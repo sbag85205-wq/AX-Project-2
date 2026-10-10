@@ -5,5 +5,5 @@
 - 현재 저장 방식·기존 API·DB·개수를 유지한다.
 - 선택한 작은 변경 하나만 수행한다.
 - 수정 후 build와 브라우저 확인 방법을 알려준다.
-- AI는 commit까지만 수행한다.
-- push·PR 생성은 사람이 VS Code 소스 제어·GitHub 화면에서 한다.
+- AI는 commit과 push까지 수행한다.
+- PR 생성은 사람이 GitHub 화면에서 한다.
