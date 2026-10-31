@@ -5,7 +5,8 @@ project_id = "knowly"
 enable_signup = false
 
 [auth.email]
-enable_signup = false
+# 이메일 로그인 방식 자체는 켜 둔다 (false면 호스팅 환경에서 이메일 로그인이 꺼짐)
+enable_signup = true
 enable_confirmations = false
 
 # 새 API 키(sb_publishable/sb_secret)와 비대칭 JWT를 쓰는 프로젝트는
