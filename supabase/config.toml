@@ -1,0 +1,20 @@
+project_id = "knowly"
+
+[auth]
+# 회원가입은 막고 관리자가 계정을 발급한다
+enable_signup = false
+
+[auth.email]
+enable_signup = false
+enable_confirmations = false
+
+# 새 API 키(sb_publishable/sb_secret)와 비대칭 JWT를 쓰는 프로젝트는
+# 게이트웨이 JWT 검사 대신 함수 안에서 auth.getUser()로 토큰을 검증한다
+[functions.chat]
+verify_jwt = false
+
+[functions.ingest]
+verify_jwt = false
+
+[functions.admin-users]
+verify_jwt = false

@@ -1,1 +1,154 @@
-# AX-Project-2
+# AX-Project-2 · Knowly
+
+사내 문서를 근거로 답하는 업무 도우미 챗봇입니다. 천안 AX 액션러닝 2조 프로젝트예요.
+
+- **프론트엔드**: React + TypeScript + Vite → Vercel 배포
+- **백엔드**: Supabase (Postgres + pgvector, Auth, Storage, Edge Functions)
+- **답변 생성**: FAQ 매칭 → 문서 검색(RAG) → OpenRouter LLM 요약 → 출처 검증
+
+> ⚠ Supabase·Vercel·OpenRouter는 외부 클라우드예요. 기업 인터뷰에서 "실제 문서와 질문은 외부로 보내면 안 된다"고 했으므로,
+> 이 배포본에는 **가상 문서만** 올려서 시연해 주세요. 사내 운영 전환 방법은 아래 [사내 서버로 옮길 때](#사내-서버로-옮길-때)를 참고하세요.
+
+## 기능
+
+| 화면 | 경로 | 내용 |
+|---|---|---|
+| 로그인 | `/` | 관리자가 발급한 아이디·비밀번호로 로그인 (회원가입 없음) |
+| 직원 챗봇 | `/` | 대화형 질문, 요약·절차·주의사항·상세 설명, 문서명·버전·페이지 출처, 원문 보기, 도움 됨/안 됨, 내 대화 기록 |
+| 미등록 질문 | `/admin/unanswered` | 근거를 못 찾았거나 '도움 안 됨'을 받은 질문을 비슷한 것끼리 묶어 보여주고, 바로 FAQ로 등록 |
+| 이용 통계 | `/admin/stats` | 질문 수, 이용 직원 수, 성공률, 응답 시간, 만족도, 부서별·카테고리별·모델별 집계, CSV |
+| 문서 관리 | `/admin/documents` | PDF·TXT 업로드 → 브라우저에서 페이지별 추출 → 청크·(임베딩) → 검색 활성화 |
+| FAQ 관리 | `/admin/faqs` | FAQ 추가·수정·숨김·삭제 |
+| 사용자 관리 | `/admin/users` | 계정 발급, 부서·권한 변경, 비밀번호 재설정 |
+
+**개인정보 원칙** (기업 인터뷰 반영)
+- 질문 원문과 대화는 **본인만** 볼 수 있어요 (RLS로 관리자도 조회 불가).
+- 미등록 질문은 이름·아이디 없이 질문 문장만 익명으로 모아요.
+- 관리자 통계는 원문 없는 집계 함수(`admin_usage_stats`)로만 조회해요.
+
+## 폴더 구조
+
+```
+src/                      React 앱
+  pages/Chat.tsx          직원 챗봇
+  pages/admin/*           관리자 화면
+  lib/extract.ts          PDF 페이지별 텍스트 추출 (pdfjs)
+supabase/
+  migrations/             DB 스키마, RLS, 검색·통계 함수
+  seed.sql                가상 문서·FAQ·예시 미등록 질문
+  functions/chat          질문 처리 (검색 → LLM → 출처 검증 → 저장·집계)
+  functions/ingest        문서 청크 분할·임베딩
+  functions/admin-users   계정 발급·삭제·비밀번호 재설정
+  functions/_shared       검색어 추출, 청크 분할, 프롬프트, 모델 어댑터
+tests/                    검색·청크·출력 검증 단위 테스트
+```
+
+## 처음 설정하기
+
+### 1. Supabase DB 만들기
+
+[Supabase 대시보드](https://supabase.com/dashboard) → 프로젝트 → **SQL Editor**에서 순서대로 실행해요.
+
+1. `supabase/migrations/20261031000000_init.sql` 전체 붙여넣고 실행
+2. `supabase/seed.sql` 실행 (가상 문서 4개, FAQ 3개, 예시 미등록 질문)
+
+CLI를 쓴다면:
+
+```bash
+npx supabase login
+npx supabase link --project-ref <project-ref>
+npx supabase db push
+```
+
+### 2. 회원가입 막기
+
+**Authentication → Sign In / Providers → Email**에서 **Allow new users to sign up**을 끕니다.
+(계정은 관리자 화면에서만 발급해요.)
+
+### 3. 첫 관리자 계정
+
+1. **Authentication → Users → Add user → Create new user**
+   - Email: `admin@knowly.local` (로그인 아이디는 `@` 앞부분인 `admin`)
+   - Password: 8자 이상, **Auto Confirm User** 체크
+2. SQL Editor에서 관리자 권한 부여:
+   ```sql
+   update public.profiles set role = 'admin', display_name = '관리자' where login_id = 'admin';
+   ```
+
+이후 직원 계정은 사이트의 **관리자 → 사용자 관리**에서 만들면 돼요.
+
+### 4. Edge Functions 배포와 비밀값
+
+```bash
+npx supabase functions deploy chat
+npx supabase functions deploy ingest
+npx supabase functions deploy admin-users
+
+# LLM (없으면 '검색 전용' 모드로 문서 내용을 그대로 보여줘요)
+npx supabase secrets set LLM_API_KEY=<OpenRouter 키> LLM_MODEL=qwen/qwen3-14b
+```
+
+| 비밀값 | 기본값 | 설명 |
+|---|---|---|
+| `LLM_API_KEY` | (없음) | OpenRouter API 키. 없으면 검색 전용 모드 |
+| `LLM_BASE_URL` | `https://openrouter.ai/api/v1` | OpenAI 호환 API 주소 |
+| `LLM_MODEL` | `qwen/qwen3-14b` | 모델 ID (평가 후보: qwen3-4b, gemma-3-4b-it, llama-3.1-8b-instruct) |
+| `LLM_TEMPERATURE` / `LLM_MAX_TOKENS` | `0.2` / `700` | 추론 설정 |
+| `EMBEDDING_MODEL` | (없음) | 지정하면 벡터 검색을 함께 사용. 없으면 키워드 검색만 |
+| `EMBEDDING_BASE_URL` / `EMBEDDING_API_KEY` | LLM 값 사용 | 임베딩 API 주소·키 |
+| `ALLOWED_ORIGIN` | `*` | CORS 허용 출처. 배포 후 Vercel 주소로 좁히세요 |
+
+> API 키는 Supabase secret에만 넣고, 저장소나 프론트엔드 환경변수에는 넣지 마세요.
+> 임베딩 모델을 바꾸면 기존 문서를 지우고 다시 등록해야 벡터 검색에 포함돼요.
+
+### 5. 로컬 실행
+
+```bash
+cp .env.example .env.local   # VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY 입력
+npm install
+npm run dev                  # http://localhost:5173
+npm test                     # 단위 테스트
+npm run build                # 타입 검사 + 빌드
+```
+
+### 6. Vercel 배포
+
+1. [Vercel](https://vercel.com/new) → **Import Git Repository** → `AX-Project-2`
+2. Framework Preset: **Vite** (자동 인식), Root Directory: 그대로
+3. Environment Variables:
+   - `VITE_SUPABASE_URL` = `https://<project-ref>.supabase.co`
+   - `VITE_SUPABASE_PUBLISHABLE_KEY` = `sb_publishable_...`
+4. Deploy. `vercel.json`이 새로고침 시 404가 나지 않도록 모든 경로를 `index.html`로 보내요.
+
+## 답변이 만들어지는 순서
+
+1. 로그인 토큰으로 사용자·부서 확인, 질문 길이 검사 (2,000자)
+2. 등록된 FAQ와 거의 같은 질문이면 FAQ 답변 반환
+3. 문서 청크 검색: 한국어 바이그램 키워드 점수 (+ 임베딩이 있으면 코사인 유사도)
+4. 근거가 기준 미달이면 **답하지 않고** "등록된 답변 없음" → 미등록 질문으로 익명 수집
+5. 근거 조각에 `[S1]` 같은 ID를 붙여 LLM에 전달, JSON 형식으로 요약·절차·주의사항·출처 ID를 받음
+6. 서버가 JSON 형식과 출처 ID를 검사 (허용 목록 밖 ID는 버림, 형식 오류는 1회 재요청)
+7. 대화 저장(본인만 열람), 통계 이벤트 저장(원문 없음)
+
+## 사내 서버로 옮길 때
+
+모델 호출은 OpenAI 호환 API만 쓰기 때문에 주소와 모델만 바꾸면 돼요.
+
+```bash
+# 예: 사내 Ollama
+LLM_BASE_URL=http://<내부 서버>:11434/v1
+LLM_MODEL=qwen3:1.7b
+LLM_API_KEY=            # 비워 둠
+EMBEDDING_BASE_URL=http://<내부 서버>:11434/v1
+EMBEDDING_MODEL=bge-m3
+```
+
+Supabase도 self-hosting이 가능하지만, 기존 사내 PostgreSQL을 쓰려면 `supabase/migrations`의 스키마와
+`supabase/functions`의 로직을 사내 백엔드로 옮겨야 해요. 같은 설정이라도 하드웨어·양자화에 따라 품질과 속도가
+달라질 수 있으니, 가상 평가 질문으로 다시 검증해 주세요.
+
+## 참고 자료
+
+- `Knowly_개발설계서_v1.docx`: 요구사항 F01–F07, API·DB 설계
+- FAQ 챗봇 관리자 대시보드 프로토타입: 미등록 질문 화면과 직원 챗봇 피드백 흐름
+- 노션 `AX 기업 과제 프로젝트 2조`: 기업 인터뷰, 기술 멘토링, 발표 피드백
