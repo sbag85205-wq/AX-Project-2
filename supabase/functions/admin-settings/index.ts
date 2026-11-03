@@ -1,8 +1,8 @@
 // 관리자 설정: 답변 모델·검색 기준 조회/저장, 모델 목록, 모델 테스트, 검색 미리보기
-import { adminClient, corsHeaders, errorResponse, getCaller, json } from '../_shared/http.ts';
+import { adminClient, corsHeaders, errorResponse, getCaller, json, loadSettings } from '../_shared/http.ts';
 import { searchTerms } from '../_shared/text.ts';
 import { chatCompletion, defaultModel, embed, embeddingConfigured, llmBaseUrl, llmConfigured } from '../_shared/providers.ts';
-import { loadSettings, parseSettings } from '../_shared/settings.ts';
+import { parseSettings } from '../_shared/settings.ts';
 
 const MODELS_TTL = 10 * 60 * 1000;
 let modelsCache: { at: number; models: unknown[] } | null = null;

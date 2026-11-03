@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient, type User } from 'npm:@supabase/supabase-js@2.118.0';
+import { DEFAULT_SETTINGS, type AppSettings } from './settings.ts';
 
 export const corsHeaders = {
   'Access-Control-Allow-Origin': Deno.env.get('ALLOWED_ORIGIN') ?? '*',
@@ -33,4 +34,12 @@ export async function getCaller(req: Request, db: SupabaseClient): Promise<Calle
   const { data: profile } = await db.from('profiles').select('id, login_id, display_name, department_id, role').eq('id', data.user.id).single();
   if (!profile) return null;
   return { user: data.user, profile };
+}
+
+/** 관리자 설정을 읽는다. 값이 없거나 읽기에 실패하면 기본값으로 동작한다. */
+export async function loadSettings(db: SupabaseClient): Promise<AppSettings> {
+  const { data, error } = await db.from('app_settings')
+    .select('llm_model, keyword_min, vector_min, vector_weight').eq('id', 1).maybeSingle();
+  if (error) console.error('settings load failed', error.message);
+  return { ...DEFAULT_SETTINGS, ...(data ?? {}) };
 }

@@ -1,5 +1,4 @@
-// 관리자 설정(app_settings) 읽기·검증. 값이 없거나 읽기에 실패하면 기본값으로 동작한다.
-import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.118.0';
+// 관리자 설정(app_settings) 기본값·검증. Deno·Node 양쪽에서 쓰도록 외부 의존성 없이 작성한다.
 
 export interface AppSettings {
   llm_model: string | null;
@@ -16,13 +15,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
 };
 
 const MODEL_ID = /^[A-Za-z0-9._:/-]{1,120}$/;
-
-export async function loadSettings(db: SupabaseClient): Promise<AppSettings> {
-  const { data, error } = await db.from('app_settings')
-    .select('llm_model, keyword_min, vector_min, vector_weight').eq('id', 1).maybeSingle();
-  if (error) console.error('settings load failed', error.message);
-  return { ...DEFAULT_SETTINGS, ...(data ?? {}) };
-}
 
 /** 관리자가 보낸 값을 검사한다. 잘못된 값이 있으면 사용자에게 보여줄 메시지를 던진다. */
 export function parseSettings(input: Record<string, unknown>): AppSettings {

@@ -1,13 +1,12 @@
 // 직원 질문 처리: 인증 → FAQ/문서 검색 → (LLM 요약) → 출처 검증 → 저장·집계
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.118.0';
-import { adminClient, corsHeaders, errorResponse, getCaller, json, type Caller } from '../_shared/http.ts';
+import { adminClient, corsHeaders, errorResponse, getCaller, json, loadSettings, type Caller } from '../_shared/http.ts';
 import { searchTerms, similarity } from '../_shared/text.ts';
 import {
   SYSTEM_PROMPT, buildUserPrompt, noEvidenceAnswer, parseModelAnswer, searchOnlyAnswer,
   type Answer, type Evidence
 } from '../_shared/answer.ts';
 import { chatCompletion, embed, llmConfigured } from '../_shared/providers.ts';
-import { loadSettings } from '../_shared/settings.ts';
 
 const MAX_QUESTION = 2000;
 const FAQ_MIN_SCORE = 0.6;
