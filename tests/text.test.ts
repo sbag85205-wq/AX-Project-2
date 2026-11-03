@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { chunkPages, searchTerms, similarity } from '../supabase/functions/_shared/text';
 import { parseModelAnswer, type Evidence } from '../supabase/functions/_shared/answer';
+import { parseSettings } from '../supabase/functions/_shared/settings';
 
 describe('searchTerms', () => {
   it('질문 어미와 조사를 걸러 핵심 바이그램만 남긴다', () => {
@@ -9,6 +10,11 @@ describe('searchTerms', () => {
     expect(terms).toContain('신청');
     expect(terms).not.toContain('나요');
     expect(terms).not.toContain('어떻');
+  });
+  it('자연스러운 질문에서 내용 단어만 남긴다', () => {
+    expect(searchTerms('반차는 어떻게 쓰나요? 몇 시간 단위예요?')).toEqual(['반차', '시간', '단위']);
+    expect(searchTerms('법인카드를 분실했어요')).toEqual(expect.arrayContaining(['법인카드', '분실']));
+    expect(searchTerms('법인카드를 분실했어요')).not.toContain('했어');
   });
   it('영문·숫자 단어는 통째로 쓴다', () => {
     expect(searchTerms('VPN 접속 오류 E401')).toEqual(expect.arrayContaining(['vpn', 'e401', '접속', '오류']));
@@ -57,5 +63,18 @@ describe('parseModelAnswer', () => {
   });
   it('insufficient_evidence는 출처 없이 허용한다', () => {
     expect(parseModelAnswer('{"status":"insufficient_evidence","summary":["확인 불가"],"citations":[]}', ev).status).toBe('insufficient_evidence');
+  });
+});
+
+describe('parseSettings', () => {
+  it('값을 0~1로 검사하고 빈 모델은 기본값(null)으로 둔다', () => {
+    expect(parseSettings({ llm_model: ' ', keyword_min: 0.3, vector_min: '0.5', vector_weight: 1 }))
+      .toEqual({ llm_model: null, keyword_min: 0.3, vector_min: 0.5, vector_weight: 1 });
+    expect(parseSettings({ llm_model: 'qwen/qwen3-4b:free', keyword_min: 0.35, vector_min: 0.55, vector_weight: 0.6 }).llm_model)
+      .toBe('qwen/qwen3-4b:free');
+  });
+  it('범위를 벗어나거나 형식이 틀리면 거부한다', () => {
+    expect(() => parseSettings({ keyword_min: 1.5, vector_min: 0.5, vector_weight: 0.5 })).toThrow();
+    expect(() => parseSettings({ llm_model: 'bad model; drop', keyword_min: 0.3, vector_min: 0.5, vector_weight: 0.5 })).toThrow();
   });
 });

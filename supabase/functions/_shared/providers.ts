@@ -14,10 +14,19 @@ export function llmConfigured(): boolean {
   return !!env('LLM_API_KEY') || env('LLM_BASE_URL').startsWith('http://');
 }
 
-export async function chatCompletion(system: string, user: string, timeoutMs = 45000): Promise<ChatResult> {
-  const base = env('LLM_BASE_URL') || 'https://openrouter.ai/api/v1';
-  const model = env('LLM_MODEL') || 'qwen/qwen3-14b';
-  const res = await fetch(`${base.replace(/\/$/, '')}/chat/completions`, {
+export function llmBaseUrl(): string {
+  return (env('LLM_BASE_URL') || 'https://openrouter.ai/api/v1').replace(/\/$/, '');
+}
+
+/** 관리자 설정에 모델이 없을 때 쓰는 기본 모델 (비밀값 LLM_MODEL) */
+export function defaultModel(): string {
+  return env('LLM_MODEL') || 'qwen/qwen3-14b';
+}
+
+export async function chatCompletion(system: string, user: string, modelOverride?: string | null, timeoutMs = 45000): Promise<ChatResult> {
+  const base = llmBaseUrl();
+  const model = modelOverride || defaultModel();
+  const res = await fetch(`${base}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

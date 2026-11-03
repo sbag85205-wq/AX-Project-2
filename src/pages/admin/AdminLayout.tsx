@@ -1,6 +1,7 @@
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import Documents from './Documents';
 import Faqs from './Faqs';
+import Settings from './Settings';
 import Stats from './Stats';
 import Unanswered from './Unanswered';
 import Users from './Users';
@@ -10,7 +11,8 @@ const LINKS = [
   ['stats', '이용 통계'],
   ['documents', '문서 관리'],
   ['faqs', 'FAQ 관리'],
-  ['users', '사용자 관리']
+  ['users', '사용자 관리'],
+  ['settings', '검색·모델 설정']
 ];
 
 export default function AdminLayout() {
@@ -28,6 +30,7 @@ export default function AdminLayout() {
         <Route path="documents" element={<Documents />} />
         <Route path="faqs" element={<Faqs />} />
         <Route path="users" element={<Users />} />
+        <Route path="settings" element={<Settings />} />
       </Routes>
     </>
   );

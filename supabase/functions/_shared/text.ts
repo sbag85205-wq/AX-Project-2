@@ -9,7 +9,24 @@ const STOP_BIGRAMS = new Set([
   '까요', '하는', '방법', '궁금'
 ]);
 
+// 내용과 상관없는 질문 표현. 단어째로 거른다
+const STOP_WORDS = new Set([
+  '어떻게', '어떤', '무엇', '뭐', '뭔가', '언제', '어디', '얼마', '얼마나', '왜', '좀', '혹시',
+  '그럼', '그리고', '정말', '알려', '알려줘', '궁금', '방법', '하나', '있나', '되나', '하는', '있는', '되는', '해야', '하면'
+]);
+
+// 질문 어미 → 조사 → 동사 꼬리 순서로 떼어 낸다 (예: 단위예요 → 단위, 신청하나요 → 신청)
+const QUESTION_ENDING = /(이에요|예요|인가요|인가|나요|까요|니까|세요|어요|아요|해요|돼요|되요|지요|죠)$/;
 const PARTICLE_SUFFIX = /(은|는|이|가|을|를|에|에서|으로|로|와|과|도|만|의|께|한테|부터|까지|이나|나|요)$/;
+const VERB_STEM = /(하|해|했|되|돼|됐|할|한)$/;
+
+function stem(raw: string): string {
+  let word = raw;
+  for (const suffix of [QUESTION_ENDING, PARTICLE_SUFFIX, VERB_STEM]) {
+    if (word.length > 2) word = word.replace(suffix, '');
+  }
+  return word;
+}
 
 export function normalize(text: string): string {
   return text.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' ').replace(/\s+/g, ' ').trim();
@@ -19,8 +36,9 @@ export function normalize(text: string): string {
 export function searchTerms(question: string, max = 24): string[] {
   const terms = new Set<string>();
   for (const raw of normalize(question).split(' ')) {
-    const word = raw.length > 2 ? raw.replace(PARTICLE_SUFFIX, '') : raw;
-    if (word.length < 2) continue;
+    if (STOP_WORDS.has(raw)) continue;
+    const word = /^[a-z0-9]+$/.test(raw) ? raw : stem(raw);
+    if (word.length < 2 || STOP_WORDS.has(word)) continue;
     if (/^[a-z0-9]+$/.test(word)) {
       terms.add(word);
       continue;

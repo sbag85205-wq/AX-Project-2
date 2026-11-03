@@ -7,12 +7,11 @@ import {
   type Answer, type Evidence
 } from '../_shared/answer.ts';
 import { chatCompletion, embed, llmConfigured } from '../_shared/providers.ts';
+import { loadSettings } from '../_shared/settings.ts';
 
 const MAX_QUESTION = 2000;
 const FAQ_MIN_SCORE = 0.6;
 const FAQ_MIN_SIMILARITY = 0.45;
-const KEYWORD_MIN = 0.35;
-const VECTOR_MIN = 0.55;
 const GROUP_MIN_SIMILARITY = 0.45;
 
 Deno.serve(async (req) => {
@@ -60,6 +59,7 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
   }
   await db.from('messages').insert({ conversation_id: conversationId, owner_id: caller.user.id, role: 'user', content: question });
 
+  const settings = await loadSettings(db);
   const terms = searchTerms(question);
   let answer: Answer | null = null;
   let category: string | null = null;
@@ -93,13 +93,14 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
     const { data: rows, error } = await db.rpc('search_chunks', {
       terms: terms.length ? terms : [question],
       query_embedding: queryEmbedding ? JSON.stringify(queryEmbedding) : null,
-      match_count: 5
+      match_count: 5,
+      vector_weight: settings.vector_weight
     });
     if (error) throw error;
 
     const evidence: Evidence[] = (rows ?? [])
       .filter((r: { keyword_score: number; vector_score: number | null }) =>
-        r.keyword_score >= KEYWORD_MIN || (r.vector_score ?? 0) >= VECTOR_MIN)
+        r.keyword_score >= settings.keyword_min || (r.vector_score ?? 0) >= settings.vector_min)
       .map((r: Record<string, unknown>, i: number) => ({
         source_id: `S${i + 1}`,
         chunk_id: r.id as string,
@@ -120,7 +121,7 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
       if (llmConfigured()) {
         try {
           const prompt = buildUserPrompt(question, evidence);
-          let result = await chatCompletion(SYSTEM_PROMPT, prompt);
+          let result = await chatCompletion(SYSTEM_PROMPT, prompt, settings.llm_model);
           model = result.model;
           inputTokens = result.input_tokens;
           outputTokens = result.output_tokens;
@@ -129,7 +130,8 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
           } catch (parseError) {
             // 형식이 깨지면 1회만 다시 요청
             result = await chatCompletion(SYSTEM_PROMPT,
-              `${prompt}\n\n이전 출력이 규칙에 맞지 않았습니다(${(parseError as Error).message}). 지정한 JSON 형식으로만 다시 답하세요.`);
+              `${prompt}\n\n이전 출력이 규칙에 맞지 않았습니다(${(parseError as Error).message}). 지정한 JSON 형식으로만 다시 답하세요.`,
+              settings.llm_model);
             inputTokens = (inputTokens ?? 0) + (result.input_tokens ?? 0);
             outputTokens = (outputTokens ?? 0) + (result.output_tokens ?? 0);
             answer = parseModelAnswer(result.text, evidence);

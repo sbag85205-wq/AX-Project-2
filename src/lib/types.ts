@@ -87,3 +87,29 @@ export interface QuestionGroup {
   question_variants: { text: string; reason: string; created_at: string }[];
   faqs?: { answer: string } | null;
 }
+
+export interface AppSettings {
+  llm_model: string | null;
+  keyword_min: number;
+  vector_min: number;
+  vector_weight: number;
+}
+
+export interface ModelOption {
+  id: string;
+  name: string;
+  context_length: number | null;
+  prompt_price: string | null;
+  completion_price: string | null;
+}
+
+export interface PreviewRow {
+  document_title: string;
+  section_title: string | null;
+  page_start: number;
+  page_end: number;
+  keyword_score: number;
+  vector_score: number | null;
+  passed: boolean;
+  snippet: string;
+}
