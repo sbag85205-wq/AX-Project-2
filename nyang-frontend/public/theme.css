@@ -1,0 +1,165 @@
+:root{color-scheme:light}
+.appearance-button.theme-toggle{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;width:auto;min-width:72px;padding:0 10px;border:1px solid #e0e2e8;border-radius:18px;font-size:11px;white-space:nowrap}
+.theme-toggle .icon{width:15px;height:15px}
+.theme-toggle span{line-height:1;font-weight:500}
+.theme-toggle[aria-pressed=true]{background:#242d3c;color:#9fc8ff}
+html[data-theme=dark]{
+ color-scheme:dark;
+ --ink:#f5f5f7;--muted:#b1b2bd;--blue:#83baff;--blue-dark:#acd1ff;
+ --pale:#202e42;--line:#393b45;--soft:#23242b;
+ --night:#111214;--surface:#1c1d22;--raised:#272930;
+ --secondary:#bec0ca;--quiet:#9ea2af;--accent-bg:#1b2c42;
+ background:var(--night);color:var(--ink);
+}
+html[data-theme=dark] body[data-mode=cat]{background:var(--night)}
+html[data-theme=dark] body[data-mode=cat] .main-content,
+html[data-theme=dark] body[data-mode=cat].custom-bg .main-content{background:var(--night)!important}
+html[data-theme=dark] body[data-mode=cat] .main-content.work-view{background:#15161a!important}
+html[data-theme=dark] body[data-mode=cat] .topbar{background:#15161af2;border-color:#2b2d34}
+html[data-theme=dark] body[data-mode=cat] .bottom-note{background:#15161a;border-color:#2b2d34;color:var(--quiet)}
+html[data-theme=dark] .brand-paw{color:var(--ink)}
+html[data-theme=dark] .studio-nav.side-nav>button{color:var(--secondary)}
+html[data-theme=dark] .studio-nav.side-nav>button:is(:hover,.active){color:#fff}
+html[data-theme=dark] .studio-nav.side-nav>button.active:after{background:#fff}
+html[data-theme=dark] .studio-nav .count,
+html[data-theme=dark] .wallet i{background:var(--raised);color:var(--secondary)}
+html[data-theme=dark] .wallet strong{color:var(--ink)}
+html[data-theme=dark] .wallet .heart-mark{background:none;color:#efa7bb}
+html[data-theme=dark] :is(.appearance-button,.bottom-note>button,.icon-button){color:var(--secondary)}
+html[data-theme=dark] :is(.appearance-button,.icon-button):hover{background:var(--raised);color:#fff}
+html[data-theme=dark] .theme-toggle[aria-pressed=true]{color:#c5ddff;border-color:#465976;background:#24354e}
+html[data-theme=dark] :is(.room-location,.motion-control,.room-location .icon,.motion-mark){color:var(--quiet)}
+html[data-theme=dark] .motion-control:hover{color:#fff}
+html[data-theme=dark] .scene-window{background-image:linear-gradient(#11121488,#11121488),var(--user-bg);opacity:.65}
+html[data-theme=dark] body[data-background=white] .scene-window{background:radial-gradient(ellipse,#2b3040,transparent 70%)}
+html[data-theme=dark] .resident-shadow{background:#0008}
+html[data-theme=dark] .resident-spark{color:#7c8caa}
+html[data-theme=dark] .resident-speech h1{color:var(--ink)}
+html[data-theme=dark] .resident-speech p{color:var(--secondary)}
+html[data-theme=dark] :is(.hero-kicker,.home-scene .hero-kicker,.hero-detail,.studio-promise,.cat-home-panel .popular>span){color:var(--quiet)}
+html[data-theme=dark] .cat-art.resident{filter:drop-shadow(0 9px 16px #0005)}
+html[data-theme=dark] .pet-touch:hover~.pet-body{filter:drop-shadow(0 0 12px #83baff22)}
+html[data-theme=dark] .treat-button{background:var(--surface);border-color:var(--line);color:var(--ink);box-shadow:none}
+html[data-theme=dark] .treat-button:not(:disabled):hover{background:var(--raised)}
+html[data-theme=dark] .treat-button b{color:var(--secondary);border-color:var(--line)}
+html[data-theme=dark] :is(.pet-actions>span,.pet-actions .pet-guide){color:var(--quiet);border-color:var(--line)}
+html[data-theme=dark] .pet-feedback,
+html[data-theme=dark] .reaction-bonus strong{color:var(--ink)}
+html[data-theme=dark] :is(.pet-feedback-kicker,.pet-feedback>small){color:var(--quiet)}
+html[data-theme=dark] .reaction-like .pet-feedback-kicker{color:#e3b993}
+html[data-theme=dark] :is(.reaction-bonus .pet-feedback-kicker,.pet-point-pop){color:var(--blue)}
+html[data-theme=dark] .pet-touch:focus-visible{outline-color:var(--blue)}
+html[data-theme=dark] .collect-heart{background:#30232c;border-color:#593749;color:#ffaec5;box-shadow:none}
+html[data-theme=dark] .collect-heart:hover{background:#45303e}
+html[data-theme=dark] .collect-heart small{color:#ffc0d1}
+
+/* Actions and question surfaces. */
+html[data-theme=dark] :is(.primary-button,.send-button){background:#0873dc;border-color:#0873dc;color:#fff}
+html[data-theme=dark] :is(.primary-button,.send-button):hover{background:#1782ec;border-color:#1782ec}
+html[data-theme=dark] .secondary-button{background:var(--raised);border-color:var(--line);color:var(--ink)}
+html[data-theme=dark] .secondary-button:hover{background:#343640;border-color:#66738a}
+html[data-theme=dark] :is(.text-button,.cat-home-actions .direct-trigger,.source-inline){color:var(--blue)}
+html[data-theme=dark] .text-button:hover{color:var(--blue-dark)}
+html[data-theme=dark] .cat-home-panel .popular .faq-tiles>button{background:var(--surface);color:var(--ink)}
+html[data-theme=dark] .cat-home-panel .popular .faq-tiles>button:hover{background:var(--raised)}
+html[data-theme=dark] .faq-tiles strong{color:var(--ink)}
+html[data-theme=dark] :is(.tile-icon,.faq-tiles small,.faq-tiles>button>.icon){color:var(--quiet)}
+html[data-theme=dark] .cat-choice-panel{background:var(--surface)}
+html[data-theme=dark] .cat-choice-panel .choices>button{background:var(--raised)}
+html[data-theme=dark] .cat-choice-panel .choices>button:hover{background:#30343e;border-color:#6689b7}
+html[data-theme=dark] .cat-choice-panel .choices strong{color:var(--ink)}
+html[data-theme=dark] :is(.cat-choice-panel .choices small,.cat-choice-panel .choice-heading,.cat-choice-panel .choice-heading>span:last-child,.cat-choice-panel .choice-footer .text-button){color:var(--secondary)}
+html[data-theme=dark] .category-icon{background:#343741!important;color:#bdd6fa!important}
+html[data-theme=dark] .choice-index{color:var(--quiet)!important}
+html[data-theme=dark] .cat-content-scroll{scrollbar-color:#525763 transparent}
+html[data-theme=dark] .cat-content-scroll .user-message{background:var(--accent-bg);color:#c6dcfa}
+html[data-theme=dark] .cat-content-scroll .answer-content{background:var(--surface)}
+html[data-theme=dark] .cat-content-scroll .answer-content h3{color:var(--ink)}
+html[data-theme=dark] :is(.cat-content-scroll .answer-content>p,.answer-steps){color:var(--secondary)}
+html[data-theme=dark] .answer-label{color:#a8bcdb}
+html[data-theme=dark] .cat-content-scroll .sources{border-color:var(--line)}
+html[data-theme=dark] .cat-content-scroll .sources>button{background:var(--raised);color:#b5d5ff}
+html[data-theme=dark] .cat-content-scroll .sources>button:hover{background:#313d50}
+html[data-theme=dark] .schedule-offer{background:var(--accent-bg)}
+html[data-theme=dark] .schedule-offer h3{color:#e2eeff}
+html[data-theme=dark] :is(.offer-eyebrow,.schedule-offer>p,.plan-form label,.schedule-preview span,.schedule-preview small){color:#b0c3df}
+html[data-theme=dark] .schedule-offer.declined{background:var(--surface);color:var(--secondary)}
+html[data-theme=dark] .schedule-offer.registered{background:#1c302a}
+html[data-theme=dark] .schedule-offer.registered>strong{color:#a5dabc}
+html[data-theme=dark] :is(.registered-items span,.registered-items b){color:#bdd6c9}
+html[data-theme=dark] :is(.schedule-preview,.schedule-preview>div){border-color:#3a4c63}
+html[data-theme=dark] .caption{color:var(--quiet)!important}
+html[data-theme=dark] :is(input,select,textarea){color:var(--ink);accent-color:#5aa5ff}
+html[data-theme=dark] :is(.plan-form input,.agenda-edit input,.task-date input,.upload-doc select){background:var(--raised);border-color:#555967;color:var(--ink)}
+html[data-theme=dark] input[type=date]::-webkit-calendar-picker-indicator{opacity:.9}
+html[data-theme=dark] .cat-content-scroll>.composer{background:var(--surface);border-color:#474b58;box-shadow:none}
+html[data-theme=dark] :is(.category-select,.category-select select){background:var(--raised);color:var(--secondary)}
+html[data-theme=dark] .input-row textarea{background:transparent;color:var(--ink)}
+html[data-theme=dark] .input-row textarea::placeholder{color:var(--quiet);opacity:1}
+html[data-theme=dark] :is(.composer-meta>span,.composer-foot){color:var(--quiet);border-color:var(--line)}
+html[data-theme=dark] .cat-direct-hint{background:var(--surface);color:var(--secondary)}
+
+/* Calendar and task list. */
+html[data-theme=dark] :is(.calendar-board,.day-agenda,.todo-stats,.week-strip,.task-list){background:var(--surface);box-shadow:none}
+html[data-theme=dark] :is(.calendar-heading p,.todo-title p,.calendar-heading .eyebrow,.todo-title .eyebrow,.day-agenda>.eyebrow,.day-agenda>p,.calendar-legend,.local-note,.todo-stats span,.todo-controls>span,.list-heading>span){color:var(--quiet)}
+html[data-theme=dark] :is(.month-navigation h2,.todo-stats strong,.agenda-item strong,.task-detail h3){color:var(--ink)}
+html[data-theme=dark] :is(.calendar-cell,.calendar-weekdays,.calendar-legend,.agenda-item,.todo-stats>div,.task-row){border-color:#32343d}
+html[data-theme=dark] .month-navigation .text-button{border-color:var(--line)}
+html[data-theme=dark] .calendar-cell:hover{background:var(--raised)}
+html[data-theme=dark] .calendar-cell.selected{background:#23344c;box-shadow:inset 0 0 0 1.5px #609ee9}
+html[data-theme=dark] .date-number{color:var(--secondary)}
+html[data-theme=dark] .calendar-cell.outside .date-number{color:#7e828e}
+html[data-theme=dark] .calendar-cell.today .date-number{background:#0873dc;color:#fff}
+html[data-theme=dark] .calendar-event{background:#263c59;color:#c7defc}
+html[data-theme=dark] .calendar-event.done{background:#2d3336;color:#adb7b9}
+html[data-theme=dark] :is(.calendar-weekdays,.calendar-cell>small,.agenda-item>small,.agenda-edit label,.agenda-empty h3,.agenda-empty p,.task-detail>p,.task-detail>small,.task-meta>span,.task-date){color:var(--quiet)}
+html[data-theme=dark] .calendar-weekdays span:last-child{color:#eaa8ac}
+html[data-theme=dark] .agenda-item>p{color:var(--secondary)}
+html[data-theme=dark] .agenda-item .agenda-deadline{color:#e5c09a}
+html[data-theme=dark] .agenda-item.done>label strong{color:#9b9ea8}
+html[data-theme=dark] .segmented{background:#25272e}
+html[data-theme=dark] .segmented>button{color:var(--secondary)}
+html[data-theme=dark] .segmented>button.selected{background:#414550;color:#fff;box-shadow:none}
+html[data-theme=dark] .week-strip>button{color:var(--secondary)}
+html[data-theme=dark] .week-strip>button:hover{background:var(--raised)}
+html[data-theme=dark] .week-strip>button.selected{background:#263c59;color:#b5d7ff}
+html[data-theme=dark] .week-strip>button i{background:#444854}
+html[data-theme=dark] .week-strip>button i.has-task{background:#83baff}
+html[data-theme=dark] .task-row{background:transparent}
+html[data-theme=dark] .task-row input[type=checkbox]{background:var(--raised);border-color:#737b8d}
+html[data-theme=dark] .task-row input[type=checkbox]:checked{background:#0873dc;border-color:#0873dc}
+html[data-theme=dark] .badge{background:var(--raised);color:var(--secondary)}
+html[data-theme=dark] .badge.blue{background:#263c59;color:#bdd9ff}
+html[data-theme=dark] :is(.empty-state h3,.empty-state p){color:var(--secondary)}
+html[data-theme=dark] .overdue-alert{background:#382b21;color:#f1c6a3}
+html[data-theme=dark] .overdue{color:#f1aa95!important}
+
+/* Dialogs, sources, backgrounds and wardrobe. */
+html[data-theme=dark] dialog{background:#1c1d22;color:var(--ink);box-shadow:0 30px 100px #0008;border:1px solid #383b45;scrollbar-color:#555967 #1c1d22}
+html[data-theme=dark] dialog::backdrop{background:#0009}
+html[data-theme=dark] :is(.modal-eyebrow,.modal-sub,.docs-list small,.upload-doc p,.upload-doc>label:not(.file-button),.upload-doc>small){color:var(--quiet)}
+html[data-theme=dark] .modal-close{background:#30323b;color:var(--secondary)}
+html[data-theme=dark] .source-document{background:#25272e}
+html[data-theme=dark] .source-document section.highlight{background:#20364f}
+html[data-theme=dark] :is(.source-document h3,.source-marker){color:#aed2ff}
+html[data-theme=dark] .source-document p{color:#d4d6de}
+html[data-theme=dark] .docs-list>button{background:var(--raised)}
+html[data-theme=dark] .docs-list>button:hover{background:#343945}
+html[data-theme=dark] .docs-list strong{color:var(--ink)}
+html[data-theme=dark] .doc-icon{background:#363b47;color:#bacce8}
+html[data-theme=dark] .upload-doc{border-color:var(--line)}
+html[data-theme=dark] .wardrobe-preview{background:radial-gradient(ellipse,#3c4050,#262832)}
+html[data-theme=dark] .heart-balance{background:#3b2b36;color:#ffc0d3}
+html[data-theme=dark] .wardrobe-item{background:var(--raised)}
+html[data-theme=dark] .wardrobe-item.equipped{background:#24364c;border-color:#669de1}
+html[data-theme=dark] :is(.wardrobe-item p,.wardrobe-item>small,.wardrobe-footer>span){color:var(--secondary)}
+html[data-theme=dark] .background-option{background:var(--raised);border-color:var(--line)}
+html[data-theme=dark] .background-option:hover{background:#343741}
+html[data-theme=dark] .background-option.chosen{border-color:#83baff;box-shadow:0 0 0 2px #83baff25}
+html[data-theme=dark] .background-option-name{color:var(--ink)}
+html[data-theme=dark] .background-option-name em{background:#3b3e49;color:var(--secondary)}
+html[data-theme=dark] :is(.background-option>small,.custom-background-status){color:var(--quiet)}
+html[data-theme=dark] .white-background-option{background:var(--raised);border-color:var(--line);color:var(--secondary)}
+html[data-theme=dark] .white-background-option.chosen{border-color:#83baff;color:#bdd9ff}
+html[data-theme=dark] #toast{background:#e4e7ee;color:#17191e;box-shadow:0 5px 30px #0005}
+html[data-theme=dark] ::selection{background:#356295;color:#fff}
