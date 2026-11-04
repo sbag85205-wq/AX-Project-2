@@ -26,8 +26,8 @@ export default function Login() {
     setBusy(true);
     setError('');
     try {
-      await signIn(loginId, password);
-      // 담당자로 들어오면 관리자 화면부터 연다 (권한이 없으면 챗봇 화면으로 돌아간다)
+      await signIn(loginId, password, type);
+      // 직원 탭은 직원 계정만, 담당자 탭은 관리자 계정만 들어온다
       navigate(type === 'admin' ? '/admin' : '/', { replace: true });
     } catch (err) {
       setError(errorMessage(err));
