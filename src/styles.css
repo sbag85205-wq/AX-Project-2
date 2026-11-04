@@ -93,13 +93,24 @@ h1, h2, h3 { margin: 0; line-height: 1.35; }
 .badge { padding: 6px 12px; border-radius: 999px; background: #f1f2f4; font-weight: 500; }
 
 /* ── 로그인 ── */
-.login-wrap {
-  min-height: 100vh; display: grid; place-items: center; padding: 96px 16px 24px;
-  background: linear-gradient(rgba(243, 246, 250, .78), rgba(243, 246, 250, .92)), url('/cat/bg-cafe.webp') center / cover;
-}
-.login-card { width: 100%; max-width: 420px; padding: 0 32px 32px; display: flex; flex-direction: column; gap: 18px; border-radius: 24px; }
-.login-card h1 { font-size: 26px; letter-spacing: -1px; }
-.login-cat { align-self: center; margin-top: -76px; filter: drop-shadow(0 8px 12px rgba(24, 36, 56, .12)); }
+.login-shell { min-height: 100dvh; display: flex; flex-direction: column; background: var(--surface); }
+.login-header { height: 78px; display: flex; align-items: center; gap: 16px; padding: 0 26px; border-bottom: 1px solid var(--line); }
+.login-header img { display: block; height: 24px; width: auto; }
+.login-header-name { font-size: 20px; font-weight: 700; letter-spacing: -.8px; }
+.login-subbar { height: 48px; display: flex; align-items: center; padding: 0 28px; border-bottom: 1px solid var(--line); font-size: 14px; font-weight: 600; }
+.login-page { flex: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 40px 100px; padding: 48px 24px; }
+.login-intro { width: 380px; max-width: 100%; text-align: center; display: flex; flex-direction: column; align-items: center; }
+.login-intro .mascot { margin-bottom: 22px; }
+.login-eyebrow { font-size: 13px; color: var(--muted); margin: 0 0 14px; }
+.login-intro h1 { font-size: 27px; letter-spacing: -1px; font-weight: 650; margin: 0 0 14px; }
+.login-intro > p:last-child { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
+.login-form { width: 350px; max-width: 100%; flex-shrink: 0; }
+.login-types { display: flex; background: #f2f3f6; padding: 4px; border-radius: 12px; margin-bottom: 30px; }
+.login-types button { flex: 1; padding: 11px; border-radius: 9px; background: none; border: 0; color: var(--muted); font-size: 14px; cursor: pointer; }
+.login-types button[aria-pressed='true'] { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 5px rgba(0, 0, 0, .05); }
+.login-error { font-size: 13px; line-height: 1.5; color: var(--danger); min-height: 20px; margin: 12px 0; }
+.login-submit { width: 100%; min-height: 50px; border-radius: 10px; }
+.login-note { text-align: center; font-size: 12.5px; line-height: 1.8; color: var(--muted); margin: 18px 0; }
 
 /* ── 챗봇 ── */
 /* 상단 바 높이가 화면 폭에 따라 달라져도 채팅 영역이 남은 높이를 채운다 */
