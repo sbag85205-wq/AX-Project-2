@@ -10,10 +10,10 @@ const Admin = lazy(() => import('./pages/admin/AdminLayout'));
 
 function Shell({ children }: { children: ReactNode }) {
   return (
-    <>
+    <div className="app-shell">
       <TopBar />
       {children}
-    </>
+    </div>
   );
 }
 

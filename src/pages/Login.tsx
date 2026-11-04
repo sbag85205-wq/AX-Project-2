@@ -26,12 +26,10 @@ export default function Login() {
   return (
     <main className="login-wrap">
       <form className="card login-card" onSubmit={submit}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Mascot size={56} mood="happy" bob />
-          <div>
-            <h1>Knowly</h1>
-            <div className="hint">사내 문서를 근거로 답하는 업무 도우미</div>
-          </div>
+        <div className="login-cat"><Mascot size={128} bob /></div>
+        <div style={{ textAlign: 'center' }}>
+          <h1>Knowly</h1>
+          <div className="hint">사내 문서를 근거로 답하는 업무 도우미</div>
         </div>
         <div className="field">
           <label htmlFor="login-id">아이디</label>

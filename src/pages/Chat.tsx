@@ -145,7 +145,10 @@ export default function Chat() {
             </button>
             {messages.length === 0 && (
               <div className="welcome">
-                <Mascot size={88} mood="happy" bob />
+                <div className="welcome-scene">
+                  <span className="scene-shadow" aria-hidden="true" />
+                  <Mascot size={176} bob />
+                </div>
                 <h1>{profile?.display_name ?? ''}님, 무엇이 궁금하세요?</h1>
                 <p>사내 규정과 매뉴얼에서 근거를 찾아 출처와 함께 알려드려요.</p>
                 <div className="suggestions" aria-label="추천 질문">
@@ -160,7 +163,7 @@ export default function Chat() {
                 <div key={m.id} className="bubble-user">{m.content}</div>
               ) : (
                 <div key={m.id} className="bot-row">
-                  <Mascot size={36} mood={m.pending ? 'thinking' : m.answer?.status === 'insufficient_evidence' ? 'sorry' : 'idle'} />
+                  <Mascot size={48} avatar mood={m.pending ? 'thinking' : m.answer?.status === 'insufficient_evidence' ? 'sorry' : m.vote === 'up' ? 'happy' : 'idle'} />
                   {m.pending ? (
                     <div className="bot-card" aria-label="답변을 준비하고 있어요">
                       <div className="hint">문서를 찾아보고 있어요…</div>
@@ -181,7 +184,7 @@ export default function Chat() {
         </div>
         <div className="composer-wrap">
           <form className="composer" onSubmit={onSubmit}>
-            <span className="mobile-hide" aria-hidden="true"><Mascot size={40} mood={mood} /></span>
+            <span className="mobile-hide" aria-hidden="true"><Mascot size={40} avatar mood={mood} /></span>
             <label htmlFor="chat-in" className="sr">질문 입력</label>
             <textarea
               id="chat-in"
