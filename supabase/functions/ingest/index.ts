@@ -91,8 +91,10 @@ async function reindex(db: SupabaseClient): Promise<Response> {
   if (error) return errorResponse(500, 'internal', '문서 목록을 불러오지 못했어요.', true);
   const todo = (docs ?? []).filter((d) => d.embedding_model !== model);
   const done: { id: string; title: string; chunks: number }[] = [];
+  let current = '';
   try {
     for (const doc of todo.slice(0, REINDEX_DOCS_PER_CALL)) {
+      current = doc.title;
       const { data: chunks, error: chunkError } = await db.from('chunks')
         .select('id, section_title, content').eq('document_id', doc.id).order('seq');
       if (chunkError) throw chunkError;
@@ -108,8 +110,10 @@ async function reindex(db: SupabaseClient): Promise<Response> {
       done.push({ id: doc.id, title: doc.title, chunks: vectors.length });
     }
   } catch (e) {
-    console.error('reindex failed', (e as Error).message);
-    return errorResponse(502, 'reindex_failed', '의미 검색 색인에 실패했어요. 잠시 후 다시 시도해 주세요.', true);
+    // 관리자 전용 기능이라 원인을 그대로 보여준다 (API 키는 오류 문구에 포함되지 않는다)
+    const message = (e as Error).message ?? 'unknown';
+    console.error('reindex failed', current, message);
+    return errorResponse(502, 'reindex_failed', `'${current}' 색인에 실패했어요: ${message.slice(0, 200)}`, true);
   }
   return json({ model, done, remaining: todo.length - done.length });
 }
