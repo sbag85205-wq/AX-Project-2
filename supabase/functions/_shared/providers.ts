@@ -70,13 +70,20 @@ export async function embed(texts: string[]): Promise<number[][] | null> {
   const key = env('EMBEDDING_API_KEY') || env('LLM_API_KEY');
   const out: number[][] = [];
   for (let i = 0; i < texts.length; i += 32) {
-    const res = await fetch(`${base.replace(/\/$/, '')}/embeddings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(key ? { Authorization: `Bearer ${key}` } : {}) },
-      body: JSON.stringify({ model: env('EMBEDDING_MODEL'), input: texts.slice(i, i + 32) }),
-      signal: AbortSignal.timeout(60000)
-    });
-    if (!res.ok) throw new Error(`Embedding ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    // 공급자가 일시적으로 과부하(429)·오류(5xx)를 내면 잠깐 기다렸다가 최대 3번까지 다시 보낸다
+    let res: Response | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      res = await fetch(`${base.replace(/\/$/, '')}/embeddings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(key ? { Authorization: `Bearer ${key}` } : {}) },
+        body: JSON.stringify({ model: env('EMBEDDING_MODEL'), input: texts.slice(i, i + 32) }),
+        signal: AbortSignal.timeout(60000)
+      });
+      if (res.ok || (res.status !== 429 && res.status < 500) || attempt === 2) break;
+      await res.body?.cancel();
+      await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
+    }
+    if (!res || !res.ok) throw new Error(`Embedding ${res?.status}: ${(await res?.text())?.slice(0, 200)}`);
     const data = await res.json();
     for (const row of data.data) out.push(row.embedding);
   }
