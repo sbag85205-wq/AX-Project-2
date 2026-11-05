@@ -1,0 +1,43 @@
+# GitHub에 push하면 화면(프론트엔드)을 Vercel에 배포한다.
+#   main             → 기존 디자인  (Vercel knowly,       https://cheonax.duckdns.org)
+#   feat/nyang-theme → 냥대리 디자인 (Vercel knowly-nyang, https://cheonax-n.duckdns.org)
+# 필요한 저장소 비밀값: VERCEL_TOKEN (Settings → Secrets and variables → Actions)
+name: Deploy frontend
+
+on:
+  push:
+    branches: [main, feat/nyang-theme]
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_yO2cPnLAHxqolchZc4R7OREG
+      VERCEL_PROJECT_ID: ${{ github.ref_name == 'main' && 'prj_gwyserAZKGyhnhzP57IcCb3RyVYy' || 'prj_kbKad7Kahx4i9lASfWxo0t9XPtqe' }}
+    steps:
+      - name: 비밀값 확인
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::저장소 비밀값 VERCEL_TOKEN이 없어서 배포하지 않았어요."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: 단위 테스트
+        run: npx vitest run
+      - name: Vercel 환경변수 받기
+        run: npx --yes vercel@65.9.0 pull --yes --environment=production --token "$VERCEL_TOKEN"
+      - name: 빌드
+        run: npx --yes vercel@65.9.0 build --prod --token "$VERCEL_TOKEN"
+      - name: 배포
+        run: npx --yes vercel@65.9.0 deploy --prebuilt --prod --token "$VERCEL_TOKEN"
