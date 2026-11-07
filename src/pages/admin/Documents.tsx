@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { useToast } from '../../components/Toast';
 import { callFunction, errorMessage } from '../../lib/api';
 import { CATEGORIES } from '../../lib/constants';
-import { extractPages, sha256 } from '../../lib/extract';
+import { DOC_ACCEPT, extractPages, sha256 } from '../../lib/extract';
+import { pageCountLabel } from '../../lib/sheet';
 import { supabase } from '../../lib/supabase';
 import type { DocumentRow } from '../../lib/types';
 
@@ -52,7 +53,7 @@ export default function Documents() {
       const { error: upErr } = await supabase.storage.from('documents').upload(path, file, { upsert: true, contentType: file.type || undefined });
       if (upErr) throw new Error('원본 파일을 저장하지 못했어요.');
 
-      setProgress(`청크 분할·인덱싱 중… (${pages.length}페이지)`);
+      setProgress(`청크 분할·인덱싱 중… (${pageCountLabel(pages.length, file.name)})`);
       const res = await callFunction<{ chunks: number; embedded: boolean }>('ingest', {
         title: title.trim() || file.name.replace(/\.[^.]+$/, ''),
         category, version, effective_from: effective || null, file_path: path, file_hash: hash, pages
@@ -90,7 +91,7 @@ export default function Documents() {
       <div className="page-head">
         <div>
           <h1>문서 관리</h1>
-          <p>PDF·텍스트 문서를 올리면 페이지 번호를 유지한 채 나눠서 챗봇 검색에 사용해요.</p>
+          <p>PDF·엑셀·텍스트 문서를 올리면 페이지(엑셀은 시트) 위치를 유지한 채 나눠서 챗봇 검색에 사용해요.</p>
         </div>
       </div>
 
@@ -99,8 +100,8 @@ export default function Documents() {
         <div className="answer-warn">⚠ 이 데모는 외부 클라우드(Supabase·OpenRouter)를 사용해요. 실제 사내 문서는 올리지 말고 가상 문서로만 테스트해 주세요.</div>
         <div className="form-grid">
           <div className="field" style={{ gridColumn: '1 / -1' }}>
-            <label htmlFor="doc-file">파일 (PDF, TXT · {MAX_MB}MB 이하)</label>
-            <input id="doc-file" type="file" accept=".pdf,.txt,.md,application/pdf,text/plain" className="input" style={{ paddingTop: 9 }}
+            <label htmlFor="doc-file">파일 (PDF, 엑셀 XLSX·XLS·CSV, TXT · {MAX_MB}MB 이하)</label>
+            <input id="doc-file" type="file" accept={DOC_ACCEPT} className="input" style={{ paddingTop: 9 }}
               onChange={(e) => setFile(e.target.files?.[0] ?? null)} required />
           </div>
           <div className="field">
@@ -136,7 +137,7 @@ export default function Documents() {
             <div className="list-main">
               <div className="list-title">{d.title}</div>
               <div className="list-meta">
-                {d.category} · {d.version} · {d.page_count}페이지{d.effective_from ? ` · 시행 ${d.effective_from}` : ''}
+                {d.category} · {d.version} · {pageCountLabel(d.page_count, d.file_path)}{d.effective_from ? ` · 시행 ${d.effective_from}` : ''}
                 {' · '}{d.embedding_model ? `임베딩 ${d.embedding_model}` : '키워드 검색'}
               </div>
               {d.status === 'failed' && d.error && <div className="list-meta" style={{ color: 'var(--danger)' }}>원인: {d.error}</div>}

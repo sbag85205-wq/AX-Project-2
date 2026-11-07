@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { PdfViewer } from '../components/PdfViewer';
+import { SheetViewer } from '../components/SheetViewer';
 import { useAuth } from '../lib/auth';
 import { stripOverlap } from '../lib/docText';
+import { docFileType, pageCountLabel, pageLabel } from '../lib/sheet';
 import { supabase } from '../lib/supabase';
 import type { DocumentRow } from '../lib/types';
 
@@ -24,7 +26,7 @@ export default function DocumentView() {
   const [chunks, setChunks] = useState<ChunkRow[]>([]);
   const [missing, setMissing] = useState(false);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
-  const [tab, setTab] = useState<'text' | 'pdf'>('text');
+  const [tab, setTab] = useState<'text' | 'original'>('text');
 
   useEffect(() => {
     if (!id) return;
@@ -64,7 +66,8 @@ export default function DocumentView() {
   }, [blocks]);
 
   const focusPage = chunks.find((c) => c.id === focusChunk)?.page_start;
-  const isPdf = !!fileUrl && !!doc?.file_path?.toLowerCase().endsWith('.pdf');
+  const type = docFileType(doc?.file_path);
+  const hasViewer = !!fileUrl && (type === 'pdf' || type === 'sheet');
 
   if (missing) {
     return (
@@ -83,23 +86,27 @@ export default function DocumentView() {
           <Link to={profile?.role === 'admin' && doc.status !== 'ready' ? '/admin/documents' : '/docs'} className="hint">← 목록으로</Link>
           <h1 style={{ marginTop: 6 }}>{doc.title}</h1>
           <p>
-            {doc.category} · {doc.version} · {doc.page_count}페이지
+            {doc.category} · {doc.version} · {pageCountLabel(doc.page_count, doc.file_path)}
             {doc.effective_from ? ` · 시행 ${doc.effective_from}` : ''}
             {doc.status !== 'ready' && <> · <span className="pill pill-new">{doc.status === 'archived' ? '검색 제외됨' : doc.status}</span></>}
           </p>
         </div>
-        {fileUrl && <a className="btn" href={fileUrl} target="_blank" rel="noreferrer">원본 파일 열기</a>}
+        {fileUrl && (type === 'sheet'
+          ? <a className="btn" href={`${fileUrl}&download=${encodeURIComponent(doc.file_path?.split('/').pop() ?? '')}`}>원본 파일 받기</a>
+          : <a className="btn" href={fileUrl} target="_blank" rel="noreferrer">원본 파일 열기</a>)}
       </div>
 
-      {isPdf && (
+      {hasViewer && (
         <div className="tabs" role="group" aria-label="보기 방식">
           <button type="button" className="tab" aria-pressed={tab === 'text'} onClick={() => setTab('text')}>텍스트</button>
-          <button type="button" className="tab" aria-pressed={tab === 'pdf'} onClick={() => setTab('pdf')}>원본 PDF</button>
+          <button type="button" className="tab" aria-pressed={tab === 'original'} onClick={() => setTab('original')}>{type === 'sheet' ? '원본 표' : '원본 PDF'}</button>
         </div>
       )}
 
-      {tab === 'pdf' && isPdf && fileUrl ? (
-        <PdfViewer url={fileUrl} page={focusPage ?? 1} title={doc.title} />
+      {tab === 'original' && hasViewer && fileUrl ? (
+        type === 'sheet'
+          ? <SheetViewer url={fileUrl} path={doc.file_path ?? ''} sheet={focusPage ?? 1} title={doc.title} />
+          : <PdfViewer url={fileUrl} page={focusPage ?? 1} title={doc.title} />
       ) : (
         <div className="doc-layout">
           {sections.length > 1 && (
@@ -119,7 +126,7 @@ export default function DocumentView() {
             {blocks.length === 0 && <div className="empty">표시할 텍스트가 없어요.</div>}
             {blocks.map((b) => (
               <section key={b.id} id={`chunk-${b.id}`} className={`doc-chunk${b.id === focusChunk ? ' focused' : ''}`}>
-                {b.newPage && <div className="doc-page">p.{b.page_start}{b.page_end !== b.page_start ? `–${b.page_end}` : ''}</div>}
+                {b.newPage && <div className="doc-page">{pageLabel(b.page_start, b.page_end, doc.file_path)}</div>}
                 <div className="doc-text">{b.text}</div>
               </section>
             ))}

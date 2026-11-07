@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import type { Citation } from '../lib/types';
 import { Modal } from './Modal';
+import { docFileType, pageLabel } from '../lib/sheet';
 
 interface ChunkView {
   content: string;
@@ -31,19 +32,22 @@ export function SourceModal({ citation, onClose }: { citation: Citation; onClose
         setChunk(view);
         if (view.documents?.file_path) {
           const { data: signed } = await supabase.storage.from('documents').createSignedUrl(view.documents.file_path, 600);
-          if (signed) setFileUrl(`${signed.signedUrl}#page=${citation.page_start}`);
+          if (signed) setFileUrl(signed.signedUrl);
         }
       });
   }, [citation]);
 
-  const pages = citation.page_start === citation.page_end ? `${citation.page_start}쪽` : `${citation.page_start}~${citation.page_end}쪽`;
+  const type = docFileType(chunk?.documents?.file_path);
+  const pages = type === 'sheet'
+    ? pageLabel(citation.page_start, citation.page_end, chunk?.documents?.file_path)
+    : citation.page_start === citation.page_end ? `${citation.page_start}쪽` : `${citation.page_start}~${citation.page_end}쪽`;
   return (
     <Modal
       title={citation.document_title}
       onClose={onClose}
       actions={
         <>
-          {fileUrl && <a className="btn" href={fileUrl} target="_blank" rel="noreferrer">원본 PDF 열기</a>}
+          {fileUrl && type === 'pdf' && <a className="btn" href={`${fileUrl}#page=${citation.page_start}`} target="_blank" rel="noreferrer">원본 PDF 열기</a>}
           {chunk && <Link className="btn" to={`/docs/${citation.document_id}?chunk=${citation.chunk_id}`}>문서 전체 보기</Link>}
           <button type="button" className="btn btn-primary" onClick={onClose}>닫기</button>
         </>

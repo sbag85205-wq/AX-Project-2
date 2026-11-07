@@ -306,3 +306,13 @@ button.grid-row[aria-pressed='true'] { background: #f2f5fe; box-shadow: inset 4p
   .doc-toc { position: static; max-height: none; }
   .doc-body { padding: 20px 18px; }
 }
+
+/* ── 원본 엑셀 표 ── */
+.sheet-view { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.sheet-tabs { padding: 10px 12px 0; flex-wrap: wrap; }
+.sheet-scroll { overflow: auto; max-height: 75vh; }
+.sheet-table { border-collapse: collapse; font-size: 13.5px; min-width: 100%; }
+.sheet-table th, .sheet-table td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; white-space: nowrap; }
+.sheet-table td.wrap { white-space: pre-wrap; min-width: 220px; max-width: 360px; }
+.sheet-table th { position: sticky; left: 0; background: var(--surface-2); color: var(--faint); font-weight: 600; font-size: 12px; text-align: right; min-width: 36px; }
+.sheet-table tr:first-child td { background: var(--primary-soft); font-weight: 600; }

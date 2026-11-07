@@ -4,6 +4,7 @@ import { SearchIcon } from '../components/Icons';
 import { CATEGORIES } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import type { DocumentRow } from '../lib/types';
+import { pageCountLabel } from '../lib/sheet';
 
 export default function DocumentList() {
   const [docs, setDocs] = useState<DocumentRow[] | null>(null);
@@ -53,7 +54,7 @@ export default function DocumentList() {
             <span className="pill pill-hold" style={{ alignSelf: 'flex-start' }}>{d.category}</span>
             <div className="list-title">{d.title}</div>
             <div className="list-meta">
-              {d.version} · {d.page_count}페이지{d.effective_from ? ` · 시행 ${d.effective_from}` : ''}
+              {d.version} · {pageCountLabel(d.page_count, d.file_path)}{d.effective_from ? ` · 시행 ${d.effective_from}` : ''}
               {d.file_path ? ' · 원본 있음' : ''}
             </div>
           </Link>

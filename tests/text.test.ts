@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { docFileType, pageCountLabel, pageLabel, sheetToText } from '../src/lib/sheet';
+import { decodeText } from '../src/lib/extract';
 import { chunkPages, searchTerms, similarity } from '../supabase/functions/_shared/text';
 import { parseModelAnswer, type Evidence } from '../supabase/functions/_shared/answer';
 import { parseSettings } from '../supabase/functions/_shared/settings';
@@ -94,5 +96,37 @@ describe('stripOverlap', () => {
   });
   it('겹침이 없으면 그대로 둔다', () => {
     expect(stripOverlap('가나다라마바사아자차카타파하'.repeat(3), '완전히 다른 내용으로 시작하는 다음 조각입니다')).toBe('완전히 다른 내용으로 시작하는 다음 조각입니다');
+  });
+});
+
+describe('sheetToText', () => {
+  it('머리글을 찾아 행마다 "머리글: 값"으로 적는다', () => {
+    const text = sheetToText({
+      name: '출장비',
+      rows: [['2026 출장비 기준표'], ['직급', '일비', '숙박비'], ['사원', '30,000', '70,000'], ['과장', '40,000', '']]
+    });
+    expect(text.split('\n')).toEqual([
+      '# 출장비',
+      '2026 출장비 기준표',
+      '직급 | 일비 | 숙박비',
+      '직급: 사원, 일비: 30,000, 숙박비: 70,000',
+      '직급: 과장, 일비: 40,000'
+    ]);
+  });
+  it('머리글이 없으면 칸을 | 로 잇는다', () => {
+    expect(sheetToText({ name: 'S', rows: [['메모'], [], ['한 줄']] })).toBe('# S\n메모\n한 줄');
+  });
+  it('엑셀 문서는 시트로 표시한다', () => {
+    expect(docFileType('2026-11-07/abc.xlsx')).toBe('sheet');
+    expect(pageLabel(2, 2, 'a.csv')).toBe('시트 2');
+    expect(pageLabel(3, 4, 'a.pdf')).toBe('p.3–4');
+    expect(pageCountLabel(3, 'a.xls')).toBe('시트 3개');
+  });
+});
+
+describe('decodeText', () => {
+  it('UTF-8과 CP949(EUC-KR) 텍스트를 모두 읽는다', () => {
+    expect(decodeText(new TextEncoder().encode('﻿연차 신청').buffer)).toBe('연차 신청');
+    expect(decodeText(Uint8Array.from([0xbf, 0xac, 0xc2, 0xf7]).buffer)).toBe('연차');
   });
 });
