@@ -133,5 +133,7 @@ export interface PreviewRow {
   keyword_score: number;
   vector_score: number | null;
   passed: boolean;
+  /** 기준을 넘고 순위 안(상위 5개)에 들어 실제 답변에 쓰이는지 */
+  used?: boolean;
   snippet: string;
 }

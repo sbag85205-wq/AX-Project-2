@@ -1,7 +1,7 @@
 // 직원 질문 처리: 인증 → FAQ/문서 검색 → (LLM 요약) → 출처 검증 → 저장·집계
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.118.0';
 import { adminClient, corsHeaders, errorResponse, getCaller, json, loadSettings, type Caller } from '../_shared/http.ts';
-import { searchTerms, similarity } from '../_shared/text.ts';
+import { CANDIDATE_COUNT, EVIDENCE_COUNT, rankEvidence, searchTerms, similarity } from '../_shared/text.ts';
 import {
   SYSTEM_PROMPT, buildUserPrompt, noEvidenceAnswer, parseAttachments, parseModelAnswer, searchOnlyAnswer,
   type Answer, type AttachmentInput, type AttachmentNote, type Evidence
@@ -119,11 +119,12 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
       const { data, error } = await db.rpc('search_chunks', {
         terms: searchTermList,
         query_embedding: embedding ? JSON.stringify(embedding) : null,
-        match_count: 5,
+        match_count: CANDIDATE_COUNT,
         vector_weight: settings.vector_weight
       });
       if (error) throw error;
-      return ((data ?? []) as Row[]).filter((r) => r.keyword_score >= settings.keyword_min || (r.vector_score ?? 0) >= settings.vector_min);
+      // 관리자 미리보기와 같은 규칙: 후보 8개 → 점수 보정·재정렬 → 기준 통과한 앞의 5개
+      return rankEvidence((data ?? []) as Row[], searchTermList.length, settings).filter((r) => r.used);
     };
     // 질문으로 한 번, 첨부 내용으로 한 번 찾는다. 키워드 점수는 검색어 중 맞은 비율이라 둘을 섞으면 점수가 낮아진다.
     const rows = await search(terms.length ? terms : [question], queryEmbedding);
@@ -133,7 +134,7 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
     }
 
     const evidence: Evidence[] = rows
-      .slice(0, 5)
+      .slice(0, EVIDENCE_COUNT)
       .map((r: Record<string, unknown>, i: number) => ({
         source_id: `S${i + 1}`,
         chunk_id: r.id as string,

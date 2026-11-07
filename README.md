@@ -91,15 +91,16 @@ npx supabase functions deploy ingest
 npx supabase functions deploy admin-users
 
 # LLM (없으면 '검색 전용' 모드로 문서 내용을 그대로 보여줘요)
-npx supabase secrets set LLM_API_KEY=<OpenRouter 키> LLM_MODEL=qwen/qwen3-14b
+npx supabase secrets set LLM_API_KEY=<OpenRouter 키> LLM_MODEL=openai/gpt-6-luna
 ```
 
 | 비밀값 | 기본값 | 설명 |
 |---|---|---|
 | `LLM_API_KEY` | (없음) | OpenRouter API 키. 없으면 검색 전용 모드 |
 | `LLM_BASE_URL` | `https://openrouter.ai/api/v1` | OpenAI 호환 API 주소 |
-| `LLM_MODEL` | `qwen/qwen3-14b` | 모델 ID (평가 후보: qwen3-4b, gemma-3-4b-it, llama-3.1-8b-instruct) |
-| `LLM_TEMPERATURE` / `LLM_MAX_TOKENS` | `0.2` / `700` | 추론 설정 |
+| `LLM_MODEL` | `openai/gpt-6-luna` | 모델 ID. 관리자 → 설정에서 고른 모델이 있으면 그것이 우선이에요 (2026-11-07 운영 모델을 Qwen에서 Luna로 변경) |
+| `LLM_TEMPERATURE` / `LLM_MAX_TOKENS` | `0.2` / `2000` | 추론 설정. 추론형 모델은 생각하는 토큰도 `LLM_MAX_TOKENS`에 들어가므로 700처럼 작게 두면 답이 잘려요 |
+| `LLM_REASONING_EFFORT` | `low` | OpenRouter 추론 강도 (`low`·`medium`·`high`, `off`면 보내지 않음). 생각 과정은 응답에서 빼요 |
 | `EMBEDDING_MODEL` | (없음) | 지정하면 벡터 검색을 함께 사용. 없으면 키워드 검색만 |
 | `EMBEDDING_BASE_URL` / `EMBEDDING_API_KEY` | LLM 값 사용 | 임베딩 API 주소·키 |
 | `VISION_MODEL` | OpenRouter 사용 시 `google/gemini-2.5-flash-lite` | 질문에 첨부한 사진을 읽는 모델. OpenRouter가 아니고 지정도 없으면 사진은 읽지 않아요 |
@@ -131,7 +132,9 @@ npm run build                # 타입 검사 + 빌드
 
 1. 로그인 토큰으로 사용자·부서 확인, 질문 길이 검사 (2,000자)
 2. 등록된 FAQ와 거의 같은 질문이면 FAQ 답변 반환
-3. 문서 청크 검색: 한국어 바이그램 키워드 점수 (+ 임베딩이 있으면 코사인 유사도)
+3. 문서 청크 검색: 한국어 바이그램 키워드 점수 (+ 임베딩이 있으면 코사인 유사도)로 후보 8개를 뽑고,
+   키워드 점수를 "맞은 검색어 ÷ min(검색어 수, 6)"으로 보정해 다시 정렬한 뒤 기준을 넘은 앞의 5개를 근거로 써요
+   (관리자 → 설정의 검색 미리보기도 같은 규칙. 구어체 어미 조각은 검색어에서 빼요)
 4. 근거가 기준 미달이면 **답하지 않고** "등록된 답변 없음" → 미등록 질문으로 익명 수집
 5. 근거 조각에 `[S1]` 같은 ID를 붙여 LLM에 전달, JSON 형식으로 요약·절차·주의사항·출처 ID를 받음
 6. 서버가 JSON 형식과 출처 ID를 검사 (허용 목록 밖 ID는 버림, 형식 오류는 1회 재요청)

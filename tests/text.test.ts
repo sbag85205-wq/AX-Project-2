@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { docFileType, pageCountLabel, pageLabel, sheetToText } from '../src/lib/sheet';
 import { decodeText } from '../src/lib/extract';
-import { chunkPages, searchTerms, similarity } from '../supabase/functions/_shared/text';
+import { chunkPages, keywordScore, rankEvidence, searchTerms, similarity } from '../supabase/functions/_shared/text';
 import { ATTACH_LIMITS, buildUserPrompt, parseAttachments, parseModelAnswer, type Evidence } from '../supabase/functions/_shared/answer';
 import { parseSettings } from '../supabase/functions/_shared/settings';
 
@@ -156,5 +156,37 @@ describe('buildUserPrompt', () => {
     expect(prompt).toContain('<attachments>\n[첨부: 영수증.jpg]\n식대 12,000원\n</attachments>');
     expect(prompt.indexOf('<attachments>')).toBeGreaterThan(prompt.indexOf('</sources>'));
     expect(buildUserPrompt('질문', [])).not.toContain('<attachments>');
+  });
+});
+
+describe('검색 품질 개선 (진단 보고서 C3·C4·C5)', () => {
+  it('구어체 연결 어미 조각을 검색어에서 뺀다', () => {
+    const terms = searchTerms('QA 결과 등록하고 배포 시작했으면 되돌릴 수 있나요?');
+    expect(terms).toEqual(expect.arrayContaining(['qa', '결과', '등록', '배포', '시작']));
+    for (const junk of ['록하', '하고', '작했', '했으', '으면']) expect(terms).not.toContain(junk);
+    expect(searchTerms('잠깐 안 만졌는데 비밀번호를 또 넣으래요')).not.toEqual(expect.arrayContaining(['는데']));
+    expect(searchTerms('잠깐 안 만졌는데 비밀번호를 또 넣으래요')).not.toContain('으래');
+  });
+
+  it('긴 질문도 키워드 점수가 깎이지 않는다', () => {
+    expect(keywordScore(3 / 16, 16)).toBeCloseTo(0.5);
+    expect(keywordScore(1 / 2, 2)).toBeCloseTo(0.5);
+    expect(keywordScore(1, 20)).toBe(1);
+  });
+
+  it('후보 8개 중 기준을 넘은 앞의 5개만 근거로 쓴다', () => {
+    const rows = Array.from({ length: 8 }, (_, i) => ({ id: i, keyword_score: 0, vector_score: 0.9 - i * 0.06 }));
+    const ranked = rankEvidence(rows, 4, { keyword_min: 0.35, vector_min: 0.55, vector_weight: 0.6 });
+    expect(ranked.filter((r) => r.used).map((r) => r.id)).toEqual([0, 1, 2, 3, 4]);
+    expect(ranked.find((r) => r.id === 5)).toMatchObject({ passed: true, used: false });
+    expect(ranked.find((r) => r.id === 7)).toMatchObject({ passed: false, used: false });
+  });
+
+  it('새 절이 시작되면 앞 절 내용을 겹쳐 붙이지 않는다', () => {
+    const steps = Array.from({ length: 4 }, (_, i) => `${i + 1}단계 내용을 자세히 적습니다. `.repeat(8)).join('\n');
+    const chunks = chunkPages([{ page: 1, text: `■ 배포 절차\n${steps}\n■ 5. 완료 시\n완료 보고서를 올린다.` }]);
+    const done = chunks.find((c) => c.section_title === '■ 5. 완료 시');
+    expect(done?.content.startsWith('■ 5. 완료 시')).toBe(true);
+    expect(done?.content).not.toContain('단계 내용');
   });
 });

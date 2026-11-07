@@ -20,7 +20,17 @@ export function llmBaseUrl(): string {
 
 /** 관리자 설정에 모델이 없을 때 쓰는 기본 모델 (비밀값 LLM_MODEL) */
 export function defaultModel(): string {
-  return env('LLM_MODEL') || 'qwen/qwen3-14b';
+  return env('LLM_MODEL') || 'openai/gpt-6-luna';
+}
+
+/**
+ * OpenRouter 추론 옵션. 기본은 짧게(low) 생각하고 생각 과정은 응답에서 뺀다.
+ * LLM_REASONING_EFFORT=off 이면 보내지 않는다. OpenRouter가 아닌 서버(Ollama 등)에는 보내지 않는다.
+ */
+function reasoningOption(): Record<string, unknown> {
+  const effort = env('LLM_REASONING_EFFORT') || 'low';
+  if (effort === 'off' || !llmBaseUrl().includes('openrouter.ai')) return {};
+  return { reasoning: { effort, exclude: true } };
 }
 
 export async function chatCompletion(system: string, user: string, modelOverride?: string | null, timeoutMs = 45000): Promise<ChatResult> {
@@ -40,7 +50,10 @@ export async function chatCompletion(system: string, user: string, modelOverride
         { role: 'user', content: user }
       ],
       temperature: Number(env('LLM_TEMPERATURE') || 0.2),
-      max_tokens: Number(env('LLM_MAX_TOKENS') || 700),
+      // 추론형 모델(GPT-6 Luna, Qwen3 등)은 생각하는 데 쓴 토큰도 max_tokens에 들어간다.
+      // 700이면 생각만 하다 끝나 JSON이 잘리고 폴백되므로 넉넉히 두고, 추론은 짧게·응답에서 빼도록 한다.
+      max_tokens: Number(env('LLM_MAX_TOKENS') || 2000),
+      ...reasoningOption(),
       response_format: { type: 'json_object' }
     }),
     signal: AbortSignal.timeout(timeoutMs)

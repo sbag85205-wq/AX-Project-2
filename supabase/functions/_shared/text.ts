@@ -19,10 +19,12 @@ const STOP_WORDS = new Set([
 const QUESTION_ENDING = /(이에요|예요|인가요|인가|나요|까요|니까|세요|어요|아요|해요|돼요|되요|지요|죠)$/;
 const PARTICLE_SUFFIX = /(은|는|이|가|을|를|에|에서|으로|로|와|과|도|만|의|께|한테|부터|까지|이나|나|요)$/;
 const VERB_STEM = /(하|해|했|되|돼|됐|할|한)$/;
+// 구어체 연결 어미 (예: 등록하고 → 등록, 시작했으면 → 시작, 넣으래요 → 넣). 검색어 잡음의 주된 원인이었다
+const CONNECTIVE = /(었는데|았는데|했는데|는데|더니|느라|으니까|니까|으면|어서|아서|해서|하고|으래)$/;
 
 function stem(raw: string): string {
   let word = raw;
-  for (const suffix of [QUESTION_ENDING, PARTICLE_SUFFIX, VERB_STEM]) {
+  for (const suffix of [QUESTION_ENDING, PARTICLE_SUFFIX, CONNECTIVE, VERB_STEM]) {
     if (word.length > 2) word = word.replace(suffix, '');
   }
   return word;
@@ -50,6 +52,55 @@ export function searchTerms(question: string, max = 24): string[] {
     }
   }
   return [...terms].slice(0, max);
+}
+
+// ───────────── 검색 점수와 근거 고르기 ─────────────
+
+/** DB가 돌려주는 후보 수 (관리자 미리보기와 채팅이 같은 값을 쓴다) */
+export const CANDIDATE_COUNT = 8;
+/** 답변 모델에 넘기는 근거 수 */
+export const EVIDENCE_COUNT = 5;
+/** 키워드 점수 분모의 상한. 검색어가 이보다 많아도 이 개수만 맞으면 만점이다. */
+export const KEYWORD_CAP = 6;
+
+/**
+ * DB의 키워드 점수(맞은 검색어 ÷ 전체 검색어)를 "맞은 검색어 ÷ min(전체, KEYWORD_CAP)"로 바꾼다.
+ * 예전 식은 질문이 길고 구어체일수록 분모가 커져, 정답 조각도 기준(0.35)을 못 넘었다.
+ * (예: 검색어 16개 중 3개 일치 → 0.19 → 이제 0.50)
+ */
+export function keywordScore(rawRatio: number, termCount: number): number {
+  const matched = Math.round(rawRatio * termCount);
+  return Math.min(1, matched / Math.max(1, Math.min(termCount, KEYWORD_CAP)));
+}
+
+export interface ScoredRow {
+  keyword_score: number;
+  vector_score: number | null;
+}
+
+export interface Thresholds {
+  keyword_min: number;
+  vector_min: number;
+  vector_weight: number;
+}
+
+/**
+ * 후보에 바뀐 키워드 점수를 매기고 다시 정렬한 뒤, 기준을 넘은 것 중 앞의 EVIDENCE_COUNT개를 근거로 쓴다.
+ * passed = 기준 통과, used = 실제로 답변 모델에 넘김.
+ */
+export function rankEvidence<T extends ScoredRow>(rows: T[], termCount: number, t: Thresholds): (T & { passed: boolean; used: boolean })[] {
+  let used = 0;
+  return rows
+    .map((r) => ({ ...r, keyword_score: keywordScore(r.keyword_score, termCount) }))
+    .sort((a, b) =>
+      ((b.vector_score ?? 0) * t.vector_weight + b.keyword_score * (1 - t.vector_weight)) -
+      ((a.vector_score ?? 0) * t.vector_weight + a.keyword_score * (1 - t.vector_weight)))
+    .map((r) => {
+      const passed = r.keyword_score >= t.keyword_min || (r.vector_score ?? 0) >= t.vector_min;
+      const take = passed && used < EVIDENCE_COUNT;
+      if (take) used++;
+      return { ...r, passed, used: take };
+    });
 }
 
 function bigrams(text: string): Set<string> {
@@ -97,12 +148,14 @@ export function chunkPages(pages: PageText[], maxChars = 900, overlapChars = 150
   let bufSection: string | null = null;
   let dirty = false;
 
-  const flush = () => {
+  // keepTail=false: 새 절이 시작될 때는 앞 절 끝을 겹쳐 붙이지 않는다
+  // (붙이면 "5. 완료 시" 제목 조각에 1~4단계 내용이 섞여 절 제목과 본문이 어긋난다)
+  const flush = (keepTail = true) => {
     const content = buf.trim();
     if (content) {
       chunks.push({ seq: chunks.length, section_title: bufSection, page_start: start, page_end: end, content });
     }
-    const tail = content.slice(-overlapChars);
+    const tail = keepTail ? content.slice(-overlapChars) : '';
     buf = tail ? tail + '\n' : '';
     start = end;
     bufSection = section;
@@ -114,7 +167,8 @@ export function chunkPages(pages: PageText[], maxChars = 900, overlapChars = 150
     for (const para of paragraphs) {
       const firstLine = para.split('\n')[0];
       if (HEADING.test(firstLine) && firstLine.length < 60) {
-        if (dirty) flush();
+        if (dirty) flush(false);
+        else buf = '';
         section = firstLine.replace(/^#+\s*/, '');
         bufSection = section;
       }

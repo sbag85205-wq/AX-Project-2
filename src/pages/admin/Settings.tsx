@@ -116,7 +116,7 @@ export default function Settings() {
   if (error) return <main className="admin-main"><div className="error-box">{error}</div></main>;
   if (!info || !draft) return <main className="admin-main"><div className="empty">불러오는 중…</div></main>;
 
-  const passed = preview?.results.filter((r) => r.passed).length ?? 0;
+  const passed = preview?.results.filter((r) => r.used ?? r.passed).length ?? 0;
 
   return (
     <main className="admin-main">
@@ -185,7 +185,7 @@ export default function Settings() {
       <section className="card" style={{ overflow: 'hidden' }}>
         <div className="panel" style={{ paddingBottom: 8 }}>
           <h2>검색 미리보기</h2>
-          <p className="panel-sub">저장하기 전에 지금 설정으로 어떤 문서가 근거로 잡히는지 확인해요. FAQ와 거의 같은 질문은 실제로는 FAQ 답변이 먼저 나가요.</p>
+          <p className="panel-sub">저장하기 전에 지금 설정으로 어떤 문서가 근거로 잡히는지 확인해요. 후보 8개 중 기준을 넘은 앞의 5개만 답변에 쓰여요. FAQ와 거의 같은 질문은 실제로는 FAQ 답변이 먼저 나가요.</p>
           <form onSubmit={runPreview} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <input className="input" style={{ flex: '1 1 260px' }} aria-label="미리 볼 질문" value={question} onChange={(e) => setQuestion(e.target.value)} />
             <button type="submit" className="btn btn-primary" disabled={previewing || !question.trim()}>{previewing ? '검색 중…' : '미리보기'}</button>
@@ -212,7 +212,11 @@ export default function Settings() {
                   </div>
                   <div>{r.keyword_score.toFixed(2)}</div>
                   <div>{r.vector_score === null ? '-' : r.vector_score.toFixed(2)}</div>
-                  <div><span className={`pill ${r.passed ? 'pill-done' : 'pill-hold'}`}>{r.passed ? '사용' : '제외'}</span></div>
+                  <div>
+                    {(r.used ?? r.passed)
+                      ? <span className="pill pill-done">사용</span>
+                      : <span className="pill pill-hold" title={r.passed ? '기준은 넘었지만 앞의 5개에 들지 못했어요' : undefined}>{r.passed ? '순위 밖' : '제외'}</span>}
+                  </div>
                 </div>
               ))}
             </div>

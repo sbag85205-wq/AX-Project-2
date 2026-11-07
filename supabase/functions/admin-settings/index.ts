@@ -1,6 +1,6 @@
 // 관리자 설정: 답변 모델·검색 기준 조회/저장, 모델 목록, 모델 테스트, 검색 미리보기
 import { adminClient, corsHeaders, errorResponse, getCaller, json, loadSettings } from '../_shared/http.ts';
-import { searchTerms } from '../_shared/text.ts';
+import { CANDIDATE_COUNT, rankEvidence, searchTerms } from '../_shared/text.ts';
 import { chatCompletion, defaultModel, embed, embeddingConfigured, llmBaseUrl, llmConfigured } from '../_shared/providers.ts';
 import { parseSettings } from '../_shared/settings.ts';
 
@@ -88,18 +88,21 @@ Deno.serve(async (req) => {
         const { data: rows, error } = await db.rpc('search_chunks', {
           terms: terms.length ? terms : [question],
           query_embedding: queryEmbedding ? JSON.stringify(queryEmbedding) : null,
-          match_count: 8,
+          match_count: CANDIDATE_COUNT,
           vector_weight: settings.vector_weight
         });
         if (error) throw error;
-        const results = (rows ?? []).map((r: Record<string, any>) => ({
+        const ranked = rankEvidence((rows ?? []) as Array<Record<string, any> & { keyword_score: number; vector_score: number | null }>,
+          terms.length ? terms.length : 1, settings);
+        const results = ranked.map((r) => ({
           document_title: r.document_title,
           section_title: r.section_title,
           page_start: r.page_start,
           page_end: r.page_end,
           keyword_score: r.keyword_score,
           vector_score: r.vector_score,
-          passed: r.keyword_score >= settings.keyword_min || (r.vector_score ?? 0) >= settings.vector_min,
+          passed: r.passed,
+          used: r.used,
           snippet: String(r.content).slice(0, 140)
         }));
         return json({ terms, results });

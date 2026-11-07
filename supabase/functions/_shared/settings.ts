@@ -19,7 +19,7 @@ const MODEL_ID = /^[A-Za-z0-9._:/-]{1,120}$/;
 /** 관리자가 보낸 값을 검사한다. 잘못된 값이 있으면 사용자에게 보여줄 메시지를 던진다. */
 export function parseSettings(input: Record<string, unknown>): AppSettings {
   const model = typeof input.llm_model === 'string' ? input.llm_model.trim() : '';
-  if (model && !MODEL_ID.test(model)) throw new Error('모델 ID 형식이 올바르지 않아요. 예: qwen/qwen3-14b');
+  if (model && !MODEL_ID.test(model)) throw new Error('모델 ID 형식이 올바르지 않아요. 예: openai/gpt-6-luna');
   const ratio = (key: keyof AppSettings) => {
     const n = Number(input[key]);
     if (!Number.isFinite(n) || n < 0 || n > 1) throw new Error('검색 기준은 0에서 1 사이 값이어야 해요.');
