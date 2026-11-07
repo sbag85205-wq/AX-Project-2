@@ -34,19 +34,28 @@
 ## 폴더 구조
 
 ```
-src/                      React 앱
-  pages/Chat.tsx          직원 챗봇
-  pages/admin/*           관리자 화면
-  lib/extract.ts          PDF 페이지별·엑셀 시트별 텍스트 추출 (pdf.js, SheetJS)
-  lib/attach.ts           질문 첨부 준비 (파일 글자 추출, 사진 줄이기)
+src/                        React 앱
+  pages/Chat.tsx            직원 챗봇 (질문 첨부 포함)
+  pages/DocumentList.tsx    문서 목록 (/docs)
+  pages/DocumentView.tsx    문서 보기 (/docs/:id): 텍스트 · 원본 PDF · 원본 표
+  pages/admin/*             관리자 화면 (Settings.tsx: 모델·검색 기준·검색 미리보기)
+  components/PdfViewer.tsx  원본 PDF를 앱 안에서 그림 (pdf.js, 보이는 페이지만)
+  components/SheetViewer.tsx 원본 엑셀을 시트별 표로 보여 줌
+  lib/pdf.ts                pdf.js 불러오기 (호환 빌드 + 한글 CMap)
+  lib/extract.ts            PDF 페이지별·엑셀 시트별·텍스트 추출, 실제 파일 형식 검사
+  lib/sheet.ts              엑셀 시트 → 검색용 텍스트, 시트/페이지 표시
+  lib/attach.ts             질문 첨부 준비 (파일 글자 추출, 사진 줄이기, 스캔 PDF → 사진)
 supabase/
-  migrations/             DB 스키마, RLS, 검색·통계 함수
-  seed.sql                가상 문서·FAQ·예시 미등록 질문
-  functions/chat          질문 처리 (검색 → LLM → 출처 검증 → 저장·집계)
-  functions/ingest        문서 청크 분할·임베딩
-  functions/admin-users   계정 발급·삭제·비밀번호 재설정
-  functions/_shared       검색어 추출, 청크 분할, 프롬프트, 모델 어댑터
-tests/                    검색·청크·출력 검증 단위 테스트
+  migrations/               DB 스키마, RLS, 검색·통계 함수, 관리자 설정
+  seed.sql                  가상 문서·FAQ·예시 미등록 질문
+  functions/chat            질문 처리 (첨부 읽기 → 질문 정리 → FAQ → 검색 → LLM → 출처 검증 → 저장·집계)
+  functions/ingest          문서 청크 분할·임베딩, 재색인
+  functions/admin-users     계정 발급·삭제·비밀번호 재설정
+  functions/admin-settings  모델·검색 기준 저장, 모델 연결 테스트, 검색 미리보기
+  functions/_shared         검색어 추출·점수, 청크 분할, 프롬프트, 모델 어댑터(LLM·임베딩·사진 판독)
+tests/                      검색·청크·첨부·출력 검증 단위 테스트
+docs/tests/                 검색 품질 진단 보고서, VDI 2차 테스트 질문지(정답표 포함)
+vite.config.ts              pdf.js 글꼴 자료(CMap 등)를 /pdfjs/ 로 함께 배포
 ```
 
 ## 처음 설정하기
@@ -56,7 +65,8 @@ tests/                    검색·청크·출력 검증 단위 테스트
 [Supabase 대시보드](https://supabase.com/dashboard) → 프로젝트 → **SQL Editor**에서 순서대로 실행해요.
 
 1. `supabase/migrations/20261031000000_init.sql` 전체 붙여넣고 실행
-2. `supabase/seed.sql` 실행 (가상 문서 4개, FAQ 3개, 예시 미등록 질문)
+2. `supabase/migrations/20261103000000_app_settings.sql` 실행 (관리자 설정 표, 검색 함수 갱신)
+3. `supabase/seed.sql` 실행 (가상 문서 4개, FAQ 3개, 예시 미등록 질문)
 
 CLI를 쓴다면:
 
@@ -85,10 +95,13 @@ npx supabase db push
 
 ### 4. Edge Functions 배포와 비밀값
 
+main에 push하면 자동으로 배포돼요 ([자동 배포](#자동-배포-github-actions)). 직접 배포하려면:
+
 ```bash
 npx supabase functions deploy chat
 npx supabase functions deploy ingest
 npx supabase functions deploy admin-users
+npx supabase functions deploy admin-settings
 
 # LLM (없으면 '검색 전용' 모드로 문서 내용을 그대로 보여줘요)
 npx supabase secrets set LLM_API_KEY=<OpenRouter 키> LLM_MODEL=openai/gpt-6-luna
@@ -110,6 +123,8 @@ npx supabase secrets set LLM_API_KEY=<OpenRouter 키> LLM_MODEL=openai/gpt-6-lun
 > 임베딩 모델을 바꾸면 기존 문서를 지우고 다시 등록해야 벡터 검색에 포함돼요.
 
 ### 5. 로컬 실행
+
+필요한 프로그램: **Node.js 22**, npm 10 (자동 배포도 Node 22를 써요)
 
 ```bash
 cp .env.example .env.local   # VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY 입력
@@ -144,6 +159,46 @@ npm run build                # 타입 검사 + 빌드
 6. 서버가 JSON 형식과 출처 ID를 검사 (허용 목록 밖 ID는 버림, 형식 오류는 1회 재요청)
 7. 대화 저장(본인만 열람), 통계 이벤트 저장(원문 없음)
 
+## 운영할 때 확인할 것
+
+- **답변 모델**: 관리자 → 설정에 모델이 정해져 있으면 그것이 우선이에요. 운영 모델은 `openai/gpt-6-luna`예요.
+  Supabase 비밀값에 `LLM_MAX_TOKENS=700`처럼 작은 값이 남아 있으면 Luna 답이 잘려 폴백되니 지우거나 2000으로 올려 주세요.
+- **문서 재등록**: 2026-11-07에 청크 나누기(절 제목이 바뀔 때 앞 절 내용을 붙이지 않음)를 고쳤어요.
+  이미 등록된 문서에는 적용되지 않으므로, 구버전 정리와 함께 문서를 다시 올려 주세요.
+- **검색 기준 맞추기**: 관리자 → 설정 → 검색 미리보기에서 질문을 넣으면 질문을 어떻게 정리했는지(원래 질문·질문 문장·AI 정리),
+  각 조각이 '사용 / 순위 밖 / 제외' 중 무엇인지 보여요. 채팅과 같은 규칙이에요.
+- **응답 시간**: 15자 이상 질문은 AI 질문 정리가 먼저 돌아 1~3초 더 걸려요. 사진 첨부는 판독 시간이 더 들어요.
+- **품질 측정**: `docs/tests/`의 질문지로 다시 측정할 때는 [테스트 정보](모델·top-k·임베딩)를 꼭 채우고,
+  한 번에 설정 하나만 바꾸고, 문항마다 새 대화로 3회씩 돌려 주세요.
+
+### 지원 범위와 한계
+
+| 항목 | 내용 |
+|---|---|
+| 문서 등록 | PDF, 엑셀(XLSX·XLS·CSV), TXT·MD, 20MB 이하. 시트 하나 = 한 페이지 |
+| 질문 첨부 | 사진(JPG·PNG·WebP·GIF), PDF, 엑셀, 텍스트. 최대 3개, 개당 10MB. 사진은 1600px로 줄여 보내요 |
+| 스캔 PDF | 문서 등록은 아직 안 돼요(글자 없음). 질문 첨부는 첫 페이지를 사진처럼 판독해요 |
+| 텍스트 인코딩 | UTF-8과 CP949(EUC-KR) 모두 읽어요 |
+| 원본 표 보기 | 시트마다 앞 500행까지. 나머지는 '원본 파일 받기'로 확인 |
+| 지원 안 함 | Word(.docx)·한글(.hwp), 암호 걸린 엑셀 |
+
+## 변경 이력
+
+### 2026-11-07
+
+| 구분 | 내용 |
+|---|---|
+| 배포 | 냥대리 디자인을 `main`으로 합침. `main` push → cheonax-n(`knowly-nyang`) 자동 배포, 기존 사이트(cheonax)는 배포 중단 |
+| 배포 | 백엔드 자동 배포의 Supabase CLI 옵션 수정(`--remote` → `--project-ref`). 첫 실행 성공 |
+| 문서 보기 | 문서 목록·문서 보기 화면, 관리자 문서 관리의 '보기' 버튼, 답변 출처의 '문서 전체 보기' |
+| PDF | 한국어 표준 글꼴(HYGoThic 등) PDF에서 글자가 비어 나오던 문제 수정(CMap). 원본 PDF를 앱 안에서 그려 휴대폰에서도 보임, 출처 페이지로 이동. 오래된 브라우저용 호환 빌드 |
+| 엑셀 | XLSX·XLS·CSV 등록, '머리글: 값' 형태로 검색, 원본 표 보기, 출처에 '시트 N' 표시 |
+| 첨부 | 질문할 때 사진·파일 첨부. 첨부는 저장하지 않음. 사진은 판독 모델(`VISION_MODEL`)로 글자·설명을 읽음 |
+| 검색 | 진단 보고서 반영: 키워드 점수 보정(긴 질문 불이익 제거), 구어체 어미 조각 제거, 절 경계 청크 수정, 채팅·미리보기 같은 규칙(후보 8 → 근거 5) |
+| 검색 | 존댓말·부연 설명이 붙은 질문: 높임 어미 제거, 질문 문장 뽑기, AI 질문 정리, 세 모양으로 검색해 합침, FAQ는 핵심어끼리 비교 |
+| 답변 | 운영 모델을 `openai/gpt-6-luna`로. 추론 토큰 때문에 답이 잘리지 않도록 `max_tokens` 2000, 추론은 짧게. 주→월 같은 간단한 계산 허용, '딱 맞는 기준 없음' 표시 |
+| 자료 | `docs/tests/`에 검색 품질 진단 보고서와 VDI 2차 테스트 질문지 추가 |
+
 ## 사내 서버로 옮길 때
 
 모델 호출은 OpenAI 호환 API만 쓰기 때문에 주소와 모델만 바꾸면 돼요.
@@ -153,6 +208,7 @@ npm run build                # 타입 검사 + 빌드
 LLM_BASE_URL=http://<내부 서버>:11434/v1
 LLM_MODEL=qwen3:1.7b
 LLM_API_KEY=            # 비워 둠
+VISION_MODEL=qwen2.5vl:7b   # 사진 첨부를 읽을 모델 (없으면 사진은 읽지 않음)
 EMBEDDING_BASE_URL=http://<내부 서버>:11434/v1
 EMBEDDING_MODEL=bge-m3
 ```
@@ -164,6 +220,8 @@ Supabase도 self-hosting이 가능하지만, 기존 사내 PostgreSQL을 쓰려�
 ## 참고 자료
 
 - `Knowly_개발설계서_v1.docx`: 요구사항 F01–F07, API·DB 설계
+- `docs/tests/Knowly_검색품질_진단보고서_원인및개선방안.pdf`: QA 문서 25문항 1~3차 결과, 실패 원인(C1~C8), 개선 로드맵
+- `docs/tests/틸론_챗봇2차테스트_질문지_VDI_15문항_IT팀.xlsx`: 모호 질문 15문항 + 답 없음 3문항, 정답표
 - FAQ 챗봇 관리자 대시보드 프로토타입: 미등록 질문 화면과 직원 챗봇 피드백 흐름
 - 노션 `AX 기업 과제 프로젝트 2조`: 기업 인터뷰, 기술 멘토링, 발표 피드백
 
@@ -182,3 +240,6 @@ GitHub에 push하면 자동으로 배포돼요. 별도 명령은 필요 없어�
 - 기능은 자기 브랜치에서 고치고, GitHub에서 PR을 만들어 `main`에 합치면 배포돼요.
 - DB 변경은 되돌리기 어려워요. `supabase/migrations/`에 새 파일을 추가하기 전에 팀과 꼭 상의해 주세요.
 - 저장소 비밀값 `VERCEL_TOKEN`, `SUPABASE_ACCESS_TOKEN`이 필요해요 (Settings → Secrets and variables → Actions).
+- 백엔드는 `supabase/` 폴더가 바뀔 때만 자동으로 돌아요. 배포 설정만 고쳤거나 다시 배포하고 싶으면
+  **Actions → Deploy backend → Run workflow**를 눌러요.
+- DB 변경은 미리 보기 단계(dry-run) 다음에 바로 적용돼요. 사람이 확인하는 단계가 없으니 PR 리뷰에서 꼭 확인해 주세요.
