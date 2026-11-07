@@ -1,16 +1,16 @@
 # GitHub에 push하면 화면(프론트엔드)을 Vercel에 배포한다.
-#   main             → 기존 디자인  (Vercel knowly,       https://cheonax.duckdns.org)
-#   feat/nyang-theme → 냥대리 디자인 (Vercel knowly-nyang, https://cheonax-n.duckdns.org)
+#   main → 냥대리 디자인 (Vercel knowly-nyang, https://cheonax-n.duckdns.org)
+#   기존 디자인 사이트(Vercel knowly, https://cheonax.duckdns.org)는 더 이상 자동 배포하지 않는다.
 # 필요한 저장소 비밀값: VERCEL_TOKEN (Settings → Secrets and variables → Actions)
 name: Deploy frontend
 
 on:
   push:
-    branches: [main, feat/nyang-theme]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
-  group: frontend-${{ github.ref_name }}
+  group: frontend
   cancel-in-progress: false
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: team_yO2cPnLAHxqolchZc4R7OREG
-      VERCEL_PROJECT_ID: ${{ github.ref_name == 'main' && 'prj_gwyserAZKGyhnhzP57IcCb3RyVYy' || 'prj_kbKad7Kahx4i9lASfWxo0t9XPtqe' }}
+      VERCEL_PROJECT_ID: prj_kbKad7Kahx4i9lASfWxo0t9XPtqe  # knowly-nyang
     steps:
       - name: 비밀값 확인
         run: |
