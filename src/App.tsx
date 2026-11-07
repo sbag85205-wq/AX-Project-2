@@ -4,6 +4,8 @@ import { TopBar } from './components/TopBar';
 import { AuthProvider, useAuth } from './lib/auth';
 import { supabaseConfigured } from './lib/supabase';
 import Chat from './pages/Chat';
+import DocumentList from './pages/DocumentList';
+import DocumentView from './pages/DocumentView';
 import Login from './pages/Login';
 
 const Admin = lazy(() => import('./pages/admin/AdminLayout'));
@@ -25,6 +27,8 @@ function Routed() {
   return (
     <Routes>
       <Route path="/" element={<Shell><Chat /></Shell>} />
+      <Route path="/docs" element={<Shell><DocumentList /></Shell>} />
+      <Route path="/docs/:id" element={<Shell><DocumentView /></Shell>} />
       <Route
         path="/admin/*"
         element={profile.role === 'admin'

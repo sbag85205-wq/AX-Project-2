@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import type { Citation } from '../lib/types';
 import { Modal } from './Modal';
@@ -43,6 +44,7 @@ export function SourceModal({ citation, onClose }: { citation: Citation; onClose
       actions={
         <>
           {fileUrl && <a className="btn" href={fileUrl} target="_blank" rel="noreferrer">원본 PDF 열기</a>}
+          {chunk && <Link className="btn" to={`/docs/${citation.document_id}?chunk=${citation.chunk_id}`}>문서 전체 보기</Link>}
           <button type="button" className="btn btn-primary" onClick={onClose}>닫기</button>
         </>
       }
