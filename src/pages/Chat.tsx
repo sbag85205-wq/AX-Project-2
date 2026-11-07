@@ -1,16 +1,43 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type DragEvent, type FormEvent, type KeyboardEvent } from 'react';
 import { AnswerCard } from '../components/AnswerCard';
-import { MenuIcon, PlusIcon, SendIcon, TrashIcon } from '../components/Icons';
+import { ClipIcon, CloseIcon, DocIcon, MenuIcon, PlusIcon, SendIcon, TrashIcon } from '../components/Icons';
 import { Mascot } from '../components/Mascot';
 import { SourceModal } from '../components/SourceModal';
 import { useToast } from '../components/Toast';
 import { ask, errorMessage, sendFeedback } from '../lib/api';
+import { ATTACH_ACCEPT, ATTACH_MAX, prepareAttachment } from '../lib/attach';
 import { useAuth } from '../lib/auth';
 import { SUGGESTED_QUESTIONS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
-import type { Citation, Conversation, Message } from '../lib/types';
+import type { ChatAttachment, Citation, Conversation, Message } from '../lib/types';
 
 const MAX_LEN = 2000;
+const ATTACH_ONLY_QUESTION = '첨부한 자료와 관련된 사내 규정이나 절차를 알려 주세요.';
+
+/** 저장된 대화에는 첨부 파일이 없으므로, 뒤따르는 답변에 남은 이름·읽음 여부로 표시한다. */
+function withAttachmentNotes(list: Message[]): Message[] {
+  return list.map((m, i) => {
+    const notes = m.role === 'user' ? list[i + 1]?.answer?.attachments : undefined;
+    return notes?.length ? { ...m, attachments: notes.map((n, j) => ({ id: `${m.id}-${j}`, ...n })) } : m;
+  });
+}
+
+function AttachmentChips({ items, onRemove }: { items: ChatAttachment[]; onRemove?: (id: string) => void }) {
+  return (
+    <ul className="attach-list">
+      {items.map((a) => (
+        <li key={a.id} className={`attach-chip${a.read === false ? ' unread' : ''}`} title={a.read === false ? '내용을 읽지 못했어요' : a.name}>
+          {a.dataUrl ? <img src={a.dataUrl} alt="" /> : <span className="attach-icon" aria-hidden="true"><DocIcon /></span>}
+          <span className="attach-name">{a.name}</span>
+          {a.read === false && <span className="attach-flag">못 읽음</span>}
+          {onRemove && (
+            <button type="button" className="attach-remove" aria-label={`${a.name} 빼기`} onClick={() => onRemove(a.id)}><CloseIcon /></button>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function Chat() {
   const { profile } = useAuth();
@@ -22,8 +49,12 @@ export default function Chat() {
   const [busy, setBusy] = useState(false);
   const [source, setSource] = useState<Citation | null>(null);
   const [sideOpen, setSideOpen] = useState(false);
+  const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
+  const [preparing, setPreparing] = useState(0);
+  const [dragging, setDragging] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const loadConversations = useCallback(async () => {
     const { data } = await supabase.from('conversations').select('id, title, updated_at').order('updated_at', { ascending: false }).limit(50);
@@ -44,7 +75,38 @@ export default function Chat() {
     setCurrentId(id);
     setMessages([]);
     const { data } = await supabase.from('messages').select('id, role, content, answer, vote, created_at').eq('conversation_id', id).order('created_at');
-    setMessages((data as Message[]) ?? []);
+    setMessages(withAttachmentNotes((data as Message[]) ?? []));
+  };
+
+  const addFiles = async (files: File[]) => {
+    if (!files.length) return;
+    const room = ATTACH_MAX - attachments.length - preparing;
+    if (room <= 0) return toast(`첨부는 ${ATTACH_MAX}개까지 넣을 수 있어요.`);
+    if (files.length > room) toast(`첨부는 ${ATTACH_MAX}개까지라 ${room}개만 넣었어요.`);
+    await Promise.all(files.slice(0, room).map(async (file) => {
+      setPreparing((n) => n + 1);
+      try {
+        const item = await prepareAttachment(file);
+        setAttachments((list) => [...list, item]);
+      } catch (e) {
+        toast(errorMessage(e));
+      } finally {
+        setPreparing((n) => n - 1);
+      }
+    }));
+  };
+
+  const onPaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    const files = [...e.clipboardData.files];
+    if (!files.length) return;
+    e.preventDefault();
+    addFiles(files);
+  };
+
+  const onDrop = (e: DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    addFiles([...e.dataTransfer.files]);
   };
 
   const newConversation = () => {
@@ -63,18 +125,24 @@ export default function Chat() {
     toast('대화를 삭제했어요.');
   };
 
-  const submit = async (text: string) => {
-    const question = text.trim();
-    if (!question || busy) return;
+  const submit = async (text: string, files: ChatAttachment[] = attachments) => {
+    const question = text.trim() || (files.length ? ATTACH_ONLY_QUESTION : '');
+    if (!question || busy || preparing) return;
     const now = new Date().toISOString();
-    const tempUser: Message = { id: `u-${now}`, role: 'user', content: question, answer: null, vote: null, created_at: now };
+    const tempUser: Message = { id: `u-${now}`, role: 'user', content: question, answer: null, vote: null, created_at: now, attachments: files };
     const tempBot: Message = { id: `b-${now}`, role: 'assistant', content: '', answer: null, vote: null, created_at: now, pending: true };
     setMessages((m) => [...m, tempUser, tempBot]);
     setInput('');
+    setAttachments([]);
     setBusy(true);
     try {
-      const res = await ask(question, currentId);
-      setMessages((m) => m.map((x) => (x.id === tempBot.id ? { ...x, id: res.message_id, answer: res.answer, content: res.answer.summary.join('\n'), pending: false } : x)));
+      const res = await ask(question, currentId, files);
+      const notes = res.answer.attachments ?? [];
+      setMessages((m) => m.map((x) => {
+        if (x.id === tempBot.id) return { ...x, id: res.message_id, answer: res.answer, content: res.answer.summary.join('\n'), pending: false };
+        if (x.id === tempUser.id && files.length) return { ...x, attachments: files.map((f, i) => ({ ...f, read: notes[i]?.read })) };
+        return x;
+      }));
       if (!currentId) setCurrentId(res.conversation_id);
       loadConversations();
     } catch (e) {
@@ -87,8 +155,9 @@ export default function Chat() {
   const retry = (botId: string) => {
     const idx = messages.findIndex((m) => m.id === botId);
     const question = messages[idx - 1]?.content;
+    const files = messages[idx - 1]?.attachments ?? [];
     setMessages((m) => m.filter((_, i) => i !== idx && i !== idx - 1));
-    if (question) submit(question);
+    if (question) submit(question, files);
   };
 
   const vote = async (id: string, v: 'up' | 'down' | null) => {
@@ -160,7 +229,10 @@ export default function Chat() {
             )}
             {messages.map((m) =>
               m.role === 'user' ? (
-                <div key={m.id} className="bubble-user">{m.content}</div>
+                <div key={m.id} className="user-row">
+                  {!!m.attachments?.length && <AttachmentChips items={m.attachments} />}
+                  <div className="bubble-user">{m.content}</div>
+                </div>
               ) : (
                 <div key={m.id} className="bot-row">
                   <Mascot size={48} avatar mood={m.pending ? 'thinking' : m.answer?.status === 'insufficient_evidence' ? 'sorry' : m.vote === 'up' ? 'happy' : 'idle'} />
@@ -183,8 +255,42 @@ export default function Chat() {
           </div>
         </div>
         <div className="composer-wrap">
-          <form className="composer" onSubmit={onSubmit}>
+          {(attachments.length > 0 || preparing > 0) && (
+            <div className="composer-attach">
+              <AttachmentChips items={attachments} onRemove={(id) => setAttachments((list) => list.filter((a) => a.id !== id))} />
+              {preparing > 0 && <span className="hint" role="status">첨부를 읽는 중…</span>}
+              <span className="hint">첨부한 파일은 저장하지 않고 이번 답변에만 사용해요.</span>
+            </div>
+          )}
+          <form
+            className={`composer${dragging ? ' dragging' : ''}`}
+            onSubmit={onSubmit}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={onDrop}
+          >
             <span className="mobile-hide" aria-hidden="true"><Mascot size={40} avatar mood={mood} /></span>
+            <input
+              ref={fileRef}
+              type="file"
+              multiple
+              accept={ATTACH_ACCEPT}
+              hidden
+              onChange={(e) => {
+                addFiles([...(e.target.files ?? [])]);
+                e.target.value = '';
+              }}
+            />
+            <button
+              type="button"
+              className="attach-btn"
+              aria-label="사진이나 파일 첨부"
+              title="사진·PDF·엑셀·텍스트 첨부 (최대 3개, 붙여넣기·끌어다 놓기 가능)"
+              disabled={busy || attachments.length + preparing >= ATTACH_MAX}
+              onClick={() => fileRef.current?.click()}
+            >
+              <ClipIcon />
+            </button>
             <label htmlFor="chat-in" className="sr">질문 입력</label>
             <textarea
               id="chat-in"
@@ -195,8 +301,9 @@ export default function Chat() {
               placeholder="궁금한 점을 입력하세요 (Shift+Enter 줄바꿈)"
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={onKeyDown}
+              onPaste={onPaste}
             />
-            <button type="submit" className="send" aria-label="질문 보내기" disabled={busy || !input.trim()}><SendIcon /></button>
+            <button type="submit" className="send" aria-label="질문 보내기" disabled={busy || preparing > 0 || (!input.trim() && !attachments.length)}><SendIcon /></button>
           </form>
         </div>
       </section>

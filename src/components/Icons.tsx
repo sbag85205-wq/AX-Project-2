@@ -7,4 +7,6 @@ export const SearchIcon = () => <svg {...base}><circle cx="11" cy="11" r="7" /><
 export const DocIcon = () => <svg {...base} width={14} height={14}><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" /><path d="M14 3v6h6" /></svg>;
 export const TrashIcon = () => <svg {...base} width={16} height={16}><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>;
 export const PlusIcon = () => <svg {...base}><path d="M12 5v14M5 12h14" /></svg>;
+export const ClipIcon = () => <svg {...base}><path d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.9-8.9a3.7 3.7 0 0 1 5.2 5.2l-8.9 8.9a1.8 1.8 0 0 1-2.6-2.6l8.2-8.2" /></svg>;
+export const CloseIcon = () => <svg {...base} width={14} height={14}><path d="M6 6l12 12M18 6L6 18" /></svg>;
 export const MenuIcon = () => <svg {...base}><path d="M4 6h16M4 12h16M4 18h16" /></svg>;

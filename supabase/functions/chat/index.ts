@@ -3,10 +3,10 @@ import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.118.0';
 import { adminClient, corsHeaders, errorResponse, getCaller, json, loadSettings, type Caller } from '../_shared/http.ts';
 import { searchTerms, similarity } from '../_shared/text.ts';
 import {
-  SYSTEM_PROMPT, buildUserPrompt, noEvidenceAnswer, parseModelAnswer, searchOnlyAnswer,
-  type Answer, type Evidence
+  SYSTEM_PROMPT, buildUserPrompt, noEvidenceAnswer, parseAttachments, parseModelAnswer, searchOnlyAnswer,
+  type Answer, type AttachmentInput, type AttachmentNote, type Evidence
 } from '../_shared/answer.ts';
-import { chatCompletion, embed, llmConfigured } from '../_shared/providers.ts';
+import { chatCompletion, describeImage, embed, llmConfigured, visionModel } from '../_shared/providers.ts';
 
 const MAX_QUESTION = 2000;
 const FAQ_MIN_SCORE = 0.6;
@@ -42,6 +42,12 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
   const question = typeof body.question === 'string' ? body.question.trim() : '';
   if (!question) return errorResponse(400, 'empty_question', '질문을 입력해 주세요.');
   if (question.length > MAX_QUESTION) return errorResponse(400, 'too_long', `질문은 ${MAX_QUESTION}자 이하로 입력해 주세요.`);
+  let attachments: AttachmentInput[];
+  try {
+    attachments = parseAttachments(body.attachments);
+  } catch (e) {
+    return errorResponse(400, 'bad_attachments', (e as Error).message);
+  }
 
   // 대화 소유권 확인 (없으면 새로 만든다)
   let conversationId = typeof body.conversation_id === 'string' ? body.conversation_id : null;
@@ -66,8 +72,27 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
   let inputTokens: number | null = null;
   let outputTokens: number | null = null;
 
-  // 1) 관리자가 등록한 FAQ와 거의 같은 질문이면 FAQ 답변을 그대로 쓴다
-  if (terms.length) {
+  // 0) 첨부 읽기: 파일은 브라우저가 뽑은 글자를 그대로, 사진은 판독 모델로 글자·설명을 얻는다.
+  //    첨부 자체는 저장하지 않고 이번 답변에만 쓴다 (대화에는 파일 이름과 읽었는지만 남는다).
+  const read = await Promise.all(attachments.map(async (a): Promise<{ name: string; text: string } | null> => {
+    if (a.kind === 'file') return { name: a.name, text: a.text ?? '' };
+    if (!visionModel()) return null;
+    try {
+      const result = await describeImage(a.data_url ?? '');
+      inputTokens = (inputTokens ?? 0) + (result.input_tokens ?? 0);
+      outputTokens = (outputTokens ?? 0) + (result.output_tokens ?? 0);
+      return result.text ? { name: a.name, text: result.text } : null;
+    } catch (e) {
+      console.error('vision failed', (e as Error).message);
+      return null;
+    }
+  }));
+  const notes: AttachmentNote[] = attachments.map((a, i) => ({ name: a.name, kind: a.kind, read: !!read[i] }));
+  const attached = read.filter((r): r is { name: string; text: string } => !!r);
+  const attachedText = attached.map((a) => a.text).join('\n').slice(0, 1500);
+
+  // 1) 관리자가 등록한 FAQ와 거의 같은 질문이면 FAQ 답변을 그대로 쓴다 (첨부가 있으면 첨부까지 보고 답한다)
+  if (terms.length && !attachments.length) {
     const { data: faqs } = await db.rpc('search_faqs', { terms, match_count: 3 });
     const best = (faqs ?? [])
       .map((f: { score: number; question: string }) => ({ ...f, sim: similarity(question, f.question) }))
@@ -85,21 +110,30 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
 
   // 2) 문서 검색 → LLM 요약
   if (!answer) {
-    const [queryEmbedding] = (await embed([question]).catch((e) => {
+    const [queryEmbedding, attachedEmbedding] = (await embed(attachedText ? [question, attachedText] : [question]).catch((e) => {
       console.error('embedding failed', e.message);
       return null;
-    })) ?? [null];
-    const { data: rows, error } = await db.rpc('search_chunks', {
-      terms: terms.length ? terms : [question],
-      query_embedding: queryEmbedding ? JSON.stringify(queryEmbedding) : null,
-      match_count: 5,
-      vector_weight: settings.vector_weight
-    });
-    if (error) throw error;
+    })) ?? [null, null];
+    type Row = Record<string, unknown> & { id: string; keyword_score: number; vector_score: number | null };
+    const search = async (searchTermList: string[], embedding: number[] | null | undefined): Promise<Row[]> => {
+      const { data, error } = await db.rpc('search_chunks', {
+        terms: searchTermList,
+        query_embedding: embedding ? JSON.stringify(embedding) : null,
+        match_count: 5,
+        vector_weight: settings.vector_weight
+      });
+      if (error) throw error;
+      return ((data ?? []) as Row[]).filter((r) => r.keyword_score >= settings.keyword_min || (r.vector_score ?? 0) >= settings.vector_min);
+    };
+    // 질문으로 한 번, 첨부 내용으로 한 번 찾는다. 키워드 점수는 검색어 중 맞은 비율이라 둘을 섞으면 점수가 낮아진다.
+    const rows = await search(terms.length ? terms : [question], queryEmbedding);
+    const attachedTerms = attachedText ? searchTerms(attachedText, 16) : [];
+    if (attachedTerms.length) {
+      for (const r of await search(attachedTerms, attachedEmbedding)) if (!rows.some((x) => x.id === r.id)) rows.push(r);
+    }
 
-    const evidence: Evidence[] = (rows ?? [])
-      .filter((r: { keyword_score: number; vector_score: number | null }) =>
-        r.keyword_score >= settings.keyword_min || (r.vector_score ?? 0) >= settings.vector_min)
+    const evidence: Evidence[] = rows
+      .slice(0, 5)
       .map((r: Record<string, unknown>, i: number) => ({
         source_id: `S${i + 1}`,
         chunk_id: r.id as string,
@@ -119,11 +153,11 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
       category = doc?.category ?? null;
       if (llmConfigured()) {
         try {
-          const prompt = buildUserPrompt(question, evidence);
+          const prompt = buildUserPrompt(question, evidence, attached);
           let result = await chatCompletion(SYSTEM_PROMPT, prompt, settings.llm_model);
           model = result.model;
-          inputTokens = result.input_tokens;
-          outputTokens = result.output_tokens;
+          inputTokens = (inputTokens ?? 0) + (result.input_tokens ?? 0);
+          outputTokens = (outputTokens ?? 0) + (result.output_tokens ?? 0);
           try {
             answer = parseModelAnswer(result.text, evidence);
           } catch (parseError) {
@@ -145,6 +179,17 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
         answer = searchOnlyAnswer(evidence);
       }
     }
+  }
+
+  if (notes.length) {
+    const unread = notes.filter((n) => !n.read);
+    answer = {
+      ...answer,
+      attachments: notes,
+      warnings: unread.length
+        ? [...answer.warnings, `${unread.map((n) => n.name).join(', ')}: 첨부 내용을 읽지 못해 질문만 보고 찾았어요.`]
+        : answer.warnings
+    };
   }
 
   if (answer.status === 'insufficient_evidence') {

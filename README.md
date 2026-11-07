@@ -14,10 +14,11 @@
 | 화면 | 경로 | 내용 |
 |---|---|---|
 | 로그인 | `/` | 관리자가 발급한 아이디·비밀번호로 로그인 (회원가입 없음) |
-| 직원 챗봇 | `/` | 대화형 질문, 요약·절차·주의사항·상세 설명, 문서명·버전·페이지 출처, 원문 보기, 도움 됨/안 됨, 내 대화 기록 |
+| 직원 챗봇 | `/` | 대화형 질문, **사진·PDF·엑셀·텍스트 첨부(최대 3개, 붙여넣기·끌어다 놓기)**, 요약·절차·주의사항·상세 설명, 문서명·버전·페이지 출처, 원문 보기, 도움 됨/안 됨, 내 대화 기록 |
 | 미등록 질문 | `/admin/unanswered` | 근거를 못 찾았거나 '도움 안 됨'을 받은 질문을 비슷한 것끼리 묶어 보여주고, 바로 FAQ로 등록 |
 | 이용 통계 | `/admin/stats` | 질문 수, 이용 직원 수, 성공률, 응답 시간, 만족도, 부서별·카테고리별·모델별 집계, CSV |
-| 문서 관리 | `/admin/documents` | PDF·TXT 업로드 → 브라우저에서 페이지별 추출 → 청크·(임베딩) → 검색 활성화 |
+| 문서 관리 | `/admin/documents` | PDF·엑셀(XLSX·XLS·CSV)·TXT 업로드 → 브라우저에서 페이지(엑셀은 시트)별 추출 → 청크·(임베딩) → 검색 활성화 |
+| 문서 보기 | `/docs`, `/docs/:id` | 텍스트 보기와 원본 보기 (PDF는 앱 안에서 페이지로, 엑셀은 시트별 표로) |
 | FAQ 관리 | `/admin/faqs` | FAQ 추가·수정·숨김·삭제 |
 | 사용자 관리 | `/admin/users` | 계정 발급, 부서·권한 변경, 비밀번호 재설정 |
 
@@ -25,6 +26,10 @@
 - 질문 원문과 대화는 **본인만** 볼 수 있어요 (RLS로 관리자도 조회 불가).
 - 미등록 질문은 이름·아이디 없이 질문 문장만 익명으로 모아요.
 - 관리자 통계는 원문 없는 집계 함수(`admin_usage_stats`)로만 조회해요.
+- 질문에 첨부한 파일·사진은 **저장하지 않아요**. 그 답변을 만들 때만 쓰고, 대화에는 파일 이름과 읽었는지만 남아요.
+  다만 답변을 만들 때 외부 모델(OpenRouter)로 보내지므로 실제 사내 자료는 첨부하지 마세요. 사진 속 주민번호·카드번호 등은 판독할 때 가리도록 지시해요.
+
+> 설계서는 초기 입력을 'PDF와 UTF-8 텍스트'로 정했지만, 팀 요청으로 엑셀 문서 등록과 질문 첨부를 추가했어요 (2026-11-07).
 
 ## 폴더 구조
 
@@ -32,7 +37,8 @@
 src/                      React 앱
   pages/Chat.tsx          직원 챗봇
   pages/admin/*           관리자 화면
-  lib/extract.ts          PDF 페이지별 텍스트 추출 (pdfjs)
+  lib/extract.ts          PDF 페이지별·엑셀 시트별 텍스트 추출 (pdf.js, SheetJS)
+  lib/attach.ts           질문 첨부 준비 (파일 글자 추출, 사진 줄이기)
 supabase/
   migrations/             DB 스키마, RLS, 검색·통계 함수
   seed.sql                가상 문서·FAQ·예시 미등록 질문
@@ -96,6 +102,7 @@ npx supabase secrets set LLM_API_KEY=<OpenRouter 키> LLM_MODEL=qwen/qwen3-14b
 | `LLM_TEMPERATURE` / `LLM_MAX_TOKENS` | `0.2` / `700` | 추론 설정 |
 | `EMBEDDING_MODEL` | (없음) | 지정하면 벡터 검색을 함께 사용. 없으면 키워드 검색만 |
 | `EMBEDDING_BASE_URL` / `EMBEDDING_API_KEY` | LLM 값 사용 | 임베딩 API 주소·키 |
+| `VISION_MODEL` | OpenRouter 사용 시 `google/gemini-2.5-flash-lite` | 질문에 첨부한 사진을 읽는 모델. OpenRouter가 아니고 지정도 없으면 사진은 읽지 않아요 |
 | `ALLOWED_ORIGIN` | `*` | CORS 허용 출처. 배포 후 Vercel 주소로 좁히세요 |
 
 > API 키는 Supabase secret에만 넣고, 저장소나 프론트엔드 환경변수에는 넣지 마세요.

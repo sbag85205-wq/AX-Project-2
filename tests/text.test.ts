@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { docFileType, pageCountLabel, pageLabel, sheetToText } from '../src/lib/sheet';
 import { decodeText } from '../src/lib/extract';
 import { chunkPages, searchTerms, similarity } from '../supabase/functions/_shared/text';
-import { parseModelAnswer, type Evidence } from '../supabase/functions/_shared/answer';
+import { ATTACH_LIMITS, buildUserPrompt, parseAttachments, parseModelAnswer, type Evidence } from '../supabase/functions/_shared/answer';
 import { parseSettings } from '../supabase/functions/_shared/settings';
 
 describe('searchTerms', () => {
@@ -128,5 +128,33 @@ describe('decodeText', () => {
   it('UTF-8과 CP949(EUC-KR) 텍스트를 모두 읽는다', () => {
     expect(decodeText(new TextEncoder().encode('﻿연차 신청').buffer)).toBe('연차 신청');
     expect(decodeText(Uint8Array.from([0xbf, 0xac, 0xc2, 0xf7]).buffer)).toBe('연차');
+  });
+});
+
+describe('parseAttachments', () => {
+  const png = 'data:image/png;base64,iVBORw0KGgo=';
+  it('파일 글자와 사진을 받아 길이를 제한한다', () => {
+    const out = parseAttachments([
+      { name: '오류\n화면.png', kind: 'image', data_url: png },
+      { name: '기준표.xlsx', kind: 'file', text: '가'.repeat(ATTACH_LIMITS.textChars + 10) }
+    ]);
+    expect(out[0]).toEqual({ name: '오류 화면.png', kind: 'image', data_url: png });
+    expect(out[1].text).toHaveLength(ATTACH_LIMITS.textChars);
+    expect(parseAttachments(undefined)).toEqual([]);
+  });
+  it('개수·형식이 틀리면 이유를 알려 준다', () => {
+    expect(() => parseAttachments(Array(4).fill({ name: 'a', kind: 'file', text: 'x' }))).toThrow('3개까지');
+    expect(() => parseAttachments([{ name: 'a.svg', kind: 'image', data_url: 'data:image/svg+xml;base64,PHN2Zz4=' }])).toThrow('사진 형식');
+    expect(() => parseAttachments([{ name: 'big.jpg', kind: 'image', data_url: 'data:image/jpeg;base64,' + 'A'.repeat(ATTACH_LIMITS.imageChars) }])).toThrow('너무 커요');
+    expect(() => parseAttachments([{ name: 'empty.pdf', kind: 'file', text: '  ' }])).toThrow('글자를 찾지 못했어요');
+  });
+});
+
+describe('buildUserPrompt', () => {
+  it('첨부는 출처와 따로 <attachments>에 넣는다', () => {
+    const prompt = buildUserPrompt('이거 처리돼요?', [], [{ name: '영수증.jpg', text: '식대 12,000원' }]);
+    expect(prompt).toContain('<attachments>\n[첨부: 영수증.jpg]\n식대 12,000원\n</attachments>');
+    expect(prompt.indexOf('<attachments>')).toBeGreaterThan(prompt.indexOf('</sources>'));
+    expect(buildUserPrompt('질문', [])).not.toContain('<attachments>');
   });
 });
