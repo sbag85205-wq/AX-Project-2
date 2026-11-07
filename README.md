@@ -152,3 +152,19 @@ Supabase도 self-hosting이 가능하지만, 기존 사내 PostgreSQL을 쓰려�
 - `Knowly_개발설계서_v1.docx`: 요구사항 F01–F07, API·DB 설계
 - FAQ 챗봇 관리자 대시보드 프로토타입: 미등록 질문 화면과 직원 챗봇 피드백 흐름
 - 노션 `AX 기업 과제 프로젝트 2조`: 기업 인터뷰, 기술 멘토링, 발표 피드백
+
+## 자동 배포 (GitHub Actions)
+
+GitHub에 push하면 자동으로 배포돼요. 별도 명령은 필요 없어요.
+
+| push한 브랜치 | 배포되는 곳 |
+|---|---|
+| `main` | 기존 디자인 https://cheonax.duckdns.org |
+| `main`의 `supabase/` 변경 | DB 변경(migration) + Edge Function (두 사이트가 같이 씀) |
+| `feat/nyang-theme` | 냥대리 디자인 https://cheonax-n.duckdns.org |
+
+- 진행 상황과 실패 원인은 GitHub 저장소의 **Actions** 탭에서 볼 수 있어요.
+- 단위 테스트가 실패하면 배포하지 않아요.
+- 백엔드는 main에서만 배포해요. 냥대리 브랜치에서 백엔드를 고쳤다면 main에 먼저 합쳐 주세요.
+- DB 변경은 되돌리기 어려워요. `supabase/migrations/`에 새 파일을 추가하기 전에 팀과 꼭 상의해 주세요.
+- 저장소 비밀값 `VERCEL_TOKEN`, `SUPABASE_ACCESS_TOKEN`이 필요해요 (Settings → Secrets and variables → Actions).

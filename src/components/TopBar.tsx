@@ -11,6 +11,7 @@ export function TopBar() {
         <NavLink to="/" className="brand"><Logo /> Knowly</NavLink>
         <nav className="nav" aria-label="주 메뉴">
           <NavLink to="/" end>직원 챗봇</NavLink>
+          <NavLink to="/docs">문서</NavLink>
           {isAdmin && <NavLink to="/admin">관리자</NavLink>}
         </nav>
         <div className="topbar-user">

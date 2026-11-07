@@ -78,3 +78,21 @@ describe('parseSettings', () => {
     expect(() => parseSettings({ llm_model: 'bad model; drop', keyword_min: 0.3, vector_min: 0.5, vector_weight: 0.5 })).toThrow();
   });
 });
+
+import { chunkPages as chunkForView } from '../supabase/functions/_shared/text';
+import { stripOverlap } from '../src/lib/docText';
+
+describe('stripOverlap', () => {
+  it('청크 겹침을 떼어 내면 원문을 중복 없이 이어 읽을 수 있다', () => {
+    const para = (n: number) => `${n}번 문단입니다. 연차는 사용 예정일 3영업일 전까지 신청하고 팀장 승인을 받아야 합니다. `.repeat(4);
+    const chunks = chunkForView([{ page: 1, text: [1, 2, 3, 4, 5, 6].map(para).join('\n\n') }], 600, 120);
+    expect(chunks.length).toBeGreaterThan(2);
+    const joined = chunks.map((c, i) => (i ? stripOverlap(chunks[i - 1].content, c.content) : c.content)).join('\n');
+    for (const n of [1, 2, 3, 4, 5, 6]) {
+      expect(joined.split(`${n}번 문단입니다.`).length - 1).toBe(4);
+    }
+  });
+  it('겹침이 없으면 그대로 둔다', () => {
+    expect(stripOverlap('가나다라마바사아자차카타파하'.repeat(3), '완전히 다른 내용으로 시작하는 다음 조각입니다')).toBe('완전히 다른 내용으로 시작하는 다음 조각입니다');
+  });
+});
