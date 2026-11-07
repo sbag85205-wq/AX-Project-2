@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { docFileType, pageCountLabel, pageLabel, sheetToText } from '../src/lib/sheet';
 import { decodeText } from '../src/lib/extract';
-import { chunkPages, keywordScore, rankEvidence, searchTerms, similarity } from '../supabase/functions/_shared/text';
-import { ATTACH_LIMITS, buildUserPrompt, parseAttachments, parseModelAnswer, type Evidence } from '../supabase/functions/_shared/answer';
+import { chunkPages, coreQuestion, keywordScore, mergeEvidence, rankEvidence, searchTerms, similarity, termSimilarity } from '../supabase/functions/_shared/text';
+import { ATTACH_LIMITS, SYSTEM_PROMPT, buildUserPrompt, noMatchingRuleAnswer, parseAttachments, parseModelAnswer, parseRewrite, type Evidence } from '../supabase/functions/_shared/answer';
 import { parseSettings } from '../supabase/functions/_shared/settings';
 
 describe('searchTerms', () => {
@@ -188,5 +188,74 @@ describe('검색 품질 개선 (진단 보고서 C3·C4·C5)', () => {
     const done = chunks.find((c) => c.section_title === '■ 5. 완료 시');
     expect(done?.content.startsWith('■ 5. 완료 시')).toBe(true);
     expect(done?.content).not.toContain('단계 내용');
+  });
+});
+
+describe('존댓말·부연 설명 질문', () => {
+  const pairs: [string, string][] = [
+    ['재택근무 신청', '재택근무 신청은 어떻게 하시면 되나요?'],
+    ['연차 신청', '연차는 며칠 전에 신청하셔야 하는지 여쭤봐도 될까요?'],
+    ['법인카드 분실 처리', '법인카드를 분실했는데 어떻게 처리해야 하는지 알려주시겠어요?'],
+    ['경조사 휴가', '경조사 휴가는 며칠 받을 수 있습니까?'],
+    ['배우자 건강검진 지원', '배우자 건강검진도 지원해 주시는지 궁금합니다'],
+    ['출장비 정산 제출', '출장비 정산은 언제까지 제출해야 합니까?']
+  ];
+  it.each(pairs)('존댓말로 물어도 "%s"과 같은 검색어만 남는다', (plain, polite) => {
+    expect(new Set(searchTerms(polite))).toEqual(new Set(searchTerms(plain)));
+  });
+
+  it('높임 어미 조각이 검색어에 남지 않는다', () => {
+    const all = pairs.flatMap(([, polite]) => searchTerms(polite));
+    for (const junk of ['하시', '시면', '하셔', '셔야', '주시', '시겠', '시는', '니다', '금합', '여쭤', '있습', '하는지']) {
+      expect(all).not.toContain(junk);
+    }
+  });
+
+  it('부연 설명 뒤의 실제 질문 문장을 뽑는다', () => {
+    expect(coreQuestion('제가 다음 달에 결혼을 하게 됐는데요, 경조사 휴가는 며칠 받을 수 있나요?')).toBe('경조사 휴가는 며칠 받을 수 있나요?');
+    expect(coreQuestion('팀장님이 확인해 보라고 하셔서요. 출장 일비는 얼마인가요?')).toBe('출장 일비는 얼마인가요?');
+    expect(coreQuestion('재택근무는 주에 몇 번 가능하나요?')).toBe('재택근무는 주에 몇 번 가능하나요?');
+    expect(coreQuestion('출장 일비는 얼마인가요? 다음 주에 부산 가거든요.')).toBe('출장 일비는 얼마인가요?');
+  });
+
+  it('말투가 달라도 같은 FAQ를 찾는다', () => {
+    expect(termSimilarity('연차 신청 기한', '연차는 며칠 전에 신청하셔야 하는지 여쭤봐도 될까요?')).toBeGreaterThanOrEqual(0.6);
+    expect(termSimilarity('법인카드 분실', '법인카드를 분실했는데 어떻게 처리해야 하는지 알려주시겠어요?')).toBeGreaterThanOrEqual(0.6);
+    expect(termSimilarity('재택근무 신청 방법', '법인카드 분실')).toBe(0);
+  });
+
+  it('여러 검색 결과를 합쳐 같은 조각은 높은 점수로 한 번만 남긴다', () => {
+    const merged = mergeEvidence([
+      [{ id: 'a', score: 0.5 }, { id: 'b', score: 0.4 }],
+      [{ id: 'b', score: 0.9 }, { id: 'c', score: 0.3 }]
+    ]);
+    expect(merged).toEqual([{ id: 'b', score: 0.9 }, { id: 'a', score: 0.5 }, { id: 'c', score: 0.3 }]);
+  });
+
+  it('AI 질문 정리 결과를 검사한다', () => {
+    expect(parseRewrite('{"query":"경조사 휴가 일수","keywords":["경조사","휴가","결혼"]}')).toEqual({ query: '경조사 휴가 일수', keywords: ['경조사', '휴가', '결혼'] });
+    expect(parseRewrite('<think>…</think>{"query":"출장 일비","keywords":[]}')?.query).toBe('출장 일비');
+    expect(parseRewrite('모르겠어요')).toBeNull();
+  });
+});
+
+describe('딱 맞는 기준이 없을 때', () => {
+  const ev: Evidence[] = [{
+    source_id: 'S1', chunk_id: 'c1', document_id: 'd1', document_title: '인사규정', version: 'v1',
+    page_start: 50, page_end: 50, section_title: '재택근무', content: '주 최대 2일 재택근무를 신청할 수 있다.'
+  }];
+  it('관련 출처와 가장 가까운 내용을 함께 보여 준다', () => {
+    const model = parseModelAnswer('{"status":"insufficient_evidence","summary":["월 단위 기준은 없고 주 최대 2일이에요."],"citations":["S1"]}', ev);
+    const a = noMatchingRuleAnswer(model, ev);
+    expect(a.status).toBe('insufficient_evidence');
+    expect(a.summary).toEqual(['월 단위 기준은 없고 주 최대 2일이에요.']);
+    expect(a.citations.map((c) => c.chunk_id)).toEqual(['c1']);
+  });
+  it('모델이 출처를 안 주면 검색된 조각을 관련 문서로 붙인다', () => {
+    expect(noMatchingRuleAnswer(null, ev).citations).toHaveLength(1);
+  });
+  it('계산해서 답해도 되는 규칙이 지시문에 있다', () => {
+    expect(SYSTEM_PROMPT).toContain('계산해서 답할 수 있습니다');
+    expect(SYSTEM_PROMPT).toContain('배경 설명');
   });
 });

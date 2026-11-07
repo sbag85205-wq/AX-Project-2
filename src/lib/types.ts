@@ -135,5 +135,13 @@ export interface PreviewRow {
   passed: boolean;
   /** 기준을 넘고 순위 안(상위 5개)에 들어 실제 답변에 쓰이는지 */
   used?: boolean;
+  /** 어떤 질문 모양(원래 질문·질문 문장·AI 정리)으로 찾았는지 */
+  via?: string;
   snippet: string;
+}
+
+export interface PreviewQuery {
+  label: string;
+  text: string;
+  terms: string[];
 }

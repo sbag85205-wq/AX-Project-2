@@ -7,6 +7,7 @@ const LABEL = {
   llm: { text: '문서 기반 답변', color: 'var(--primary-ink)' },
   search: { text: '관련 문서 내용', color: 'var(--primary-ink)' },
   none: { text: '등록된 답변 없음', color: 'var(--warn)' },
+  partial: { text: '딱 맞는 기준 없음', color: 'var(--warn)' },
   conflict: { text: '문서 내용이 서로 달라요', color: 'var(--warn)' }
 };
 
@@ -24,7 +25,7 @@ export function AnswerCard({ message, onVote, onOpenSource }: Props) {
   if (!a) return <div className="bot-card">{message.content}</div>;
 
   const label =
-    a.status === 'insufficient_evidence' ? LABEL.none : a.status === 'conflicting_sources' ? LABEL.conflict : LABEL[a.mode];
+    a.status === 'insufficient_evidence' ? (a.citations.length ? LABEL.partial : LABEL.none) : a.status === 'conflicting_sources' ? LABEL.conflict : LABEL[a.mode];
   const hasDetails = !!a.details && a.mode !== 'faq' && a.status !== 'insufficient_evidence';
   const vote = message.vote;
 

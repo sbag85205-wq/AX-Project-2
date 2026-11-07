@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useToast } from '../../components/Toast';
 import { callFunction, errorMessage } from '../../lib/api';
-import type { AppSettings, ModelOption, PreviewRow } from '../../lib/types';
+import type { AppSettings, ModelOption, PreviewQuery, PreviewRow } from '../../lib/types';
 
 interface SettingsInfo {
   settings: AppSettings;
@@ -53,7 +53,7 @@ export default function Settings() {
   const [test, setTest] = useState<TestResult | null>(null);
   const [testing, setTesting] = useState(false);
   const [question, setQuestion] = useState('반차는 어떻게 쓰나요? 몇 시간 단위예요?');
-  const [preview, setPreview] = useState<{ terms: string[]; results: PreviewRow[] } | null>(null);
+  const [preview, setPreview] = useState<{ terms: string[]; queries?: PreviewQuery[]; results: PreviewRow[] } | null>(null);
   const [previewing, setPreviewing] = useState(false);
 
   useEffect(() => {
@@ -191,10 +191,17 @@ export default function Settings() {
             <button type="submit" className="btn btn-primary" disabled={previewing || !question.trim()}>{previewing ? '검색 중…' : '미리보기'}</button>
           </form>
           {preview && (
-            <p className="hint" style={{ marginTop: 12 }}>
-              검색어: {preview.terms.length ? preview.terms.join(', ') : '(없음)'} · 근거로 쓰는 문서 {passed}개
-              {passed === 0 && ' → 이 질문은 "근거를 찾지 못했어요"로 답해요.'}
-            </p>
+            <div className="hint" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {preview.queries?.length
+                ? preview.queries.map((q) => (
+                  <div key={q.label}><b>{q.label}</b>{q.label !== '원래 질문' && <> “{q.text}”</>} → {q.terms.length ? q.terms.join(', ') : '(검색어 없음)'}</div>
+                ))
+                : <div>검색어: {preview.terms.length ? preview.terms.join(', ') : '(없음)'}</div>}
+              <div>
+                근거로 쓰는 문서 {passed}개
+                {passed === 0 && ' → 이 질문은 "근거를 찾지 못했어요"로 답해요.'}
+              </div>
+            </div>
           )}
         </div>
         {preview && (
@@ -207,7 +214,7 @@ export default function Settings() {
               {preview.results.map((r, i) => (
                 <div key={i} className="grid-row" style={{ gridTemplateColumns: COLS }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 600 }}>{r.document_title} · {r.section_title ?? `${r.page_start}쪽`}</div>
+                    <div style={{ fontWeight: 600 }}>{r.document_title} · {r.section_title ?? `${r.page_start}쪽`}{r.via && r.via !== '원래 질문' && <span className="hint" style={{ fontWeight: 400 }}> · {r.via}로 찾음</span>}</div>
                     <div className="hint" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.snippet}</div>
                   </div>
                   <div>{r.keyword_score.toFixed(2)}</div>
