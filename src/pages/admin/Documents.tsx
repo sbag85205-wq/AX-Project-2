@@ -47,7 +47,7 @@ export default function Documents() {
 
       setProgress('원본 저장 중…');
       const hash = await sha256(file);
-      const ext = file.name.toLowerCase().endsWith('.pdf') ? 'pdf' : 'txt';
+      const ext = file.name.toLowerCase().split('.').pop();
       const path = `${new Date().toISOString().slice(0, 10)}/${hash.slice(0, 16)}.${ext}`;
       const { error: upErr } = await supabase.storage.from('documents').upload(path, file, { upsert: true, contentType: file.type || undefined });
       if (upErr) throw new Error('원본 파일을 저장하지 못했어요.');

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { PdfViewer } from '../components/PdfViewer';
 import { useAuth } from '../lib/auth';
 import { stripOverlap } from '../lib/docText';
 import { supabase } from '../lib/supabase';
@@ -63,7 +64,7 @@ export default function DocumentView() {
   }, [blocks]);
 
   const focusPage = chunks.find((c) => c.id === focusChunk)?.page_start;
-  const pdfSrc = fileUrl && doc?.file_path?.endsWith('.pdf') ? `${fileUrl}#page=${focusPage ?? 1}` : null;
+  const isPdf = !!fileUrl && !!doc?.file_path?.toLowerCase().endsWith('.pdf');
 
   if (missing) {
     return (
@@ -90,15 +91,15 @@ export default function DocumentView() {
         {fileUrl && <a className="btn" href={fileUrl} target="_blank" rel="noreferrer">원본 파일 열기</a>}
       </div>
 
-      {pdfSrc && (
+      {isPdf && (
         <div className="tabs" role="group" aria-label="보기 방식">
           <button type="button" className="tab" aria-pressed={tab === 'text'} onClick={() => setTab('text')}>텍스트</button>
           <button type="button" className="tab" aria-pressed={tab === 'pdf'} onClick={() => setTab('pdf')}>원본 PDF</button>
         </div>
       )}
 
-      {tab === 'pdf' && pdfSrc ? (
-        <iframe className="card doc-pdf" src={pdfSrc} title={`${doc.title} 원본`} />
+      {tab === 'pdf' && isPdf && fileUrl ? (
+        <PdfViewer url={fileUrl} page={focusPage ?? 1} title={doc.title} />
       ) : (
         <div className="doc-layout">
           {sections.length > 1 && (
