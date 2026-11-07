@@ -3,15 +3,61 @@ import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.118.0';
 import { adminClient, corsHeaders, errorResponse, getCaller, json, loadSettings, type Caller } from '../_shared/http.ts';
 import { searchTerms, similarity } from '../_shared/text.ts';
 import {
-  SYSTEM_PROMPT, buildUserPrompt, noEvidenceAnswer, parseModelAnswer, searchOnlyAnswer,
+  REWRITE_SYSTEM_PROMPT, SYSTEM_PROMPT, buildRewritePrompt, buildUserPrompt, noEvidenceAnswer,
+  parseModelAnswer, parseRewriteQueries, searchOnlyAnswer,
   type Answer, type Evidence
 } from '../_shared/answer.ts';
 import { chatCompletion, embed, llmConfigured } from '../_shared/providers.ts';
+import type { AppSettings } from '../_shared/settings.ts';
 
 const MAX_QUESTION = 2000;
 const FAQ_MIN_SCORE = 0.6;
 const FAQ_MIN_SIMILARITY = 0.45;
 const GROUP_MIN_SIMILARITY = 0.45;
+const REWRITE_TIMEOUT_MS = 15000;
+const MAX_EVIDENCE = 5;
+
+interface RawEvidence {
+  chunk_id: string;
+  document_id: string;
+  document_title: string;
+  version: string;
+  page_start: number;
+  page_end: number;
+  section_title: string | null;
+  content: string;
+  score: number;
+}
+
+/** 검색어 추출 → 임베딩 → search_chunks RPC → 임계값 필터. 원질문 검색과 재작성 검색에 공통으로 쓴다. */
+async function searchEvidence(db: SupabaseClient, settings: AppSettings, queryText: string): Promise<RawEvidence[]> {
+  const terms = searchTerms(queryText);
+  const [queryEmbedding] = (await embed([queryText]).catch((e) => {
+    console.error('embedding failed', e.message);
+    return null;
+  })) ?? [null];
+  const { data: rows, error } = await db.rpc('search_chunks', {
+    terms: terms.length ? terms : [queryText],
+    query_embedding: queryEmbedding ? JSON.stringify(queryEmbedding) : null,
+    match_count: MAX_EVIDENCE,
+    vector_weight: settings.vector_weight
+  });
+  if (error) throw error;
+  return (rows ?? [])
+    .filter((r: { keyword_score: number; vector_score: number | null }) =>
+      r.keyword_score >= settings.keyword_min || (r.vector_score ?? 0) >= settings.vector_min)
+    .map((r: Record<string, unknown>) => ({
+      chunk_id: r.id as string,
+      document_id: r.document_id as string,
+      document_title: r.document_title as string,
+      version: r.document_version as string,
+      page_start: r.page_start as number,
+      page_end: r.page_end as number,
+      section_title: (r.section_title as string) ?? null,
+      content: r.content as string,
+      score: (r.vector_score as number ?? 0) * settings.vector_weight + (r.keyword_score as number) * (1 - settings.vector_weight)
+    }));
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -85,32 +131,42 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
 
   // 2) 문서 검색 → LLM 요약
   if (!answer) {
-    const [queryEmbedding] = (await embed([question]).catch((e) => {
-      console.error('embedding failed', e.message);
-      return null;
-    })) ?? [null];
-    const { data: rows, error } = await db.rpc('search_chunks', {
-      terms: terms.length ? terms : [question],
-      query_embedding: queryEmbedding ? JSON.stringify(queryEmbedding) : null,
-      match_count: 5,
-      vector_weight: settings.vector_weight
-    });
-    if (error) throw error;
+    let rawEvidence = await searchEvidence(db, settings, question);
 
-    const evidence: Evidence[] = (rows ?? [])
-      .filter((r: { keyword_score: number; vector_score: number | null }) =>
-        r.keyword_score >= settings.keyword_min || (r.vector_score ?? 0) >= settings.vector_min)
-      .map((r: Record<string, unknown>, i: number) => ({
-        source_id: `S${i + 1}`,
-        chunk_id: r.id as string,
-        document_id: r.document_id as string,
-        document_title: r.document_title as string,
-        version: r.document_version as string,
-        page_start: r.page_start as number,
-        page_end: r.page_end as number,
-        section_title: (r.section_title as string) ?? null,
-        content: r.content as string
-      }));
+    // 검색 결과가 없으면 질문을 공식 용어로 바꿔 다시 검색해 본다
+    if (!rawEvidence.length && llmConfigured()) {
+      try {
+        const rewrite = await chatCompletion(REWRITE_SYSTEM_PROMPT, buildRewritePrompt(question), settings.llm_model, REWRITE_TIMEOUT_MS);
+        inputTokens = (inputTokens ?? 0) + (rewrite.input_tokens ?? 0);
+        outputTokens = (outputTokens ?? 0) + (rewrite.output_tokens ?? 0);
+        const queries = parseRewriteQueries(rewrite.text);
+
+        const resultLists = await Promise.all(queries.map((q) => searchEvidence(db, settings, q)));
+        const merged = new Map<string, RawEvidence>();
+        for (const list of resultLists) {
+          for (const r of list) {
+            const prev = merged.get(r.chunk_id);
+            if (!prev || r.score > prev.score) merged.set(r.chunk_id, r);
+          }
+        }
+        rawEvidence = [...merged.values()].sort((a, b) => b.score - a.score).slice(0, MAX_EVIDENCE);
+        console.log(`rewrite used: ${rawEvidence.length}개 청크 찾음`);
+      } catch (e) {
+        console.error('query rewrite failed', (e as Error).message);
+      }
+    }
+
+    const evidence: Evidence[] = rawEvidence.map((r, i) => ({
+      source_id: `S${i + 1}`,
+      chunk_id: r.chunk_id,
+      document_id: r.document_id,
+      document_title: r.document_title,
+      version: r.version,
+      page_start: r.page_start,
+      page_end: r.page_end,
+      section_title: r.section_title,
+      content: r.content
+    }));
 
     if (!evidence.length) {
       answer = noEvidenceAnswer();
@@ -122,8 +178,8 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
           const prompt = buildUserPrompt(question, evidence);
           let result = await chatCompletion(SYSTEM_PROMPT, prompt, settings.llm_model);
           model = result.model;
-          inputTokens = result.input_tokens;
-          outputTokens = result.output_tokens;
+          inputTokens = (inputTokens ?? 0) + (result.input_tokens ?? 0);
+          outputTokens = (outputTokens ?? 0) + (result.output_tokens ?? 0);
           try {
             answer = parseModelAnswer(result.text, evidence);
           } catch (parseError) {

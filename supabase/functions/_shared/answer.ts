@@ -62,7 +62,7 @@ export function buildUserPrompt(question: string, evidence: Evidence[]): string 
   return `<sources>\n${sources}\n</sources>\n\n질문: ${question}`;
 }
 
-function extractJson(text: string): unknown {
+export function extractJson(text: string): unknown {
   const cleaned = text.replace(/<think>[\s\S]*?<\/think>/g, '').replace(/```(?:json)?/g, '').trim();
   const start = cleaned.indexOf('{');
   const end = cleaned.lastIndexOf('}');
@@ -125,6 +125,31 @@ export function searchOnlyAnswer(evidence: Evidence[]): Answer {
       source_id, chunk_id, document_id, document_title, version, page_start, page_end
     }))
   };
+}
+
+export const REWRITE_SYSTEM_PROMPT = `당신은 사내 업무 도우미 "Knowly"의 검색어 보조 도구입니다.
+직원이 일상적인 말투로 쓴 질문을, 회사 규정집·매뉴얼에 실제로 쓰일 법한 공식 용어의 검색 문장 3개로 바꿉니다.
+
+규칙
+1. 질문 형태(물음표, "~나요" 등)가 아니라 명사 위주의 짧은 검색 문장으로 씁니다.
+2. 서로 다른 각도(제도명, 기준, 절차 등)로 3개를 만들어 검색 범위를 넓힙니다.
+3. 답을 추측해서 쓰지 않고, 검색에 쓸 문장만 만듭니다.
+4. 반드시 아래 JSON 하나만 출력합니다. 코드 블록이나 다른 문장은 쓰지 않습니다.
+
+예시
+질문: "다음 주에 부산 가는데 숙소는 얼마짜리까지 잡아도 돼요?"
+{"queries":["출장 숙박비 한도","국내 출장 숙박비 기준","출장비 정산 규정"]}`;
+
+export function buildRewritePrompt(question: string): string {
+  return `질문: ${question}`;
+}
+
+/** 재작성 모델 출력을 검사해 검색 문장 배열(최대 3개, 빈 문자열 제외)로 만든다. 형식이 깨졌으면 예외를 던진다. */
+export function parseRewriteQueries(raw: string): string[] {
+  const data = extractJson(raw) as Record<string, unknown>;
+  const queries = strList(data.queries, 3);
+  if (!queries.length) throw new Error('empty queries');
+  return queries;
 }
 
 export function noEvidenceAnswer(): Answer {

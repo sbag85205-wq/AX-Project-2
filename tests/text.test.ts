@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { chunkPages, searchTerms, similarity } from '../supabase/functions/_shared/text';
-import { parseModelAnswer, type Evidence } from '../supabase/functions/_shared/answer';
+import { parseModelAnswer, parseRewriteQueries, type Evidence } from '../supabase/functions/_shared/answer';
 import { parseSettings } from '../supabase/functions/_shared/settings';
 
 describe('searchTerms', () => {
@@ -63,6 +63,29 @@ describe('parseModelAnswer', () => {
   });
   it('insufficient_evidence는 출처 없이 허용한다', () => {
     expect(parseModelAnswer('{"status":"insufficient_evidence","summary":["확인 불가"],"citations":[]}', ev).status).toBe('insufficient_evidence');
+  });
+});
+
+describe('parseRewriteQueries', () => {
+  it('정상 JSON에서 검색 문장 배열을 돌려준다', () => {
+    expect(parseRewriteQueries('{"queries":["출장 숙박비 한도","국내 출장 숙박비 기준","출장비 정산 규정"]}'))
+      .toEqual(['출장 숙박비 한도', '국내 출장 숙박비 기준', '출장비 정산 규정']);
+  });
+  it('생각 태그가 섞여 있어도 JSON만 읽는다', () => {
+    expect(parseRewriteQueries('<think>고민 중...</think>{"queries":["출장 숙박비 한도"]}'))
+      .toEqual(['출장 숙박비 한도']);
+  });
+  it('코드 블록으로 감싸져 있어도 읽는다', () => {
+    expect(parseRewriteQueries('```json\n{"queries":["출장 숙박비 한도","출장비 정산 규정"]}\n```'))
+      .toEqual(['출장 숙박비 한도', '출장비 정산 규정']);
+  });
+  it('빈 문자열은 빼고 최대 3개만 남긴다', () => {
+    expect(parseRewriteQueries('{"queries":["출장 숙박비 한도","","국내 출장 숙박비 기준","출장비 정산 규정","여분 문장"]}'))
+      .toEqual(['출장 숙박비 한도', '국내 출장 숙박비 기준', '출장비 정산 규정']);
+  });
+  it('JSON이 깨지면 예외를 던진다', () => {
+    expect(() => parseRewriteQueries('이건 JSON이 아니에요')).toThrow();
+    expect(() => parseRewriteQueries('{"queries":[]}')).toThrow();
   });
 });
 
