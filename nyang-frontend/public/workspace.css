@@ -220,3 +220,67 @@ body[data-mode=cat] #toast{background:var(--ui-panel);border:1px solid var(--ui-
 @media(max-width:1150px){.workspace-header{grid-template-columns:minmax(210px,1fr) auto minmax(210px,1fr);padding:0 22px;gap:12px}.header-brand{gap:10px}.company-logo{width:76px}body[data-mode=cat] .workspace-header .brand{font-size:18px}.workspace-nav.side-nav>button{padding-left:9px;padding-right:9px}.desktop-workspace :is(.calendar-page,.todos-page,.community-page){padding-left:30px;padding-right:30px}.desktop-workspace .calendar-layout{grid-template-columns:minmax(0,1fr) 205px;gap:18px}.desktop-workspace .day-agenda{padding-left:18px}.desktop-workspace .board-summary>p{max-width:280px}.desktop-workspace .board-controls{flex-wrap:wrap}.desktop-workspace .calendar-cell{height:78px}}
 @media(max-width:950px){.desktop-workspace .calendar-layout{grid-template-columns:1fr}.desktop-workspace .day-agenda{border-left:0;border-top:1px solid var(--ui-line);padding:20px 0}.desktop-workspace .board-summary>p{display:none}.desktop-workspace .chat-transcript,.desktop-workspace .chat-compose-dock{padding-left:24px;padding-right:24px}.desktop-workspace .chat-room .chat-message-body{padding-right:0}.desktop-workspace .chat-starters>button{padding-left:14px;padding-right:14px}.desktop-workspace .todo-controls>span{display:none}}
 @media(max-height:760px){body[data-mode=cat]{--resident-size:200px;--room-center:calc((100dvh - 150px)*.45)}.desktop-workspace .home-scene .resident-speech{top:calc(var(--room-center) - var(--resident-size)/2 - 95px)}.desktop-workspace .home-scene .resident-speech h1{font-size:30px}.desktop-workspace .home-scene .resident-speech p{font-size:13px;margin-top:9px}.desktop-workspace .cat-resident-stage{height:calc(var(--room-center) + var(--resident-size)/2 + 25px)}.desktop-workspace .chat-home-below{gap:12px}.desktop-workspace .chat-home-below .input-row{padding-top:15px;padding-bottom:9px}.desktop-workspace .chat-home{padding-bottom:15px}}
+
+/* Conversation history stays beside chat; primary navigation remains above. */
+.chat-layout{display:flex;width:100%;height:100%;min-height:0;overflow:hidden}
+.chat-workspace{flex:1;min-width:0;height:100%;position:relative;overflow:hidden}
+.chat-history{width:240px;flex:0 0 240px;display:flex;flex-direction:column;background:var(--ui-side);border-right:1px solid var(--ui-line);color:var(--ui-ink);min-height:0}
+.chat-history-heading{display:flex;align-items:center;justify-content:space-between;padding:20px 16px 12px;gap:8px}
+.chat-history-heading h2{font-size:14px;font-weight:600;letter-spacing:-.3px;margin:0}
+.chat-history-heading .icon-button{color:var(--ui-sub);flex-shrink:0}
+.chat-history-list{flex:1;min-height:0;overflow-y:auto;padding:0 10px 18px;scrollbar-width:thin;scrollbar-color:var(--ui-line) transparent}
+.chat-history-list h3{font-size:11px;font-weight:500;color:var(--ui-faint);margin:19px 10px 7px}
+.chat-history-item{display:block;width:100%;border:0;border-radius:9px;padding:11px 10px;background:transparent;text-align:left;color:var(--ui-ink);margin:3px 0}
+.chat-history-item:hover{background:var(--ui-selection)}
+.chat-history-item.selected{background:var(--ui-selection)}
+.chat-history-item>span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;line-height:1.6;font-weight:500}
+.chat-history-item small{display:block;margin-top:4px;font-size:11px;line-height:1.4;color:var(--ui-sub)}
+.chat-history-note{margin:0;padding:15px 20px;border-top:1px solid var(--ui-line);font-size:11px;line-height:1.8;color:var(--ui-faint)}
+.chat-history-empty{padding:35px 10px;color:var(--ui-sub)}
+.chat-history-empty p{font-size:13px;margin:0 0 10px}.chat-history-empty span{font-size:12px;line-height:1.8;color:var(--ui-faint)}
+.chat-history.is-collapsed{width:50px;flex-basis:50px}.chat-history.is-collapsed .chat-history-heading{padding:18px 7px}.chat-history.is-collapsed :is(h2,.chat-history-note){display:none}
+@media(max-width:1100px){.chat-history{width:210px;flex-basis:210px}.desktop-workspace .chat-workspace .chat-home{padding-left:22px;padding-right:22px}.desktop-workspace .chat-workspace .chat-room .chat-row{gap:10px}.desktop-workspace .chat-workspace .chat-room .chat-message-body{padding-right:0}}
+
+.chat-history-filter{padding:0 16px 8px}.chat-history-filter label{display:block;font-size:11px;color:var(--ui-sub);margin-bottom:7px}
+.chat-history-filter select{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--ui-line);border-radius:8px;background:var(--ui-panel);color:var(--ui-ink);font-size:12px;cursor:pointer}
+.chat-history-filter p{font-size:11px;color:var(--ui-faint);margin:10px 0 0}
+.chat-history.is-collapsed .chat-history-filter{display:none}
+
+.personality-options{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:22px 0}
+.personality-option{display:flex;flex-direction:column;align-items:flex-start;gap:12px;text-align:left;padding:22px 18px;border:1px solid var(--ui-line);border-radius:14px;background:var(--ui-fill);color:var(--ui-ink)}
+.personality-option.selected{border-color:var(--ui-accent);box-shadow:0 0 0 1px var(--ui-accent)}
+.personality-option>.icon{width:25px;height:25px;color:var(--ui-sub)}.personality-option[data-personality=warm]>.icon{color:#c28539}
+.personality-option strong{font-size:17px}.personality-option>span{font-size:12px;color:var(--ui-sub);line-height:1.7}.personality-option q{font-size:13px;line-height:1.8;margin:3px 0}.personality-option small{font-size:12px;color:var(--ui-accent);margin-top:auto}
+.personality-note{font-size:12px;color:var(--ui-sub);line-height:1.8}
+body[data-personality=warm] #personality-button .icon{color:#c28539}
+
+/* Animate one body layer only; the high-resolution sprite and blink remain intact. */
+body[data-personality] .resident-portrait .pet-body{transform-origin:50% 90%;filter:none;animation-timing-function:ease-in-out}
+body[data-personality=warm] .resident-portrait .pet-body{animation:warm-idle 4.2s ease-in-out infinite}
+body[data-personality=cold] .resident-portrait .pet-body{animation:cold-idle 7s ease-in-out infinite}
+body[data-personality=warm] .resident-portrait .pet-body.pet-engaged{animation:warm-nuzzle 1.1s ease-in-out infinite}
+body[data-personality=cold] .resident-portrait .pet-body.pet-engaged{animation:cold-recoil 1.5s ease-in-out infinite}
+body[data-personality=warm] .resident-portrait .pet-body.pet-like{animation:warm-nuzzle 1.1s ease-in-out infinite}
+body[data-personality=cold] .resident-portrait .pet-body.pet-like{animation:cold-shy 1.6s ease-in-out infinite}
+body[data-personality=warm] .resident-portrait .pet-body.pet-dislike{animation:warm-boundary 1.8s ease-in-out infinite}
+body[data-personality=cold] .resident-portrait .pet-body.pet-dislike{animation:cold-boundary 1.3s ease-in-out infinite}
+body[data-personality=warm] .resident-portrait .pet-body:is(.delighted,.pet-bonus){animation:warm-celebrate .8s ease-in-out infinite}
+body[data-personality=cold] .resident-portrait .pet-body:is(.delighted,.pet-bonus){animation:cold-celebrate 1.8s ease-in-out infinite}
+body[data-personality=warm] .pet-wag-tail{animation-duration:.7s}
+body[data-personality=cold] .pet-wag-tail{animation-duration:1.2s}
+/* Hover keeps the same upright idle; expressive reactions require a press. */
+@keyframes warm-idle{0%,100%{transform:translateY(0)}50%{transform:translateY(-2%)}}
+@keyframes cold-idle{0%,65%,100%{transform:translateY(0)}78%,88%{transform:translateY(-1%)}}
+@keyframes warm-nuzzle{0%,100%{transform:translateY(0)}50%{transform:translateY(-2%)}}
+@keyframes cold-recoil{0%,100%{transform:translateY(0)}25%{transform:translateY(1%)}}
+@keyframes cold-shy{0%,100%{transform:translateY(0)}50%{transform:translateY(-.5%)}}
+@keyframes warm-boundary{0%,100%{transform:translateY(0)}50%{transform:translateY(1%)}}
+@keyframes cold-boundary{0%,100%{transform:translateY(0)}35%{transform:translateY(1.5%)}}
+@keyframes warm-celebrate{0%,100%{transform:translateY(0)}45%{transform:translateY(-3%)}}
+@keyframes cold-celebrate{0%,100%{transform:translateY(0)}50%{transform:translateY(-1%)}}
+.personality-preview{display:block;position:relative;width:110px;height:110px;align-self:center;margin:4px 0 10px;transform-origin:50% 90%}
+.personality-preview .cat-art{width:100%;height:100%;animation:none!important}
+.personality-option[data-personality=warm] .personality-preview{animation:warm-nuzzle 1.4s ease-in-out infinite}
+.personality-option[data-personality=cold] .personality-preview{animation:cold-recoil 3s ease-in-out infinite}
+body.motion-paused[data-personality] .resident-portrait .pet-body,body.motion-paused .personality-preview{animation:none!important;transform:none!important}
+@media(prefers-reduced-motion:reduce){body[data-personality] .resident-portrait .pet-body,.personality-preview{animation:none!important;transform:none!important}}

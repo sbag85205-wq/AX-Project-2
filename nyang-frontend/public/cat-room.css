@@ -34,7 +34,7 @@ body[data-mode=cat] .bottom-note{min-height:29px;background:#fffdfb;font-size:9p
 .cat-direct-hint{text-align:center;color:#867762;background:#fffdf6e6;padding:18px;border-radius:12px;font-size:11px;margin:8px auto 0;max-width:560px}
 .cat-below>.composer{margin:12px 5px 0;box-shadow:0 8px 25px #54402516;border-color:#fff;background:#fffefa;flex-shrink:0}
 .motion-paused .cat-art.resident,.motion-paused .resident-shadow,.motion-paused .resident-spark{animation-play-state:paused}
-@keyframes cat-breathe{0%,100%{transform:translateY(0) rotate(-.7deg) scale(1,1)}35%{transform:translateY(-5px) rotate(.7deg) scale(1.012,1.027)}65%{transform:translateY(-3px) rotate(.3deg) scale(1.008,1.019)}}
+@keyframes cat-breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 @keyframes cat-shadow{0%,100%{transform:translateX(-50%) scale(1);opacity:.7}40%{transform:translateX(-50%) scale(.91);opacity:.45}}
 @keyframes cat-spark{0%,100%{opacity:.3;transform:translateY(0) scale(.8)}50%{opacity:.9;transform:translateY(-7px) scale(1)}}
 .background-presets{display:grid;grid-template-columns:1fr 1fr;gap:14px}

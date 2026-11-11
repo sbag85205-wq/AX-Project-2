@@ -16,7 +16,7 @@ body[data-mode=cat] .bottom-note{height:29px;flex-shrink:0}
 @keyframes cat-blink{0%,38%,42%,73%,77%,100%{opacity:0}40%,75%{opacity:1}}
 @keyframes cat-open-eyes{0%,38%,42%,73%,77%,100%{opacity:1}40%,75%{opacity:0}}
 .cat-art.happy{animation:cat-delighted 1.6s ease-in-out infinite!important}
-@keyframes cat-delighted{0%,100%{transform:rotate(-3deg) translateY(0)}50%{transform:rotate(3deg) translateY(-8px)}}
+@keyframes cat-delighted{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .motion-paused .cat-art::before,.motion-paused .cat-art::after,.motion-paused .cat-art.happy,.motion-paused .collect-heart,.motion-paused .cat-outfit{animation-play-state:paused!important}
 .resident-portrait{overflow:visible}
 .pet-body{position:absolute;inset:0;transform-origin:50% 88%;animation:cat-breathe 4.6s ease-in-out infinite;pointer-events:none;z-index:2}.pet-body .cat-art.resident{animation:none!important}.pet-body.delighted{animation:cat-delighted 1.6s ease-in-out infinite}.motion-paused .pet-body{animation-play-state:paused}.pet-body .cat-outfit{z-index:3}

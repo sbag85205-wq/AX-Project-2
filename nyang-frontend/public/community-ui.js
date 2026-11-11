@@ -1,5 +1,5 @@
-import {boardView} from './board-view.js?v=04100caff5d0';
-import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=e27536a53c71';
+import {boardView} from './board-view.js?v=900015a8f3b1';
+import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=8e24d5477306';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const labels={hr:'휴가 · 근태',pay:'급여 · 복지',trip:'출장 · 정산',life:'사내 생활'};
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
