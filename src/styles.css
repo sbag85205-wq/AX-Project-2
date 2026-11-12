@@ -249,6 +249,8 @@ button.grid-row[aria-pressed='true'] { background: #f2f5fe; box-shadow: inset 4p
 .hbar { display: grid; grid-template-columns: 84px minmax(0, 1fr) 44px; gap: 12px; align-items: center; font-size: 14px; }
 .hbar .bar-track { height: 12px; border-radius: 6px; }
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.dropzone { padding: 14px; border: 2px dashed var(--input); border-radius: 12px; }
+.dropzone.dragging { border-color: var(--primary); background: var(--primary-soft); }
 .list-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--line-soft); }
 .list-row:last-child { border-bottom: 0; }
 .list-main { flex: 1 1 260px; min-width: 0; }
