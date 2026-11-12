@@ -10,7 +10,19 @@
 > 이 배포본에는 **가상 문서만** 올려서 시연해 주세요. 사내 운영 전환 방법은 아래 [사내 서버로 옮길 때](#사내-서버로-옮길-때)를 참고하세요.
 
 - **사이트**: https://cheonax-n.duckdns.org (냥대리 디자인)
-- **사용자 가이드**: 직원·담당자용 사용법은 [docs/USER_GUIDE.md](docs/USER_GUIDE.md)에 있어요.
+
+> [!TIP]
+> **사용자 가이드** — 직원·담당자(관리자)의 사용 방법은 **[사용자 가이드 (docs/USER_GUIDE.md)](docs/USER_GUIDE.md)** 에서 확인할 수 있어요.
+
+## 화면 미리보기
+
+<p align="center">
+  <img src="docs/images/readme-01-chat.png" alt="직원 챗봇 화면" width="32%">
+  <img src="docs/images/readme-02-documents.png" alt="문서 화면" width="32%">
+  <img src="docs/images/readme-03-admin-stats.png" alt="관리자 이용 통계 화면" width="32%">
+</p>
+
+> **화면별 상세 기능과 사용 방법은 [사용자 가이드](docs/USER_GUIDE.md)에서 확인할 수 있습니다.**
 
 ## 기능
 
