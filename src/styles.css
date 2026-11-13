@@ -85,6 +85,7 @@ h1, h2, h3 { margin: 0; line-height: 1.35; }
   max-width: 1320px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap;
   align-items: center; gap: 12px 28px;
 }
+.back-btn { gap: 4px; margin-right: -16px; color: var(--muted); }
 .brand { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 800; letter-spacing: -.8px; color: var(--text); text-decoration: none; }
 .nav { display: flex; gap: 4px; flex-wrap: wrap; }
 .nav a { padding: 10px 14px; border-radius: 8px; color: var(--muted); text-decoration: none; font-weight: 500; }
