@@ -7,12 +7,13 @@ import { useToast } from '../components/Toast';
 import { ask, errorMessage, sendFeedback } from '../lib/api';
 import { ATTACH_ACCEPT, ATTACH_MAX, prepareAttachment } from '../lib/attach';
 import { useAuth } from '../lib/auth';
-import { SUGGESTED_QUESTIONS } from '../lib/constants';
+import { CATEGORY_SUGGESTIONS, SUGGESTED_QUESTIONS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import type { ChatAttachment, Citation, Conversation, Message } from '../lib/types';
 
 const MAX_LEN = 2000;
 const ATTACH_ONLY_QUESTION = '첨부한 자료와 관련된 사내 규정이나 절차를 알려 주세요.';
+const TOPICS = Object.keys(CATEGORY_SUGGESTIONS);
 
 /** 저장된 대화에는 첨부 파일이 없으므로, 뒤따르는 답변에 남은 이름·읽음 여부로 표시한다. */
 function withAttachmentNotes(list: Message[]): Message[] {
@@ -52,6 +53,7 @@ export default function Chat() {
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [preparing, setPreparing] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [topic, setTopic] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -107,6 +109,12 @@ export default function Chat() {
     e.preventDefault();
     setDragging(false);
     addFiles([...e.dataTransfer.files]);
+  };
+
+  // 연관 검색어는 바로 보내지 않고 입력칸에 채워, 뒤에 궁금한 점을 이어 쓰게 한다.
+  const fillInput = (keyword: string) => {
+    setInput(`${keyword} `);
+    inputRef.current?.focus();
   };
 
   const newConversation = () => {
@@ -220,11 +228,35 @@ export default function Chat() {
                 </div>
                 <h1>{profile?.display_name ?? ''}님, 무엇이 궁금하세요?</h1>
                 <p>사내 규정과 매뉴얼에서 근거를 찾아 출처와 함께 알려드려요.</p>
+                <div className="chips topic-chips" role="group" aria-label="카테고리별 추천 질문">
+                  <button type="button" className="chip" aria-pressed={!topic} onClick={() => setTopic(null)}>전체</button>
+                  {TOPICS.map((c) => (
+                    <button type="button" key={c} className="chip" aria-pressed={topic === c} onClick={() => setTopic(c)}>{c}</button>
+                  ))}
+                </div>
                 <div className="suggestions" aria-label="추천 질문">
-                  {SUGGESTED_QUESTIONS.map((q) => (
+                  {(topic ? CATEGORY_SUGGESTIONS[topic].questions : SUGGESTED_QUESTIONS).map((q) => (
                     <button type="button" key={q} className="suggestion" onClick={() => submit(q)}>{q}</button>
                   ))}
                 </div>
+                {topic && (
+                  <div className="related" aria-label="연관 검색어">
+                    <span className="hint">연관 검색어</span>
+                    {CATEGORY_SUGGESTIONS[topic].keywords.map((k) => (
+                      <button type="button" key={k} className="related-word" onClick={() => fillInput(k)}>#{k}</button>
+                    ))}
+                  </div>
+                )}
+                <details className="ask-guide">
+                  <summary>처음이신가요? 이렇게 물어보세요</summary>
+                  <ul>
+                    <li><b>물어볼 수 있는 것</b>: 등록된 사내 규정·매뉴얼 내용이에요. ({TOPICS.join(' · ')})</li>
+                    <li><b>구체적으로</b>: "휴가"보다 "연차는 며칠 전에 신청해야 하나요?"처럼 상황을 넣어 물어보세요.</li>
+                    <li><b>한 번에 하나씩</b>: 질문 하나에 궁금한 것 하나를 담으면 더 정확하게 찾아요.</li>
+                    <li><b>출처 확인</b>: 답변 아래 출처를 누르면 문서 원문을 바로 볼 수 있어요.</li>
+                    <li><b>답이 없을 때</b>: 문서에 근거가 없으면 지어내지 않고 알려 드려요. 그 질문은 이름 없이 담당자에게 전달돼 FAQ로 보강돼요.</li>
+                  </ul>
+                </details>
               </div>
             )}
             {messages.map((m) =>

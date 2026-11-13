@@ -186,6 +186,14 @@ h1, h2, h3 { margin: 0; line-height: 1.35; }
   font-size: 14px; color: #55657a;
 }
 .suggestion:hover { background: #eff5fd; border-color: #c8d9ee; color: var(--primary); }
+.topic-chips { justify-content: center; max-width: 720px; margin-top: 6px; }
+.related { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 10px; max-width: 720px; }
+.related-word { padding: 4px 2px; border: 0; background: none; cursor: pointer; font-size: 14px; color: var(--primary-ink); }
+.related-word:hover { text-decoration: underline; }
+.ask-guide { width: 100%; max-width: 720px; margin-top: 6px; text-align: left; font-size: 14px; color: var(--muted); }
+.ask-guide summary { cursor: pointer; text-align: center; color: var(--text-2); font-weight: 500; }
+.ask-guide ul { margin: 10px 0 0; padding: 14px 18px 14px 34px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); line-height: 1.7; }
+.ask-guide b { color: var(--text-2); }
 .composer-wrap { background: var(--bg); padding: 4px 24px 18px; }
 .composer {
   max-width: 812px; margin: 0 auto; padding: 10px 10px 10px 14px; display: flex; gap: 10px; align-items: flex-end;
