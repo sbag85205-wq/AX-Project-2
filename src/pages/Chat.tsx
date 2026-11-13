@@ -216,7 +216,7 @@ export default function Chat() {
               <div className="welcome">
                 <div className="welcome-scene">
                   <span className="scene-shadow" aria-hidden="true" />
-                  <Mascot size={176} bob />
+                  <Mascot size={176} bob pettable />
                 </div>
                 <h1>{profile?.display_name ?? ''}님, 무엇이 궁금하세요?</h1>
                 <p>사내 규정과 매뉴얼에서 근거를 찾아 출처와 함께 알려드려요.</p>
