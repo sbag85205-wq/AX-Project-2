@@ -216,7 +216,15 @@ h1, h2, h3 { margin: 0; line-height: 1.35; }
 .mascot-bob { animation: cat-breathe 3.6s ease-in-out infinite; transform-origin: 50% 100%; }
 @keyframes cat-breathe { 0%, 100% { transform: translateY(0) scale(1, 1) } 45% { transform: translateY(-2px) scale(1.01, .99) } }
 @keyframes cat-blink { 0%, 38%, 42%, 73%, 77%, 100% { opacity: 0 } 40%, 75% { opacity: 1 } }
-@media (prefers-reduced-motion: reduce) { .mascot-bob, .cat-blink, .typing span { animation: none; } }
+.mascot-pet { position: relative; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 50%; }
+.mascot-pet:focus-visible { outline: 3px solid var(--primary-tint); outline-offset: 4px; }
+.mascot-petted { animation: cat-pet .6s ease-out; transform-origin: 50% 100%; }
+@keyframes cat-pet { 0%, 100% { transform: translateY(0) scale(1, 1) } 30% { transform: translateY(-8px) scale(.97, 1.04) } 60% { transform: translateY(0) scale(1.04, .96) } }
+.pet-bubble {
+  position: absolute; left: 50%; top: -4px; transform: translateX(-50%); white-space: nowrap; padding: 6px 12px; border-radius: 14px;
+  background: var(--surface); color: var(--text-2); font-size: 14px; font-weight: 600; box-shadow: var(--shadow); border: 1px solid var(--line);
+}
+@media (prefers-reduced-motion: reduce) { .mascot-bob, .cat-blink, .typing span, .mascot-petted { animation: none; } }
 
 /* ── 관리자 ── */
 .admin-main { max-width: 1320px; margin: 0 auto; padding: 32px 24px 64px; display: flex; flex-direction: column; gap: 24px; }
