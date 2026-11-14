@@ -145,11 +145,11 @@ export default function Unanswered() {
         <section className="card" aria-label="자주 묻는 미등록 질문" style={{ flex: '999 1 560px', minWidth: 0, overflow: 'hidden' }}>
           <div style={{ padding: '20px 24px 16px', display: 'flex', flexDirection: 'column', gap: 14, borderBottom: '1px solid var(--line)' }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <h2 style={{ fontSize: 19 }}>자주 묻는 미등록 질문</h2>
+              <h2>자주 묻는 미등록 질문</h2>
               <div style={{ position: 'relative', flex: '0 1 280px' }}>
                 <label htmlFor="q-search" className="sr">질문 검색</label>
-                <input id="q-search" type="search" className="input" style={{ paddingLeft: 40 }} placeholder="질문 검색" value={q} onChange={(e) => setQ(e.target.value)} />
-                <span style={{ position: 'absolute', left: 13, top: 13, color: 'var(--faint)' }}><SearchIcon /></span>
+                <input id="q-search" type="search" className="input" style={{ paddingLeft: 36 }} placeholder="질문 검색" value={q} onChange={(e) => setQ(e.target.value)} />
+                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', display: 'flex', color: 'var(--faint)' }}><SearchIcon /></span>
               </div>
             </div>
             <div role="group" aria-label="처리 상태" className="tabs">
@@ -174,17 +174,17 @@ export default function Unanswered() {
               {!loading && filtered.length === 0 && <div className="empty">조건에 맞는 질문이 없어요.</div>}
               {filtered.map((i, idx) => (
                 <button key={i.id} type="button" className="grid-row" style={{ gridTemplateColumns: COLS }} aria-pressed={selected?.id === i.id} onClick={() => setSelectedId(i.id)}>
-                  <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--muted)' }}>{idx + 1}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)' }}>{idx + 1}</div>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontWeight: 600 }}>{i.question}</div>
                     <div className="hint">비슷한 표현 {i.count}개 · 이번 주 +{i.week}</div>
                   </div>
-                  <div style={{ fontSize: 14 }}>{i.category}</div>
+                  <div>{i.category}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <b style={{ minWidth: 28 }}>{i.count}</b>
                     <span className="bar-track"><span className="bar-fill" style={{ width: `${Math.round((i.count / max) * 100)}%` }} /></span>
                   </div>
-                  <div className="hint" style={{ fontSize: 14 }}>{relativeDay(i.last_asked_at)}</div>
+                  <div className="hint">{relativeDay(i.last_asked_at)}</div>
                   <div><span className={`pill ${PILL[i.status]}`}>{i.status}</span></div>
                 </button>
               ))}
@@ -201,14 +201,14 @@ export default function Unanswered() {
                 <span className="hint" style={{ fontWeight: 600 }}>선택한 질문 · {selected.category}</span>
                 <span className={`pill ${PILL[selected.status]}`}>{selected.status}</span>
               </div>
-              <h2 style={{ fontSize: 20 }}>{selected.question}</h2>
+              <h2>{selected.question}</h2>
               <div className="mini-stats">
                 <div className="mini-stat"><div>총 질문</div><div>{selected.count}회</div></div>
                 <div className="mini-stat"><div>이번 주</div><div>+{selected.week}</div></div>
                 <div className="mini-stat"><div>최근</div><div>{relativeDay(selected.last_asked_at)}</div></div>
               </div>
               <div>
-                <h3 style={{ fontSize: 15, marginBottom: 10 }}>직원들은 이렇게 물어봤어요</h3>
+                <h3 style={{ fontSize: 14, marginBottom: 10 }}>직원들은 이렇게 물어봤어요</h3>
                 <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {[...selected.question_variants]
                     .sort((a, b) => b.created_at.localeCompare(a.created_at))
@@ -223,12 +223,12 @@ export default function Unanswered() {
               </div>
               {selected.status === 'FAQ 등록 완료' ? (
                 <div style={{ background: 'var(--ok-tint)', border: '1px solid var(--ok-line)', borderRadius: 10, padding: '14px 16px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ok)', marginBottom: 4 }}>등록된 FAQ 답변</div>
-                  <div style={{ fontSize: 14, whiteSpace: 'pre-line' }}>{selected.faqs?.answer ?? '(삭제된 FAQ)'}</div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--ok)', marginBottom: 4 }}>등록된 FAQ 답변</div>
+                  <div style={{ whiteSpace: 'pre-line' }}>{selected.faqs?.answer ?? '(삭제된 FAQ)'}</div>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <button type="button" className="btn btn-primary" style={{ minHeight: 48, fontSize: 16 }}
+                  <button type="button" className="btn btn-primary" style={{ minHeight: 40, fontSize: 14 }}
                     onClick={() => setDraft({ question: selected.question, answer: '', category: CATEGORIES.includes(selected.category as never) ? selected.category : '기타' })}>
                     FAQ로 등록하기
                   </button>

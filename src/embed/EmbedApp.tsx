@@ -15,7 +15,7 @@ import { notifyParent } from './bridge';
 
 function RouteReporter() {
   const location = useLocation();
-  useEffect(() => { notifyParent({ type: 'knowly-embed-route', route: location.pathname + location.search }); window.scrollTo(0, 0); }, [location]);
+  useEffect(() => { document.body.dataset.route = location.pathname; notifyParent({ type: 'knowly-embed-route', route: location.pathname + location.search }); window.scrollTo(0, 0); }, [location]);
   return null;
 }
 

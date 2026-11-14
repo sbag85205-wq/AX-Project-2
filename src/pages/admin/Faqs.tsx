@@ -95,7 +95,7 @@ export default function Faqs() {
             <label htmlFor="faq-a">답변</label>
             <textarea id="faq-a" className="textarea" rows={5} value={draft.answer} onChange={(e) => setDraft({ ...draft, answer: e.target.value })} />
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <input type="checkbox" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} /> 챗봇에서 사용
           </label>
         </Modal>
