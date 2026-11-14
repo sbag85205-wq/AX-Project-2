@@ -65,4 +65,4 @@ npm run build
 
 직원 계정으로 질문하면 서버의 `/api/knowly`가 main 브랜치의 Supabase `chat` 함수(등록 FAQ → 문서 키워드·의미 검색 → AI 요약 → 출처 검증)에 질문을 전달하고, 근거가 있는 답을 기존 답변 카드 모양으로 보여 줍니다. 근거가 없거나 연결 설정이 없으면 기존 샘플 FAQ·키워드 답변을 그대로 씁니다. 질문 예시 버튼, 다른 분야 질문, 개인 정보 질문은 기존 방식으로 처리합니다.
 
-서버 환경 변수(`.env.example` 참고, 값은 Sites secrets로만 설정): `KNOWLY_SUPABASE_URL`, `KNOWLY_SUPABASE_KEY`(publishable key), `KNOWLY_LOGIN_EMAIL`, `KNOWLY_LOGIN_PASSWORD`(Knowly 관리자 화면에서 발급한 직원 계정). 비밀번호와 토큰은 브라우저로 보내지 않습니다. 문서 등록·FAQ·검색 모델 설정은 main의 Knowly 관리자 화면에서 관리합니다.
+서버 환경 변수(`.env.example` 참고, 값은 Sites secrets로만 설정): `KNOWLY_SUPABASE_URL`, `KNOWLY_SUPABASE_KEY`(publishable key), `KNOWLY_LOGIN_EMAIL`, `KNOWLY_LOGIN_PASSWORD`(Knowly 관리자 화면에서 발급한 직원 계정). 비밀번호와 토큰은 브라우저로 보내지 않습니다. 담당자(admin01) 화면의 FAQ 관리·문서 관리·사용자 관리·검색 모델 설정과 이용통계 하단의 ‘사내 문서 검색 이용 현황·답하지 못한 질문’은 `/api/knowly-admin`을 거쳐 main의 Knowly 관리자 기능(Supabase 테이블, `ingest`·`admin-users`·`admin-settings` 함수, `admin_usage_stats`)을 그대로 사용합니다. 이 기능에는 `KNOWLY_ADMIN_EMAIL`, `KNOWLY_ADMIN_PASSWORD`(Knowly 관리자 역할 계정)가 필요하며, 비어 있으면 기존 샘플 관리자 화면을 보여 줍니다. 서버는 정해 둔 작업만 허용하고 입력을 검사합니다. 냥대리에서는 텍스트 문서(.txt·.md·.csv)와 붙여 넣은 글을 등록할 수 있고, PDF·엑셀 원본 등록은 Knowly 관리자 화면에서 합니다.

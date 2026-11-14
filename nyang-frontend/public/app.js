@@ -8,6 +8,7 @@ import {categories,documents,faq,answers,reference,resolveQuestion,localDate,add
 import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=7d55f062fd27';
 import {createPetInteraction} from './pet-interaction.js?v=355c0da8eb14';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies} from './activity-history.js?v=7e17914f64fb';
+import {createKnowlyAdmin} from './knowly-admin.js?v=44d0f6b369f3';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const mode=document.body.dataset.mode;
@@ -35,6 +36,8 @@ if(!seenReplies||typeof seenReplies!=='object')seenReplies={};
 const allDocs=()=>[...documents,...uploads];
 const badge=(text,cls='')=>`<span class="badge ${cls}">${text}</span>`;
 function toast(text){let el=$('#toast');if(!el){el=document.createElement('div');el.id='toast';el.setAttribute('role','status');document.body.append(el);}el.textContent=text;el.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>el.classList.remove('show'),3500);}
+// 담당자 화면을 main 백엔드(Knowly) 관리자 기능에 연결. 연결 설정이 없으면 기존 샘플 화면을 그대로 보여준다.
+const knowlyAdmin=createKnowlyAdmin({toast,onChange:changed=>{if(view===changed&&communityState().me?.role==='staff')render();}});knowlyAdmin.bind();
 const systemColorTheme=matchMedia('(prefers-color-scheme: dark)');
 function applyColorTheme(theme){
  const dark=theme==='dark';
@@ -113,7 +116,7 @@ function render(){
  $('#page-title').textContent={chat:'냥대리에게 물어보기',calendar:'내 캘린더',todos:'내가 해야 할 일',activity:'나의 질문 활동',board:'익명 질문 게시판',statistics:'이용통계',faq:'FAQ 관리',documents:'문서 관리',users:'사용자 관리',model:'검색 모델 설정'}[view];
  if(staff&&view==='board')$('#workspace-title').textContent='미등록 질문';
  $('#main').classList.toggle('work-view',view!=='chat');updateWallet();
- if(['faq','documents','users','model'].includes(view))$('#main').innerHTML=adminView(view,session.me.role,view==='documents'?documentQuery:adminQuery,view==='documents'?documentCategory:adminCategory,allDocs());else if(view==='statistics')$('#main').innerHTML=statsHTML();else if(view==='activity')$('#main').innerHTML=activityHTML(activityContent());else if(view==='board')$('#main').innerHTML=boardHTML();else if(view==='calendar')renderCalendar();else if(view==='todos')renderTodos();else renderCat();
+ if(['faq','documents','users','model'].includes(view))$('#main').innerHTML=knowlyAdmin.html(view)??adminView(view,session.me.role,view==='documents'?documentQuery:adminQuery,view==='documents'?documentCategory:adminCategory,allDocs());else if(view==='statistics')$('#main').innerHTML=statsHTML()+knowlyAdmin.statsHTML();else if(view==='activity')$('#main').innerHTML=activityHTML(activityContent());else if(view==='board')$('#main').innerHTML=boardHTML();else if(view==='calendar')renderCalendar();else if(view==='todos')renderTodos();else renderCat();
 }
 async function commitReward(event){
  const payload={type:event.type,id:crypto.randomUUID()};

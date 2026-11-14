@@ -4,15 +4,19 @@ import {AppError} from './community.mjs';
 
 const MAX_QUESTION=1000;
 const TIMEOUT_MS=25000;
-let cached=null; // {key, token, expires}
+const tokens=new Map(); // `${url}|${email}` → {token, expires}
 
-export function knowlyConfig(env={}){
+function baseConfig(env,emailKey,passwordKey){
  const url=String(env.KNOWLY_SUPABASE_URL||'').trim().replace(/\/+$/,''),key=String(env.KNOWLY_SUPABASE_KEY||'').trim();
- const email=String(env.KNOWLY_LOGIN_EMAIL||'').trim(),password=String(env.KNOWLY_LOGIN_PASSWORD||'');
+ const email=String(env[emailKey]||'').trim(),password=String(env[passwordKey]||'');
  if(!/^https:\/\/[^\s/]+$/.test(url)&&!/^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(url))return null;
  if(!key||!email||!password)return null;
  return {url,key,email,password};
 }
+/** 직원 질문용 계정 설정 (없으면 null) */
+export const knowlyConfig=(env={})=>baseConfig(env,'KNOWLY_LOGIN_EMAIL','KNOWLY_LOGIN_PASSWORD');
+/** 관리자 화면용 계정 설정 (Knowly 관리자 역할 계정, 없으면 null) */
+export const knowlyAdminConfig=(env={})=>baseConfig(env,'KNOWLY_ADMIN_EMAIL','KNOWLY_ADMIN_PASSWORD');
 
 const text=(v,max=600)=>typeof v==='string'?v.trim().slice(0,max):'';
 const list=(v,max=8,len=600)=>(Array.isArray(v)?v:[]).map(x=>text(x,len)).filter(Boolean).slice(0,max);
@@ -39,16 +43,34 @@ async function timed(fetchImpl,url,init){
 }
 
 async function token(config,fetchImpl,now){
- const key=`${config.url}|${config.email}`;
- if(cached&&cached.key===key&&cached.expires>now+60000)return cached.token;
+ const key=`${config.url}|${config.email}`,hit=tokens.get(key);
+ if(hit&&hit.expires>now+60000)return hit.token;
  const res=await timed(fetchImpl,`${config.url}/auth/v1/token?grant_type=password`,{method:'POST',headers:{apikey:config.key,'Content-Type':'application/json'},body:JSON.stringify({email:config.email,password:config.password})});
  const data=await res.json().catch(()=>null);
- if(!res.ok||typeof data?.access_token!=='string'){cached=null;throw new AppError('문서 검색 서버에 로그인하지 못했어요. 담당자에게 연결 설정을 확인해 달라고 알려 주세요.',502);}
- cached={key,token:data.access_token,expires:now+Math.max(60,Number(data.expires_in)||3600)*1000};
- return cached.token;
+ if(!res.ok||typeof data?.access_token!=='string'){tokens.delete(key);throw new AppError('문서 검색 서버에 로그인하지 못했어요. 담당자에게 연결 설정을 확인해 달라고 알려 주세요.',502);}
+ tokens.set(key,{token:data.access_token,expires:now+Math.max(60,Number(data.expires_in)||3600)*1000});
+ return data.access_token;
 }
 
-export function resetKnowlyToken(){cached=null;}
+export function resetKnowlyToken(){tokens.clear();}
+
+/** 설정한 계정으로 Supabase API를 호출한다. 토큰이 만료돼 401이 오면 한 번 다시 로그인한다. */
+export async function knowlyFetch(config,path,init={},fetchImpl=fetch,now=Date.now()){
+ const call=async auth=>timed(fetchImpl,config.url+path,{...init,headers:{apikey:config.key,Authorization:`Bearer ${auth}`,...(init.body!==undefined?{'Content-Type':'application/json'}:{}),...(init.headers||{})}});
+ let res=await call(await token(config,fetchImpl,now));
+ if(res.status===401){tokens.delete(`${config.url}|${config.email}`);res=await call(await token(config,fetchImpl,now));}
+ return res;
+}
+
+/** Edge Function 결과를 읽고, 실패하면 서버가 보낸 한국어 메시지로 예외를 던진다. */
+export async function knowlyJson(res,fallback){
+ const data=await res.json().catch(()=>null);
+ if(!res.ok){
+  const message=text(data?.error?.message,300)||text(data?.message,300)||fallback;
+  throw new AppError(message,res.status>=500||res.status===401?502:res.status===403?403:400);
+ }
+ return data;
+}
 
 /** 질문을 main 백엔드에 보내고 정리된 답을 돌려준다. 설정이 없으면 503(화면은 기존 샘플 답변으로 대체). */
 export async function askKnowly(env,question,fetchImpl=fetch,now=Date.now()){
@@ -57,13 +79,7 @@ export async function askKnowly(env,question,fetchImpl=fetch,now=Date.now()){
  const q=text(question,MAX_QUESTION+1);
  if(!q)throw new AppError('질문을 입력해 주세요.',400);
  if(q.length>MAX_QUESTION)throw new AppError('질문은 1,000자 이내로 적어 주세요.',400);
- const call=async auth=>timed(fetchImpl,`${config.url}/functions/v1/chat`,{method:'POST',headers:{apikey:config.key,Authorization:`Bearer ${auth}`,'Content-Type':'application/json'},body:JSON.stringify({question:q,conversation_id:null})});
- let res=await call(await token(config,fetchImpl,now));
- if(res.status===401){cached=null;res=await call(await token(config,fetchImpl,now));}
- const data=await res.json().catch(()=>null);
- if(!res.ok){
-  const message=text(data?.error?.message,200)||'문서 검색 서버가 답하지 못했어요. 잠시 후 다시 시도해 주세요.';
-  throw new AppError(message,res.status>=500||res.status===401?502:res.status);
- }
+ const res=await knowlyFetch(config,'/functions/v1/chat',{method:'POST',body:JSON.stringify({question:q,conversation_id:null})},fetchImpl,now);
+ const data=await knowlyJson(res,'문서 검색 서버가 답하지 못했어요. 잠시 후 다시 시도해 주세요.');
  return toNyangAnswer(data?.answer);
 }

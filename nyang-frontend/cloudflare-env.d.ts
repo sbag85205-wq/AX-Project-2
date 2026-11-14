@@ -6,6 +6,8 @@ declare namespace Cloudflare {
     KNOWLY_SUPABASE_KEY?: string;
     KNOWLY_LOGIN_EMAIL?: string;
     KNOWLY_LOGIN_PASSWORD?: string;
+    KNOWLY_ADMIN_EMAIL?: string;
+    KNOWLY_ADMIN_PASSWORD?: string;
     DB?: D1Database;
     BUCKET?: R2Bucket;
   }
