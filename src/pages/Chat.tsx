@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type Dra
 import { AnswerCard } from '../components/AnswerCard';
 import { ClipIcon, CloseIcon, DocIcon, MenuIcon, PlusIcon, SendIcon, TrashIcon } from '../components/Icons';
 import { LoadError } from '../components/LoadError';
-import { Mascot } from '../components/Mascot';
+import { Mascot, type Mood } from '../components/Mascot';
 import { SourceModal } from '../components/SourceModal';
 import { useToast } from '../components/Toast';
 import { ask, errorMessage, sendFeedback } from '../lib/api';
@@ -23,6 +23,14 @@ function withAttachmentNotes(list: Message[]): Message[] {
     const notes = m.role === 'user' ? list[i + 1]?.answer?.attachments : undefined;
     return notes?.length ? { ...m, attachments: notes.map((n, j) => ({ id: `${m.id}-${j}`, ...n })) } : m;
   });
+}
+
+/** 답변 상태에 맞는 고양이 표정: 준비 중 → 찾는 중, 근거 부족 → 찡그림, '도움 됨' → 웃음 */
+function moodFor(m: Message | undefined): Mood {
+  if (m?.pending) return 'thinking';
+  if (m?.answer?.status === 'insufficient_evidence') return 'sorry';
+  if (m?.vote === 'up') return 'happy';
+  return 'idle';
 }
 
 function AttachmentChips({ items, onRemove }: { items: ChatAttachment[]; onRemove?: (id: string) => void }) {
@@ -61,6 +69,19 @@ export default function Chat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  // 화면에 보이는 대화. 답변을 기다리는 사이 다른 대화로 옮겨 가도 늦게 온 결과가 엉뚱한 대화에 붙지 않게,
+  // 대화를 바꿀 때마다 view 번호를 올리고 await 뒤에 같은 화면인지 확인한다.
+  const activeId = useRef<string | null>(null);
+  const view = useRef(0);
+
+  /** 보이는 대화를 바꾼다. 새 view 번호를 돌려준다. */
+  const showConversation = (id: string | null) => {
+    activeId.current = id;
+    setCurrentId(id);
+    setMessages([]);
+    setThreadError('');
+    return ++view.current;
+  };
 
   const loadConversations = useCallback(async () => {
     try {
@@ -79,22 +100,22 @@ export default function Chat() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
-  const openConversation = async (id: string) => {
-    setSideOpen(false);
-    if (id === currentId) return;
-    setCurrentId(id);
-    await loadMessages(id);
-  };
-
-  const loadMessages = async (id: string) => {
-    setMessages([]);
-    setThreadError('');
+  const loadMessages = async (id: string, token: number) => {
     try {
-      setMessages(withAttachmentNotes(await listMessages(id)));
+      const list = await listMessages(id);
+      if (view.current === token) setMessages(withAttachmentNotes(list));
     } catch (e) {
-      setThreadError(errorMessage(e));
+      if (view.current === token) setThreadError(errorMessage(e));
     }
   };
+
+  const openConversation = async (id: string) => {
+    setSideOpen(false);
+    if (id === activeId.current) return;
+    await loadMessages(id, showConversation(id));
+  };
+
+  const reloadConversation = (id: string) => loadMessages(id, showConversation(id));
 
   const addFiles = async (files: File[]) => {
     if (!files.length) return;
@@ -134,9 +155,7 @@ export default function Chat() {
   };
 
   const newConversation = () => {
-    setCurrentId(null);
-    setMessages([]);
-    setThreadError('');
+    showConversation(null);
     setSideOpen(false);
     inputRef.current?.focus();
   };
@@ -148,7 +167,7 @@ export default function Chat() {
     } catch (e) {
       return toast(errorMessage(e));
     }
-    if (id === currentId) newConversation();
+    if (id === activeId.current) newConversation();
     setConversations((list) => list.filter((c) => c.id !== id));
     toast('대화를 삭제했어요.');
   };
@@ -156,6 +175,7 @@ export default function Chat() {
   const submit = async (text: string, files: ChatAttachment[] = attachments) => {
     const question = text.trim() || (files.length ? ATTACH_ONLY_QUESTION : '');
     if (!question || busy || preparing) return;
+    const token = view.current;
     const now = new Date().toISOString();
     const tempUser: Message = { id: `u-${now}`, role: 'user', content: question, answer: null, vote: null, created_at: now, attachments: files };
     const tempBot: Message = { id: `b-${now}`, role: 'assistant', content: '', answer: null, vote: null, created_at: now, pending: true };
@@ -164,16 +184,20 @@ export default function Chat() {
     setAttachments([]);
     setBusy(true);
     try {
-      const res = await ask(question, currentId, files);
+      const res = await ask(question, activeId.current, files);
+      loadConversations();
+      // 기다리는 사이 다른 대화로 옮겼으면 지금 화면에 붙이지 않는다 (답변은 원래 대화에 저장돼 있다)
+      if (view.current !== token) return toast('이전 대화의 답변이 도착했어요. 대화 기록에서 볼 수 있어요.');
       const notes = res.answer.attachments ?? [];
       setMessages((m) => m.map((x) => {
         if (x.id === tempBot.id) return { ...x, id: res.message_id, answer: res.answer, content: res.answer.summary.join('\n'), pending: false };
         if (x.id === tempUser.id && files.length) return { ...x, attachments: files.map((f, i) => ({ ...f, read: notes[i]?.read })) };
         return x;
       }));
-      if (!currentId) setCurrentId(res.conversation_id);
-      loadConversations();
+      activeId.current ??= res.conversation_id;
+      setCurrentId((prev) => prev ?? res.conversation_id);
     } catch (e) {
+      if (view.current !== token) return toast(`이전 대화에서 보낸 질문에 답하지 못했어요. ${errorMessage(e)}`);
       setMessages((m) => m.map((x) => (x.id === tempBot.id ? { ...x, pending: false, error: errorMessage(e) } : x)));
     } finally {
       setBusy(false);
@@ -212,7 +236,7 @@ export default function Chat() {
   };
 
   const lastBot = [...messages].reverse().find((m) => m.role === 'assistant');
-  const mood = busy ? 'thinking' : lastBot?.answer?.status === 'insufficient_evidence' ? 'sorry' : lastBot?.vote === 'up' ? 'happy' : 'idle';
+  const mood: Mood = busy ? 'thinking' : moodFor(lastBot);
 
   return (
     <div className="chat-layout">
@@ -241,7 +265,7 @@ export default function Chat() {
             <button type="button" className="btn btn-sm mobile-only" style={{ alignSelf: 'flex-start' }} onClick={() => setSideOpen(!sideOpen)}>
               <MenuIcon /> 대화 기록
             </button>
-            {threadError && currentId && <LoadError message={threadError} onRetry={() => loadMessages(currentId)} />}
+            {threadError && currentId && <LoadError message={threadError} onRetry={() => reloadConversation(currentId)} />}
             {messages.length === 0 && !threadError && (
               <div className="welcome">
                 <div className="welcome-scene">
@@ -289,7 +313,7 @@ export default function Chat() {
                 </div>
               ) : (
                 <div key={m.id} className="bot-row">
-                  <Mascot size={48} avatar mood={m.pending ? 'thinking' : m.answer?.status === 'insufficient_evidence' ? 'sorry' : m.vote === 'up' ? 'happy' : 'idle'} />
+                  <Mascot size={48} avatar mood={moodFor(m)} />
                   {m.pending ? (
                     <div className="bot-card" aria-label="답변을 준비하고 있어요">
                       <div className="hint">문서를 찾아보고 있어요…</div>

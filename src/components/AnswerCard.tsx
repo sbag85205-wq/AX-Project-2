@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { pageLabel } from '../lib/sheet';
-import type { Citation, Message } from '../lib/types';
+import type { Answer, Citation, Message } from '../lib/types';
 import { DocIcon, ThumbDown, ThumbUp } from './Icons';
 
 const LABEL = {
@@ -11,6 +11,13 @@ const LABEL = {
   partial: { text: '딱 맞는 기준 없음', color: 'var(--warn)' },
   conflict: { text: '문서 내용이 서로 달라요', color: 'var(--warn)' }
 };
+
+/** 답변 위의 꼬리표: 근거 부족(출처가 있으면 "딱 맞는 기준 없음") · 문서 충돌 · 답변 방식 */
+function labelFor(a: Answer) {
+  if (a.status === 'insufficient_evidence') return a.citations.length ? LABEL.partial : LABEL.none;
+  if (a.status === 'conflicting_sources') return LABEL.conflict;
+  return LABEL[a.mode];
+}
 
 interface Props {
   message: Message;
@@ -23,8 +30,7 @@ export function AnswerCard({ message, onVote, onOpenSource }: Props) {
   const a = message.answer;
   if (!a) return <div className="bot-card">{message.content}</div>;
 
-  const label =
-    a.status === 'insufficient_evidence' ? (a.citations.length ? LABEL.partial : LABEL.none) : a.status === 'conflicting_sources' ? LABEL.conflict : LABEL[a.mode];
+  const label = labelFor(a);
   const hasDetails = !!a.details && a.mode !== 'faq' && a.status !== 'insufficient_evidence';
   const vote = message.vote;
 

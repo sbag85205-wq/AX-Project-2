@@ -2,7 +2,7 @@
 // cat-faces.webp는 2x2 표정 칸(기본 · 눈 감음 / 찡그림 · 웃음), cat-search.webp는 바인더를 보는 모습이다.
 import { useEffect, useRef, useState } from 'react';
 
-type Mood = 'idle' | 'thinking' | 'happy' | 'sorry';
+export type Mood = 'idle' | 'thinking' | 'happy' | 'sorry';
 
 const FACE: Record<Exclude<Mood, 'thinking'>, string> = {
   idle: '0% 0%',
