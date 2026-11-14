@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ALL, CategoryChips } from '../../components/CategoryChips';
+import { ColumnChart, HBars } from '../../components/Charts';
 import { SearchIcon } from '../../components/Icons';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
@@ -18,7 +20,7 @@ export default function Unanswered() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<(typeof STATUSES)[number]>('전체');
-  const [cat, setCat] = useState('전체');
+  const [cat, setCat] = useState(ALL);
   const [q, setQ] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ question: string; answer: string; category: string } | null>(null);
@@ -52,7 +54,7 @@ export default function Unanswered() {
 
   const filtered = items
     .filter((i) => status === '전체' || i.status === status)
-    .filter((i) => cat === '전체' || i.category === cat)
+    .filter((i) => cat === ALL || i.category === cat)
     .filter((i) => !q.trim() || i.question.includes(q.trim()) || i.question_variants.some((v) => v.text.includes(q.trim())))
     .sort((a, b) => b.count - a.count || b.last_asked_at.localeCompare(a.last_asked_at));
   const max = Math.max(1, ...filtered.map((i) => i.count));
@@ -71,14 +73,12 @@ export default function Unanswered() {
     const end = daysAgo((7 - i) * 7);
     const start = daysAgo((8 - i) * 7);
     const n = allVariants.filter((v) => v.created_at >= start.toISOString() && v.created_at < end.toISOString()).length;
-    return { label: shortDate(start), n };
+    return { key: start.toISOString(), label: shortDate(start), n };
   });
-  const wmax = Math.max(1, ...weeks.map((w) => w.n));
 
-  const catTotals = CATEGORIES.map((c) => ({ c, n: items.filter((i) => i.category === c).reduce((a, i) => a + i.count, 0) }))
+  const catTotals = CATEGORIES.map((c) => ({ label: c, n: items.filter((i) => i.category === c).reduce((a, i) => a + i.count, 0) }))
     .filter((x) => x.n > 0)
     .sort((a, b) => b.n - a.n);
-  const cmax = Math.max(1, ...catTotals.map((x) => x.n));
 
   const setGroupStatus = async (s: GroupStatus, msg: string) => {
     if (!selected) return;
@@ -159,11 +159,7 @@ export default function Unanswered() {
                 </button>
               ))}
             </div>
-            <div role="group" aria-label="카테고리" className="chips">
-              {['전체', ...CATEGORIES].map((c) => (
-                <button key={c} type="button" className="chip" aria-pressed={cat === c} onClick={() => setCat(c)}>{c}</button>
-              ))}
-            </div>
+            <CategoryChips value={cat} onChange={setCat} />
           </div>
           <div className="table-scroll">
             <div className="grid-table">
@@ -222,9 +218,9 @@ export default function Unanswered() {
                 </ul>
               </div>
               {selected.status === 'FAQ 등록 완료' ? (
-                <div style={{ background: '#eef8f2', border: '1px solid #bfe3ce', borderRadius: 10, padding: '14px 16px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ok)', marginBottom: 4 }}>등록된 FAQ 답변</div>
-                  <div style={{ fontSize: 14, whiteSpace: 'pre-line' }}>{selected.faqs?.answer ?? '(삭제된 FAQ)'}</div>
+                <div className="faq-answer-box">
+                  <div>등록된 FAQ 답변</div>
+                  <div>{selected.faqs?.answer ?? '(삭제된 FAQ)'}</div>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -249,29 +245,12 @@ export default function Unanswered() {
         <section className="card panel" aria-label="주별 추이" style={{ flex: '3 1 520px', minWidth: 0 }}>
           <h2>주별 미등록 질문 수</h2>
           <p className="panel-sub">최근 8주</p>
-          <div className="columns" style={{ ['--n' as string]: 8 }}>
-            {weeks.map((w, i) => (
-              <div key={i} className={`column${i === weeks.length - 1 ? ' latest' : ''}`}>
-                <b>{w.n}</b>
-                <i style={{ height: `${Math.max(2, Math.round((w.n / wmax) * 140))}px` }} />
-                <span>{w.label}</span>
-              </div>
-            ))}
-          </div>
+          <ColumnChart columns={weeks} />
         </section>
         <section className="card panel" aria-label="카테고리별 분포" style={{ flex: '2 1 340px', minWidth: 0 }}>
           <h2>카테고리별 분포</h2>
           <p className="panel-sub">어느 영역의 FAQ가 부족한지 한눈에</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {catTotals.length === 0 && <div className="hint">아직 데이터가 없어요.</div>}
-            {catTotals.map((x) => (
-              <div key={x.c} className="hbar">
-                <span style={{ fontWeight: 500 }}>{x.c}</span>
-                <span className="bar-track"><span className="bar-fill" style={{ width: `${Math.round((x.n / cmax) * 100)}%` }} /></span>
-                <b style={{ textAlign: 'right' }}>{x.n}</b>
-              </div>
-            ))}
-          </div>
+          <HBars rows={catTotals} />
         </section>
       </div>
 

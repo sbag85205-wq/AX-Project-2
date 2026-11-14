@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { ALL, CategoryChips } from '../../components/CategoryChips';
 import { LoadError } from '../../components/LoadError';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
@@ -14,7 +15,7 @@ export default function Faqs() {
   const toast = useToast();
   const [faqs, setFaqs] = useState<Faq[] | null>(null);
   const [error, setError] = useState('');
-  const [cat, setCat] = useState('전체');
+  const [cat, setCat] = useState(ALL);
   const [draft, setDraft] = useState<Draft | null>(null);
 
   const load = useCallback(async () => {
@@ -51,7 +52,7 @@ export default function Faqs() {
     load();
   };
 
-  const shown = (faqs ?? []).filter((f) => cat === '전체' || f.category === cat);
+  const shown = (faqs ?? []).filter((f) => cat === ALL || f.category === cat);
 
   return (
     <main className="admin-main">
@@ -62,9 +63,7 @@ export default function Faqs() {
         </div>
         <button type="button" className="btn btn-primary" onClick={() => setDraft({ question: '', answer: '', category: CATEGORIES[0], active: true })}>FAQ 추가</button>
       </div>
-      <div className="chips" role="group" aria-label="카테고리">
-        {['전체', ...CATEGORIES].map((c) => <button key={c} type="button" className="chip" aria-pressed={cat === c} onClick={() => setCat(c)}>{c}</button>)}
-      </div>
+      <CategoryChips value={cat} onChange={setCat} />
       <section className="card" style={{ overflow: 'hidden' }}>
         {error && <LoadError className="empty" message={error} onRetry={load} />}
         {!error && faqs === null && <div className="empty">불러오는 중…</div>}

@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ALL, CategoryChips } from '../components/CategoryChips';
 import { SearchIcon } from '../components/Icons';
 import { LoadError } from '../components/LoadError';
 import { errorMessage } from '../lib/api';
-import { CATEGORIES } from '../lib/constants';
 import { listReadyDocuments } from '../lib/db';
 import type { DocumentRow } from '../lib/types';
 import { pageCountLabel } from '../lib/sheet';
 
 export default function DocumentList() {
   const [docs, setDocs] = useState<DocumentRow[] | null>(null);
-  const [cat, setCat] = useState('전체');
+  const [cat, setCat] = useState(ALL);
   const [q, setQ] = useState('');
   const [error, setError] = useState('');
 
@@ -29,7 +29,7 @@ export default function DocumentList() {
   useEffect(() => load(), [load]);
 
   const shown = (docs ?? [])
-    .filter((d) => cat === '전체' || d.category === cat)
+    .filter((d) => cat === ALL || d.category === cat)
     .filter((d) => !q.trim() || d.title.toLowerCase().includes(q.trim().toLowerCase()));
 
   return (
@@ -46,11 +46,7 @@ export default function DocumentList() {
         </div>
       </div>
 
-      <div className="chips" role="group" aria-label="카테고리">
-        {['전체', ...CATEGORIES].map((c) => (
-          <button key={c} type="button" className="chip" aria-pressed={cat === c} onClick={() => setCat(c)}>{c}</button>
-        ))}
-      </div>
+      <CategoryChips value={cat} onChange={setCat} />
 
       {error && <LoadError message={error} onRetry={load} />}
       {docs === null && !error && <div className="empty">불러오는 중…</div>}

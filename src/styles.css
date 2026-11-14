@@ -19,6 +19,8 @@
   --shadow: 0 7px 28px rgba(32, 48, 71, .05);
   --ok: #17603a;
   --ok-soft: #ddf1e6;
+  --ok-tint: #eef8f2;
+  --ok-line: #bfe3ce;
   --warn: #8a3b06;
   --warn-soft: #fde8d7;
   --info-soft: #e3eafd;
@@ -221,13 +223,22 @@ button.grid-row[aria-pressed='true'] { background: #f2f5fe; box-shadow: inset 4p
 .mini-stat div:first-child { font-size: 13px; color: var(--muted); }
 .mini-stat div:last-child { font-size: 20px; font-weight: 700; }
 .variant { padding: 10px 14px; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; color: var(--text-2); }
-.columns { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 10px; align-items: end; height: 200px; }
+.columns { --column-bar-max: 140px; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 10px; align-items: end; height: 200px; }
+.columns-dense { gap: 2px; }
 .column { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; height: 100%; font-size: 13px; color: var(--muted); }
 .column b { color: var(--text); font-size: 13.5px; }
-.column i { display: block; width: 100%; max-width: 44px; border-radius: 6px 6px 0 0; background: var(--primary-tint); }
+/* 막대 높이 = 최대 높이 × 비율(--ratio, 0~1). 0이어도 2px은 보이게 한다 */
+.column i { display: block; width: 100%; max-width: 44px; height: max(2px, calc(var(--column-bar-max) * var(--ratio, 0))); border-radius: 6px 6px 0 0; background: var(--primary-tint); }
 .column.latest i { background: var(--primary); }
-.hbar { display: grid; grid-template-columns: 84px minmax(0, 1fr) 44px; gap: 12px; align-items: center; font-size: 14px; }
+.hbars { display: flex; flex-direction: column; gap: 12px; }
+.hbars-wide { --hbar-value: 72px; }
+.hbar { display: grid; grid-template-columns: 84px minmax(0, 1fr) var(--hbar-value, 44px); gap: 12px; align-items: center; font-size: 14px; }
 .hbar .bar-track { height: 12px; border-radius: 6px; }
+.hbar-label { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hbar-value { text-align: right; }
+.faq-answer-box { background: var(--ok-tint); border: 1px solid var(--ok-line); border-radius: 10px; padding: 14px 16px; }
+.faq-answer-box > div:first-child { font-size: 13px; font-weight: 700; color: var(--ok); margin-bottom: 4px; }
+.faq-answer-box > div:last-child { font-size: 14px; white-space: pre-line; }
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
 .dropzone { padding: 14px; border: 2px dashed var(--input); border-radius: 12px; }
 .dropzone.dragging { border-color: var(--primary); background: var(--primary-soft); }

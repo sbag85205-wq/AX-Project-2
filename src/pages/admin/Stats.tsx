@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ColumnChart, HBars } from '../../components/Charts';
 import { fmt } from '../../lib/format';
 import { supabase } from '../../lib/supabase';
 
@@ -21,21 +22,8 @@ interface UsageStats {
 
 const RANGES = [7, 30, 90];
 
-function HBars({ rows, unit = '' }: { rows: { label: string; n: number; extra?: string }[]; unit?: string }) {
-  const max = Math.max(1, ...rows.map((r) => r.n));
-  if (!rows.length) return <div className="hint">아직 데이터가 없어요.</div>;
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {rows.map((r) => (
-        <div key={r.label} className="hbar" style={{ gridTemplateColumns: '84px minmax(0, 1fr) 72px' }}>
-          <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={r.label}>{r.label}</span>
-          <span className="bar-track"><span className="bar-fill" style={{ width: `${Math.round((r.n / max) * 100)}%` }} /></span>
-          <span style={{ textAlign: 'right' }}><b>{fmt(r.n)}</b>{unit}{r.extra && <span className="hint"> {r.extra}</span>}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
+/** 모델 사용량 표의 칸 너비 (머리줄과 각 줄이 같이 쓴다) */
+const MODEL_COLS = { gridTemplateColumns: 'minmax(0,1fr) 90px 120px 120px 110px' };
 
 function csvCell(v: string | number): string {
   const s = String(v);
@@ -89,7 +77,6 @@ export default function Stats() {
   };
 
   const rated = stats ? stats.feedback_up + stats.feedback_down : 0;
-  const dmax = Math.max(1, ...(stats?.daily.map((d) => d.count) ?? [1]));
 
   return (
     <main className="admin-main">
@@ -139,15 +126,16 @@ export default function Stats() {
             {stats.daily.length === 0 ? (
               <div className="hint">아직 데이터가 없어요.</div>
             ) : (
-              <div className="columns" style={{ ['--n' as string]: stats.daily.length, gap: stats.daily.length > 31 ? 2 : 8 }}>
-                {stats.daily.map((d, i) => (
-                  <div key={d.date} className={`column${i === stats.daily.length - 1 ? ' latest' : ''}`} title={`${d.date}: ${d.count}건`}>
-                    {stats.daily.length <= 31 && <b>{d.count}</b>}
-                    <i style={{ height: `${Math.max(2, Math.round((d.count / dmax) * 140))}px` }} />
-                    {stats.daily.length <= 14 && <span>{d.date.slice(5).replace('-', '/')}</span>}
-                  </div>
-                ))}
-              </div>
+              <ColumnChart
+                showValues={stats.daily.length <= 31}
+                columns={stats.daily.map((d) => ({
+                  key: d.date,
+                  n: d.count,
+                  title: `${d.date}: ${d.count}건`,
+                  // 14일이 넘으면 날짜를 빼고 막대만 보여준다
+                  label: stats.daily.length <= 14 ? d.date.slice(5).replace('-', '/') : undefined
+                }))}
+              />
             )}
           </section>
 
@@ -155,12 +143,12 @@ export default function Stats() {
             <section className="card panel" style={{ flex: '1 1 380px', minWidth: 0 }}>
               <h2>부서별 이용량</h2>
               <p className="panel-sub">질문 수 · 이용 직원 수</p>
-              <HBars rows={stats.by_department.map((d) => ({ label: d.name, n: d.count, extra: `/${d.users}명` }))} />
+              <HBars wide rows={stats.by_department.map((d) => ({ label: d.name, n: d.count, extra: `/${d.users}명` }))} />
             </section>
             <section className="card panel" style={{ flex: '1 1 380px', minWidth: 0 }}>
               <h2>질문 유형</h2>
               <p className="panel-sub">답변 근거 문서의 카테고리 기준</p>
-              <HBars rows={stats.by_category.map((d) => ({ label: d.name, n: d.count }))} />
+              <HBars wide rows={stats.by_category.map((d) => ({ label: d.name, n: d.count }))} />
             </section>
           </div>
 
@@ -171,12 +159,12 @@ export default function Stats() {
             </div>
             <div className="table-scroll">
               <div className="grid-table">
-                <div className="grid-row grid-head" style={{ gridTemplateColumns: 'minmax(0,1fr) 90px 120px 120px 110px' }}>
+                <div className="grid-row grid-head" style={MODEL_COLS}>
                   <div>모델</div><div>호출</div><div>입력 토큰</div><div>출력 토큰</div><div>평균 응답</div>
                 </div>
                 {stats.by_model.length === 0 && <div className="empty">아직 데이터가 없어요.</div>}
                 {stats.by_model.map((m) => (
-                  <div key={m.model} className="grid-row" style={{ gridTemplateColumns: 'minmax(0,1fr) 90px 120px 120px 110px' }}>
+                  <div key={m.model} className="grid-row" style={MODEL_COLS}>
                     <div style={{ fontWeight: 600, overflowWrap: 'anywhere' }}>{m.model}</div>
                     <div>{fmt(m.count)}</div>
                     <div>{fmt(m.input_tokens)}</div>
