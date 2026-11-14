@@ -3,7 +3,7 @@ import {createCompanionBehavior,companionAppearance} from './companion-behavior.
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=06e0b81b016b';
 import {adminView} from './admin-view.js?v=d3650a3b26a4';
-import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,statsHTML,loadStatistics,logoutAccount} from './community-ui.js?v=4c3d0f2d22e9';
+import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,statsHTML,loadStatistics,logoutAccount,loadKnowlyClient} from './community-ui.js?v=527508588aed';
 import {categories,documents,faq,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=0ff57cf675c0';
 import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=7d55f062fd27';
 import {createPetInteraction} from './pet-interaction.js?v=355c0da8eb14';
@@ -213,7 +213,7 @@ function knowlyHTML(r){
  return `<div class="answer-content"><span class="answer-label">${icon('check')} ${k.mode==='faq'?'FAQ에서 확인한 답변':'사내 문서에서 확인한 답변'}</span><h3>${esc(summary[0]||'')}</h3>${summary.length>1?`<ul class="answer-essentials">${summary.slice(1).map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`:''}${arr(k.warnings).map(w=>`<p class="caption">${icon('info')} ${esc(w)}</p>`).join('')}${notes}${sources}${answerTools(r,[],detail)}${votes}</div>`;
 }
 // ── Knowly(main 백엔드) 연결 ─────────────────────────────────────────
-// 서버에 연결 설정이 없으면(503) 역할별로 꺼 두고 기존 샘플 화면·답변을 그대로 쓴다.
+// Knowly 코드(public/knowly/client.js)로 Supabase를 직접 쓴다(Knowly와 같은 방식). 연결 설정이 없으면 기존 샘플 화면·답변을 그대로 쓴다.
 const knowlyOff={employee:false,staff:false};let knowlyOffMessage='';
 const KNOWLY_ROUTES={faq:'/admin/faqs',documents:'/admin/documents',users:'/admin/users',model:'/admin/settings',unanswered:'/admin/unanswered',library:'/docs'};
 let libraryRoute='/docs',attachments=[],attachBusy=false;
@@ -237,29 +237,29 @@ window.addEventListener('message',e=>{
 const knowlyProbed=new Set();
 function probeKnowly(role){
  if(knowlyProbed.has(role))return;knowlyProbed.add(role);
- fetch('/api/knowly-session',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}).then(async res=>{if(res.status===503){knowlyOff[role]=true;knowlyOffMessage=(await res.json().catch(()=>null))?.error||'';render();}}).catch(()=>{});
+ loadKnowlyClient().then(kc=>{if(!kc){knowlyOff[role]=true;knowlyOffMessage='사내 문서 검색(Knowly)이 아직 연결되지 않았어요.';render();}});
 }
 function openLibrary(route='/docs'){libraryRoute=route;view='library';petInteraction.reset();render();$('#main').scrollTop=0;}
-// 서버가 문서 검색에 연결돼 있으면 답을 받아오고, 아니면 null (기존 샘플 답변으로 대체).
+// Knowly chat 함수로 답을 받아오고, 연결이 없거나 실패하면 null (기존 샘플 답변으로 대체).
+// 냥대리 대화 하나 = Knowly 대화 하나 (Knowly 대화 기록에도 이어서 쌓인다).
+const knowlyConversations=new Map();
 async function askKnowly(question,files=[]){
  if(knowlyOff.employee)return null;
- try{
-  const res=await fetch('/api/knowly',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,attachments:files.map(a=>a.kind==='image'?{name:a.name,kind:'image',data_url:a.dataUrl}:{name:a.name,kind:'file',text:a.text})})}),data=await res.json().catch(()=>null);
-  if(res.status===503){knowlyOff.employee=true;render();}
-  else if(!res.ok&&res.status!==401)toast(data?.error||'사내 문서 검색에 연결하지 못해 기본 자료로 답했어요.');
-  return res.ok?data?.answer||null:null;
- }catch{return null;}
+ const kc=await loadKnowlyClient();if(!kc){knowlyOff.employee=true;render();return null;}
+ const chat=activeChatId;
+ try{const a=await kc.ask(question,knowlyConversations.get(chat)||null,files);if(a.conversation_id)knowlyConversations.set(chat,a.conversation_id);return a;}
+ catch(err){toast((err?.message||'사내 문서 검색에 연결하지 못했어요.')+' 기본 자료로 답했어요.');return null;}
 }
 async function voteKnowly(messageId,vote){
  const m=messages.find(x=>x.result?.messageId===messageId),k=m?.result?.knowly;if(!k?.message_id)return;
  const next=k.vote===vote?null:vote;
- try{const res=await fetch('/api/knowly',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'feedback',message_id:k.message_id,vote:next})}),data=await res.json().catch(()=>null);if(!res.ok)throw Error(data?.error||'평가를 저장하지 못했어요.');k.vote=next;saveCurrentChat();render();toast(next?'평가를 남겼어요. 고마워요!':'평가를 취소했어요.');}
+ try{const kc=await loadKnowlyClient();if(!kc)throw Error('사내 문서 검색이 연결되지 않았어요.');await kc.feedback(k.message_id,next);k.vote=next;saveCurrentChat();render();toast(next?'평가를 남겼어요. 고마워요!':'평가를 취소했어요.');}
  catch(err){toast(err.message);}
 }
 async function addAttachments(files){
  if(attachBusy)return;attachBusy=true;
  try{
-  const lib=await import('/knowly/attach.js');
+  const lib=await loadKnowlyClient();if(!lib)throw Error();
   for(const file of files){
    if(attachments.length>=lib.ATTACH_MAX){toast(`첨부는 ${lib.ATTACH_MAX}개까지 할 수 있어요.`);break;}
    try{attachments.push(await lib.prepareAttachment(file));}catch(err){toast(err.message||`${file.name}을(를) 읽지 못했어요.`);}
@@ -584,7 +584,7 @@ document.addEventListener('click',async e=>{
  if(a==='toggle-chat-history'){chatHistoryCollapsed=!chatHistoryCollapsed;render();return;}
  if(a==='login-pet'){reactLoginPet();return;}
  if(a==='logout'){await logoutAccount();return;}
- if(a==='account'){const me=communityState().me;openModal('<div class="account-menu"><h2 id="modal-title">내 계정</h2><strong>'+esc(me.username)+' · '+(me.role==='staff'?'담당자':'직원')+'</strong><p>'+ (me.role==='staff'?'질문 게시판 관리와 통계에 접근할 수 있어요.':'포인트와 보상은 같은 계정으로 로그인한<br>모든 기기에서 이어져요.') +'</p><p>현재는 두 개의 공용 시연 계정입니다.<br>실제 직원별 사용에는 개인 계정이 필요해요.</p><button class="primary-button" data-action="logout">로그아웃</button></div>');return;}
+ if(a==='account'){const me=communityState().me;openModal('<div class="account-menu"><h2 id="modal-title">내 계정</h2><strong>'+esc(me.username)+' · '+(me.role==='staff'?'담당자':'직원')+'</strong><p>'+ (me.role==='staff'?'질문 게시판 관리와 통계에 접근할 수 있어요.':'포인트와 보상은 같은 계정으로 로그인한<br>모든 기기에서 이어져요.') +'</p>'+(communityState().knowlyAccount?'<p>사내 문서 검색(Knowly) 계정으로 로그인했어요.</p>':'<p>현재는 두 개의 공용 시연 계정입니다.<br>실제 직원별 사용에는 개인 계정이 필요해요.</p>')+'<button class="primary-button" data-action="logout">로그아웃</button></div>');return;}
  if(a==='unanswered'||a==='library'){if(a==='library')openLibrary();else if(communityState().me?.role==='staff'){view=a;petInteraction.reset();render();$('#main').scrollTop=0;}return;}
  if(['faq','documents','users','model'].includes(a)){if(communityState().me?.role==='staff'){view=a;petInteraction.reset();render();$('#main').scrollTop=0;}return;}
  if(a==='statistics'){if(communityState().me?.role==='staff'){view='statistics';petInteraction.reset();await loadStatistics();}return;}

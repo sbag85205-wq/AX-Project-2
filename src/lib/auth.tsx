@@ -15,6 +15,23 @@ interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+/** expectedRole을 주면 그 유형의 계정만 들어올 수 있다. 다르면 바로 로그아웃하고 맞는 탭을 안내한다.
+ *  (냥대리 로그인 화면도 이 함수를 그대로 쓴다: src/embed/client.ts) */
+export async function signInAs(loginId: string, password: string, expectedRole?: Role) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail(loginId), password });
+  if (error) throw new Error(error.message.includes('Invalid') ? '아이디 또는 비밀번호가 맞지 않아요.' : error.message);
+  if (!expectedRole) return data.session;
+  const { data: row } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
+  const role = (row as { role: Role } | null)?.role;
+  if (role !== expectedRole) {
+    await supabase.auth.signOut();
+    throw new Error(role === 'admin'
+      ? '담당자 계정이에요. 담당자 탭에서 로그인해 주세요.'
+      : '담당자 계정이 아니에요. 직원 탭에서 로그인해 주세요.');
+  }
+  return data.session;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -52,21 +69,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [userId]);
 
-  /** expectedRole을 주면 그 유형의 계정만 들어올 수 있다. 다르면 바로 로그아웃하고 맞는 탭을 안내한다 */
   const signIn = async (loginId: string, password: string, expectedRole?: Role) => {
     setVerifying(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail(loginId), password });
-      if (error) throw new Error(error.message.includes('Invalid') ? '아이디 또는 비밀번호가 맞지 않아요.' : error.message);
-      if (!expectedRole) return;
-      const { data: row } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
-      const role = (row as { role: Role } | null)?.role;
-      if (role !== expectedRole) {
-        await supabase.auth.signOut();
-        throw new Error(role === 'admin'
-          ? '담당자 계정이에요. 담당자 탭에서 로그인해 주세요.'
-          : '담당자 계정이 아니에요. 직원 탭에서 로그인해 주세요.');
-      }
+      await signInAs(loginId, password, expectedRole);
     } finally {
       setVerifying(false);
     }

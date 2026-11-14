@@ -1,5 +1,5 @@
 import {boardView} from './board-view.js?v=4d8e85e9c584';
-import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=92eabaa524d4';
+import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=3b39d73ccec3';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const labels={hr:'휴가 · 근태',pay:'급여 · 복지',trip:'출장 · 정산',life:'사내 생활'};
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
@@ -14,10 +14,13 @@ export async function loadStatistics(){
  catch(e){if(epoch!==authEpoch)return;stats={error:e.message};}
  hooks.render();
 }
+// Knowly 연결 시 로그인·로그아웃은 Knowly 코드(public/knowly/client.js)로 한다. 연결이 없으면 기존 시연 계정 로그인.
+let knowlyClient=null;
+export function loadKnowlyClient(){knowlyClient??=import('/knowly/client.js').then(m=>m.configured?m:null).catch(()=>null);return knowlyClient;}
 function broadcastAuth(){try{localStorage.setItem('nyang-account-change',String(Date.now()));}catch{}}
 export async function logoutAccount(){
- try{const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})});if(!res.ok)throw Error('로그아웃하지 못했어요. 다시 시도해 주세요.');
- authEpoch++;connecting=null;stats=null;state={authenticated:false,member:false};filter='all';query='';hooks.close();hooks.update(state);broadcastAuth();}
+ try{await (await loadKnowlyClient())?.signOut().catch(()=>{});const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})});if(!res.ok)throw Error('로그아웃하지 못했어요. 다시 시도해 주세요.');
+ authEpoch++;connecting=null;stats=null;state={authenticated:false,member:false,knowly:state.knowly};filter='all';query='';hooks.close();hooks.update(state);broadcastAuth();}
  catch(e){hooks.toast(e.message);}
 }
 
@@ -46,7 +49,7 @@ export async function communityAction(action,body={}){
  try{
   const response=action==='reward'&&body.type==='pet'?'wallet':undefined;
   const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...body,response})});
-  const data=await res.json();if(epoch!==authEpoch)return null;if(res.status===401){authEpoch++;state={authenticated:false,member:false};hooks.update(state);throw Error('로그인이 만료됐어요. 다시 로그인해 주세요.');}if(!res.ok)throw Error(data.error);
+  const data=await res.json();if(epoch!==authEpoch)return null;if(res.status===401){authEpoch++;state={authenticated:false,member:false,knowly:state.knowly};hooks.update(state);throw Error('로그인이 만료됐어요. 다시 로그인해 주세요.');}if(!res.ok)throw Error(data.error);
   state=data.partial==='wallet'?{...state,wallet:data.wallet,level:data.level}:data;
   hooks.update(state);if(data.notice)hooks.toast(data.notice);return data;
  }catch(e){hooks.toast(e.message||'연결을 확인하고 다시 시도해 주세요.');return null;}
@@ -141,7 +144,9 @@ document.addEventListener('submit',async e=>{
  if(f.id==='account-login'){
   e.preventDefault();if(busy)return;busy=true;const button=f.querySelector('[type="submit"]'),error=f.querySelector('#login-error');button.disabled=true;button.textContent='로그인 중…';error.textContent='';
   const epoch=++authEpoch;connecting=null;
-  try{const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'login',...Object.fromEntries(new FormData(f))})}),data=await res.json();if(epoch!==authEpoch)return;if(!res.ok)throw Error(data.error);state=data;stats=null;filter='all';query='';hooks.update(state);broadcastAuth();}
+  const kc=await loadKnowlyClient();
+  try{const form=Object.fromEntries(new FormData(f)),body=kc?{action:'login',role:form.role,access_token:await kc.signIn(form.username,form.password,form.role)}:{action:'login',...form};
+   const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),data=await res.json();if(!res.ok&&kc)await kc.signOut().catch(()=>{});if(epoch!==authEpoch)return;if(!res.ok)throw Error(data.error);state=data;stats=null;filter='all';query='';hooks.update(state);broadcastAuth();}
   catch(e){if(epoch===authEpoch){error.textContent=e.message;f.querySelector('[name="password"]').focus();}}
   finally{busy=false;button.disabled=false;button.textContent=loginRole==='staff'?'담당자로 로그인':'직원으로 로그인';}return;
  }

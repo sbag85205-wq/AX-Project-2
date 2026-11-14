@@ -77,11 +77,11 @@ npm run build
 
 ### 동작 방식과 보안
 
-- 로그인은 냥대리 계정(user01·admin01)으로 합니다. 서버가 역할에 맞는 Knowly 계정(직원 → `KNOWLY_LOGIN_*`, 담당자 → `KNOWLY_ADMIN_*`)으로 대신 로그인합니다.
-- 직원 질문은 `/api/knowly`가 Knowly `chat` 함수로 전달합니다. 화면 안 Knowly 화면은 `/api/knowly-session`에서 받은 짧은 접속 토큰(약 1시간)만 씁니다. 비밀번호와 갱신 토큰은 브라우저로 보내지 않습니다.
-- 두 경로 모두 같은 사이트에서 온 요청과 로그인한 역할만 받습니다. 세션 쿠키 경로는 `/api`이고, 예전 `/api/account` 경로 쿠키는 다음 접속 때 자동으로 옮겨집니다.
-- Knowly 쪽 기록은 연결 계정 단위로 남습니다(직원 질문은 직원 연결 계정 하나의 질문으로 집계).
+- Knowly와 똑같이 동작하도록 Knowly 코드를 그대로 씁니다. 로그인은 냥대리 로그인 화면에서 **Knowly 계정**(Knowly 사용자 관리에서 발급한 아이디·비밀번호)으로 합니다. 직원 탭은 Knowly 직원 계정, 담당자 탭은 Knowly 관리자 계정만 들어올 수 있습니다(Knowly 로그인 화면과 같은 규칙).
+- 로그인·질문·답변 평가·첨부는 `public/knowly/client.js`(Knowly의 `lib/auth`·`lib/api`·`lib/attach`), 관리자·사내 문서 화면은 `public/knowly/index.html`(Knowly 화면)이 브라우저에서 Supabase를 직접 호출합니다. 세션도 Knowly처럼 브라우저에 저장·자동 갱신되므로 Knowly의 RLS·권한·모델 설정이 그대로 적용됩니다.
+- 냥대리 서버는 로그인 때 받은 Knowly 접속 토큰으로 계정과 역할만 확인해 냥대리 세션(포인트·출석·게시판·통계)을 엽니다. 비밀번호는 냥대리 서버로 오지 않습니다. 냥대리 기록은 기존 `demo_*` 테이블에 Knowly 아이디별로 저장됩니다.
+- Supabase 주소·publishable key는 `/api/knowly-config`로 내려줍니다(Knowly 프런트엔드에도 공개되는 값).
 
-### 서버 환경 변수 (`.env.example` 참고, 값은 Sites secrets로만 설정)
+### 서버 환경 변수 (`.env.example` 참고)
 
-`KNOWLY_SUPABASE_URL`, `KNOWLY_SUPABASE_KEY`(publishable key), `KNOWLY_LOGIN_EMAIL`, `KNOWLY_LOGIN_PASSWORD`(직원 역할 계정), `KNOWLY_ADMIN_EMAIL`, `KNOWLY_ADMIN_PASSWORD`(관리자 역할 계정). 계정은 Knowly 사용자 관리에서 발급하며 이메일은 `<아이디>@knowly.local` 형식입니다.
+`KNOWLY_SUPABASE_URL`, `KNOWLY_SUPABASE_KEY`(publishable key). Knowly 프런트엔드의 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`와 같은 값입니다. 비워 두면 기존 시연 계정(user01·admin01)과 샘플 기능으로 동작합니다.
