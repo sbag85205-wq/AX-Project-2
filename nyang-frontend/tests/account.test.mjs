@@ -41,7 +41,6 @@ test('staff moderation hides and restores posts, preserves rewards, and attribut
  for(const action of ['question','post','attendance','like','reward'])assert.equal((await call(staff.cookie,{action,question:'무단 질문',category:'hr',body:'무단으로 작성하는 질문',type:'feed',id:'denied'})).status,403);
  const post=(await call(employee.cookie,{action:'post',category:'hr',body:'담당자 삭제와 복원 시연용 질문입니다.'})).data.posts[0];
  assert.equal((await call('',{action:'delete-post',post:post.id})).status,401);
- assert.equal((await call(employee.cookie,{action:'delete-post',post:post.id,username:'admin01',role:'staff'})).status,403);
  const replied=await call(staff.cookie,{action:'reply',post:post.id,id:'named-reply',body:'담당자가 규정을 확인한 답변입니다.',source:'샘플 인사 규정',name:'익명',authorUsername:'forged'});
  assert.equal(replied.data.posts[0].replies[0].authorUsername,'admin01');assert.equal(replied.data.posts[0].replies[0].name,'담당자');assert.equal(replied.data.posts[0].replies[0].authorRole,'staff');
  await call(employee.cookie,{action:'question',question:'새로운 보상 질문'});const balance=(await call(employee.cookie)).data.wallet.points;
@@ -64,4 +63,31 @@ test('wrong credentials, wrong login type, forged tokens, cross-origin requests,
  assert.equal((await call('',{action:'login',username:'user01',password:'test-password',role:'employee'},'','https://evil.test')).status,403);
  const user=await sign();assert.equal(await session(db,{NYANG_DEMO_PASSWORD_HASH:await passwordHash('changed')},new Request('https://nyang.test/api/account',{headers:{cookie:user.cookie}})),null);
  db.sql.exec('UPDATE demo_login_limits SET attempts=30');assert.equal((await sign()).status,429);
+});
+
+test('employees delete only their own posts across sessions without exposing authors or changing rewards',async()=>{
+ const {db,call,sign}=fixture(),owner=await sign(),otherSession=await sign(),staff=await sign('admin01');
+ const post=(await call(owner.cookie,{action:'post',category:'hr',body:'본인 질문 삭제 검증용 질문입니다.'})).data.posts[0];
+ db.sql.prepare('INSERT INTO demo_posts(id,author,hash,category,body,created) VALUES(?,?,?,?,?,?)').run('other-post','demo-other','other-hash','hr','다른 직원이 작성한 질문입니다.',new Date().toISOString());
+ await call(staff.cookie,{action:'reply',post:post.id,id:'owner-reply',body:'질문에 대한 담당자 답변입니다.',source:'샘플 문서'});
+ await call(owner.cookie,{action:'question',question:'포인트 유지 검증 질문입니다.'});
+ const balance=(await call(owner.cookie)).data.wallet;
+ assert.equal((await call('',{action:'delete-post',post:post.id})).status,401);
+ assert.equal((await call(owner.cookie,{action:'delete-post',post:'other-post',role:'staff',username:'admin01',mine:true,author:'demo-user01'})).status,403);
+ const deleted=await call(owner.cookie,{action:'delete-post',post:post.id});
+ assert.equal(deleted.status,200);assert.equal(deleted.data.posts.some(p=>p.id===post.id),false);
+ assert.equal(deleted.data.posts.some(p=>p.id==='other-post'),true);
+ assert.deepEqual(deleted.data.wallet,balance);
+ assert.equal((await call(otherSession.cookie)).data.posts.some(p=>p.id===post.id),false);
+ const admin=(await call(staff.cookie)).data;
+ assert.equal(admin.posts.some(p=>p.id===post.id),false);
+ const archived=admin.deletedPosts.find(p=>p.id===post.id);
+ assert.ok(archived);assert.equal(archived.deleted_by,undefined);assert.equal(archived.author,undefined);
+ assert.equal(db.sql.prepare('SELECT deleted_by FROM demo_deleted_posts WHERE post=?').get(post.id).deleted_by,'author');
+ assert.equal((await call(owner.cookie,{action:'delete-post',post:post.id})).status,200);
+ assert.equal((await call(owner.cookie,{action:'restore-post',post:post.id})).status,403);
+ assert.equal((await call(owner.cookie,{action:'like',post:post.id})).status,404);
+ const restored=await call(staff.cookie,{action:'restore-post',post:post.id});
+ assert.equal(restored.data.posts.find(p=>p.id===post.id).replies.length,1);
+ assert.deepEqual((await call(owner.cookie)).data.wallet,balance);
 });

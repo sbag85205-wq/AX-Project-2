@@ -37,3 +37,14 @@ test('an in-flight reward response cannot restore an account after logout',async
  const pending=communityAction('reward',{type:'collect',id:'pending-heart'});await logoutAccount();finishReward();
  assert.equal(await pending,null);assert.equal(communityState().member,false);
 });
+
+test('board exposes delete only for own questions or staff, including the mine filter',async()=>{
+ const {boardView}=await import('../public/board-view.js');
+ const post=(id,mine)=>({id,mine,category:'hr',body:id,created:'2026-11-12',likes:0,replies:[]});
+ const state={me:{role:'employee'},posts:[post('own',true),post('other',false)]};
+ const employee=boardView(state);
+ assert.ok(employee.includes('data-delete-post="own"'));assert.ok(!employee.includes('data-delete-post="other"'));
+ assert.ok(boardView(state,'mine').includes('data-delete-post="own"'));
+ const staff=boardView({...state,me:{role:'staff'}});
+ assert.ok(staff.includes('data-delete-post="own"'));assert.ok(staff.includes('data-delete-post="other"'));
+});

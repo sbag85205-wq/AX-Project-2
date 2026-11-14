@@ -266,6 +266,36 @@ body[data-personality=warm] .resident-portrait .pet-body.pet-dislike{animation:w
 body[data-personality=cold] .resident-portrait .pet-body.pet-dislike{animation:cold-boundary 1.3s ease-in-out infinite}
 body[data-personality=warm] .resident-portrait .pet-body:is(.delighted,.pet-bonus){animation:warm-celebrate .8s ease-in-out infinite}
 body[data-personality=cold] .resident-portrait .pet-body:is(.delighted,.pet-bonus){animation:cold-celebrate 1.8s ease-in-out infinite}
+/* A single quick touch loop spans the request and its result. Changing the
+   expression must not switch/restart the body's animation on a slow network. */
+body[data-personality=warm] .resident-portrait .pet-body.pet-engaged{animation:warm-touch .72s ease-out infinite}
+body[data-personality=cold] .resident-portrait .pet-body.pet-engaged{animation:cold-touch .9s ease-out infinite}
+@keyframes warm-touch{0%,100%{transform:translateY(0)}16%,32%{transform:translateY(-2%)}65%{transform:translateY(-.5%)}}
+@keyframes cold-touch{0%,100%{transform:translateY(0)}14%,28%{transform:translateY(1.2%)}55%{transform:translateY(.3%)}}
+/* Character gestures stay inside the anchored portrait. */
+body[data-personality=warm] .resident-portrait .pet-body.behavior-welcome{animation:welcome-settle 1.1s ease-in-out 2}
+body[data-personality=cold] .resident-portrait .pet-body.behavior-sleepy{animation:cold-idle 7s ease-in-out infinite}
+body[data-personality=cold] .resident-portrait .pet-body.behavior-peek{animation:quiet-nod 1.1s ease-out 1}
+body[data-personality=warm] .resident-portrait .pet-body.behavior-snack{animation:welcome-bounce .65s ease-out infinite}
+body[data-personality=cold] .resident-portrait .pet-body.behavior-snack{animation:quiet-nod 1.4s ease-in-out infinite}
+body[data-personality=cold] .resident-portrait .pet-body.behavior-hesitate{animation:none}
+@keyframes welcome-bounce{0%,100%{transform:translateY(0)}22%{transform:translateY(-3%)}48%{transform:translateY(0)}68%{transform:translateY(-1.3%)}}
+@keyframes quiet-nod{0%,100%{transform:translateY(0)}40%{transform:translateY(1%)}}
+.pet-body .cat-art.pet-sleepy::before{animation:none!important;opacity:0!important}
+.pet-body .cat-art.pet-sleepy::after{animation:none!important;opacity:1!important}
+.pet-body.pet-soft-boundary .cat-art::before{animation:boundary-eyes 2.2s steps(1,end) both!important}
+.pet-body.pet-soft-boundary .cat-art::after{animation:boundary-blink 2.2s steps(1,end) both!important}
+@keyframes boundary-eyes{0%,70%{opacity:0}71%,100%{opacity:1}}
+@keyframes boundary-blink{0%,70%{opacity:1}71%,100%{opacity:0}}
+.companion-emote{position:absolute;top:8%;right:-13%;font-size:clamp(12px,1vw,16px);font-weight:500;white-space:nowrap;color:var(--ui-sub);pointer-events:none;animation:emote-appear .2s ease-out both}
+.behavior-snack .companion-emote{top:48%;right:-24%}
+.behavior-sleepy .companion-emote{font-size:18px;letter-spacing:3px}
+body[data-personality=warm] .companion-emote{color:#b37157}
+html[data-theme=dark] body[data-personality=warm] .companion-emote{color:#e3b39f}
+@keyframes emote-appear{from{opacity:0}to{opacity:1}}
+.chat-room .companion-emote{display:none}
+body.motion-paused .companion-emote{animation:none!important}
+@media(prefers-reduced-motion:reduce){.companion-emote{animation:none!important}}
 body[data-personality=warm] .pet-wag-tail{animation-duration:.7s}
 body[data-personality=cold] .pet-wag-tail{animation-duration:1.2s}
 /* Hover keeps the same upright idle; expressive reactions require a press. */
@@ -278,9 +308,62 @@ body[data-personality=cold] .pet-wag-tail{animation-duration:1.2s}
 @keyframes cold-boundary{0%,100%{transform:translateY(0)}35%{transform:translateY(1.5%)}}
 @keyframes warm-celebrate{0%,100%{transform:translateY(0)}45%{transform:translateY(-3%)}}
 @keyframes cold-celebrate{0%,100%{transform:translateY(0)}50%{transform:translateY(-1%)}}
+/* One confirmed gesture replaces the touch loop. Never rotate the portrait. */
+body[data-personality] .resident-portrait .pet-body.gesture-purr,
+body[data-personality] .resident-portrait .pet-body:is(.behavior-cozy,.behavior-savor){animation:gesture-purr 1.2s ease-in-out infinite}
+body[data-personality] .resident-portrait .pet-body.gesture-bounce,
+body[data-personality] .resident-portrait .pet-body.behavior-tasty{animation:welcome-bounce .9s ease-out infinite}
+body[data-personality] .resident-portrait .pet-body.gesture-nod{animation:gesture-nod 1.1s ease-in-out infinite}
+body[data-personality] .resident-portrait .pet-body.gesture-stretch,
+body[data-personality] .resident-portrait .pet-body.behavior-stretch{animation:gesture-stretch 2.2s ease-in-out both}
+body[data-personality] .resident-portrait .pet-body.gesture-tuck{animation:gesture-tuck 2.2s ease-in-out both}
+body[data-personality] .resident-portrait .pet-body.gesture-backstep{animation:gesture-backstep 2.2s ease-out both}
+@keyframes gesture-purr{0%,100%{transform:translateY(0) scale(1)}35%{transform:translateY(-.6%) scale(1.015,1)}65%{transform:translateY(-.3%) scale(1.005,1)}}
+@keyframes gesture-nod{0%,100%{transform:translateY(0)}25%{transform:translateY(2%)}50%{transform:translateY(0)}70%{transform:translateY(1%)}}
+@keyframes gesture-stretch{0%,100%{transform:scale(1)}35%,60%{transform:scale(.98,1.04)}}
+@keyframes gesture-tuck{0%,100%{transform:translateY(0) scale(1)}25%,75%{transform:translateY(1%) scale(1.02,.96)}}
+@keyframes gesture-backstep{0%,100%{transform:scale(1)}18%,70%{transform:scale(.94)}}
+body.motion-paused .resident-portrait .pet-body{animation:none!important}
+@media(prefers-reduced-motion:reduce){body[data-personality] .resident-portrait .pet-body{animation:none!important}}
 .personality-preview{display:block;position:relative;width:110px;height:110px;align-self:center;margin:4px 0 10px;transform-origin:50% 90%}
 .personality-preview .cat-art{width:100%;height:100%;animation:none!important}
 .personality-option[data-personality=warm] .personality-preview{animation:warm-nuzzle 1.4s ease-in-out infinite}
 .personality-option[data-personality=cold] .personality-preview{animation:cold-recoil 3s ease-in-out infinite}
 body.motion-paused[data-personality] .resident-portrait .pet-body,body.motion-paused .personality-preview{animation:none!important;transform:none!important}
 @media(prefers-reduced-motion:reduce){body[data-personality] .resident-portrait .pet-body,.personality-preview{animation:none!important;transform:none!important}}
+
+@keyframes welcome-settle{0%,100%{transform:translateY(0)}40%{transform:translateY(-1.2%)}}
+
+/* Separate conversation opening and deletion targets. */
+.chat-history-row{display:flex;align-items:center;gap:2px;border-radius:9px}
+.chat-history-row .chat-history-item{flex:1;min-width:0;width:auto}
+.chat-history-delete{flex:0 0 30px;width:30px;height:32px;color:var(--ui-sub);opacity:.65}
+.chat-history-delete:hover,.chat-history-delete:focus-visible{opacity:1;color:#d53b3b;background:var(--ui-selection)}
+.chat-history-delete svg{width:15px;height:15px}
+.chat-history-settings{flex:0 0 28px;width:28px;height:32px;color:var(--ui-sub);opacity:.7}
+.chat-history-settings:hover,.chat-history-settings:focus-visible{opacity:1;color:var(--ui-accent);background:var(--ui-selection)}
+.chat-history-settings svg{width:16px;height:16px}
+.chat-history-filter .chat-category-label{margin-top:14px}
+.chat-history-filter .folder-rename{font-size:11px;margin-top:8px;color:var(--ui-accent)}
+.chat-history-item small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat-settings-form{display:flex;flex-direction:column;gap:9px;margin-top:20px}
+.chat-settings-form label{font-size:13px;font-weight:500;margin-top:8px}
+.chat-settings-form input{width:100%;box-sizing:border-box;padding:12px;border:1px solid var(--ui-line)}
+.chat-settings-form small{font-size:12px;line-height:1.7;color:var(--ui-sub)}
+.chat-settings-form .chat-delete-actions{margin-top:12px}
+.chat-delete-title{font-weight:600;overflow-wrap:anywhere;margin:20px 0 12px}
+.chat-delete-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px}
+.chat-delete-confirm{border:0;border-radius:10px;padding:11px 18px;background:#c83232;color:white;font-weight:600}
+.chat-delete-confirm:hover{background:#ab2525}
+
+.chat-folder-label{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px}
+.chat-settings-form .chat-folder-label label{margin:0}
+.chat-folder-toggle{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:8px;padding:7px 10px;background:var(--ui-fill);color:var(--ui-accent);font:inherit;font-size:12px;cursor:pointer}
+.chat-folder-toggle:hover,.chat-folder-toggle[aria-expanded="true"]{background:var(--ui-selection)}
+.chat-folder-toggle span{transition:transform .15s}
+.chat-folder-toggle[aria-expanded="true"] span{transform:rotate(180deg)}
+.chat-folder-picker{max-height:180px;overflow-y:auto;border:1px solid var(--ui-line);border-radius:12px;padding:5px;background:var(--ui-panel)}
+.chat-folder-picker[hidden]{display:none}
+.chat-folder-picker button{display:block;width:100%;border:0;border-radius:7px;padding:11px 12px;text-align:left;background:transparent;color:var(--ui-ink);font:inherit;font-size:13px;overflow-wrap:anywhere;cursor:pointer}
+.chat-folder-picker button:hover,.chat-folder-picker button:focus-visible{background:var(--ui-selection);color:var(--ui-accent)}
+.chat-folder-picker p{margin:8px;font-size:12px;line-height:1.7;color:var(--ui-sub)}

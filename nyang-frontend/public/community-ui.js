@@ -1,5 +1,5 @@
-import {boardView} from './board-view.js?v=900015a8f3b1';
-import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=8e24d5477306';
+import {boardView} from './board-view.js?v=4d8e85e9c584';
+import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=92eabaa524d4';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const labels={hr:'휴가 · 근태',pay:'급여 · 복지',trip:'출장 · 정산',life:'사내 생활'};
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
@@ -100,8 +100,9 @@ export function boardHTML(){
  return boardView(state,filter,query);
 }
 function showDeleteDialog(id){
- const post=state.posts.find(p=>p.id===id);if(!post||state.me?.role!=='staff')return;
- hooks.modal('<h2 id="modal-title">이 질문을 삭제할까요?</h2><p class="modal-sub">직원 화면에서 질문과 답변이 함께 숨겨집니다.<br>삭제된 글에서 복원할 수 있고, 이미 지급된 포인트는 유지됩니다.</p><blockquote class="delete-question-preview">'+esc(post.body)+'</blockquote><div class="modal-button-row"><button class="danger-button" data-confirm-delete="'+esc(post.id)+'">질문 삭제</button><button class="secondary-button" data-action="close-modal">취소</button></div>');
+ const post=state.posts.find(p=>p.id===id);if(!post||(state.me?.role!=='staff'&&!post.mine))return;
+ const description=state.me?.role==='staff'?'직원 화면에서 질문과 답변이 함께 숨겨집니다.<br>삭제된 글에서 복원할 수 있고, 이미 지급된 포인트는 유지됩니다.':'내 질문과 달린 답변이 게시판과 내 활동에서 함께 사라져요.<br>이미 받은 포인트는 유지되며, 복원이 필요하면 담당자에게 요청해 주세요.';
+ hooks.modal('<h2 id="modal-title">이 질문을 삭제할까요?</h2><p class="modal-sub">'+description+'</p><blockquote class="delete-question-preview">'+esc(post.body)+'</blockquote><div class="modal-button-row"><button class="danger-button" data-confirm-delete="'+esc(post.id)+'">질문 삭제</button><button class="secondary-button" data-action="close-modal">취소</button></div>');
 }
 export function unknownOffer(r){
  return `<div class="unknown-board-offer"><div><strong>게시판에 질문을 남길까요?</strong><p>익명으로 공유됩니다.</p></div><button class="secondary-button" data-post-question="${esc(r.messageId)}">익명으로 질문하기</button></div>`;
@@ -114,7 +115,10 @@ document.addEventListener('click',async e=>{
  const b=e.target.closest('button');if(!b||b.disabled)return;
  if(b.dataset.deletePost){showDeleteDialog(b.dataset.deletePost);return;}
  if(b.dataset.confirmDelete||b.dataset.restorePost){
-  if(busy||state.me?.role!=='staff')return;busy=true;b.disabled=true;
+  if(busy||!state.member)return;
+  const staff=state.me?.role==='staff',post=state.posts.find(p=>p.id===b.dataset.confirmDelete);
+  if(b.dataset.restorePost?!staff:!staff&&!post?.mine)return;
+  busy=true;b.disabled=true;
   try{const restore=!!b.dataset.restorePost,result=await communityAction(restore?'restore-post':'delete-post',{post:b.dataset.restorePost||b.dataset.confirmDelete});if(result){if(!restore)hooks.close();hooks.show('board');}}finally{busy=false;b.disabled=false;}return;
  }
  if(b.dataset.loginRole){loginRole=b.dataset.loginRole;hooks.render();return;}

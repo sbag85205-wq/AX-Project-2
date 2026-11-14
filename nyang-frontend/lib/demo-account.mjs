@@ -43,17 +43,19 @@ export async function session(db,env,request,now=Date.now()){
 export async function logout(db,request){const token=tokenFrom(request);if(/^[a-f0-9]{64}$/.test(token||''))await run(db,'DELETE FROM demo_sessions WHERE token_hash=?',await digest(token));return cookie(request,'',0);}
 export async function accountCommunity(database,username,action=null,input={}){
  const account=accounts[username];if(!account)fail('로그인 후 이용해 주세요.',401);
- const allowed=account.role==='staff'?['reply','delete-post','restore-post']:['question','attendance','post','like','reward'];
+ const allowed=account.role==='staff'?['reply','delete-post','restore-post']:['question','attendance','post','like','reward','delete-post'];
  if(action&&!allowed.includes(action))fail(account.role==='staff'?'담당자는 게시판 관리와 통계 기능을 이용할 수 있어요.':'담당자만 이 작업을 할 수 있어요.',403);
  const db=accountDatabase(database),uid='demo-'+username,email=username+'@demo.invalid';
  await run(db,`INSERT INTO members(email,uid,role,department,name,active) VALUES(?,?,?,?,?,1) ON CONFLICT(email) DO UPDATE SET role=excluded.role,department=excluded.department,name=excluded.name`,email,uid,account.role,account.department,account.name);
  let notice='';
  if(action==='delete-post'||action==='restore-post'){
   if(typeof input.post!=='string'||input.post.length>100)fail('질문을 확인해 주세요.',400);
-  if(!await one(database,'SELECT id FROM demo_posts WHERE id=?',input.post))fail('질문을 찾을 수 없어요.',404);
+  const post=await one(database,'SELECT id,author FROM demo_posts WHERE id=?',input.post);
+  if(!post)fail('질문을 찾을 수 없어요.',404);
+  if(account.role!=='staff'&&post.author!==uid)fail('본인이 작성한 질문만 삭제할 수 있어요.',403);
   if(action==='delete-post'){
-   await run(database,'INSERT OR IGNORE INTO demo_deleted_posts(post,deleted_by,deleted_at) VALUES(?,?,?)',input.post,username,new Date().toISOString());
-   notice='질문을 삭제했어요. 삭제된 글에서 복원할 수 있어요.';
+   await run(database,'INSERT OR IGNORE INTO demo_deleted_posts(post,deleted_by,deleted_at) VALUES(?,?,?)',input.post,account.role==='staff'?username:'author',new Date().toISOString());
+   notice=account.role==='staff'?'질문을 삭제했어요. 삭제된 글에서 복원할 수 있어요.':'내 질문을 삭제했어요.';
   }else{
    await run(database,'DELETE FROM demo_deleted_posts WHERE post=?',input.post);notice='질문을 복원했어요.';
   }
@@ -64,7 +66,7 @@ export async function accountCommunity(database,username,action=null,input={}){
  const authors=await rows(db,'SELECT id,staff FROM replies WHERE post IN (SELECT id FROM posts ORDER BY created DESC LIMIT 200)');
  const byId=new Map(authors.map(r=>[r.id,r.staff]));
  const posts=result.posts.map(p=>({...p,replies:p.replies.map(r=>({...r,authorUsername:Object.keys(accounts).find(key=>'demo-'+key===byId.get(r.id))||'',authorRole:'staff'}))}));
- const deletedPosts=account.role==='staff'?await rows(database,'SELECT p.id,p.category,p.body,p.created,d.deleted_at,d.deleted_by FROM demo_deleted_posts d JOIN demo_posts p ON p.id=d.post ORDER BY d.deleted_at DESC LIMIT 200'):undefined;
+ const deletedPosts=account.role==='staff'?await rows(database,'SELECT p.id,p.category,p.body,p.created,d.deleted_at FROM demo_deleted_posts d JOIN demo_posts p ON p.id=d.post ORDER BY d.deleted_at DESC LIMIT 200'):undefined;
  return {...result,...(notice?{notice}:{}),posts,deletedPosts,demoMode:true,me:{username,...account},members:undefined};
 }
 export async function statistics(db,username){

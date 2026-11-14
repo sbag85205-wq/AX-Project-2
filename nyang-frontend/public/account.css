@@ -27,3 +27,6 @@ body[data-role="staff"] .header-account{display:flex;flex-direction:row;justify-
 .login-pet-reply:empty{visibility:hidden}
 @keyframes login-cat-grumble{0%,100%{transform:translateY(0)}30%,70%{transform:translateY(3px)}50%{transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.login-cat-touch.is-annoyed{animation:none}}
+
+.admin-document-table-wrap{overflow-x:auto}.admin-document-table td{font-size:13px;line-height:1.6}.admin-document-table td:first-child{min-width:180px}.admin-document-table td:first-child strong{font-weight:500}.admin-document-table td:not(:first-child){white-space:nowrap}.admin-document-table .text-button{color:var(--ui-accent);font-size:13px}.admin-documents .admin-search .text-button{white-space:nowrap}.admin-document-table caption{font-size:12px;text-align:left;color:var(--ui-sub)}
+@media(min-width:1151px){body[data-role=staff] .workspace-header{grid-template-columns:minmax(245px,1fr) auto minmax(90px,1fr)}}
