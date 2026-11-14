@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState, type DragEvent, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { LoadError } from '../../components/LoadError';
 import { useToast } from '../../components/Toast';
 import { callFunction, errorMessage } from '../../lib/api';
 import { CATEGORIES } from '../../lib/constants';
+import { listAllDocuments, setDocumentStatus, uploadDocumentFile } from '../../lib/db';
 import { extractPages, sha256 } from '../../lib/extract';
 import { DOC_ACCEPT, DOC_TYPES_LABEL, fileKind } from '../../lib/fileTypes';
 import { pageCountLabel } from '../../lib/sheet';
@@ -19,7 +21,8 @@ const STATUS: Record<DocumentRow['status'], [string, string]> = {
 
 export default function Documents() {
   const toast = useToast();
-  const [docs, setDocs] = useState<DocumentRow[]>([]);
+  const [docs, setDocs] = useState<DocumentRow[] | null>(null);
+  const [loadError, setLoadError] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<string>(CATEGORIES[0]);
@@ -30,8 +33,12 @@ export default function Documents() {
   const [dragging, setDragging] = useState(false);
 
   const load = useCallback(async () => {
-    const { data } = await supabase.from('documents').select('*').order('created_at', { ascending: false });
-    setDocs((data as DocumentRow[]) ?? []);
+    setLoadError('');
+    try {
+      setDocs(await listAllDocuments());
+    } catch (e) {
+      setLoadError(errorMessage(e));
+    }
   }, []);
 
   useEffect(() => {
@@ -65,8 +72,7 @@ export default function Documents() {
       const hash = await sha256(file);
       const ext = file.name.toLowerCase().split('.').pop();
       const path = `${new Date().toISOString().slice(0, 10)}/${hash.slice(0, 16)}.${ext}`;
-      const { error: upErr } = await supabase.storage.from('documents').upload(path, file, { upsert: true, contentType: file.type || undefined });
-      if (upErr) throw new Error('원본 파일을 저장하지 못했어요.');
+      await uploadDocumentFile(path, file);
 
       setProgress(`청크 분할·인덱싱 중… (${pageCountLabel(pages.length, file.name)})`);
       const res = await callFunction<{ chunks: number; embedded: boolean }>('ingest', {
@@ -86,8 +92,11 @@ export default function Documents() {
   };
 
   const setStatus = async (d: DocumentRow, status: 'ready' | 'archived') => {
-    const { error: e } = await supabase.from('documents').update({ status, updated_at: new Date().toISOString() }).eq('id', d.id);
-    if (e) return toast('상태를 바꾸지 못했어요.');
+    try {
+      await setDocumentStatus(d.id, status);
+    } catch (e) {
+      return toast(errorMessage(e));
+    }
     toast(status === 'archived' ? '검색 대상에서 제외했어요.' : '다시 검색 대상에 넣었어요.');
     load();
   };
@@ -150,8 +159,10 @@ export default function Documents() {
       </form>
 
       <section className="card" aria-label="문서 목록" style={{ overflow: 'hidden' }}>
-        {docs.length === 0 && <div className="empty">등록된 문서가 없어요.</div>}
-        {docs.map((d) => (
+        {loadError && <LoadError className="empty" message={loadError} onRetry={load} />}
+        {!loadError && docs === null && <div className="empty">불러오는 중…</div>}
+        {!loadError && docs?.length === 0 && <div className="empty">등록된 문서가 없어요.</div>}
+        {(docs ?? []).map((d) => (
           <div key={d.id} className="list-row">
             <div className="list-main">
               <div className="list-title">{d.title}</div>

@@ -1,21 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { LoadError } from '../components/LoadError';
 import { PdfViewer } from '../components/PdfViewer';
 import { SheetViewer } from '../components/SheetViewer';
+import { errorMessage } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import { getDocument, listChunks, signedDocUrl, SIGNED_URL_TTL, type ChunkRow } from '../lib/db';
 import { stripOverlap } from '../lib/docText';
 import { docFileType, pageCountLabel, pageLabel } from '../lib/sheet';
-import { supabase } from '../lib/supabase';
 import type { DocumentRow } from '../lib/types';
-
-interface ChunkRow {
-  id: string;
-  seq: number;
-  section_title: string | null;
-  page_start: number;
-  page_end: number;
-  content: string;
-}
 
 export default function DocumentView() {
   const { id } = useParams();
@@ -27,22 +20,37 @@ export default function DocumentView() {
   const [missing, setMissing] = useState(false);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [tab, setTab] = useState<'text' | 'original'>('text');
+  const [error, setError] = useState('');
 
-  useEffect(() => {
+  const load = useCallback(() => {
     if (!id) return;
-    Promise.all([
-      supabase.from('documents').select('*').eq('id', id).maybeSingle(),
-      supabase.from('chunks').select('id, seq, section_title, page_start, page_end, content').eq('document_id', id).order('seq')
-    ]).then(async ([{ data: d }, { data: c }]) => {
+    let cancelled = false;
+    setError('');
+    setMissing(false);
+    setDoc(null);
+    setChunks([]);
+    setFileUrl(null);
+    (async () => {
+      const [d, c] = await Promise.all([getDocument(id), listChunks(id)]);
+      if (cancelled) return;
       if (!d) return setMissing(true);
-      setDoc(d as DocumentRow);
-      setChunks((c as ChunkRow[]) ?? []);
+      setDoc(d);
+      setChunks(c);
       if (d.file_path) {
-        const { data: signed } = await supabase.storage.from('documents').createSignedUrl(d.file_path, 3600);
-        if (signed) setFileUrl(signed.signedUrl);
+        // 원본 주소를 못 만들어도 텍스트는 그대로 보여준다 (원본 버튼만 빠진다)
+        const url = await signedDocUrl(d.file_path, SIGNED_URL_TTL.documentView).catch((e) => {
+          console.warn(e);
+          return null;
+        });
+        if (!cancelled) setFileUrl(url);
       }
-    });
+    })().catch((e) => !cancelled && setError(errorMessage(e)));
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
+
+  useEffect(() => load(), [load]);
 
   // 인용에서 들어왔으면 해당 조각으로 스크롤
   useEffect(() => {
@@ -73,6 +81,14 @@ export default function DocumentView() {
     return (
       <main className="admin-main">
         <div className="card empty">문서를 찾을 수 없어요. 삭제되었거나 검색 대상에서 제외된 문서일 수 있어요.</div>
+        <Link to="/docs" className="btn" style={{ alignSelf: 'flex-start' }}>문서 목록으로</Link>
+      </main>
+    );
+  }
+  if (error) {
+    return (
+      <main className="admin-main">
+        <LoadError message={error} onRetry={load} />
         <Link to="/docs" className="btn" style={{ alignSelf: 'flex-start' }}>문서 목록으로</Link>
       </main>
     );

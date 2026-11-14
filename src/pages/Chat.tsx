@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ClipboardEvent, type DragEvent, type FormEvent, type KeyboardEvent } from 'react';
 import { AnswerCard } from '../components/AnswerCard';
 import { ClipIcon, CloseIcon, DocIcon, MenuIcon, PlusIcon, SendIcon, TrashIcon } from '../components/Icons';
+import { LoadError } from '../components/LoadError';
 import { Mascot } from '../components/Mascot';
 import { SourceModal } from '../components/SourceModal';
 import { useToast } from '../components/Toast';
@@ -9,7 +10,7 @@ import { ATTACH_ACCEPT, ATTACH_MAX, prepareAttachment } from '../lib/attach';
 import { ATTACH_TYPES_SHORT } from '../lib/fileTypes';
 import { useAuth } from '../lib/auth';
 import { CATEGORY_SUGGESTIONS, SUGGESTED_QUESTIONS } from '../lib/constants';
-import { supabase } from '../lib/supabase';
+import { deleteConversation as deleteConversationRow, listConversations, listMessages } from '../lib/db';
 import type { ChatAttachment, Citation, Conversation, Message } from '../lib/types';
 
 const MAX_LEN = 2000;
@@ -55,13 +56,19 @@ export default function Chat() {
   const [preparing, setPreparing] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [topic, setTopic] = useState<string | null>(null);
+  const [convError, setConvError] = useState('');
+  const [threadError, setThreadError] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const loadConversations = useCallback(async () => {
-    const { data } = await supabase.from('conversations').select('id, title, updated_at').order('updated_at', { ascending: false }).limit(50);
-    setConversations((data as Conversation[]) ?? []);
+    try {
+      setConversations(await listConversations());
+      setConvError('');
+    } catch (e) {
+      setConvError(errorMessage(e));
+    }
   }, []);
 
   useEffect(() => {
@@ -76,9 +83,17 @@ export default function Chat() {
     setSideOpen(false);
     if (id === currentId) return;
     setCurrentId(id);
+    await loadMessages(id);
+  };
+
+  const loadMessages = async (id: string) => {
     setMessages([]);
-    const { data } = await supabase.from('messages').select('id, role, content, answer, vote, created_at').eq('conversation_id', id).order('created_at');
-    setMessages(withAttachmentNotes((data as Message[]) ?? []));
+    setThreadError('');
+    try {
+      setMessages(withAttachmentNotes(await listMessages(id)));
+    } catch (e) {
+      setThreadError(errorMessage(e));
+    }
   };
 
   const addFiles = async (files: File[]) => {
@@ -121,14 +136,18 @@ export default function Chat() {
   const newConversation = () => {
     setCurrentId(null);
     setMessages([]);
+    setThreadError('');
     setSideOpen(false);
     inputRef.current?.focus();
   };
 
   const deleteConversation = async (id: string) => {
     if (!window.confirm('이 대화를 삭제할까요? 삭제하면 되돌릴 수 없어요.')) return;
-    const { error } = await supabase.from('conversations').delete().eq('id', id);
-    if (error) return toast('삭제하지 못했어요.');
+    try {
+      await deleteConversationRow(id);
+    } catch (e) {
+      return toast(errorMessage(e));
+    }
     if (id === currentId) newConversation();
     setConversations((list) => list.filter((c) => c.id !== id));
     toast('대화를 삭제했어요.');
@@ -204,7 +223,8 @@ export default function Chat() {
           </button>
         </div>
         <ul className="conv-list">
-          {conversations.length === 0 && <li className="hint" style={{ padding: 12 }}>아직 대화가 없어요.</li>}
+          {convError && <li style={{ padding: 12 }}><LoadError className="hint" message={convError} onRetry={loadConversations} /></li>}
+          {!convError && conversations.length === 0 && <li className="hint" style={{ padding: 12 }}>아직 대화가 없어요.</li>}
           {conversations.map((c) => (
             <li key={c.id} className="conv-item" aria-current={c.id === currentId}>
               <button type="button" className="open" onClick={() => openConversation(c.id)} title={c.title}>{c.title}</button>
@@ -221,7 +241,8 @@ export default function Chat() {
             <button type="button" className="btn btn-sm mobile-only" style={{ alignSelf: 'flex-start' }} onClick={() => setSideOpen(!sideOpen)}>
               <MenuIcon /> 대화 기록
             </button>
-            {messages.length === 0 && (
+            {threadError && currentId && <LoadError message={threadError} onRetry={() => loadMessages(currentId)} />}
+            {messages.length === 0 && !threadError && (
               <div className="welcome">
                 <div className="welcome-scene">
                   <span className="scene-shadow" aria-hidden="true" />

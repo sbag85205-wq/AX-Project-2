@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
+import { LoadError } from '../../components/LoadError';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
+import { errorMessage } from '../../lib/api';
 import { CATEGORIES } from '../../lib/constants';
+import { deleteFaq, listFaqs } from '../../lib/db';
 import { supabase } from '../../lib/supabase';
 import type { Faq } from '../../lib/types';
 
@@ -9,13 +12,18 @@ type Draft = { id?: string; question: string; answer: string; category: string; 
 
 export default function Faqs() {
   const toast = useToast();
-  const [faqs, setFaqs] = useState<Faq[]>([]);
+  const [faqs, setFaqs] = useState<Faq[] | null>(null);
+  const [error, setError] = useState('');
   const [cat, setCat] = useState('전체');
   const [draft, setDraft] = useState<Draft | null>(null);
 
   const load = useCallback(async () => {
-    const { data } = await supabase.from('faqs').select('*').order('updated_at', { ascending: false });
-    setFaqs((data as Faq[]) ?? []);
+    setError('');
+    try {
+      setFaqs(await listFaqs());
+    } catch (e) {
+      setError(errorMessage(e));
+    }
   }, []);
 
   useEffect(() => {
@@ -34,13 +42,16 @@ export default function Faqs() {
 
   const remove = async (f: Faq) => {
     if (!window.confirm('이 FAQ를 삭제할까요?')) return;
-    const { error } = await supabase.from('faqs').delete().eq('id', f.id);
-    if (error) return toast('삭제하지 못했어요.');
+    try {
+      await deleteFaq(f.id);
+    } catch (e) {
+      return toast(errorMessage(e));
+    }
     toast('FAQ를 삭제했어요.');
     load();
   };
 
-  const shown = faqs.filter((f) => cat === '전체' || f.category === cat);
+  const shown = (faqs ?? []).filter((f) => cat === '전체' || f.category === cat);
 
   return (
     <main className="admin-main">
@@ -55,7 +66,9 @@ export default function Faqs() {
         {['전체', ...CATEGORIES].map((c) => <button key={c} type="button" className="chip" aria-pressed={cat === c} onClick={() => setCat(c)}>{c}</button>)}
       </div>
       <section className="card" style={{ overflow: 'hidden' }}>
-        {shown.length === 0 && <div className="empty">FAQ가 없어요.</div>}
+        {error && <LoadError className="empty" message={error} onRetry={load} />}
+        {!error && faqs === null && <div className="empty">불러오는 중…</div>}
+        {!error && faqs !== null && shown.length === 0 && <div className="empty">FAQ가 없어요.</div>}
         {shown.map((f) => (
           <div key={f.id} className="list-row">
             <div className="list-main">

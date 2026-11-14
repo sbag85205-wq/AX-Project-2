@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SearchIcon } from '../components/Icons';
+import { LoadError } from '../components/LoadError';
+import { errorMessage } from '../lib/api';
 import { CATEGORIES } from '../lib/constants';
-import { supabase } from '../lib/supabase';
+import { listReadyDocuments } from '../lib/db';
 import type { DocumentRow } from '../lib/types';
 import { pageCountLabel } from '../lib/sheet';
 
@@ -10,17 +12,21 @@ export default function DocumentList() {
   const [docs, setDocs] = useState<DocumentRow[] | null>(null);
   const [cat, setCat] = useState('전체');
   const [q, setQ] = useState('');
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    // 직원에게는 RLS로 검색 가능한(ready) 문서만 보인다
-    supabase
-      .from('documents')
-      .select('*')
-      .eq('status', 'ready')
-      .order('category')
-      .order('title')
-      .then(({ data }) => setDocs((data as DocumentRow[]) ?? []));
+  const load = useCallback(() => {
+    let cancelled = false;
+    setError('');
+    setDocs(null);
+    listReadyDocuments()
+      .then((list) => !cancelled && setDocs(list))
+      .catch((e) => !cancelled && setError(errorMessage(e)));
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  useEffect(() => load(), [load]);
 
   const shown = (docs ?? [])
     .filter((d) => cat === '전체' || d.category === cat)
@@ -46,7 +52,8 @@ export default function DocumentList() {
         ))}
       </div>
 
-      {docs === null && <div className="empty">불러오는 중…</div>}
+      {error && <LoadError message={error} onRetry={load} />}
+      {docs === null && !error && <div className="empty">불러오는 중…</div>}
       {docs !== null && shown.length === 0 && <div className="card empty">{docs.length ? '조건에 맞는 문서가 없어요.' : '아직 등록된 문서가 없어요.'}</div>}
       <div className="doc-grid">
         {shown.map((d) => (
