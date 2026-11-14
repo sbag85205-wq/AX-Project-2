@@ -4,27 +4,32 @@ import { TopBar } from './components/TopBar';
 import { AuthProvider, useAuth } from './lib/auth';
 import { supabaseConfigured } from './lib/supabase';
 import Chat from './pages/Chat';
+import DocumentList from './pages/DocumentList';
+import DocumentView from './pages/DocumentView';
 import Login from './pages/Login';
 
 const Admin = lazy(() => import('./pages/admin/AdminLayout'));
 
 function Shell({ children }: { children: ReactNode }) {
   return (
-    <>
+    <div className="app-shell">
       <TopBar />
       {children}
-    </>
+    </div>
   );
 }
 
 function Routed() {
-  const { session, profile, loading } = useAuth();
+  const { session, profile, loading, verifying } = useAuth();
+  if (verifying) return <Login />;
   if (loading) return <div className="empty">불러오는 중…</div>;
   if (!session) return <Login />;
   if (!profile) return <div className="empty">계정 정보를 찾을 수 없어요. 관리자에게 문의해 주세요.</div>;
   return (
     <Routes>
       <Route path="/" element={<Shell><Chat /></Shell>} />
+      <Route path="/docs" element={<Shell><DocumentList /></Shell>} />
+      <Route path="/docs/:id" element={<Shell><DocumentView /></Shell>} />
       <Route
         path="/admin/*"
         element={profile.role === 'admin'

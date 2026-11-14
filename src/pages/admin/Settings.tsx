@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useToast } from '../../components/Toast';
 import { callFunction, errorMessage } from '../../lib/api';
-import type { AppSettings, ModelOption, PreviewRow } from '../../lib/types';
+import type { AppSettings, ModelOption, PreviewQuery, PreviewRow } from '../../lib/types';
 
 interface SettingsInfo {
   settings: AppSettings;
@@ -53,7 +53,7 @@ export default function Settings() {
   const [test, setTest] = useState<TestResult | null>(null);
   const [testing, setTesting] = useState(false);
   const [question, setQuestion] = useState('반차는 어떻게 쓰나요? 몇 시간 단위예요?');
-  const [preview, setPreview] = useState<{ terms: string[]; results: PreviewRow[] } | null>(null);
+  const [preview, setPreview] = useState<{ terms: string[]; queries?: PreviewQuery[]; results: PreviewRow[] } | null>(null);
   const [previewing, setPreviewing] = useState(false);
 
   useEffect(() => {
@@ -116,7 +116,7 @@ export default function Settings() {
   if (error) return <main className="admin-main"><div className="error-box">{error}</div></main>;
   if (!info || !draft) return <main className="admin-main"><div className="empty">불러오는 중…</div></main>;
 
-  const passed = preview?.results.filter((r) => r.passed).length ?? 0;
+  const passed = preview?.results.filter((r) => r.used ?? r.passed).length ?? 0;
 
   return (
     <main className="admin-main">
@@ -185,16 +185,23 @@ export default function Settings() {
       <section className="card" style={{ overflow: 'hidden' }}>
         <div className="panel" style={{ paddingBottom: 8 }}>
           <h2>검색 미리보기</h2>
-          <p className="panel-sub">저장하기 전에 지금 설정으로 어떤 문서가 근거로 잡히는지 확인해요. FAQ와 거의 같은 질문은 실제로는 FAQ 답변이 먼저 나가요.</p>
+          <p className="panel-sub">저장하기 전에 지금 설정으로 어떤 문서가 근거로 잡히는지 확인해요. 후보 8개 중 기준을 넘은 앞의 5개만 답변에 쓰여요. FAQ와 거의 같은 질문은 실제로는 FAQ 답변이 먼저 나가요.</p>
           <form onSubmit={runPreview} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <input className="input" style={{ flex: '1 1 260px' }} aria-label="미리 볼 질문" value={question} onChange={(e) => setQuestion(e.target.value)} />
             <button type="submit" className="btn btn-primary" disabled={previewing || !question.trim()}>{previewing ? '검색 중…' : '미리보기'}</button>
           </form>
           {preview && (
-            <p className="hint" style={{ marginTop: 12 }}>
-              검색어: {preview.terms.length ? preview.terms.join(', ') : '(없음)'} · 근거로 쓰는 문서 {passed}개
-              {passed === 0 && ' → 이 질문은 "근거를 찾지 못했어요"로 답해요.'}
-            </p>
+            <div className="hint" style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {preview.queries?.length
+                ? preview.queries.map((q) => (
+                  <div key={q.label}><b>{q.label}</b>{q.label !== '원래 질문' && <> “{q.text}”</>} → {q.terms.length ? q.terms.join(', ') : '(검색어 없음)'}</div>
+                ))
+                : <div>검색어: {preview.terms.length ? preview.terms.join(', ') : '(없음)'}</div>}
+              <div>
+                근거로 쓰는 문서 {passed}개
+                {passed === 0 && ' → 이 질문은 "근거를 찾지 못했어요"로 답해요.'}
+              </div>
+            </div>
           )}
         </div>
         {preview && (
@@ -207,12 +214,16 @@ export default function Settings() {
               {preview.results.map((r, i) => (
                 <div key={i} className="grid-row" style={{ gridTemplateColumns: COLS }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 600 }}>{r.document_title} · {r.section_title ?? `${r.page_start}쪽`}</div>
+                    <div style={{ fontWeight: 600 }}>{r.document_title} · {r.section_title ?? `${r.page_start}쪽`}{r.via && r.via !== '원래 질문' && <span className="hint" style={{ fontWeight: 400 }}> · {r.via}로 찾음</span>}</div>
                     <div className="hint" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.snippet}</div>
                   </div>
                   <div>{r.keyword_score.toFixed(2)}</div>
                   <div>{r.vector_score === null ? '-' : r.vector_score.toFixed(2)}</div>
-                  <div><span className={`pill ${r.passed ? 'pill-done' : 'pill-hold'}`}>{r.passed ? '사용' : '제외'}</span></div>
+                  <div>
+                    {(r.used ?? r.passed)
+                      ? <span className="pill pill-done">사용</span>
+                      : <span className="pill pill-hold" title={r.passed ? '기준은 넘었지만 앞의 5개에 들지 못했어요' : undefined}>{r.passed ? '순위 밖' : '제외'}</span>}
+                  </div>
                 </div>
               ))}
             </div>

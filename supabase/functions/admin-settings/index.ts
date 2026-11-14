@@ -1,6 +1,7 @@
 // 관리자 설정: 답변 모델·검색 기준 조회/저장, 모델 목록, 모델 테스트, 검색 미리보기
 import { adminClient, corsHeaders, errorResponse, getCaller, json, loadSettings } from '../_shared/http.ts';
-import { searchTerms } from '../_shared/text.ts';
+import { CANDIDATE_COUNT, EVIDENCE_COUNT, coreQuestion, rankEvidence, searchTerms } from '../_shared/text.ts';
+import { REWRITE_PROMPT, parseRewrite } from '../_shared/answer.ts';
 import { chatCompletion, defaultModel, embed, embeddingConfigured, llmBaseUrl, llmConfigured } from '../_shared/providers.ts';
 import { parseSettings } from '../_shared/settings.ts';
 
@@ -83,26 +84,63 @@ Deno.serve(async (req) => {
         } catch (e) {
           return errorResponse(400, 'bad_settings', (e as Error).message);
         }
-        const terms = searchTerms(question);
-        const [queryEmbedding] = (await embed([question]).catch(() => null)) ?? [null];
-        const { data: rows, error } = await db.rpc('search_chunks', {
-          terms: terms.length ? terms : [question],
-          query_embedding: queryEmbedding ? JSON.stringify(queryEmbedding) : null,
-          match_count: 8,
-          vector_weight: settings.vector_weight
-        });
-        if (error) throw error;
-        const results = (rows ?? []).map((r: Record<string, any>) => ({
-          document_title: r.document_title,
-          section_title: r.section_title,
-          page_start: r.page_start,
-          page_end: r.page_end,
-          keyword_score: r.keyword_score,
-          vector_score: r.vector_score,
-          passed: r.keyword_score >= settings.keyword_min || (r.vector_score ?? 0) >= settings.vector_min,
-          snippet: String(r.content).slice(0, 140)
+        // 채팅과 같은 방식: 원래 질문 + 실제로 묻는 문장 + AI가 정리한 질문으로 각각 찾아 합친다
+        const queries: { label: string; text: string }[] = [{ label: '원래 질문', text: question }];
+        const core = coreQuestion(question);
+        if (core !== question) queries.push({ label: '질문 문장', text: core });
+        if (llmConfigured() && question.length >= 15) {
+          const r = await chatCompletion(REWRITE_PROMPT, question, settings.llm_model, 10000).catch(() => null);
+          const parsed = r ? parseRewrite(r.text) : null;
+          const rewritten = parsed ? [parsed.query, ...parsed.keywords].join(' ').trim() : '';
+          if (rewritten) queries.push({ label: 'AI 정리', text: rewritten });
+        }
+        const bases = queries.filter((q) => searchTerms(q.text).length);
+        const used = bases.length ? bases : [queries[0]];
+        const embeddings = (await embed(used.map((q) => q.text)).catch(() => null)) ?? [];
+        type Row = {
+          id: string; document_title: string; section_title: string | null; page_start: number; page_end: number;
+          content: string; keyword_score: number; vector_score: number | null;
+        };
+        const lists = await Promise.all(used.map(async (q, i) => {
+          const terms = searchTerms(q.text).length ? searchTerms(q.text) : [q.text];
+          const { data: rows, error } = await db.rpc('search_chunks', {
+            terms,
+            query_embedding: embeddings[i] ? JSON.stringify(embeddings[i]) : null,
+            match_count: CANDIDATE_COUNT,
+            vector_weight: settings.vector_weight
+          });
+          if (error) throw error;
+          return rankEvidence((rows ?? []) as Row[], terms.length, settings).map((r) => ({ ...r, via: q.label }));
         }));
-        return json({ terms, results });
+        // 같은 조각은 가장 높은 점수로 한 번만, 기준을 넘은 것 중 점수 높은 5개가 실제 답변에 쓰인다
+        const best = new Map<string, (typeof lists)[number][number]>();
+        for (const r of lists.flat()) {
+          const prev = best.get(r.id);
+          if (!prev || r.score > prev.score) best.set(r.id, { ...r, passed: r.passed || !!prev?.passed });
+          else if (r.passed) prev.passed = true;
+        }
+        let taken = 0;
+        const results = [...best.values()].sort((a, b) => b.score - a.score).slice(0, CANDIDATE_COUNT).map((r) => {
+          const use = r.passed && taken < EVIDENCE_COUNT;
+          if (use) taken++;
+          return {
+            document_title: r.document_title,
+            section_title: r.section_title,
+            page_start: r.page_start,
+            page_end: r.page_end,
+            keyword_score: r.keyword_score,
+            vector_score: r.vector_score,
+            passed: r.passed,
+            used: use,
+            via: r.via,
+            snippet: String(r.content).slice(0, 140)
+          };
+        });
+        return json({
+          terms: [...new Set(used.flatMap((q) => searchTerms(q.text)))],
+          queries: queries.map((q) => ({ ...q, terms: searchTerms(q.text) })),
+          results
+        });
       }
 
       default:

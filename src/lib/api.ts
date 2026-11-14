@@ -1,6 +1,6 @@
 import { FunctionsHttpError } from '@supabase/supabase-js';
 import { supabase } from './supabase';
-import type { Answer } from './types';
+import type { Answer, ChatAttachment } from './types';
 
 /** Edge Function을 호출하고, 실패하면 서버가 보낸 한국어 메시지로 예외를 던진다. */
 export async function callFunction<T>(name: string, body: Record<string, unknown>): Promise<T> {
@@ -22,8 +22,14 @@ export interface AskResult {
   answer: Answer;
 }
 
-export const ask = (question: string, conversationId: string | null) =>
-  callFunction<AskResult>('chat', { question, conversation_id: conversationId });
+export const ask = (question: string, conversationId: string | null, attachments: ChatAttachment[] = []) =>
+  callFunction<AskResult>('chat', {
+    question,
+    conversation_id: conversationId,
+    attachments: attachments.map((a) => (a.kind === 'image'
+      ? { name: a.name, kind: 'image', data_url: a.dataUrl }
+      : { name: a.name, kind: 'file', text: a.text }))
+  });
 
 export const sendFeedback = (messageId: string, vote: 'up' | 'down' | null) =>
   callFunction<{ ok: true }>('chat', { action: 'feedback', message_id: messageId, vote });
