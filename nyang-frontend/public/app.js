@@ -81,7 +81,7 @@ function shell(){
    <div class="header-account"><div id="wallet" class="wallet" aria-label="보유 포인트와 하트"></div></div>
   </header>
   <div class="main-shell">
-   <header class="topbar workspace-toolbar"><div class="workspace-context"><span id="workspace-title">물어보기</span></div><div class="top-actions"><div class="workspace-utilities"><button data-action="personality" id="personality-button" aria-label="냥대리 성격 설정">${icon('moon')}<span>차가운 모드</span></button><button data-action="docs">${icon('book')}<span>사내 문서</span></button><button data-action="wardrobe">${icon('shirt')}<span>꾸미기</span></button></div><button class="appearance-button theme-toggle" data-action="toggle-theme" aria-label="다크 모드" aria-pressed="false" title="다크 모드로 전환">${icon('moon')}</button></div></header>
+   <header class="topbar workspace-toolbar"><div class="workspace-context"><span id="workspace-title">물어보기</span></div><div class="top-actions"><div class="workspace-utilities"><button data-action="personality" id="personality-button" aria-label="냥대리 성격 설정">${icon('moon')}<span>차가운 모드</span></button><button data-action="wardrobe">${icon('shirt')}<span>꾸미기</span></button></div><button class="appearance-button theme-toggle" data-action="toggle-theme" aria-label="다크 모드" aria-pressed="false" title="다크 모드로 전환">${icon('moon')}</button></div></header>
    <main class="main-content cat-mode" id="main"></main>
    <footer class="bottom-note"><span id="page-title" class="visually-hidden"></span><span>Knowly 사내 문서와 FAQ를 검색합니다.</span><button data-action="docs">참고 자료 보기 ${icon('chevron')}</button></footer>
   </div>
