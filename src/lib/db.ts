@@ -105,6 +105,30 @@ export async function setDocumentStatus(id: string, status: 'ready' | 'archived'
   if (error) throw new DbError('상태를 바꾸지 못했어요.', error);
 }
 
+/**
+ * 문서를 지운다. DB 행을 먼저 지우고(실패하면 예외), 그다음 원본 파일을 지운다.
+ * 원본 경로는 파일 해시로 정해져 같은 파일을 올린 다른 문서와 겹칠 수 있으므로, 아직 그 경로를 쓰는
+ * 문서가 있으면 파일은 남긴다. 파일 삭제가 실패해도 문서 삭제는 끝난 것으로 본다.
+ */
+export async function deleteDocument(doc: Pick<DocumentRow, 'id' | 'file_path'>): Promise<'removed' | 'shared' | 'no-file' | 'file-failed'> {
+  // 권한(RLS)에 막히면 오류 없이 0행이 지워지므로, 지워진 행을 돌려받아 확인한다
+  const { data, error } = await supabase.from('documents').delete().eq('id', doc.id).select('id');
+  if (error) throw new DbError('삭제하지 못했어요.', error);
+  if (!data?.length) throw new DbError('삭제하지 못했어요. 이미 삭제됐거나 권한이 없을 수 있어요.');
+  if (!doc.file_path) return 'no-file';
+  try {
+    const { count, error: countError } = await supabase.from('documents').select('id', { count: 'exact', head: true }).eq('file_path', doc.file_path);
+    if (countError) throw countError;
+    if (count) return 'shared';
+    const { error: removeError } = await supabase.storage.from(DOC_BUCKET).remove([doc.file_path]);
+    if (removeError) throw removeError;
+    return 'removed';
+  } catch (e) {
+    console.warn('원본 파일을 지우지 못했어요.', doc.file_path, e);
+    return 'file-failed';
+  }
+}
+
 // ───────────── 대화 ─────────────
 
 export async function listConversations(): Promise<Conversation[]> {

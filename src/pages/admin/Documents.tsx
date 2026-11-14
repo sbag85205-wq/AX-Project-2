@@ -4,11 +4,10 @@ import { LoadError } from '../../components/LoadError';
 import { useToast } from '../../components/Toast';
 import { callFunction, errorMessage } from '../../lib/api';
 import { CATEGORIES } from '../../lib/constants';
-import { listAllDocuments, setDocumentStatus, uploadDocumentFile } from '../../lib/db';
+import { deleteDocument, listAllDocuments, setDocumentStatus, uploadDocumentFile } from '../../lib/db';
 import { extractPages, sha256 } from '../../lib/extract';
 import { DOC_ACCEPT, DOC_TYPES_LABEL, fileKind } from '../../lib/fileTypes';
 import { pageCountLabel } from '../../lib/sheet';
-import { supabase } from '../../lib/supabase';
 import type { DocumentRow } from '../../lib/types';
 
 const MAX_MB = 20;
@@ -103,10 +102,13 @@ export default function Documents() {
 
   const remove = async (d: DocumentRow) => {
     if (!window.confirm(`'${d.title}' 문서를 삭제할까요? 이 문서를 출처로 한 과거 답변의 원문 보기도 막혀요.`)) return;
-    if (d.file_path) await supabase.storage.from('documents').remove([d.file_path]);
-    const { error: e } = await supabase.from('documents').delete().eq('id', d.id);
-    if (e) return toast('삭제하지 못했어요.');
-    toast('문서를 삭제했어요.');
+    let result;
+    try {
+      result = await deleteDocument(d);
+    } catch (e) {
+      return toast(errorMessage(e));
+    }
+    toast(result === 'file-failed' ? '문서를 삭제했어요. 원본 파일은 지우지 못해 저장소에 남아 있어요.' : '문서를 삭제했어요.');
     load();
   };
 
