@@ -1,22 +1,24 @@
 // 엑셀 시트를 검색용 텍스트로 바꾼다. 외부 라이브러리 없이 작성해 단위 테스트에서 바로 쓴다.
+import { docFileType } from './fileTypes';
+
+export { docFileType, type DocFileType } from './fileTypes';
 
 export interface Sheet {
   name: string;
   rows: string[][];
 }
 
-import { docFileType } from './fileTypes';
-
-export { docFileType, type DocFileType } from './fileTypes';
-
 /** 문서 크기 표시: 엑셀은 시트 수, 나머지는 페이지 수 */
 export const pageCountLabel = (count: number, path: string | null | undefined) =>
   docFileType(path) === 'sheet' ? `시트 ${count}개` : `${count}페이지`;
 
-/** 위치 표시: 엑셀은 "시트 N", 나머지는 "p.N" */
-export function pageLabel(start: number, end: number, path: string | null | undefined): string {
+/**
+ * 위치 표시(출처 카드·출처 창·문서 보기 공통): 엑셀은 "시트 2", "시트 2–3", 나머지는 "2쪽", "2–3쪽".
+ * 경로를 모르면(출처 카드: 서버가 보내는 출처에 파일 정보가 없다) 쪽으로 표시한다.
+ */
+export function pageLabel(start: number, end: number, path?: string | null): string {
   const range = start === end ? `${start}` : `${start}–${end}`;
-  return docFileType(path) === 'sheet' ? `시트 ${range}` : `p.${range}`;
+  return docFileType(path) === 'sheet' ? `시트 ${range}` : `${range}쪽`;
 }
 
 const trimRow = (row: string[]) => {

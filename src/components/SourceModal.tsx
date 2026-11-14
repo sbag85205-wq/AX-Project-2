@@ -38,9 +38,7 @@ export function SourceModal({ citation, onClose }: { citation: Citation; onClose
   }, [citation]);
 
   const type = docFileType(chunk?.documents?.file_path);
-  const pages = type === 'sheet'
-    ? pageLabel(citation.page_start, citation.page_end, chunk?.documents?.file_path)
-    : citation.page_start === citation.page_end ? `${citation.page_start}쪽` : `${citation.page_start}~${citation.page_end}쪽`;
+  const pages = pageLabel(citation.page_start, citation.page_end, chunk?.documents?.file_path);
   return (
     <Modal
       title={citation.document_title}

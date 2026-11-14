@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { pageLabel } from '../lib/sheet';
 import type { Citation, Message } from '../lib/types';
 import { DocIcon, ThumbDown, ThumbUp } from './Icons';
 
@@ -10,8 +11,6 @@ const LABEL = {
   partial: { text: '딱 맞는 기준 없음', color: 'var(--warn)' },
   conflict: { text: '문서 내용이 서로 달라요', color: 'var(--warn)' }
 };
-
-const pages = (c: Citation) => (c.page_start === c.page_end ? `p.${c.page_start}` : `p.${c.page_start}-${c.page_end}`);
 
 interface Props {
   message: Message;
@@ -71,7 +70,7 @@ export function AnswerCard({ message, onVote, onOpenSource }: Props) {
         <div className="citations" aria-label="출처">
           {a.citations.map((c) => (
             <button type="button" key={c.source_id} className="citation" onClick={() => onOpenSource(c)}>
-              <DocIcon /> <span><b>{c.document_title}</b> · {c.version} · {pages(c)}</span>
+              <DocIcon /> <span><b>{c.document_title}</b> · {c.version} · {pageLabel(c.page_start, c.page_end)}</span>
             </button>
           ))}
         </div>

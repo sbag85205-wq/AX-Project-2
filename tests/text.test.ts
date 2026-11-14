@@ -119,7 +119,10 @@ describe('sheetToText', () => {
   it('엑셀 문서는 시트로 표시한다', () => {
     expect(docFileType('2026-11-07/abc.xlsx')).toBe('sheet');
     expect(pageLabel(2, 2, 'a.csv')).toBe('시트 2');
-    expect(pageLabel(3, 4, 'a.pdf')).toBe('p.3–4');
+    expect(pageLabel(3, 4, 'a.pdf')).toBe('3–4쪽');
+    expect(pageLabel(5, 5, 'a.pdf')).toBe('5쪽');
+    expect(pageLabel(1, 2)).toBe('1–2쪽');
+    expect(pageLabel(2, 3, 'a.xlsx')).toBe('시트 2–3');
     expect(pageCountLabel(3, 'a.xls')).toBe('시트 3개');
   });
 });
