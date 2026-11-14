@@ -19,6 +19,8 @@
   --shadow: 0 7px 28px rgba(32, 48, 71, .05);
   --ok: #17603a;
   --ok-soft: #ddf1e6;
+  --ok-tint: #eef8f2;
+  --ok-line: #bfe3ce;
   --warn: #8a3b06;
   --warn-soft: #fde8d7;
   --info-soft: #e3eafd;

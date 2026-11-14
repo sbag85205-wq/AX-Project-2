@@ -1,3 +1,51 @@
 /* 냥대리 화면 안에 들어갈 때: 바깥 여백·배경은 냥대리가 맡는다 */
 body.knowly-embed { background: transparent; min-height: 0; }
 body.knowly-embed #root > .page, body.knowly-embed .page { padding-top: 8px; }
+
+/* 다크모드: 냥대리 다크 화면(workspace.css의 --ui-* 색)에 맞춘다. knowly-embed.html이 html[data-theme]를 정한다. */
+html[data-theme=dark] {
+  color-scheme: dark;
+  --bg: #1c1c1e;
+  --surface: #262628;
+  --surface-2: #2d2d30;
+  --text: #f2f2f7;
+  --text-2: #dcdce2;
+  --muted: #b0b0b6;
+  --faint: #98989f;
+  --line: #3a3a3c;
+  --line-soft: #323235;
+  --input: #4a4a4f;
+  --primary: #70b4ff;
+  --primary-ink: #a9d0ff;
+  --primary-soft: #243349;
+  --primary-tint: #4a6a94;
+  --me: #284669;
+  --me-ink: #dfedff;
+  --shadow: 0 7px 28px rgba(0, 0, 0, .25);
+  --ok: #8fd6ad;
+  --ok-soft: #1c3a2a;
+  --ok-tint: #1a2e24;
+  --ok-line: #2f5a43;
+  --warn: #f1b98a;
+  --warn-soft: #40291a;
+  --info-soft: #24334d;
+  --neutral-soft: #333336;
+  --danger: #ff8a80;
+}
+html[data-theme=dark] :is(.btn-primary, .send) { background: #0873dc; border-color: #0873dc; color: #fff; }
+html[data-theme=dark] .btn-primary:hover { background: #1782ec; box-shadow: none; }
+html[data-theme=dark] .pill-hold { color: #c9c9cf; }
+html[data-theme=dark] .pill-fail { background: #44231f; }
+html[data-theme=dark] .error-box { background: #44231f; color: #ffb4ab; }
+html[data-theme=dark] :is(.answer-warn, .status-warn) { color: var(--warn); }
+html[data-theme=dark] .badge { background: var(--neutral-soft); }
+html[data-theme=dark] .topbar { background: rgba(28, 28, 30, .94); }
+html[data-theme=dark] button.grid-row[aria-pressed='true'] { background: var(--primary-soft); }
+html[data-theme=dark] .toast { background: #e4e7ee; color: #17191e; }
+html[data-theme=dark] .doc-chunk.focused { background: #4a4020; box-shadow: 0 0 0 8px #4a4020; }
+html[data-theme=dark] .mascot-avatar { background: var(--surface-2); }
+html[data-theme=dark] .suggestion { border-color: var(--line); color: var(--muted); }
+html[data-theme=dark] .suggestion:hover { background: var(--primary-soft); border-color: var(--primary-tint); }
+html[data-theme=dark] .composer { border-color: var(--line); }
+html[data-theme=dark] .login-types { background: var(--surface-2); }
+html[data-theme=dark] .chat-scroll { scrollbar-color: #555967 transparent; }

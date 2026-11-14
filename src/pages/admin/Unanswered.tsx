@@ -222,7 +222,7 @@ export default function Unanswered() {
                 </ul>
               </div>
               {selected.status === 'FAQ 등록 완료' ? (
-                <div style={{ background: '#eef8f2', border: '1px solid #bfe3ce', borderRadius: 10, padding: '14px 16px' }}>
+                <div style={{ background: 'var(--ok-tint)', border: '1px solid var(--ok-line)', borderRadius: 10, padding: '14px 16px' }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ok)', marginBottom: 4 }}>등록된 FAQ 답변</div>
                   <div style={{ fontSize: 14, whiteSpace: 'pre-line' }}>{selected.faqs?.answer ?? '(삭제된 FAQ)'}</div>
                 </div>
