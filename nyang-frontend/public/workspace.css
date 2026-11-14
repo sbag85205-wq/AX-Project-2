@@ -76,6 +76,14 @@ html[data-theme=dark] .desktop-workspace .workspace-toolbar .theme-toggle[aria-p
 .desktop-workspace .chat-composer .input-row textarea::placeholder{color:var(--ui-faint)}
 .desktop-workspace .chat-composer .send-button{width:30px;height:30px;background:#007aff;color:white;border-radius:50%}
 .desktop-workspace .chat-composer .send-button .icon{width:16px;height:16px}
+/* 사진·파일 첨부: 입력칸 왼쪽의 둥근 + 버튼 */
+.desktop-workspace .chat-composer .attach-button{display:grid;place-items:center;flex:none;width:30px;height:30px;border:1px solid var(--ui-line);border-radius:50%;background:var(--ui-panel);color:var(--ui-sub)}
+.desktop-workspace .chat-composer .attach-button:hover:not(:disabled){background:var(--ui-fill);color:var(--ui-ink)}
+.desktop-workspace .chat-composer .attach-button:disabled{opacity:.45}
+.desktop-workspace .chat-composer .attach-button .icon{width:16px;height:16px}
+/* 첨부한 파일 표시는 입력칸과 같은 왼쪽 여백에 맞춘다 */
+.desktop-workspace .chat-composer .composer-attachments{margin:0;padding:12px 18px 0}
+.desktop-workspace .chat-composer .composer-attachments+.input-row{padding-top:10px}
 .desktop-workspace .chat-composer .composer-meta{padding:0 18px 13px;gap:12px}
 .desktop-workspace .chat-composer .category-select{padding:4px 0;background:none;color:var(--ui-sub)}
 .desktop-workspace .chat-composer .category-select select{color:var(--ui-sub);font-size:11px}
