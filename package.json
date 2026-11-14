@@ -8,7 +8,8 @@
     "build": "npm run prepare:nyang && tsc -b && npm run build:nyang-embed && vite build",
     "preview": "vite preview",
     "test": "vitest run && node --test tests/nyang-local.test.mjs nyang-frontend/tests/*.test.mjs",
-    "build:nyang-embed": "vite build --config vite.embed.config.ts && node -e \"require('fs').renameSync('public/knowly/knowly-embed.html','public/knowly/index.html')\"",
+    "build:nyang-embed": "vite build --config vite.embed.config.ts",
+    "dev:knowly": "vite build --watch --config vite.embed.config.ts",
     "prepare:nyang": "node scripts/prepare-nyang.mjs",
     "predev": "npm run prepare:nyang && npm run build:nyang-embed",
     "test:nyang": "node --test nyang-frontend/tests/*.test.mjs"

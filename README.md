@@ -188,6 +188,13 @@ npm test                     # 단위 테스트
 npm run build                # 타입 검사 + 빌드
 ```
 
+Knowly 화면(문서·대화 기록·관리자)은 냥대리 안의 iframe(`/knowly/`)으로 열리고, `npm run dev`를 시작할 때 한 번만 빌드돼요.
+Knowly 화면 코드(`src/pages`, `src/components`, `src/lib`)를 고치면서 보려면 다른 터미널에서 아래를 함께 켜 두고, 저장한 뒤 브라우저를 새로고침하세요.
+
+```bash
+npm run dev:knowly           # Knowly 화면을 public/knowly/에 다시 빌드 (파일을 저장할 때마다)
+```
+
 ### 6. Vercel 배포
 
 1. [Vercel](https://vercel.com/new) → **Import Git Repository** → `AX-Project-2`
