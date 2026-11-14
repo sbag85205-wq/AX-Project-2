@@ -10,4 +10,3 @@ export const PlusIcon = () => <svg {...base}><path d="M12 5v14M5 12h14" /></svg>
 export const ClipIcon = () => <svg {...base}><path d="M21 11.5l-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.9-8.9a3.7 3.7 0 0 1 5.2 5.2l-8.9 8.9a1.8 1.8 0 0 1-2.6-2.6l8.2-8.2" /></svg>;
 export const CloseIcon = () => <svg {...base} width={14} height={14}><path d="M6 6l12 12M18 6L6 18" /></svg>;
 export const MenuIcon = () => <svg {...base}><path d="M4 6h16M4 12h16M4 18h16" /></svg>;
-export const BackIcon = () => <svg {...base}><path d="M20 12H5M11 6l-6 6 6 6" /></svg>;

@@ -60,7 +60,3 @@ function MascotFace({ size, mood, bob, avatar, petted }: { size: number; mood: M
     </span>
   );
 }
-
-export function Logo({ size = 36 }: { size?: number }) {
-  return <span aria-hidden="true"><Mascot size={size} avatar /></span>;
-}

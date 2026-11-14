@@ -1,42 +1,20 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { loginEmail, supabase } from './supabase';
-import type { Profile, Role } from './types';
+import { supabase } from './supabase';
+import type { Profile } from './types';
 
 interface AuthState {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  /** 로그인 직후 계정 유형을 확인하는 중. 이때는 로그인 화면을 그대로 둔다 */
-  verifying: boolean;
-  signIn: (loginId: string, password: string, expectedRole?: Role) => Promise<void>;
-  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
-
-/** expectedRole을 주면 그 유형의 계정만 들어올 수 있다. 다르면 바로 로그아웃하고 맞는 탭을 안내한다.
- *  (냥대리 화면은 src/nyang/transport.ts에서 같은 확인을 한다) */
-export async function signInAs(loginId: string, password: string, expectedRole?: Role) {
-  const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail(loginId), password });
-  if (error) throw new Error(error.message.includes('Invalid') ? '아이디 또는 비밀번호가 맞지 않아요.' : error.message);
-  if (!expectedRole) return data.session;
-  const { data: row } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
-  const role = (row as { role: Role } | null)?.role;
-  if (role !== expectedRole) {
-    await supabase.auth.signOut();
-    throw new Error(role === 'admin'
-      ? '담당자 계정이에요. 담당자 탭에서 로그인해 주세요.'
-      : '담당자 계정이 아니에요. 직원 탭에서 로그인해 주세요.');
-  }
-  return data.session;
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -69,20 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [userId]);
 
-  const signIn = async (loginId: string, password: string, expectedRole?: Role) => {
-    setVerifying(true);
-    try {
-      await signInAs(loginId, password, expectedRole);
-    } finally {
-      setVerifying(false);
-    }
-  };
-
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
-
-  return <AuthContext.Provider value={{ session, profile, loading, verifying, signIn, signOut }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ session, profile, loading }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthState {
