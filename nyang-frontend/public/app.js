@@ -33,20 +33,17 @@ let history=normalizeHistory(read('om-question-history',[])),activityTab='recent
 if(!seenReplies||typeof seenReplies!=='object')seenReplies={};
 const allDocs=()=>[...documents,...uploads];
 const badge=(text,cls='')=>`<span class="badge ${cls}">${text}</span>`;
-function toast(text){let el=$('#toast');if(!el){el=document.createElement('div');el.id='toast';el.setAttribute('role','status');document.body.append(el);}el.textContent=text;el.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>el.classList.remove('show'),3500);}
-const systemColorTheme=matchMedia('(prefers-color-scheme: dark)');
+let toastTimer=null,happyTimer=null;
+function toast(text){let el=$('#toast');if(!el){el=document.createElement('div');el.id='toast';el.setAttribute('role','status');document.body.append(el);}el.textContent=text;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3500);}
+// 테마 결정·적용 규칙은 theme.js(<head>에서 먼저 실행) 한 곳에 있다.
+const colorTheme=window.nyangTheme;
 function applyColorTheme(theme){
- const dark=theme==='dark';
- document.documentElement.dataset.theme=dark?'dark':'light';
- $('meta[name="theme-color"]')?.setAttribute('content',dark?'#111214':'#ffffff');
+ const dark=colorTheme.apply(theme);
  const button=$('[data-action="toggle-theme"]');
  if(button){button.setAttribute('aria-pressed',String(dark));button.title=dark?'라이트 모드로 전환':'다크 모드로 전환';button.innerHTML=icon(dark?'moon':'sun')+`<span aria-hidden="true">${dark?'다크':'라이트'}</span>`;}
 }
-function preferredColorTheme(){
- const saved=read('nyang-color-theme',null);
- return saved==='dark'||saved==='light'?saved:systemColorTheme.matches?'dark':'light';
-}
-systemColorTheme.addEventListener('change',()=>applyColorTheme(preferredColorTheme()));
+const preferredColorTheme=()=>colorTheme.preferred();
+colorTheme.media.addEventListener('change',()=>applyColorTheme(preferredColorTheme()));
 window.addEventListener('storage',e=>{if(e.key==='nyang-color-theme'||e.key===null)applyColorTheme(preferredColorTheme());});
 
 
@@ -244,10 +241,22 @@ async function voteKnowly(messageId,vote){
  try{const res=await fetch('/api/knowly',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'feedback',message_id:k.message_id,vote:next})}),data=await res.json().catch(()=>null);if(!res.ok)throw Error(data?.error||'평가를 저장하지 못했어요.');k.vote=next;saveCurrentChat();render();toast(next?'평가를 남겼어요. 고마워요!':'평가를 취소했어요.');}
  catch(err){toast(err.message);}
 }
+// 첨부 처리는 Knowly 화면과 같은 코드를 쓴다: /knowly/attach.js는 npm run build:nyang-embed가
+// src/embed/attach.ts(→ src/lib/attach.ts)에서 만든다. 쓰는 것: prepareAttachment(file)→첨부 객체,
+// ATTACH_MAX(최대 개수). 그 밖에 ATTACH_ACCEPT·ATTACH_MAX_MB를 내보내며, composer()의 accept 목록은 ATTACH_ACCEPT와 같아야 한다.
+// 불러오기에 실패하면 다음 시도에서 다시 불러온다(실패를 기억하지 않음).
+let attachModule=null;
+function loadAttach(){
+ attachModule??=import('/knowly/attach.js').then(lib=>{
+  if(typeof lib.prepareAttachment!=='function'||!Number.isInteger(lib.ATTACH_MAX))throw Error('첨부 모듈 형식이 달라요.');
+  return lib;
+ }).catch(err=>{attachModule=null;throw err;});
+ return attachModule;
+}
 async function addAttachments(files){
  if(attachBusy)return;attachBusy=true;
  try{
-  const lib=await import('/knowly/attach.js');
+  const lib=await loadAttach();
   for(const file of files){
    if(attachments.length>=lib.ATTACH_MAX){toast(`첨부는 ${lib.ATTACH_MAX}개까지 할 수 있어요.`);break;}
    try{attachments.push(await lib.prepareAttachment(file));}catch(err){toast(err.message||`${file.name}을(를) 읽지 못했어요.`);}
@@ -549,7 +558,7 @@ document.addEventListener('click',async e=>{
  if(b.dataset.historyOpen){openHistory(b.dataset.historyOpen);return;}
  if(b.dataset.saveAnswer){const r=messages.find(m=>m.result?.messageId===b.dataset.saveAnswer)?.result;if(r&&!history.some(x=>x.id===r.messageId)){const next=recordAnswer(history,r);if(!save('om-question-history',next))return;history=next;}try{const next=toggleSaved(history,b.dataset.saveAnswer);if(save('om-question-history',next)){history=next;render();toast(history.find(x=>x.id===b.dataset.saveAnswer)?.saved?'내 활동에 답변을 저장했어요.':'답변 저장을 해제했어요.');}}catch(e){toast(e.message);}return;}
  if(b.dataset.activityPost){const post=communityState().posts?.find(p=>p.id===b.dataset.activityPost);if(post){const next={...seenReplies,[post.id]:post.replies.length};if(save('om-seen-replies',next))seenReplies=next;showMyPost(post.id);}return;}
- if(b.dataset.heart){if(await commitReward({type:'collect',id:b.dataset.heart})){refreshPet();toast('하트 +1 ♥ · 꾸미기에 쓸 수 있다냥.');if(!rewards.pending.length){$('.resident-speech h1')?.replaceChildren(voice().heart);$('.resident-speech p')?.replaceChildren(voice().heartDetail);clearTimeout(window.happyTimer);window.happyTimer=setTimeout(()=>{happyUntil=0;refreshPet();},3500);}}return;}
+ if(b.dataset.heart){if(await commitReward({type:'collect',id:b.dataset.heart})){refreshPet();toast('하트 +1 ♥ · 꾸미기에 쓸 수 있다냥.');if(!rewards.pending.length){$('.resident-speech h1')?.replaceChildren(voice().heart);$('.resident-speech p')?.replaceChildren(voice().heartDetail);clearTimeout(happyTimer);happyTimer=setTimeout(()=>{happyUntil=0;refreshPet();},3500);}}return;}
  if(b.dataset.item){if(await commitReward({type:b.dataset.owned==='true'?'equip':'buy',id:b.dataset.item})){refreshPet();showWardrobe();toast('제법 잘 어울린다냥!');}return;}
  if(b.dataset.answerPanel){const r=messages.find(m=>m.result?.messageId===b.dataset.message)?.result;if(r){r.expandedPanel=r.expandedPanel===b.dataset.answerPanel?null:b.dataset.answerPanel;render();$(`[data-answer-panel="${b.dataset.answerPanel}"][data-message="${r.messageId}"]`)?.focus({preventScroll:true});}return;}
  if(b.dataset.consent){const r=messages.find(m=>m.result?.messageId===b.dataset.message)?.result;if(r&&r.decision!=='added'){r.decision=b.dataset.consent;render();requestAnimationFrame(()=>{const form=$(`[data-plan-form="${r.messageId}"]`);if(form){form.querySelector('input')?.focus({preventScroll:true});form.scrollIntoView({block:'nearest'});}else $(`[data-consent][data-message="${r.messageId}"]`)?.focus({preventScroll:true});});}return;}
