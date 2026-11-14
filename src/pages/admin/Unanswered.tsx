@@ -1,56 +1,30 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ALL, CategoryChips } from '../../components/CategoryChips';
-import { ColumnChart, HBars } from '../../components/Charts';
 import { SearchIcon } from '../../components/Icons';
+import { LoadError } from '../../components/LoadError';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
+import { errorMessage } from '../../lib/api';
 import { CATEGORIES } from '../../lib/constants';
-import { daysAgo, fmt, relativeDay, shortDate } from '../../lib/format';
-import { supabase } from '../../lib/supabase';
-import type { GroupStatus, QuestionGroup } from '../../lib/types';
+import { createFaqFromGroup, FaqLeftBehindError, setQuestionGroupStatus } from '../../lib/db';
+import { relativeDay } from '../../lib/format';
+import type { GroupStatus } from '../../lib/types';
+import { GroupDetail, PILL } from './GroupDetail';
+import { UnansweredKpis, UnansweredTrends } from './UnansweredPanels';
+import { GROUP_LIMIT, useUnanswered } from './useUnanswered';
 
 const STATUSES: ('전체' | GroupStatus)[] = ['전체', '신규', '검토 중', 'FAQ 등록 완료', '보류'];
-const PILL: Record<GroupStatus, string> = { 신규: 'pill-new', '검토 중': 'pill-review', 'FAQ 등록 완료': 'pill-done', 보류: 'pill-hold' };
 const COLS = '48px minmax(0, 1fr) 96px 150px 80px 124px';
-
-type Group = QuestionGroup & { faqs: { answer: string; created_at: string } | null };
 
 export default function Unanswered() {
   const toast = useToast();
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { items, stats, loading, error, truncated, reload } = useUnanswered();
   const [status, setStatus] = useState<(typeof STATUSES)[number]>('전체');
   const [cat, setCat] = useState(ALL);
   const [q, setQ] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<{ question: string; answer: string; category: string } | null>(null);
   const [saving, setSaving] = useState(false);
-
-  const load = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('question_groups')
-      .select('*, question_variants(text, reason, created_at), faqs(answer, created_at)')
-      .order('last_asked_at', { ascending: false })
-      .limit(500);
-    if (error) toast('미등록 질문을 불러오지 못했어요.');
-    setGroups((data as Group[]) ?? []);
-    setLoading(false);
-  }, [toast]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const weekAgo = daysAgo(7).toISOString();
-  const items = useMemo(
-    () =>
-      groups.map((g) => ({
-        ...g,
-        count: g.question_variants.length,
-        week: g.question_variants.filter((v) => v.created_at >= weekAgo).length
-      })),
-    [groups, weekAgo]
-  );
 
   const filtered = items
     .filter((i) => status === '전체' || i.status === status)
@@ -60,50 +34,38 @@ export default function Unanswered() {
   const max = Math.max(1, ...filtered.map((i) => i.count));
   const selected = items.find((i) => i.id === selectedId) ?? filtered[0];
 
-  // 요약 지표
-  const allVariants = groups.flatMap((g) => g.question_variants);
-  const last30 = allVariants.filter((v) => v.created_at >= daysAgo(30).toISOString()).length;
-  const prev30 = allVariants.filter((v) => v.created_at >= daysAgo(60).toISOString() && v.created_at < daysAgo(30).toISOString()).length;
-  const change = prev30 ? Math.round(((last30 - prev30) / prev30) * 100) : null;
-  const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-  const doneThisMonth = groups.filter((g) => g.status === 'FAQ 등록 완료' && g.faqs && g.faqs.created_at >= monthStart).length;
-
-  // 최근 8주 추이
-  const weeks = Array.from({ length: 8 }, (_, i) => {
-    const end = daysAgo((7 - i) * 7);
-    const start = daysAgo((8 - i) * 7);
-    const n = allVariants.filter((v) => v.created_at >= start.toISOString() && v.created_at < end.toISOString()).length;
-    return { key: start.toISOString(), label: shortDate(start), n };
-  });
-
-  const catTotals = CATEGORIES.map((c) => ({ label: c, n: items.filter((i) => i.category === c).reduce((a, i) => a + i.count, 0) }))
-    .filter((x) => x.n > 0)
-    .sort((a, b) => b.n - a.n);
-
   const setGroupStatus = async (s: GroupStatus, msg: string) => {
     if (!selected) return;
-    const { error } = await supabase.from('question_groups').update({ status: s }).eq('id', selected.id);
-    if (error) return toast('상태를 바꾸지 못했어요.');
+    try {
+      await setQuestionGroupStatus(selected.id, s);
+    } catch (e) {
+      return toast(errorMessage(e));
+    }
     toast(msg);
-    load();
+    reload();
   };
 
   const saveFaq = async () => {
     if (!selected || !draft || !draft.answer.trim() || !draft.question.trim()) return;
     setSaving(true);
-    const { data: faq, error } = await supabase
-      .from('faqs')
-      .insert({ question: draft.question.trim(), answer: draft.answer.trim(), category: draft.category })
-      .select('id')
-      .single();
-    if (!error) {
-      await supabase.from('question_groups').update({ status: 'FAQ 등록 완료', faq_id: faq.id, category: draft.category }).eq('id', selected.id);
+    try {
+      await createFaqFromGroup(selected.id, draft);
+    } catch (e) {
+      if (e instanceof FaqLeftBehindError) {
+        // FAQ는 이미 만들어졌으므로 등록 창을 닫아 같은 FAQ를 또 만들지 않게 한다
+        setDraft(null);
+        window.alert(e.message);
+        reload();
+      } else {
+        toast(errorMessage(e));
+      }
+      return;
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    if (error) return toast('FAQ를 등록하지 못했어요.');
     setDraft(null);
     toast('FAQ에 등록했어요. 직원 챗봇에 바로 반영돼요.');
-    load();
+    reload();
   };
 
   return (
@@ -113,33 +75,13 @@ export default function Unanswered() {
           <h1>미등록 질문 모음</h1>
           <p>챗봇이 근거를 찾지 못했거나 직원이 '도움 안 됨'을 누른 질문을 비슷한 것끼리 묶어 보여줘요.</p>
         </div>
-        <div className="hint">기준: 최근 30일 · {relativeDay(new Date().toISOString())} 기준</div>
+        <div className="hint">
+          기준: 최근 30일 · {relativeDay(new Date().toISOString())} 기준
+          {truncated && ` · 최근 질문 묶음 ${GROUP_LIMIT}개 기준`}
+        </div>
       </div>
 
-      <section className="stats-row" aria-label="요약">
-        <div className="card stat">
-          <div className="stat-label">미등록 질문 수 (30일)</div>
-          <div className="stat-value">{fmt(last30)}<small>건</small></div>
-          <div className="stat-sub" style={{ color: change && change > 0 ? 'var(--warn)' : undefined }}>
-            {change === null ? '이전 30일 데이터 없음' : `이전 30일 대비 ${change > 0 ? '+' : ''}${change}%`}
-          </div>
-        </div>
-        <div className="card stat">
-          <div className="stat-label">질문 유형 (묶음)</div>
-          <div className="stat-value">{groups.length}<small>개</small></div>
-          <div className="stat-sub">비슷한 표현을 자동으로 묶음</div>
-        </div>
-        <div className="card stat">
-          <div className="stat-label">처리 대기</div>
-          <div className="stat-value" style={{ color: 'var(--warn)' }}>{groups.filter((g) => g.status === '신규' || g.status === '검토 중').length}<small>개</small></div>
-          <div className="stat-sub">신규 + 검토 중</div>
-        </div>
-        <div className="card stat">
-          <div className="stat-label">FAQ로 등록됨</div>
-          <div className="stat-value" style={{ color: 'var(--ok)' }}>{doneThisMonth}<small>개</small></div>
-          <div className="stat-sub">이번 달 새로 추가된 FAQ</div>
-        </div>
-      </section>
+      <UnansweredKpis stats={stats} truncated={truncated} />
 
       <div className="split">
         <section className="card" aria-label="자주 묻는 미등록 질문" style={{ flex: '999 1 560px', minWidth: 0, overflow: 'hidden' }}>
@@ -166,8 +108,9 @@ export default function Unanswered() {
               <div className="grid-row grid-head" style={{ gridTemplateColumns: COLS }}>
                 <div>순위</div><div>질문</div><div>카테고리</div><div>질문 횟수</div><div>최근</div><div>상태</div>
               </div>
+              {error && <LoadError className="empty" message={error} onRetry={reload} />}
               {loading && <div className="empty">불러오는 중…</div>}
-              {!loading && filtered.length === 0 && <div className="empty">조건에 맞는 질문이 없어요.</div>}
+              {!loading && !error && filtered.length === 0 && <div className="empty">조건에 맞는 질문이 없어요.</div>}
               {filtered.map((i, idx) => (
                 <button key={i.id} type="button" className="grid-row" style={{ gridTemplateColumns: COLS }} aria-pressed={selected?.id === i.id} onClick={() => setSelectedId(i.id)}>
                   <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--muted)' }}>{idx + 1}</div>
@@ -188,71 +131,14 @@ export default function Unanswered() {
           </div>
         </section>
 
-        <aside className="card panel" aria-label="선택한 질문 상세" style={{ flex: '1 1 340px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 18 }}>
-          {!selected ? (
-            <div className="empty">질문을 선택하세요.</div>
-          ) : (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                <span className="hint" style={{ fontWeight: 600 }}>선택한 질문 · {selected.category}</span>
-                <span className={`pill ${PILL[selected.status]}`}>{selected.status}</span>
-              </div>
-              <h2 style={{ fontSize: 20 }}>{selected.question}</h2>
-              <div className="mini-stats">
-                <div className="mini-stat"><div>총 질문</div><div>{selected.count}회</div></div>
-                <div className="mini-stat"><div>이번 주</div><div>+{selected.week}</div></div>
-                <div className="mini-stat"><div>최근</div><div>{relativeDay(selected.last_asked_at)}</div></div>
-              </div>
-              <div>
-                <h3 style={{ fontSize: 15, marginBottom: 10 }}>직원들은 이렇게 물어봤어요</h3>
-                <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {[...selected.question_variants]
-                    .sort((a, b) => b.created_at.localeCompare(a.created_at))
-                    .slice(0, 5)
-                    .map((v, i) => (
-                      <li key={i} className="variant">
-                        "{v.text}"
-                        {v.reason === 'not_helpful' && <span className="hint"> · 도움 안 됨</span>}
-                      </li>
-                    ))}
-                </ul>
-              </div>
-              {selected.status === 'FAQ 등록 완료' ? (
-                <div className="faq-answer-box">
-                  <div>등록된 FAQ 답변</div>
-                  <div>{selected.faqs?.answer ?? '(삭제된 FAQ)'}</div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  <button type="button" className="btn btn-primary" style={{ minHeight: 48, fontSize: 16 }}
-                    onClick={() => setDraft({ question: selected.question, answer: '', category: CATEGORIES.includes(selected.category as never) ? selected.category : '기타' })}>
-                    FAQ로 등록하기
-                  </button>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {selected.status !== '검토 중' && <button type="button" className="btn" style={{ flex: 1 }} onClick={() => setGroupStatus('검토 중', '검토 중으로 표시했어요.')}>검토 중으로 표시</button>}
-                    {selected.status !== '보류' && <button type="button" className="btn" style={{ flex: 1 }} onClick={() => setGroupStatus('보류', '보류로 옮겼어요.')}>보류</button>}
-                    {selected.status !== '신규' && <button type="button" className="btn" style={{ flex: 1 }} onClick={() => setGroupStatus('신규', '신규로 되돌렸어요.')}>신규로</button>}
-                  </div>
-                </div>
-              )}
-              <div className="hint" style={{ borderTop: '1px solid var(--line-soft)', paddingTop: 14 }}>질문한 직원의 이름과 아이디는 저장하지 않고 익명으로 집계해요.</div>
-            </>
-          )}
-        </aside>
+        <GroupDetail
+          selected={selected}
+          onRegister={(g) => setDraft({ question: g.question, answer: '', category: CATEGORIES.includes(g.category as never) ? g.category : '기타' })}
+          onSetStatus={setGroupStatus}
+        />
       </div>
 
-      <div className="split">
-        <section className="card panel" aria-label="주별 추이" style={{ flex: '3 1 520px', minWidth: 0 }}>
-          <h2>주별 미등록 질문 수</h2>
-          <p className="panel-sub">최근 8주</p>
-          <ColumnChart columns={weeks} />
-        </section>
-        <section className="card panel" aria-label="카테고리별 분포" style={{ flex: '2 1 340px', minWidth: 0 }}>
-          <h2>카테고리별 분포</h2>
-          <p className="panel-sub">어느 영역의 FAQ가 부족한지 한눈에</p>
-          <HBars rows={catTotals} />
-        </section>
-      </div>
+      <UnansweredTrends stats={stats} />
 
       {draft && selected && (
         <Modal

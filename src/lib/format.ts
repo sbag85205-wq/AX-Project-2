@@ -12,6 +12,7 @@ export function relativeDay(iso: string): string {
 
 export const shortDate = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
 
-export const daysAgo = (n: number) => new Date(Date.now() - n * DAY);
+/** n일 전 시각. 기준 시각(from)을 주면 그 시각에서 센다 */
+export const daysAgo = (n: number, from = Date.now()) => new Date(from - n * DAY);
 
 export const fmt = (n: number) => n.toLocaleString('ko-KR');

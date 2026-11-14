@@ -25,7 +25,7 @@ vi.mock('../src/lib/supabase', () => {
   return { supabase: { from: query, storage: { from: () => ({ remove: mocks.remove }) } } };
 });
 
-import { deleteDocument, getChunkView, listReadyDocuments } from '../src/lib/db';
+import { createFaqFromGroup, deleteDocument, FaqLeftBehindError, getChunkView, listReadyDocuments } from '../src/lib/db';
 
 beforeEach(() => {
   mocks.results = [];
@@ -74,5 +74,34 @@ describe('deleteDocument', () => {
     mocks.results.push({ data: [{ id: 'd1' }] }, { count: 0 });
     mocks.remove.mockResolvedValue({ error: { message: 'storage down' } });
     expect(await deleteDocument({ id: 'd1', file_path: 'x/abc.pdf' })).toBe('file-failed');
+  });
+});
+
+describe('createFaqFromGroup', () => {
+  const input = { question: ' 질문 ', answer: ' 답변 ', category: '휴가' };
+  it('FAQ를 만들고 묶음을 FAQ 등록 완료로 바꾼다', async () => {
+    mocks.results.push({ data: { id: 'f1' } }, { data: [{ id: 'g1' }] });
+    await createFaqFromGroup('g1', input);
+    expect(mocks.calls[0][0]).toBe('faqs');
+    expect(mocks.calls[1].join(' ')).toContain('"faq_id":"f1"');
+    expect(mocks.calls).toHaveLength(2);
+  });
+  it('묶음을 바꾸지 못하면 방금 만든 FAQ를 지워 되돌린다', async () => {
+    mocks.results.push({ data: { id: 'f1' } }, { error: { message: 'denied' } }, { error: null });
+    await expect(createFaqFromGroup('g1', input)).rejects.toThrow('FAQ 등록을 취소했어요');
+    expect(mocks.calls[2]).toEqual(['faqs', 'delete()', 'eq("id","f1")']);
+  });
+  it('권한에 막혀 0행이 바뀐 것도 실패로 본다', async () => {
+    mocks.results.push({ data: { id: 'f1' } }, { data: [] }, { error: null });
+    await expect(createFaqFromGroup('g1', input)).rejects.toThrow('FAQ 등록을 취소했어요');
+  });
+  it('되돌리기도 실패하면 FAQ가 남았다고 알린다', async () => {
+    mocks.results.push({ data: { id: 'f1' } }, { error: { message: 'denied' } }, { error: { message: 'down' } });
+    await expect(createFaqFromGroup('g1', input)).rejects.toBeInstanceOf(FaqLeftBehindError);
+  });
+  it('FAQ를 만들지 못하면 묶음은 건드리지 않는다', async () => {
+    mocks.results.push({ error: { message: 'down' } });
+    await expect(createFaqFromGroup('g1', input)).rejects.toThrow('FAQ를 등록하지 못했어요.');
+    expect(mocks.calls).toHaveLength(1);
   });
 });

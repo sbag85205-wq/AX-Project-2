@@ -1,7 +1,7 @@
 // 화면에서 쓰는 Supabase 읽기·쓰기. 실패하면 예외를 던져, 네트워크·권한(RLS) 오류가
 // "등록된 문서가 없어요" 같은 빈 화면으로 보이지 않게 한다. (테이블·함수는 기존 것 그대로)
 import { supabase } from './supabase';
-import type { Conversation, DocumentRow, Faq, Message } from './types';
+import type { Conversation, DocumentRow, Faq, GroupStatus, Message, QuestionGroup } from './types';
 
 /** 원본 파일을 두는 Storage 버킷 */
 export const DOC_BUCKET = 'documents';
@@ -156,4 +156,61 @@ export async function listFaqs(): Promise<Faq[]> {
 export async function deleteFaq(id: string): Promise<void> {
   const { error } = await supabase.from('faqs').delete().eq('id', id);
   if (error) throw new DbError('삭제하지 못했어요.', error);
+}
+
+// ───────────── 미등록 질문 ─────────────
+
+export type QuestionGroupRow = QuestionGroup & { faqs: { answer: string; created_at: string } | null };
+
+/** 최근에 물어본 순으로 질문 묶음을 limit개까지 불러온다 */
+export async function listQuestionGroups(limit: number): Promise<QuestionGroupRow[]> {
+  const res = await supabase
+    .from('question_groups')
+    .select('*, question_variants(text, reason, created_at), faqs(answer, created_at)')
+    .order('last_asked_at', { ascending: false })
+    .limit(limit);
+  return (check(res, '미등록 질문을 불러오지 못했어요.') as QuestionGroupRow[] | null) ?? [];
+}
+
+async function updateQuestionGroup(id: string, patch: Record<string, unknown>, message: string): Promise<void> {
+  // 권한(RLS)에 막히면 오류 없이 0행이 바뀌므로, 바뀐 행을 돌려받아 확인한다
+  const { data, error } = await supabase.from('question_groups').update(patch).eq('id', id).select('id');
+  if (error || !data?.length) throw new DbError(message, error);
+}
+
+export function setQuestionGroupStatus(id: string, status: GroupStatus): Promise<void> {
+  return updateQuestionGroup(id, { status }, '상태를 바꾸지 못했어요.');
+}
+
+/** FAQ는 만들어졌는데 묶음 상태도 못 바꾸고 되돌리지도 못한 경우 (다시 등록하면 FAQ가 겹친다) */
+export class FaqLeftBehindError extends DbError {}
+
+export interface FaqInput {
+  question: string;
+  answer: string;
+  category: string;
+}
+
+/**
+ * 미등록 질문 묶음을 FAQ로 등록한다: FAQ를 만들고 묶음을 "FAQ 등록 완료"로 바꾼다.
+ * 묶음을 바꾸지 못하면 방금 만든 FAQ를 지워 되돌린다. 그대로 두면 묶음은 "신규"로 남아
+ * 다시 등록할 때 같은 FAQ가 두 개 생기고, 챗봇이 두 FAQ 중 아무거나 쓰게 된다.
+ */
+export async function createFaqFromGroup(groupId: string, input: FaqInput): Promise<void> {
+  const res = await supabase
+    .from('faqs')
+    .insert({ question: input.question.trim(), answer: input.answer.trim(), category: input.category })
+    .select('id')
+    .single();
+  const faq = check(res, 'FAQ를 등록하지 못했어요.') as { id: string } | null;
+  if (!faq) throw new DbError('FAQ를 등록하지 못했어요.');
+  try {
+    await updateQuestionGroup(groupId, { status: 'FAQ 등록 완료', faq_id: faq.id, category: input.category }, '질문 묶음 상태를 바꾸지 못했어요.');
+  } catch (e) {
+    const { error: undoError } = await supabase.from('faqs').delete().eq('id', faq.id);
+    if (undoError) {
+      throw new FaqLeftBehindError('FAQ는 만들어졌지만 질문 묶음을 "FAQ 등록 완료"로 바꾸지 못했어요. 다시 등록하지 말고 FAQ 관리에서 확인해 주세요.', e);
+    }
+    throw new DbError('질문 묶음 상태를 바꾸지 못해 FAQ 등록을 취소했어요. 잠시 후 다시 시도해 주세요.', e);
+  }
 }
