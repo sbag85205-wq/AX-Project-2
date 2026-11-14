@@ -5,10 +5,13 @@ vi.mock('../src/lib/supabase', () => ({ supabaseConfigured: true, loginEmail: (i
 } }));
 vi.mock('../src/lib/api', () => ({ callFunction: mocks.call }));
 vi.mock('../src/nyang/local-store', () => ({ localNyang: mocks.local }));
-import { request } from '../src/nyang/transport';
+import { request, toNyangRole } from '../src/nyang/transport';
 const post = (body: unknown) => ({ method: 'POST', body: JSON.stringify(body) });
 beforeEach(() => { vi.resetAllMocks(); mocks.getSession.mockResolvedValue({ data: { session: { user: { id: 'employee-a' } } } }); });
 describe('main Knowly transport', () => {
+  it('maps only the Knowly admin role to Nyang staff', () => {
+    expect(['admin', 'employee', 'viewer', null, undefined].map(toNyangRole)).toEqual(['staff', 'employee', 'employee', 'employee', 'employee']);
+  });
   it('logs in with the individual Knowly credentials and verifies the profile role', async () => {
     mocks.signInWithPassword.mockResolvedValue({ data: { user: { id: 'employee-a' } } });
     mocks.single.mockResolvedValue({ data: { role: 'employee', login_id: 'alice', display_name: '직원 A', department_id: null } });mocks.local.mockResolvedValue({ member: true });

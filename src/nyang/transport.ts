@@ -4,6 +4,9 @@ import { localNyang, type NyangAccount } from './local-store';
 
 // 냥대리 활동(포인트·출석·게시판)은 운영 DB 대신 이 브라우저에 저장한다(local-store.ts).
 // 계정·역할은 요청 본문이 아니라 로그인한 Knowly 프로필에서 가져온다(원래 nyang 서버 함수와 같은 규칙).
+/** Knowly 프로필 역할 → 냥대리 역할. Knowly 관리자(admin)만 담당자(staff), 그 밖은 직원(employee). */
+export const toNyangRole = (role: string | null | undefined): NyangAccount['role'] => (role === 'admin' ? 'staff' : 'employee');
+
 let cached: NyangAccount | null = null;
 async function currentAccount(userId: string): Promise<NyangAccount> {
   if (cached?.id === userId) return cached;
@@ -11,7 +14,7 @@ async function currentAccount(userId: string): Promise<NyangAccount> {
   if (!p) throw new Error('계정 정보를 찾을 수 없어요. 관리자에게 문의해 주세요.');
   let department = '';
   if (p.department_id) department = (await supabase.from('departments').select('name').eq('id', p.department_id).single()).data?.name ?? '';
-  cached = { id: userId, username: p.login_id, name: p.display_name, department, role: p.role === 'admin' ? 'staff' : 'employee' };
+  cached = { id: userId, username: p.login_id, name: p.display_name, department, role: toNyangRole(p.role) };
   return cached;
 }
 
@@ -31,7 +34,7 @@ export async function request(path: string, init: RequestInit = {}): Promise<Res
       const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail(input.username), password: input.password });
       if (error) throw new Error('아이디 또는 비밀번호를 확인해 주세요.');
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
-      if (!profile || (profile.role === 'admin' ? 'staff' : 'employee') !== input.role) {
+      if (!profile || toNyangRole(profile.role) !== input.role) {
         await supabase.auth.signOut();
         throw new Error('계정 유형을 확인하고 직원 또는 담당자 탭에서 로그인해 주세요.');
       }

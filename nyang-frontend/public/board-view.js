@@ -1,8 +1,8 @@
-import {categoryLabels as labels,esc} from './common.js';
+import {categoryLabels as labels,esc,isStaff} from './common.js';
 import {LIKE_POINTS} from './reward-rules.js';
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 export function boardView(state,filter='all',query=''){
- const staff=state.me.role==='staff',deleted=staff&&filter==='deleted';
+ const staff=isStaff(state),deleted=staff&&filter==='deleted';
  const list=deleted?(state.deletedPosts||[]):state.posts;
  const posts=list.filter(p=>(deleted||filter==='all'?true:filter==='mine'?p.mine:filter==='waiting'?!p.replies.length:filter==='answered'?p.replies.length:true)&&(!query||p.body.toLowerCase().includes(query.toLowerCase())));
  const tabs=[['all','전체'],['waiting','답변 대기'],['answered','답변 완료'],staff?['deleted','삭제된 글']:['mine','내 질문']];

@@ -5,6 +5,7 @@ const fail=(message,status=400)=>{throw new AppError(message,status);};
 const one=(db,sql,...args)=>db.prepare(sql).bind(...args).first();
 const run=(db,sql,...args)=>db.prepare(sql).bind(...args).run();
 const rows=async(db,sql,...args)=>(await db.prepare(sql).bind(...args).all()).results;
+// 역할: 냥대리 화면(Knowly 계정)은 employee·staff만 쓴다. 'admin'은 이전 독립 프로토타입의 최초 관리자(adminEmail) 전용이다.
 const categories=CATEGORY_IDS,roles=['employee','staff'];
 export const seoulDay=(date=new Date())=>new Date(date.getTime()+9*3600000).toISOString().slice(0,10);
 export const drawReward=drawAttendanceGift;

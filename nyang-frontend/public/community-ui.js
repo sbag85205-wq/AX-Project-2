@@ -1,7 +1,7 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {boardView} from './board-view.js?v=008e53f7600c';
 import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=9cfeb982e79d';
-import {categoryLabels as labels,esc} from './common.js';
+import {categoryLabels as labels,esc,isStaff} from './common.js';
 import {rewardHelp} from './reward-rules.js';
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 let state={loading:true},hooks,filter='all',query='',busy=false,connecting=null,authEpoch=0,loginRole='employee',stats=null;
@@ -9,7 +9,7 @@ export const communityState=()=>state;
 export const accountGateHTML=()=>loginView(loginRole,state);
 export const statsHTML=()=>statisticsHTML(stats);
 export async function loadStatistics(){
- if(state.me?.role!=='staff')return;
+ if(!isStaff(state))return;
  const epoch=authEpoch;stats={loading:true};hooks.render();
  try{const response=await fetch('/api/account?view=stats',{cache:'no-store'}),data=await response.json();if(!response.ok)throw Error(data.error);if(epoch!==authEpoch)return;stats=data;}
  catch(e){if(epoch!==authEpoch)return;stats={error:e.message};}
@@ -101,8 +101,8 @@ export function boardHTML(){
  return boardView(state,filter,query);
 }
 function showDeleteDialog(id){
- const post=state.posts.find(p=>p.id===id);if(!post||(state.me?.role!=='staff'&&!post.mine))return;
- const description=state.me?.role==='staff'?'직원 화면에서 질문과 답변이 함께 숨겨집니다.<br>삭제된 글에서 복원할 수 있고, 이미 지급된 포인트는 유지됩니다.':'내 질문과 달린 답변이 게시판과 내 활동에서 함께 사라져요.<br>이미 받은 포인트는 유지되며, 복원이 필요하면 담당자에게 요청해 주세요.';
+ const post=state.posts.find(p=>p.id===id);if(!post||(!isStaff(state)&&!post.mine))return;
+ const description=isStaff(state)?'직원 화면에서 질문과 답변이 함께 숨겨집니다.<br>삭제된 글에서 복원할 수 있고, 이미 지급된 포인트는 유지됩니다.':'내 질문과 달린 답변이 게시판과 내 활동에서 함께 사라져요.<br>이미 받은 포인트는 유지되며, 복원이 필요하면 담당자에게 요청해 주세요.';
  hooks.modal('<h2 id="modal-title">이 질문을 삭제할까요?</h2><p class="modal-sub">'+description+'</p><blockquote class="delete-question-preview">'+esc(post.body)+'</blockquote><div class="modal-button-row"><button class="danger-button" data-confirm-delete="'+esc(post.id)+'">질문 삭제</button><button class="secondary-button" data-action="close-modal">취소</button></div>');
 }
 export function unknownOffer(r){
@@ -117,7 +117,7 @@ document.addEventListener('click',async e=>{
  if(b.dataset.deletePost){showDeleteDialog(b.dataset.deletePost);return;}
  if(b.dataset.confirmDelete||b.dataset.restorePost){
   if(busy||!state.member)return;
-  const staff=state.me?.role==='staff',post=state.posts.find(p=>p.id===b.dataset.confirmDelete);
+  const staff=isStaff(state),post=state.posts.find(p=>p.id===b.dataset.confirmDelete);
   if(b.dataset.restorePost?!staff:!staff&&!post?.mine)return;
   busy=true;b.disabled=true;
   try{const restore=!!b.dataset.restorePost,result=await communityAction(restore?'restore-post':'delete-post',{post:b.dataset.restorePost||b.dataset.confirmDelete});if(result){if(!restore)hooks.close();hooks.show('board');}}finally{busy=false;b.disabled=false;}return;
