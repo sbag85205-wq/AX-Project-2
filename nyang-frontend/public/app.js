@@ -1,8 +1,9 @@
-import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,statsHTML,loadStatistics,logoutAccount} from './community-ui.js?v=301ca7f2b206';
-import {categories,documents,faq,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=b31737937a1f';
-import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=9e284fd13915';
-import {createPetInteraction} from './pet-interaction.js?v=74689b31d2e9';
-import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies} from './activity-history.js?v=cf0b627c6eaa';
+import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,statsHTML,loadStatistics,logoutAccount} from './community-ui.js?v=e8e0c640b1bb';
+import {categories,documents,faq,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=0ff57cf675c0';
+import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=7d55f062fd27';
+import {createPetInteraction} from './pet-interaction.js?v=355c0da8eb14';
+import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies} from './activity-history.js?v=a74d89f760bb';
+import {knowlyConfig,askKnowly} from './knowly.js?v=377f7f906376';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const mode=document.body.dataset.mode;
@@ -21,7 +22,7 @@ const storageKey=key=>personalKeys.has(key)?'nyang-account:'+(activeAccount||'si
 function read(key,fallback){try{return JSON.parse(localStorage.getItem(storageKey(key)))??fallback;}catch{return fallback;}}
 function save(key,value){try{localStorage.setItem(storageKey(key),JSON.stringify(value));return true;}catch{toast('브라우저 저장 공간이 부족해 저장하지 못했어요.');return false;}}
 let uploads=read('om-docs',[]),tasks=read('om-tasks',[]),messages=[],category=isCat?null:'trip',mood='',view='chat',filter='today',selectedDay=localDate(),plan=null,dialogOpener=null;
-let chatDraft='',pendingReply=null,replyTimer=null,heroTransition=null;
+let chatDraft='',pendingReply=null,replyTimer=null,heroTransition=null,knowlyConversation=null;
 let history=normalizeHistory(read('om-question-history',[])),activityTab='recent',activityQuery='',seenReplies=read('om-seen-replies',{}),scheduleView='todos';
 if(!seenReplies||typeof seenReplies!=='object')seenReplies={};
 const allDocs=()=>[...documents,...uploads];
@@ -163,7 +164,16 @@ function answerTools(r,refs,detail='',detailLabel='자세한 절차'){
  const citation=first?`<div class="answer-citation"><button data-source="${esc(refs[0])}">${icon('book')}<span><strong>${esc(first.doc.title)}</strong><small>${esc(first.section.label)} · ${esc(first.doc.version)}</small></span>${icon('chevron')}</button></div>`:'';
  return `${citation}<div class="answer-tools" role="group" aria-label="답변 더 알아보기">${detail?`<button data-answer-panel="detail" data-message="${r.messageId}" aria-expanded="${panel==='detail'}" aria-controls="${detailId}">${detailLabel} ${icon('down')}</button>`:''}${refs.length>1?`<button data-answer-panel="sources" data-message="${r.messageId}" aria-expanded="${panel==='sources'}" aria-controls="${sourceId}">${icon('book')} 전체 출처 <span class="source-count">${refs.length}</span></button>`:''}<button data-save-answer="${r.messageId}" aria-pressed="${saved}">${icon(saved?'check':'plus')}${saved?'저장됨':'답변 저장'}</button>${r.scheduleType?`<button class="answer-schedule-button" ${r.decision==='added'?`data-open-plan="${r.start}"`:`data-consent="${r.decision==='yes'?'no':'yes'}" data-message="${r.messageId}" aria-expanded="${r.decision==='yes'}" aria-controls="schedule-${r.messageId}"`}>${icon(r.decision==='added'?'check':'calendar')}${r.decision==='added'?'내 일정 보기':r.decision==='yes'?'일정 접기':['annual','half'].includes(r.scheduleType)?'신청 일정 잡기':'일정 잡기'}</button>`:''}</div>${detail?`<div class="answer-detail" id="${detailId}" ${panel==='detail'?'':'hidden'}>${detail}</div>`:''}<div class="answer-source-panel" id="${sourceId}" ${panel==='sources'?'':'hidden'}><p>답변의 근거 · 눌러서 원문 확인</p>${sourceButtons(refs)}</div>`;
 }
+// Knowly(main 백엔드) 답변: 기존 답변 카드 모양을 그대로 쓴다.
+function knowlyHTML(r){
+ const k=r.knowly||{},summary=k.summary||[],steps=k.steps||[],cites=k.citations||[];
+ if(!k.answered)return `<div class="answer-content"><span class="answer-label muted">${icon('info')} 확인할 수 없는 내용</span><h3>${isCat?'사내 문서에는 없다냥.':'사내 문서에서 답을 확인할 수 없습니다.'}</h3><p>${esc(k.error||k.details||'관련 문서를 찾지 못했어요. 담당자에게 문의하거나 게시판에 질문을 남겨 주세요.')}</p></div>${k.error?'':unknownOffer(r)}`;
+ const detail=steps.length?`<ol class="answer-steps">${steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`:k.details?`<p>${esc(k.details)}</p>`:'';
+ const sources=cites.map(c=>`<p class="caption">${icon('book')} ${esc(c.title)}${c.pages||c.version?` · ${esc([c.pages,c.version].filter(Boolean).join(' · '))}`:''}</p>`).join('');
+ return `<div class="answer-content"><span class="answer-label">${icon('check')} ${k.mode==='faq'?'FAQ에서 확인한 답변':'사내 문서에서 확인한 답변'}</span><h3>${esc(summary[0]||'')}</h3>${summary.length>1?`<ul class="answer-essentials">${summary.slice(1).map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`:''}${(k.warnings||[]).map(w=>`<p class="caption">${icon('info')} ${esc(w)}</p>`).join('')}${sources}${answerTools(r,[],detail)}</div>`;
+}
 function resultHTML(r){
+ if(r.kind==='knowly')return knowlyHTML(r);
  if(r.kind==='answer'){const a=answers[r.id],detail=a.steps?`<ol class="answer-steps">${a.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`:'';return `<div class="answer-content"><span class="answer-label">${icon('check')} 자료에서 확인한 답변</span><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p>${answerTools(r,a.refs,detail)}</div>`;}
  if(r.kind==='unknown')return `<div class="answer-content"><span class="answer-label muted">${icon('info')} 확인할 수 없는 내용</span><h3>${isCat?'받은 자료에는 없다냥.':'현재 자료에서 답을 확인할 수 없습니다.'}</h3><p>${r.personal?'개인별 잔여 연차·급여·계정 정보에는 접근할 수 없어요. 사내 시스템이나 담당 부서에서 확인해 주세요.':isCat?'이건 나도 아는 척 못 해. 다른 질문을 골라보거나 담당자에게 확인해 봐.':'현재 샘플 자료에 없거나 체험에서 지원하지 않는 질문입니다. 관련 문서를 확인하거나 담당자에게 문의해 주세요.'}</p></div>${unknownOffer(r)}`;
  if(r.kind==='scope')return `<div class="answer-content"><h3>${isCat?'그건 다른 분야의 질문이다냥.':'선택한 분야 밖의 질문입니다.'}</h3><p>지금은 ${categories.find(c=>c.id===(r.category||category))?.label} 자료 안에서 답하고 있어요.</p><button class="secondary-button" data-switch-category="${r.target}" data-retry="${esc(r.q)}">${categories.find(c=>c.id===r.target).label} 분야로 바꿔서 질문 ${icon('arrow')}</button></div>`;
@@ -226,7 +236,7 @@ function showCategories(){openModal(`<h2 id="modal-title">어떤 분야가 궁�
 function resizeComposer(){const field=$('#question-form textarea');if(!field)return;field.style.height='auto';field.style.height=Math.min(140,Math.max(30,field.scrollHeight))+'px';}
 function scrollConversation(){const pane=$('.chat-transcript'),last=pane?.querySelector('.assistant-message:last-child');if(!pane)return;requestAnimationFrame(()=>{if(!pane.isConnected)return;if(last)pane.scrollTop+=last.getBoundingClientRect().top-pane.getBoundingClientRect().top-24;else pane.scrollTop=pane.scrollHeight;});}
 function showChatExamples(){const c=category||'hr';openModal(`<h2 id="modal-title">질문 예시</h2><p class="modal-sub">${categories.find(x=>x.id===c).label} 분야의 자주 묻는 질문이에요.</p><div class="chat-example-list">${faq[c].map(([q,id])=>`<button class="secondary-button" data-faq="${id}" data-q="${esc(q)}">${esc(q)} ${icon('arrow')}</button>`).join('')}</div>`);}
-function resetChat(){clearTimeout(replyTimer);replyTimer=null;pendingReply=null;heroTransition=null;messages=[];chatDraft='';plan=null;view='chat';mood='';category=null;petInteraction.reset();render();}
+function resetChat(){clearTimeout(replyTimer);replyTimer=null;pendingReply=null;heroTransition=null;knowlyConversation=null;messages=[];chatDraft='';plan=null;view='chat';mood='';category=null;petInteraction.reset();render();}
 function ask(q,id,reward=true){
  if(!communityState().member||communityState().me?.role==='staff'){render();return;}
  q=String(q).trim();if(!q)return;
@@ -241,13 +251,20 @@ function ask(q,id,reward=true){
  messages.push({role:'user',text:q,at:Date.now()});pendingReply=r;chatDraft='';view='chat';
  render();refreshPet();scrollConversation();$('#question-form textarea')?.focus({preventScroll:true});
  if(reward)communityAction('question',{question:q});
- replyTimer=setTimeout(()=>{
+ const deliver=()=>{
   if(pendingReply!==r)return;
   pendingReply=null;replyTimer=null;messages.push({role:'assistant',result:r,at:Date.now()});
   const next=recordAnswer(history,r);if(save('om-question-history',next))history=next;
   if(view==='activity')render();
   if(view==='chat'){render();scrollConversation();}
- },first?950:480);
+ };
+ // Knowly가 연결돼 있으면 사내 문서 검색(main 백엔드)으로 답한다. 출장 일정 짜기(plan)는 냥대리 기능이라 그대로 둔다.
+ knowlyConfig().then(kc=>{
+  if(pendingReply!==r)return;
+  if(!kc||r.kind==='plan'){replyTimer=setTimeout(deliver,first?950:480);return;}
+  const knowly=k=>{Object.assign(r,{kind:'knowly',knowly:k,id:undefined,scheduleType:null});deliver();};
+  askKnowly(q,knowlyConversation).then(res=>{if(pendingReply!==r)return;knowlyConversation=res.conversationId;knowly(res.answer);},e=>{if(pendingReply!==r)return;knowly({answered:false,error:e.message||'문서 검색 서버에 연결하지 못했어요.'});});
+ });
 }
 function scheduleTabs(){return `<div class="schedule-view-switch segmented" role="group" aria-label="일정 보기 방식"><button data-schedule-view="todos" class="${view==='todos'?'selected':''}" aria-pressed="${view==='todos'}">${icon('list')} 목록</button><button data-schedule-view="calendar" class="${view==='calendar'?'selected':''}" aria-pressed="${view==='calendar'}">${icon('calendar')} 달력</button></div>`;}
 function renderCalendar(){
@@ -430,7 +447,7 @@ initCommunity({
  update(state){
   const next=state.member?state.me.username:null;
   if(next!==activeAccount){
-   clearTimeout(replyTimer);replyTimer=null;pendingReply=null;messages=[];chatDraft='';category=null;view='chat';activityTab='recent';activityQuery='';plan=null;petInteraction.reset();
+   clearTimeout(replyTimer);replyTimer=null;pendingReply=null;knowlyConversation=null;messages=[];chatDraft='';category=null;view='chat';activityTab='recent';activityQuery='';plan=null;petInteraction.reset();
    if($('#modal').open)closeModal();activeAccount=next;
    uploads=read('om-docs',[]);tasks=read('om-tasks',[]);history=normalizeHistory(read('om-question-history',[]));seenReplies=read('om-seen-replies',{});if(!seenReplies||typeof seenReplies!=='object')seenReplies={};
    rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};render();return;

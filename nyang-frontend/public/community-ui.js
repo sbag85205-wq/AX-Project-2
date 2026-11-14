@@ -1,5 +1,6 @@
-import {boardView} from './board-view.js?v=04100caff5d0';
-import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=e27536a53c71';
+import {boardView} from './board-view.js?v=5c5b2d22e90c';
+import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=d7a061a0c0ec';
+import {signIn as knowlySignIn,signOut as knowlySignOut} from './knowly.js?v=377f7f906376';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const labels={hr:'휴가 · 근태',pay:'급여 · 복지',trip:'출장 · 정산',life:'사내 생활'};
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
@@ -17,7 +18,7 @@ export async function loadStatistics(){
 function broadcastAuth(){try{localStorage.setItem('nyang-account-change',String(Date.now()));}catch{}}
 export async function logoutAccount(){
  try{const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})});if(!res.ok)throw Error('로그아웃하지 못했어요. 다시 시도해 주세요.');
- authEpoch++;connecting=null;stats=null;state={authenticated:false,member:false};filter='all';query='';hooks.close();hooks.update(state);broadcastAuth();}
+ knowlySignOut();authEpoch++;connecting=null;stats=null;state={authenticated:false,member:false,knowly:state.knowly};filter='all';query='';hooks.close();hooks.update(state);broadcastAuth();}
  catch(e){hooks.toast(e.message);}
 }
 
@@ -137,8 +138,12 @@ document.addEventListener('submit',async e=>{
  if(f.id==='account-login'){
   e.preventDefault();if(busy)return;busy=true;const button=f.querySelector('[type="submit"]'),error=f.querySelector('#login-error');button.disabled=true;button.textContent='로그인 중…';error.textContent='';
   const epoch=++authEpoch;connecting=null;
-  try{const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'login',...Object.fromEntries(new FormData(f))})}),data=await res.json();if(epoch!==authEpoch)return;if(!res.ok)throw Error(data.error);state=data;stats=null;filter='all';query='';hooks.update(state);broadcastAuth();}
-  catch(e){if(epoch===authEpoch){error.textContent=e.message;f.querySelector('[name="password"]').focus();}}
+  const form=Object.fromEntries(new FormData(f));let knowly=false;
+  try{
+   // Knowly가 연결돼 있으면 Knowly 계정으로 먼저 로그인하고, 서버는 그 토큰으로 계정·역할을 확인한다.
+   const access_token=await knowlySignIn(form.username,form.password);knowly=!!access_token;
+   const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(knowly?{action:'login',role:form.role,access_token}:{action:'login',...form})}),data=await res.json();if(epoch!==authEpoch)return;if(!res.ok)throw Error(data.error);state=data;stats=null;filter='all';query='';hooks.update(state);broadcastAuth();}
+  catch(e){if(knowly)knowlySignOut();if(epoch===authEpoch){error.textContent=e.message;f.querySelector('[name="password"]').focus();}}
   finally{busy=false;button.disabled=false;button.textContent=loginRole==='staff'?'담당자로 로그인':'직원으로 로그인';}return;
  }
 

@@ -38,6 +38,20 @@
 
 기존 체험 기능: 챗봇의 답변은 샘플 FAQ와 키워드 검색입니다. 회사 실제 문서 AI 검색이 아닙니다. 일정·할 일·추가 샘플 자료는 브라우저에 저장합니다. Google Workspace·Slack 연동, 실제 상품 지급·사원 순위, 회사 SSO, 자동 이메일 알림은 이번 구현에 포함되지 않습니다. 실제 회사 규정과 운영 방침은 담당자가 관리해야 합니다.
 
+## Knowly(사내 문서 검색) 연결
+
+화면은 그대로 두고, 로그인과 채팅 답변만 main 브랜치의 Knowly 백엔드(Supabase)를 씁니다.
+
+| 환경 변수 | 값 |
+| --- | --- |
+| `KNOWLY_SUPABASE_URL` | Knowly의 `VITE_SUPABASE_URL`과 같은 값 |
+| `KNOWLY_SUPABASE_KEY` | Knowly의 `VITE_SUPABASE_PUBLISHABLE_KEY`와 같은 값(공개 값) |
+| `KNOWLY_LOGIN_EMAIL_DOMAIN` | 선택. 기본 `knowly.local` (Knowly의 `VITE_LOGIN_EMAIL_DOMAIN`) |
+
+- 로그인: 브라우저가 Knowly 계정(아이디·비밀번호)으로 로그인하고, 서버는 그 토큰으로 계정과 역할(Knowly 관리자 → 담당자)만 확인해 기존 냥대리 세션을 엽니다.
+- 채팅: 직원 질문은 Knowly `chat` 함수로 보내고 답은 기존 답변 카드로 보여 줍니다. 출장 일정 짜기는 냥대리 기능 그대로입니다.
+- 두 값을 비워 두면 기존 시연 계정(`user01`·`admin01`)과 샘플 답변으로 동작합니다.
+
 ## 개발
 
 Sites Vinext + Cloudflare Workers + D1. `public/`에 기존 화면과 자산, `app/api/visitor/route.ts`에 방문자 HTTP 경계, `lib/visitor.mjs`에 방문자 ID·데이터 격리, `lib/community.mjs`에 공통 보상 로직, `db/schema.ts`와 `drizzle/`에 데이터 구조와 규칙이 있습니다.
