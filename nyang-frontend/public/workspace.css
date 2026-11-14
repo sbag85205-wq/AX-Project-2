@@ -94,6 +94,14 @@ html[data-theme=dark] .desktop-workspace .workspace-toolbar .theme-toggle[aria-p
 .desktop-workspace .chat-starters>button{border:0;border-radius:0;background:none!important;color:var(--ui-sub)!important;font-size:12px;padding:3px 20px;gap:10px;line-height:1.5}
 .desktop-workspace .chat-starters>button+button{border-left:1px solid var(--ui-line)}
 .desktop-workspace .chat-starters>button:hover{color:var(--ui-accent)!important}.desktop-workspace .chat-starters .icon{width:11px;height:11px;opacity:.65}
+/* 첫 화면의 추천 질문은 입력칸 바로 위 한 줄이다. 좁은 화면에서는 줄을 바꾸지 않고 옆으로 넘겨 보게 해서 입력칸을 아래로 밀지 않는다. */
+.desktop-workspace .chat-home-below>.chat-starters{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scrollbar-width:none}
+.desktop-workspace .chat-home-below>.chat-starters::-webkit-scrollbar{display:none}
+.desktop-workspace .chat-home-below>.chat-starters>button{flex:none;white-space:nowrap}
+.desktop-workspace .chat-home-below>.chat-starters>button:first-child{margin-left:auto}
+.desktop-workspace .chat-home-below>.chat-starters>button:last-child{margin-right:auto}
+/* 낮은 화면에서는 추천 질문 한 줄만큼 고양이 자리를 줄여 입력칸이 화면 아래로 가려지지 않게 한다. */
+@media(max-height:690px){.desktop-workspace .chat-home{--resident-size:170px;--room-center:calc((100dvh - 150px)*.45 - 16px)}.desktop-workspace .chat-home .cat-resident-stage{min-height:0}}
 /* Conversation: familiar messages, compact citations, no decorative panels. */
 .desktop-workspace .chat-room{--chat-bg:var(--ui-bg);--chat-card:var(--ui-fill);--chat-line:var(--ui-line);--chat-muted:var(--ui-faint);--chat-ink:var(--ui-ink);--chat-me:#007aff}
 .desktop-workspace .chat-transcript{padding:28px 40px 30px;background-color:var(--ui-bg);background-image:linear-gradient(#ffffffd9,#ffffffd9),var(--user-bg);background-size:cover;background-position:center;scrollbar-color:var(--ui-line) transparent}

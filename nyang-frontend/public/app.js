@@ -3,10 +3,10 @@ import {createReactionPicker} from './reaction-variety.js?v=115ea2f34987';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=ef11f91be08e';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=3e865096f4ea';
-import {adminView} from './admin-view.js?v=fd42af3ef495';
+import {adminView} from './admin-view.js?v=3ee8bd055934';
 import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,statsHTML,loadStatistics,logoutAccount} from './community-ui.js?v=dd7e4b42d6d1';
-import {categories,defaultCategory,categoryOf,documents,faq,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=f0133ec7428a';
-import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=a82c967b81af';
+import {categories,defaultCategory,categoryOf,documents,faq,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=fc51d10ed173';
+import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=fd6d1d696e1b';
 import {createPetInteraction} from './pet-interaction.js?v=355c0da8eb14';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies} from './activity-history.js?v=fd0c4d4b0686';
 const $=s=>document.querySelector(s);
@@ -362,7 +362,7 @@ function renderCat(){
  document.body.classList.toggle('motion-paused',!read('om-cat-motion',true));
  let content;
  if(home){
-  content=`<section class="cat-room home-scene chat-home"><div class="cat-resident-stage"><div class="scene-window" aria-hidden="true"></div><div class="active-cat-slot"></div><div class="chat-rewards home-cat-rewards" aria-label="냥대리에게 츄르 주기">${chatRewards()}</div><div class="resident-speech"><h1>${voice().greeting}</h1><p>${voice().intro}</p></div></div><div class="cat-below chat-home-below">${composer(true)}${starterQuestions()}</div></section>`;
+  content=`<section class="cat-room home-scene chat-home"><div class="cat-resident-stage"><div class="scene-window" aria-hidden="true"></div><div class="active-cat-slot"></div><div class="chat-rewards home-cat-rewards" aria-label="냥대리에게 츄르 주기">${chatRewards()}</div><div class="resident-speech"><h1>${voice().greeting}</h1><p>${voice().intro}</p></div></div><div class="cat-below chat-home-below">${starterQuestions()}${composer(true)}</div></section>`;
  }else{
   content=`<section class="chat-room" aria-label="냥대리 채팅방"><div class="chat-transcript" tabindex="0" aria-label="대화 내역"><div class="chat-transcript-inner">${conversation()}</div></div><div class="chat-compose-dock">${composer()}<p class="chat-dock-note">중요한 내용은 답변의 출처에서 확인하세요.</p></div></section>`;
  }

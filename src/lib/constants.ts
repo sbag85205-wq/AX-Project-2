@@ -4,9 +4,9 @@ export const CATEGORIES = ['서버 설치 · 설정', '클라이언트 접속', 
 
 export const SUGGESTED_QUESTIONS = [
   'Dcenter는 어떻게 설치하나요?',
-  'Dstation Linker Client는 어떻게 설치하나요?',
+  'Linker Client는 어떻게 설치하나요?',
   '인증서버는 어떻게 등록하나요?',
-  'Linker Client 접속이 안 될 때 조치 방법을 알려주세요'
+  '접속이 안 될 때 어떻게 조치하나요?'
 ];
 
 /**
@@ -19,11 +19,11 @@ export const CATEGORY_SUGGESTIONS: Record<string, { questions: string[]; keyword
     keywords: ['Dcenter 설치', 'CenterPost 설치', 'VDAgent 설치', '기본 설정']
   },
   '클라이언트 접속': {
-    questions: ['Dstation Linker Client는 어떻게 설치하나요?', '인증서버는 어떻게 등록하나요?', 'Linker Client로 접속하는 방법을 알려주세요'],
+    questions: ['Linker Client는 어떻게 설치하나요?', '인증서버는 어떻게 등록하나요?', 'Linker Client로 접속하는 방법을 알려주세요'],
     keywords: ['Linker Client 설치', '인증서버 등록', '접속 방법']
   },
   '장애 조치': {
-    questions: ['Linker Client 접속이 안 될 때 조치 방법을 알려주세요', '설치 중 오류가 발생하면 어떻게 조치하나요?', '이슈별 조치 방법을 알려주세요'],
+    questions: ['접속이 안 될 때 어떻게 조치하나요?', '설치 중 오류가 발생하면 어떻게 조치하나요?', '이슈별 조치 방법을 알려주세요'],
     keywords: ['접속 오류', '설치 오류', '조치 방법']
   }
 };
