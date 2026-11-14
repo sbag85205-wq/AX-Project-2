@@ -43,6 +43,8 @@ body[data-mode=cat] .desktop-workspace .workspace-toolbar{height:48px;min-height
 .workspace-toolbar .appearance-button .icon{width:17px;height:17px}
 body[data-mode=cat] .desktop-workspace .main-content,html[data-theme=dark] body[data-mode=cat] .desktop-workspace .main-content{background:var(--ui-bg)!important;min-height:0;overflow:hidden}
 body[data-mode=cat] .desktop-workspace .main-content.work-view{overflow:auto;background:var(--ui-bg)!important;scrollbar-width:thin;scrollbar-color:var(--ui-line) transparent}
+/* 다크모드용 위 선택자가 더 구체적이라 overflow:hidden이 이겨 스크롤이 막히던 것을 되돌린다. */
+html[data-theme=dark] body[data-mode=cat] .desktop-workspace .main-content.work-view{overflow:auto}
 body[data-mode=cat] .desktop-workspace .bottom-note{height:27px;min-height:27px;padding:0 28px;border:0;background:var(--ui-bg);color:var(--ui-faint);justify-content:center;gap:12px;font-size:10px}
 .desktop-workspace .bottom-note>button{font-size:10px;color:var(--ui-sub)}
 /* Home: the character stays in the centre, with one input and three quiet shortcuts. */
