@@ -1,23 +1,13 @@
 // 문서 업로드 전 브라우저에서 페이지별 텍스트를 뽑는다 (원문은 Supabase로만 전송)
 import { openPdf } from './pdf';
+import { fileKind, type FileKind } from './fileTypes';
 import { sheetToText, type Sheet } from './sheet';
+
+export { DOC_ACCEPT, fileKind, type FileKind } from './fileTypes';
 
 export interface PageText {
   page: number;
   text: string;
-}
-
-export type FileKind = 'pdf' | 'xlsx' | 'xls' | 'csv' | 'text';
-
-/** 문서로 올릴 수 있는 파일 (input accept 값) */
-export const DOC_ACCEPT = '.pdf,.xlsx,.xls,.csv,.txt,.md';
-
-/** 확장자로 종류를 정한다. 지원하지 않으면 null */
-export function fileKind(name: string): FileKind | null {
-  const ext = name.toLowerCase().split('.').pop() ?? '';
-  if (ext === 'pdf' || ext === 'xlsx' || ext === 'xls' || ext === 'csv') return ext;
-  if (ext === 'txt' || ext === 'md') return 'text';
-  return null;
 }
 
 /** 확장자만 바꾼 파일을 거르기 위해 실제 내용의 첫 바이트를 확인한다. */

@@ -1,5 +1,6 @@
 // 질문 첨부: 브라우저에서 파일의 글자를 뽑거나 사진을 줄여서 보낸다. 서버는 첨부를 저장하지 않는다.
-import { extractPages, fileKind } from './extract';
+import { extractPages } from './extract';
+import { ATTACH_TYPES_LABEL, fileKind, isImageFile } from './fileTypes';
 import { openPdf } from './pdf';
 import type { ChatAttachment } from './types';
 import { ATTACH_LIMITS } from '../../supabase/functions/_shared/answer';
@@ -10,9 +11,7 @@ export const ATTACH_MAX_MB = 10;
 const MAX_TEXT = ATTACH_LIMITS.textChars;
 const MAX_SIDE = 1600;
 
-export const ATTACH_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,.pdf,.xlsx,.xls,.csv,.txt,.md';
-
-const isImage = (file: File) => /^image\/(png|jpeg|webp|gif)$/.test(file.type) || /\.(png|jpe?g|webp|gif)$/i.test(file.name);
+export { ATTACH_ACCEPT } from './fileTypes';
 
 const id = () => Math.random().toString(36).slice(2, 10);
 
@@ -51,7 +50,7 @@ export async function prepareAttachment(file: File): Promise<ChatAttachment> {
   if (file.size > ATTACH_MAX_MB * 1024 * 1024) throw new Error(`${file.name}: ${ATTACH_MAX_MB}MB 이하만 첨부할 수 있어요.`);
   const name = file.name || '붙여넣은 사진.png';
 
-  if (isImage(file)) {
+  if (isImageFile(file)) {
     let bitmap: ImageBitmap;
     try {
       bitmap = await createImageBitmap(file);
@@ -64,7 +63,7 @@ export async function prepareAttachment(file: File): Promise<ChatAttachment> {
   }
 
   const kind = fileKind(name);
-  if (!kind) throw new Error(`${name}: 사진(JPG·PNG), PDF, 엑셀, 텍스트 파일만 첨부할 수 있어요.`);
+  if (!kind) throw new Error(`${name}: ${ATTACH_TYPES_LABEL} 파일만 첨부할 수 있어요.`);
   const pages = await extractPages(file);
   const text = pages.map((p) => p.text).join('\n\n').trim();
   if (!text) {

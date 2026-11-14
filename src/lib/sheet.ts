@@ -5,16 +5,9 @@ export interface Sheet {
   rows: string[][];
 }
 
-export type DocFileType = 'pdf' | 'sheet' | 'text';
+import { docFileType } from './fileTypes';
 
-/** 저장된 원본 경로의 확장자로 문서 종류를 정한다. */
-export function docFileType(path: string | null | undefined): DocFileType | null {
-  const ext = path?.toLowerCase().split('.').pop();
-  if (!ext) return null;
-  if (ext === 'pdf') return 'pdf';
-  if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') return 'sheet';
-  return 'text';
-}
+export { docFileType, type DocFileType } from './fileTypes';
 
 /** 문서 크기 표시: 엑셀은 시트 수, 나머지는 페이지 수 */
 export const pageCountLabel = (count: number, path: string | null | undefined) =>

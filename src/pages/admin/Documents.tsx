@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { useToast } from '../../components/Toast';
 import { callFunction, errorMessage } from '../../lib/api';
 import { CATEGORIES } from '../../lib/constants';
-import { DOC_ACCEPT, extractPages, sha256 } from '../../lib/extract';
+import { extractPages, sha256 } from '../../lib/extract';
+import { DOC_ACCEPT, DOC_TYPES_LABEL, fileKind } from '../../lib/fileTypes';
 import { pageCountLabel } from '../../lib/sheet';
 import { supabase } from '../../lib/supabase';
 import type { DocumentRow } from '../../lib/types';
@@ -44,7 +45,7 @@ export default function Documents() {
     if (progress) return;
     const dropped = e.dataTransfer.files[0];
     if (!dropped) return;
-    if (!DOC_ACCEPT.split(',').some((ext) => dropped.name.toLowerCase().endsWith(ext))) return setError('PDF, 엑셀(XLSX·XLS·CSV), TXT 파일만 올릴 수 있어요.');
+    if (!fileKind(dropped.name)) return setError(`${DOC_TYPES_LABEL} 파일만 올릴 수 있어요.`);
     setError('');
     (document.getElementById('doc-file') as HTMLInputElement).files = e.dataTransfer.files;
     setFile(dropped);
@@ -117,7 +118,7 @@ export default function Documents() {
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
             onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragging(false); }}
             onDrop={drop}>
-            <label htmlFor="doc-file">파일 (PDF, 엑셀 XLSX·XLS·CSV, TXT · {MAX_MB}MB 이하)</label>
+            <label htmlFor="doc-file">파일 ({DOC_TYPES_LABEL} · {MAX_MB}MB 이하)</label>
             <input id="doc-file" type="file" accept={DOC_ACCEPT} className="input" style={{ paddingTop: 9 }}
               onChange={(e) => setFile(e.target.files?.[0] ?? null)} required />
             <span className="hint">파일을 이 칸으로 끌어다 놓아도 돼요.</span>

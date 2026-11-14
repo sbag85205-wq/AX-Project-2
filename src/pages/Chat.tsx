@@ -6,6 +6,7 @@ import { SourceModal } from '../components/SourceModal';
 import { useToast } from '../components/Toast';
 import { ask, errorMessage, sendFeedback } from '../lib/api';
 import { ATTACH_ACCEPT, ATTACH_MAX, prepareAttachment } from '../lib/attach';
+import { ATTACH_TYPES_SHORT } from '../lib/fileTypes';
 import { useAuth } from '../lib/auth';
 import { CATEGORY_SUGGESTIONS, SUGGESTED_QUESTIONS } from '../lib/constants';
 import { supabase } from '../lib/supabase';
@@ -317,7 +318,7 @@ export default function Chat() {
               type="button"
               className="attach-btn"
               aria-label="사진이나 파일 첨부"
-              title="사진·PDF·엑셀·텍스트 첨부 (최대 3개, 붙여넣기·끌어다 놓기 가능)"
+              title={`${ATTACH_TYPES_SHORT} 첨부 (최대 ${ATTACH_MAX}개, 붙여넣기·끌어다 놓기 가능)`}
               disabled={busy || attachments.length + preparing >= ATTACH_MAX}
               onClick={() => fileRef.current?.click()}
             >
