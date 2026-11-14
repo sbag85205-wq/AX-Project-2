@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import initSqlJs from 'sql.js';
 import { createSerializer, runOnce } from '../src/nyang/local-db.mjs';
-import { accountCommunity, statistics } from '../nyang-frontend/lib/demo-account.mjs';
+import { accountCommunity, statistics } from '../src/nyang/live-account.mjs';
 
 // 브라우저 저장(src/nyang/local-store.ts)과 같은 경로: 요청마다 저장된 DB를 열고, 성공했을 때만 저장한다.
 const dir = new URL('../nyang-frontend/drizzle/', import.meta.url);
@@ -100,4 +100,11 @@ test('브라우저 저장소: 요청은 Web Locks로 탭 사이에서도 하나�
   const failed=local(async()=>{await new Promise(r=>setTimeout(r,5));seen.push(1);throw new Error('실패');});
   const next=local(async()=>{seen.push(2);return 'ok';});
   await assert.rejects(failed,/실패/);assert.equal(await next,'ok');assert.deepEqual(seen,[1,2]);
+});
+
+test('브라우저 저장소: 계정은 Knowly 프로필 객체만 받는다(이전 데모 아이디 문자열은 거절)', async () => {
+  const SQL = await initSqlJs();
+  for (const account of ['user01', 'admin01', null, { username: 'alice', role: 'employee' }, { id: 'x', role: 'admin' }])
+    await assert.rejects(runOnce(SQL, null, files, (db) => accountCommunity(db, account)), /로그인/);
+  await assert.rejects(runOnce(SQL, null, files, (db) => statistics(db, 'admin01')), /로그인/);
 });

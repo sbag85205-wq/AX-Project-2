@@ -1,3 +1,5 @@
+// 이전 독립 프로토타입(Cloudflare Worker + D1)의 공용 시연 계정 2개(user01·admin01) 처리. 통합 앱은 쓰지 않는다
+// (통합 앱의 계정별 활동은 src/nyang/live-account.mjs).
 import {AppError,community,seoulDay,wallet} from './community.mjs';
 import {CATEGORY_IDS} from '../public/common.js';
 const accounts={user01:{role:'employee',name:'직원',department:''},admin01:{role:'staff',name:'담당자',department:'운영 담당'}};
@@ -46,10 +48,10 @@ export async function session(db,env,request,now=Date.now()){
 }
 export async function logout(db,request){const token=tokenFrom(request);if(/^[a-f0-9]{64}$/.test(token||''))await run(db,'DELETE FROM demo_sessions WHERE token_hash=?',await digest(token));return cookie(request,'',0);}
 export async function accountCommunity(database,username,action=null,input={}){
- const account=typeof username==='object'&&username?username:accounts[username];if(!account)fail('로그인 후 이용해 주세요.',401);
+ const account=accounts[username];if(!account)fail('로그인 후 이용해 주세요.',401);
  const allowed=account.role==='staff'?['reply','delete-post','restore-post']:['question','attendance','post','like','reward','delete-post'];
  if(action&&!allowed.includes(action))fail(account.role==='staff'?'담당자는 게시판 관리와 통계 기능을 이용할 수 있어요.':'담당자만 이 작업을 할 수 있어요.',403);
- const db=accountDatabase(database),uid=account.id||'demo-'+username,email=account.id?account.id+'@knowly.internal':username+'@demo.invalid';
+ const db=accountDatabase(database),uid='demo-'+username,email=username+'@demo.invalid';
  await run(db,`INSERT INTO members(email,uid,role,department,name,active) VALUES(?,?,?,?,?,1) ON CONFLICT(email) DO UPDATE SET role=excluded.role,department=excluded.department,name=excluded.name WHERE role IS NOT excluded.role OR department IS NOT excluded.department OR name IS NOT excluded.name`,email,uid,account.role,account.department,account.name);
  let notice='';
  if(action==='delete-post'||action==='restore-post'){
@@ -58,7 +60,7 @@ export async function accountCommunity(database,username,action=null,input={}){
   if(!post)fail('질문을 찾을 수 없어요.',404);
   if(account.role!=='staff'&&post.author!==uid)fail('본인이 작성한 질문만 삭제할 수 있어요.',403);
   if(action==='delete-post'){
-   await run(database,'INSERT OR IGNORE INTO demo_deleted_posts(post,deleted_by,deleted_at) VALUES(?,?,?)',input.post,account.role==='staff'?(account.username||username):'author',new Date().toISOString());
+   await run(database,'INSERT OR IGNORE INTO demo_deleted_posts(post,deleted_by,deleted_at) VALUES(?,?,?)',input.post,account.role==='staff'?username:'author',new Date().toISOString());
    notice=account.role==='staff'?'질문을 삭제했어요. 삭제된 글에서 복원할 수 있어요.':'내 질문을 삭제했어요.';
   }else{
    await run(database,'DELETE FROM demo_deleted_posts WHERE post=?',input.post);notice='질문을 복원했어요.';
@@ -71,10 +73,10 @@ export async function accountCommunity(database,username,action=null,input={}){
  const byId=new Map(authors.map(r=>[r.id,r.staff]));
  const posts=result.posts.map(p=>({...p,replies:p.replies.map(r=>({...r,authorUsername:Object.keys(accounts).find(key=>'demo-'+key===byId.get(r.id))||'',authorRole:'staff'}))}));
  const deletedPosts=account.role==='staff'?await rows(database,'SELECT p.id,p.category,p.body,p.created,d.deleted_at FROM demo_deleted_posts d JOIN demo_posts p ON p.id=d.post ORDER BY d.deleted_at DESC LIMIT 200'):undefined;
- return {...result,...(notice?{notice}:{}),posts,deletedPosts,demoMode:!account.id,me:{username:account.username||username,...account},members:undefined};
+ return {...result,...(notice?{notice}:{}),posts,deletedPosts,demoMode:true,me:{username,...account},members:undefined};
 }
 export async function statistics(db,username){
- const account=typeof username==='object'&&username?username:accounts[username];
+ const account=accounts[username];
  if(!account)fail('로그인 후 이용해 주세요.',401);
  if(account.role!=='staff')fail('담당자만 통계를 볼 수 있어요.',403);
  const day=seoulDay(),start=new Date(new Date(day).getTime()-6*86400000).toISOString().slice(0,10);
@@ -89,7 +91,7 @@ export async function statistics(db,username){
  return {day,updatedAt:new Date().toISOString(),accounts:await count("SELECT COUNT(*) AS n FROM demo_members WHERE role='employee' AND active=1"),questions,posts,answered,waiting:posts-answered,attendance,likes,
   daily:Array.from({length:7},(_,i)=>{const d=new Date(new Date(start).getTime()+i*86400000).toISOString().slice(0,10);return {day:d,n:daily.find(x=>x.day===d)?.n||0};}),
   categories:CATEGORY_IDS.map(category=>({category,n:categories.find(x=>x.category===category)?.n||0})),
-  ranking:rank.map(r=>({username:account.id?r.name:r.uid.slice(5),name:r.name,role:r.role,points:wallet(r.data).points,questions:wallet(r.data).questions})).sort((a,b)=>b.points-a.points||a.username.localeCompare(b.username)).slice(0,3)};
+  ranking:rank.map(r=>({username:r.uid.slice(5),name:r.name,role:r.role,points:wallet(r.data).points,questions:wallet(r.data).questions})).sort((a,b)=>b.points-a.points||a.username.localeCompare(b.username)).slice(0,3)};
 }
 export async function accountRequest(db,env,request){
  let body,status=200,setCookie=null;

@@ -2,7 +2,7 @@
 // 운영 DB(Supabase)에는 새 테이블을 만들지 않는다. 다른 기기·브라우저와는 공유되지 않는다.
 import initSqlJs, { type SqlJsStatic } from 'sql.js';
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
-import { accountCommunity, statistics } from '../../nyang-frontend/lib/demo-account.mjs';
+import { accountCommunity, statistics } from './live-account.mjs';
 import { createSerializer, runOnce } from './local-db.mjs';
 
 export interface NyangAccount { id: string; username: string; name: string; department: string; role: 'staff' | 'employee' }

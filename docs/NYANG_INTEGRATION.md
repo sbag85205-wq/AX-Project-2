@@ -39,7 +39,9 @@ npm run build
 운영 DB 변경 없이 먼저 배포하기 위해 **브라우저 저장**으로 바꿨습니다. 마이그레이션·`nyang` 함수는 없습니다.
 
 - `src/nyang/local-store.ts`: 원래 냥대리 서버(Cloudflare D1)와 같은 SQLite 스키마(`nyang-frontend/drizzle/*.sql`)와
-  같은 규칙 코드(`nyang-frontend/lib/demo-account.mjs`)를 브라우저 안 SQLite(sql.js)에서 실행하고 IndexedDB에 저장합니다.
+  같은 규칙 코드(`nyang-frontend/lib/community.mjs`, 보상 숫자는 `nyang-frontend/public/reward-rules.js`)를 Knowly 계정용 연결부
+  (`src/nyang/live-account.mjs`)로 브라우저 안 SQLite(sql.js)에서 실행하고 IndexedDB에 저장합니다.
+  `nyang-frontend/lib/demo-account.mjs`는 이전 독립 프로토타입(공용 시연 계정) 전용입니다.
   요청 하나가 끝까지 성공했을 때만 저장합니다(서버의 트랜잭션과 같은 효과).
 - 계정·역할은 요청 본문이 아니라 로그인한 Knowly 프로필(`profiles`)에서 가져옵니다(`src/nyang/transport.ts`).
 - 한계: 다른 기기·브라우저와 공유되지 않고, 브라우저 데이터를 지우면 포인트·게시판이 초기화됩니다.

@@ -1,7 +1,10 @@
 // 냥대리 원본 JS 모듈(타입 없음)을 TypeScript에서 불러오기 위한 선언.
-declare module '*/nyang-frontend/lib/demo-account.mjs' {
-  export function accountCommunity(db: unknown, account: unknown, action?: string | null, input?: Record<string, unknown>): Promise<unknown>;
-  export function statistics(db: unknown, account: unknown): Promise<unknown>;
+declare module '*/live-account.mjs' {
+  /** 로그인한 Knowly 프로필에서 만든 계정(local-store.ts NyangAccount와 같은 모양) */
+  export interface LiveAccount { id: string; username: string; name: string; department: string; role: 'staff' | 'employee' }
+  export const TABLES: Record<string, string>;
+  export function accountCommunity(db: unknown, account: LiveAccount, action?: string | null, input?: Record<string, unknown>): Promise<unknown>;
+  export function statistics(db: unknown, account: LiveAccount): Promise<unknown>;
 }
 declare module '*/local-db.mjs' {
   import type { SqlJsStatic } from 'sql.js';

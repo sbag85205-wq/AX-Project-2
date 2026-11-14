@@ -1,6 +1,6 @@
 // 냥대리 활동 데이터(포인트·출석·게시판)를 브라우저 안의 SQLite(sql.js)에 저장할 때 쓰는 연결부.
 // 원래 냥대리 서버(Cloudflare D1)와 같은 SQLite 스키마(nyang-frontend/drizzle)와
-// 같은 규칙 코드(nyang-frontend/lib/demo-account.mjs)를 그대로 쓰도록 D1과 같은 모양으로 감싼다.
+// 같은 규칙 코드(nyang-frontend/lib/community.mjs, 연결부 src/nyang/live-account.mjs)를 그대로 쓰도록 D1과 같은 모양으로 감싼다.
 
 /** sql.js Database를 D1 모양(prepare/bind/first/all/run, batch)으로 감싼다. */
 export function d1(sql) {
