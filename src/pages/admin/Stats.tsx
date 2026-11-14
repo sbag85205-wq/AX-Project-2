@@ -50,11 +50,18 @@ export default function Stats() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // 기간을 빨리 바꾸면 앞 요청이 늦게 올 수 있으므로, 지금 기간의 결과만 반영한다
+    let cancelled = false;
     setStats(null);
+    setError('');
     supabase.rpc('admin_usage_stats', { days }).then(({ data, error: e }) => {
+      if (cancelled) return;
       if (e) setError('통계를 불러오지 못했어요.');
       else setStats(data as UsageStats);
     });
+    return () => {
+      cancelled = true;
+    };
   }, [days]);
 
   const download = () => {
