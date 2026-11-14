@@ -1,5 +1,6 @@
 import {AppError,community,seoulDay,wallet} from './community.mjs';
 const accounts={user01:{role:'employee',name:'직원',department:''},admin01:{role:'staff',name:'담당자',department:'운영 담당'}};
+export const accountRole=username=>accounts[username]?.role||null;
 const hex=a=>Array.from(new Uint8Array(a),x=>x.toString(16).padStart(2,'0')).join('');
 const digest=async s=>hex(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)));
 const one=(db,q,...args)=>db.prepare(q).bind(...args).first();

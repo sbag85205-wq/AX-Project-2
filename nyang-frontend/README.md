@@ -60,3 +60,9 @@ npm run build
 - 개발 데이터베이스와 `.dev.vars`, `.wrangler`, `.sites-runtime`은 배포 소스·아카이브에 포함하지 않습니다.
 
 검증: 기존 FAQ/일정/고양이 보상 테스트, SQL migration을 적용한 SQLite 서비스 테스트(로그인·회원 경계, 직원/담당자 권한, 익명 응답, 좋아요, 출석, 질문 중복·한도, 동시 요청·재시도), 방문자 쿠키 유지·공유 게시·좋아요·출석·꾸미기, 직원 데이터와의 격리 테스트 및 로컬 D1 브라우저 흐름.
+
+## 사내 문서 검색 연결 (main 백엔드)
+
+직원 계정으로 질문하면 서버의 `/api/knowly`가 main 브랜치의 Supabase `chat` 함수(등록 FAQ → 문서 키워드·의미 검색 → AI 요약 → 출처 검증)에 질문을 전달하고, 근거가 있는 답을 기존 답변 카드 모양으로 보여 줍니다. 근거가 없거나 연결 설정이 없으면 기존 샘플 FAQ·키워드 답변을 그대로 씁니다. 질문 예시 버튼, 다른 분야 질문, 개인 정보 질문은 기존 방식으로 처리합니다.
+
+서버 환경 변수(`.env.example` 참고, 값은 Sites secrets로만 설정): `KNOWLY_SUPABASE_URL`, `KNOWLY_SUPABASE_KEY`(publishable key), `KNOWLY_LOGIN_EMAIL`, `KNOWLY_LOGIN_PASSWORD`(Knowly 관리자 화면에서 발급한 직원 계정). 비밀번호와 토큰은 브라우저로 보내지 않습니다. 문서 등록·FAQ·검색 모델 설정은 main의 Knowly 관리자 화면에서 관리합니다.

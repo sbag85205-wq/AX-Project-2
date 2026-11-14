@@ -1,6 +1,6 @@
-const kinds=new Set(['answer','plan','excerpt','unknown','scope']);
+const kinds=new Set(['answer','plan','excerpt','unknown','scope','knowly']);
 const categories=new Set(['hr','pay','trip','life']);
-export const canSaveAnswer=result=>['answer','plan','excerpt'].includes(result?.kind);
+export const canSaveAnswer=result=>['answer','plan','excerpt','knowly'].includes(result?.kind);
 export function normalizeHistory(value){
  const seen=new Set();
  const valid=(Array.isArray(value)?value:[]).filter(x=>x&&typeof x.id==='string'&&typeof x.q==='string'&&Number.isFinite(x.at)&&kinds.has(x.result?.kind)&&categories.has(x.result?.category)&&!seen.has(x.id)&&seen.add(x.id));
@@ -10,8 +10,8 @@ export function normalizeHistory(value){
  return [...new Map([...recent,...saved].map(x=>[x.id,x])).values()].sort((a,b)=>b.at-a.at);
 }
 export function recordAnswer(history,result,at=Date.now()){
- const {kind,id,q,category,messageId,personal,target,title,text,ref,scheduleType,start,end}=result;
- const record={id:messageId,q,at,saved:history.find(x=>x.id===messageId)?.saved===true,result:{kind,id,q,category,messageId,personal,target,title,text,ref,scheduleType,start,end}};
+ const {kind,id,q,category,messageId,personal,target,title,text,ref,scheduleType,start,end,knowly}=result;
+ const record={id:messageId,q,at,saved:history.find(x=>x.id===messageId)?.saved===true,result:{kind,id,q,category,messageId,personal,target,title,text,ref,scheduleType,start,end,...(kind==='knowly'?{knowly}:{})}};
  return normalizeHistory([record,...history.filter(x=>x.id!==messageId)]);
 }
 export function toggleSaved(history,id){

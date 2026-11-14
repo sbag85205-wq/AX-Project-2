@@ -1,13 +1,13 @@
-import {createReactionPicker} from './reaction-variety.js?v=633497953fb9';
-import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=927fca561e45';
+import {createReactionPicker} from './reaction-variety.js?v=115ea2f34987';
+import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=ef11f91be08e';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
-import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=eca964bc2123';
-import {adminView} from './admin-view.js?v=97f79c136eac';
+import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=06e0b81b016b';
+import {adminView} from './admin-view.js?v=d3650a3b26a4';
 import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,statsHTML,loadStatistics,logoutAccount} from './community-ui.js?v=4c3d0f2d22e9';
-import {categories,documents,faq,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=b31737937a1f';
-import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=9e284fd13915';
-import {createPetInteraction} from './pet-interaction.js?v=74689b31d2e9';
-import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies} from './activity-history.js?v=cf0b627c6eaa';
+import {categories,documents,faq,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=0ff57cf675c0';
+import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=7d55f062fd27';
+import {createPetInteraction} from './pet-interaction.js?v=355c0da8eb14';
+import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies} from './activity-history.js?v=7e17914f64fb';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const mode=document.body.dataset.mode;
@@ -199,8 +199,23 @@ function answerTools(r,refs,detail='',detailLabel='자세한 절차'){
  const citation=first?`<div class="answer-citation"><button data-source="${esc(refs[0])}">${icon('book')}<span><strong>${esc(first.doc.title)}</strong><small>${esc(first.section.label)} · ${esc(first.doc.version)}</small></span>${icon('chevron')}</button></div>`:'';
  return `${citation}<div class="answer-tools" role="group" aria-label="답변 더 알아보기">${detail?`<button data-answer-panel="detail" data-message="${r.messageId}" aria-expanded="${panel==='detail'}" aria-controls="${detailId}">${detailLabel} ${icon('down')}</button>`:''}${refs.length>1?`<button data-answer-panel="sources" data-message="${r.messageId}" aria-expanded="${panel==='sources'}" aria-controls="${sourceId}">${icon('book')} 전체 출처 <span class="source-count">${refs.length}</span></button>`:''}<button data-save-answer="${r.messageId}" aria-pressed="${saved}">${icon(saved?'check':'plus')}${saved?'저장됨':'답변 저장'}</button>${r.scheduleType?`<button class="answer-schedule-button" ${r.decision==='added'?`data-open-plan="${r.start}"`:`data-consent="${r.decision==='yes'?'no':'yes'}" data-message="${r.messageId}" aria-expanded="${r.decision==='yes'}" aria-controls="schedule-${r.messageId}"`}>${icon(r.decision==='added'?'check':'calendar')}${r.decision==='added'?'내 일정 보기':r.decision==='yes'?'일정 접기':['annual','half'].includes(r.scheduleType)?'신청 일정 잡기':'일정 잡기'}</button>`:''}</div>${detail?`<div class="answer-detail" id="${detailId}" ${panel==='detail'?'':'hidden'}>${detail}</div>`:''}<div class="answer-source-panel" id="${sourceId}" ${panel==='sources'?'':'hidden'}><p>답변의 근거 · 눌러서 원문 확인</p>${sourceButtons(refs)}</div>`;
 }
+// main 백엔드(사내 문서 검색) 답변: 기존 답변 카드·도구 모양을 그대로 쓴다.
+function knowlyHTML(r){
+ const k=r.knowly||{},arr=v=>Array.isArray(v)?v.filter(x=>x&&typeof x==='object'||typeof x==='string'):[],summary=arr(k.summary),steps=arr(k.steps),cites=arr(k.citations);
+ const detail=steps.length?`<ol class="answer-steps">${steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`:k.details?`<p>${esc(k.details)}</p>`:'';
+ const sources=cites.length?`<p class="caption knowly-sources">${icon('book')} 근거 · ${cites.map(c=>esc([c.title,c.version,c.pages].filter(Boolean).join(' · '))).join(' / ')}</p>`:'';
+ return `<div class="answer-content"><span class="answer-label">${icon('check')} ${k.mode==='faq'?'FAQ에서 확인한 답변':'사내 문서에서 확인한 답변'}</span><h3>${esc(summary[0]||'')}</h3>${summary.length>1?`<ul class="answer-essentials">${summary.slice(1).map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`:''}${arr(k.warnings).map(w=>`<p class="caption">${icon('info')} ${esc(w)}</p>`).join('')}${sources}${answerTools(r,[],detail)}</div>`;
+}
+let knowlyOff=false;
+// 서버가 문서 검색에 연결돼 있으면 답을 받아오고, 아니면 null (기존 샘플 답변으로 대체).
+async function askKnowly(question){
+ if(knowlyOff)return null;
+ try{const res=await fetch('/api/knowly',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question})}),data=await res.json().catch(()=>null);if(res.status===503)knowlyOff=true;return res.ok?data?.answer||null:null;}
+ catch{return null;}
+}
 function resultHTML(r){
  if(r.kind==='answer'){const a=personalityAnswer(answers[r.id],personality),detail=a.steps?`<ol class="answer-steps">${a.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`:'';return `<div class="answer-content"><span class="answer-label">${icon('check')} 자료에서 확인한 답변</span><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p>${answerTools(r,a.refs,detail)}</div>`;}
+ if(r.kind==='knowly')return knowlyHTML(r);
  if(r.kind==='unknown')return `<div class="answer-content"><span class="answer-label muted">${icon('info')} 확인할 수 없는 내용</span><h3>${isCat?voice().unknown:'현재 자료에서 답을 확인할 수 없습니다.'}</h3><p>${r.personal?'개인별 잔여 연차·급여·계정 정보에는 접근할 수 없어요. 사내 시스템이나 담당 부서에서 확인해 주세요.':isCat?voice().unknownDetail:'현재 샘플 자료에 없거나 체험에서 지원하지 않는 질문입니다. 관련 문서를 확인하거나 담당자에게 문의해 주세요.'}</p></div>${unknownOffer(r)}`;
  if(r.kind==='scope')return `<div class="answer-content"><h3>${isCat?voice().scope:'선택한 분야 밖의 질문입니다.'}</h3><p>지금은 ${categories.find(c=>c.id===(r.category||category))?.label} 자료 안에서 답하고 있어요.</p><button class="secondary-button" data-switch-category="${r.target}" data-retry="${esc(r.q)}">${categories.find(c=>c.id===r.target).label} 분야로 바꿔서 질문 ${icon('arrow')}</button></div>`;
  if(r.kind==='excerpt'){const long=r.text.length>180;return `<div class="answer-content"><span class="answer-label">${icon('book')} 업로드 자료 원문 검색</span><h3>${esc(r.title)}</h3><p class="excerpt">${esc(long?r.text.slice(0,180)+'…':r.text)}</p><p class="caption">${long?'문단 일부예요. ':''}${personality==='warm'?'답변으로 확인된 내용은 아니니 원문을 확인해 주세요.':'답변으로 확인된 내용은 아니니 원문을 확인해 줘.'}</p>${answerTools(r,[r.ref],long?`<p class="excerpt">${esc(r.text)}</p>`:'','문단 펼치기')}</div>`;}
@@ -343,8 +358,11 @@ function ask(q,id,reward=true){
  messages.push({role:'user',text:q,at:Date.now()});pendingReply=r;chatDraft='';view='chat';
  render();refreshPet();scrollConversation();$('#question-form textarea')?.focus({preventScroll:true});
  if(reward)communityAction('question',{question:q});
- replyTimer=setTimeout(()=>{
+ const remote=!id&&!r.personal&&r.kind!=='scope'?askKnowly(q):null;
+ replyTimer=setTimeout(async()=>{
   if(pendingReply!==r)return;
+  const k=remote&&await remote;if(pendingReply!==r)return;
+  if(k?.answered&&Array.isArray(k.summary)){r.kind='knowly';r.knowly=k;}
   pendingReply=null;replyTimer=null;messages.push({role:'assistant',result:r,at:Date.now()});saveCurrentChat();
   const next=recordAnswer(history,r);if(save('om-question-history',next))history=next;
   if(view==='activity')render();
@@ -368,7 +386,7 @@ function activityContent(){
  const notices=fresh.length?`<button class="activity-notice" data-activity-tab="posts">${icon('chat')} 내 질문 ${fresh.length}개에 새 답변이 있어요 ${icon('chevron')}</button>`:'';
  const postRows=posts.filter(p=>p.body.toLocaleLowerCase('ko').includes(q));
  const empty=activityTab==='saved'?'아직 저장한 답변이 없어요.':activityTab==='posts'?'아직 게시한 질문이 없어요.':'아직 기록된 질문이 없어요.';
- return `<section class="activity-work" aria-label="나의 질문 기록">${notices}<div class="activity-tabs" role="group" aria-label="질문 기록 종류">${tabs.map(([id,label])=>`<button data-activity-tab="${id}" aria-pressed="${activityTab===id}" class="${activityTab===id?'selected':''}">${label}${id==='posts'&&fresh.length?`<span>${fresh.length}</span>`:''}</button>`).join('')}</div><form id="activity-search"><input name="query" value="${esc(activityQuery)}" aria-label="내 질문 검색" placeholder="질문 내용으로 찾기"><button class="secondary-button">검색</button></form><div class="activity-record-list">${activityTab==='posts'?postRows.map(p=>`<article class="activity-record"><button class="activity-record-open" data-activity-post="${esc(p.id)}"><span class="record-meta">${esc(categories.find(c=>c.id===p.category)?.label)} · ${date(p.created)}${fresh.some(x=>x.id===p.id)?'<b class="reply-new">새 답변</b>':''}</span><strong>${esc(p.body)}</strong><span class="record-preview">${p.replies.length?`담당자 답변 ${p.replies.length}개 · 공식 확인 전`:'답변을 기다리고 있어요'} · 좋아요 ${p.likes}</span></button>${icon('chevron')}</article>`).join(''):rows.map(x=>`<article class="activity-record"><button class="activity-record-open" data-history-open="${esc(x.id)}"><span class="record-meta">${esc(categories.find(c=>c.id===x.result.category)?.label)} · ${date(x.at)}</span><strong>${esc(x.q)}</strong><span class="record-preview">${esc(x.result.kind==='answer'?answers[x.result.id]?.title||'답변 다시 보기':x.result.kind==='plan'?'출장 준비 절차와 일정':x.result.kind==='excerpt'?x.result.title:x.result.kind==='scope'?'다른 분야의 질문':'자료에서 확인하지 못한 질문')}</span></button>${x.saved?'<span class="record-saved">저장됨</span>':icon('chevron')}</article>`).join('')}${!(activityTab==='posts'?postRows.length:rows.length)?`<div class="activity-record-empty"><h2>${activityQuery?'일치하는 질문이 없어요.':empty}</h2><p>${activityQuery?'다른 단어로 검색해 보세요.':activityTab==='saved'?'답변 아래의 ‘답변 저장’을 누르면 여기에 모여요.':activityTab==='posts'?'냥대리가 답하지 못한 질문을 게시판에 남길 수 있어요.':'지금부터 나눈 질문과 답변이 여기에 쌓여요.'}</p>${!activityQuery?'<button class="secondary-button" data-action="chat">냥대리에게 물어보기</button>':''}</div>`:''}</div><p class="activity-storage-note">${activityTab==='posts'?'최근 게시판 질문 200개 안에서 내가 쓴 질문을 보여줘요. 새 답변은 내 활동을 열거나 새로고침하면 확인돼요.':'최근 질문 100개와 저장한 답변 최대 100개가 현재 계정의 이 브라우저에 보관돼요. 질문 기록은 다른 기기와 동기화되지 않아요.'}</p></section>`;
+ return `<section class="activity-work" aria-label="나의 질문 기록">${notices}<div class="activity-tabs" role="group" aria-label="질문 기록 종류">${tabs.map(([id,label])=>`<button data-activity-tab="${id}" aria-pressed="${activityTab===id}" class="${activityTab===id?'selected':''}">${label}${id==='posts'&&fresh.length?`<span>${fresh.length}</span>`:''}</button>`).join('')}</div><form id="activity-search"><input name="query" value="${esc(activityQuery)}" aria-label="내 질문 검색" placeholder="질문 내용으로 찾기"><button class="secondary-button">검색</button></form><div class="activity-record-list">${activityTab==='posts'?postRows.map(p=>`<article class="activity-record"><button class="activity-record-open" data-activity-post="${esc(p.id)}"><span class="record-meta">${esc(categories.find(c=>c.id===p.category)?.label)} · ${date(p.created)}${fresh.some(x=>x.id===p.id)?'<b class="reply-new">새 답변</b>':''}</span><strong>${esc(p.body)}</strong><span class="record-preview">${p.replies.length?`담당자 답변 ${p.replies.length}개 · 공식 확인 전`:'답변을 기다리고 있어요'} · 좋아요 ${p.likes}</span></button>${icon('chevron')}</article>`).join(''):rows.map(x=>`<article class="activity-record"><button class="activity-record-open" data-history-open="${esc(x.id)}"><span class="record-meta">${esc(categories.find(c=>c.id===x.result.category)?.label)} · ${date(x.at)}</span><strong>${esc(x.q)}</strong><span class="record-preview">${esc(x.result.kind==='answer'?answers[x.result.id]?.title||'답변 다시 보기':x.result.kind==='plan'?'출장 준비 절차와 일정':x.result.kind==='excerpt'?x.result.title:x.result.kind==='knowly'?x.result.knowly?.summary?.[0]||'사내 문서 답변':x.result.kind==='scope'?'다른 분야의 질문':'자료에서 확인하지 못한 질문')}</span></button>${x.saved?'<span class="record-saved">저장됨</span>':icon('chevron')}</article>`).join('')}${!(activityTab==='posts'?postRows.length:rows.length)?`<div class="activity-record-empty"><h2>${activityQuery?'일치하는 질문이 없어요.':empty}</h2><p>${activityQuery?'다른 단어로 검색해 보세요.':activityTab==='saved'?'답변 아래의 ‘답변 저장’을 누르면 여기에 모여요.':activityTab==='posts'?'냥대리가 답하지 못한 질문을 게시판에 남길 수 있어요.':'지금부터 나눈 질문과 답변이 여기에 쌓여요.'}</p>${!activityQuery?'<button class="secondary-button" data-action="chat">냥대리에게 물어보기</button>':''}</div>`:''}</div><p class="activity-storage-note">${activityTab==='posts'?'최근 게시판 질문 200개 안에서 내가 쓴 질문을 보여줘요. 새 답변은 내 활동을 열거나 새로고침하면 확인돼요.':'최근 질문 100개와 저장한 답변 최대 100개가 현재 계정의 이 브라우저에 보관돼요. 질문 기록은 다른 기기와 동기화되지 않아요.'}</p></section>`;
 }
 function openHistory(id){
  const existing=chats.find(x=>x.messages.some(m=>m.result?.messageId===id));if(existing){openChat(existing.id);return;}
