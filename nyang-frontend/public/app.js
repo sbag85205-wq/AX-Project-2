@@ -577,7 +577,7 @@ document.addEventListener('click',async e=>{
  if(a==='toggle-chat-history'){chatHistoryCollapsed=!chatHistoryCollapsed;render();return;}
  if(a==='login-pet'){reactLoginPet();return;}
  if(a==='logout'){await logoutAccount();return;}
- if(a==='account'){const me=communityState().me;openModal('<div class="account-menu"><h2 id="modal-title">내 계정</h2><strong>'+esc(me.username)+' · '+(me.role==='staff'?'담당자':'직원')+'</strong><p>'+ (me.role==='staff'?'질문 게시판 관리와 통계에 접근할 수 있어요.':'포인트와 보상은 같은 계정으로 로그인한<br>모든 기기에서 이어져요.') +'</p><p>Knowly 개인 계정으로 연결되어 있어요.<br>대화와 보상은 계정별로 구분됩니다.</p><button class="primary-button" data-action="logout">로그아웃</button></div>');return;}
+ if(a==='account'){const me=communityState().me;openModal('<div class="account-menu"><h2 id="modal-title">내 계정</h2><strong>'+esc(me.username)+' · '+(me.role==='staff'?'담당자':'직원')+'</strong><p>'+ (me.role==='staff'?'질문 게시판 관리와 통계에 접근할 수 있어요.':'포인트와 보상은 이 브라우저에만 저장돼요.<br>다른 기기·브라우저에서는 새로 시작해요.') +'</p><p>Knowly 개인 계정으로 연결되어 있어요.<br>대화와 보상은 계정별로 구분됩니다.</p><button class="primary-button" data-action="logout">로그아웃</button></div>');return;}
  if(a==='unanswered'||a==='library'){if(a==='library')openLibrary();else if(communityState().me?.role==='staff'){view=a;petInteraction.reset();render();$('#main').scrollTop=0;}return;}
  if(['faq','documents','users','model'].includes(a)){if(communityState().me?.role==='staff'){view=a;petInteraction.reset();render();$('#main').scrollTop=0;}return;}
  if(a==='statistics'){if(communityState().me?.role==='staff'){view='statistics';petInteraction.reset();await loadStatistics();}return;}
