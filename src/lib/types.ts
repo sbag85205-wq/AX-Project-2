@@ -14,33 +14,9 @@ export interface Department {
   name: string;
 }
 
-export interface Citation {
-  source_id: string;
-  chunk_id: string;
-  document_id: string;
-  document_title: string;
-  version: string;
-  page_start: number;
-  page_end: number;
-}
-
-export interface Answer {
-  status: 'answered' | 'insufficient_evidence' | 'conflicting_sources';
-  mode: 'faq' | 'llm' | 'search';
-  summary: string[];
-  steps: string[];
-  details: string;
-  warnings: string[];
-  citations: Citation[];
-  attachments?: AttachmentNote[];
-}
-
-/** 질문에 첨부한 파일 (서버는 이름과 읽었는지만 대화에 남긴다) */
-export interface AttachmentNote {
-  name: string;
-  kind: 'file' | 'image';
-  read: boolean;
-}
+// 답변·출처·첨부 기록 모양은 서버(chat 함수)와 같은 정의를 그대로 쓴다. 따로 베끼면 서로 달라진다.
+export type { Answer, AnswerStatus, AttachmentNote, Citation } from '../../supabase/functions/_shared/answer';
+import type { Answer, AttachmentNote } from '../../supabase/functions/_shared/answer';
 
 export interface Message {
   id: string;
@@ -55,10 +31,9 @@ export interface Message {
   attachments?: ChatAttachment[];
 }
 
-export interface ChatAttachment {
+/** 화면에서 다루는 첨부: 서버 기록(AttachmentNote)의 이름·종류에 미리보기·추출 글자를 더한다 */
+export interface ChatAttachment extends Omit<AttachmentNote, 'read'> {
   id: string;
-  name: string;
-  kind: 'file' | 'image';
   /** 파일에서 뽑은 글자 */
   text?: string;
   /** 사진 (줄인 JPEG data URL) */
@@ -110,6 +85,8 @@ export interface QuestionGroup {
   faqs?: { answer: string } | null;
 }
 
+/** 관리자 설정. supabase/functions/_shared/settings.ts의 AppSettings와 같은 모양으로 유지한다
+ *  (settings.ts는 프론트엔드 tsconfig include에 없어 여기서는 그대로 둔다) */
 export interface AppSettings {
   llm_model: string | null;
   keyword_min: number;

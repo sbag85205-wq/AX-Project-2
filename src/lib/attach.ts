@@ -2,10 +2,12 @@
 import { extractPages, fileKind } from './extract';
 import { openPdf } from './pdf';
 import type { ChatAttachment } from './types';
+import { ATTACH_LIMITS } from '../../supabase/functions/_shared/answer';
 
-export const ATTACH_MAX = 3;
+/** 개수·글자 수 한도는 서버(chat 함수)가 검사하는 값과 같은 것을 쓴다 */
+export const ATTACH_MAX = ATTACH_LIMITS.count;
 export const ATTACH_MAX_MB = 10;
-const MAX_TEXT = 6000;
+const MAX_TEXT = ATTACH_LIMITS.textChars;
 const MAX_SIDE = 1600;
 
 export const ATTACH_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif,.pdf,.xlsx,.xls,.csv,.txt,.md';
