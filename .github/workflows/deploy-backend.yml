@@ -30,9 +30,6 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 2.122.0
-      # GitHub 러너는 IPv6가 안 될 때가 있어 DB에 바로 붙지 못한다. link가 IPv4(pooler) 접속 정보를 받아 둔다.
-      - name: IPv4 연결 설정
-        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
       - name: 적용할 DB 변경 미리 보기
         run: supabase db push --project-ref "$SUPABASE_PROJECT_REF" --dry-run
       - name: DB 변경 적용
