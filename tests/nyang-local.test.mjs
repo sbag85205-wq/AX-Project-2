@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import initSqlJs from 'sql.js';
-import { runOnce } from '../src/nyang/local-db.mjs';
+import { createSerializer, runOnce } from '../src/nyang/local-db.mjs';
 import { accountCommunity, statistics } from '../nyang-frontend/lib/demo-account.mjs';
 
 // 브라우저 저장(src/nyang/local-store.ts)과 같은 경로: 요청마다 저장된 DB를 열고, 성공했을 때만 저장한다.
@@ -67,4 +67,37 @@ test('브라우저 저장소: 실패한 요청은 저장하지 않고, 스키마
   const db=new SQL.Database(again.bytes);
   assert.equal(db.exec('SELECT COUNT(*) FROM local_migrations')[0].values[0][0],files.length);
   db.close();
+});
+
+test('브라우저 저장소: 읽기만 한 요청은 바뀐 것이 없어 저장하지 않는다(다른 탭의 변경을 덮어쓰지 않음)', async () => {
+  const SQL = await initSqlJs();
+  const a={id:'user-a',username:'alice',name:'직원 A',department:'개발',role:'employee'};
+  const staff={id:'staff-a',username:'manager',name:'담당자',department:'운영',role:'staff'};
+  const first=await runOnce(SQL,null,files,(db)=>accountCommunity(db,a));
+  assert.equal(first.changed,true); // 새 DB: 스키마·첫 회원 등록
+  const read=await runOnce(SQL,first.bytes,files,(db)=>accountCommunity(db,a));
+  assert.equal(read.changed,false);assert.equal(read.bytes,first.bytes);
+  const renamed=await runOnce(SQL,first.bytes,files,(db)=>accountCommunity(db,{...a,name:'직원 A2'}));
+  assert.equal(renamed.changed,true); // 프로필 이름이 바뀌면 회원 정보를 갱신한다
+  const asked=await runOnce(SQL,renamed.bytes,files,(db)=>accountCommunity(db,{...a,name:'직원 A2'},'question',{question:'연차 신청은 어떻게 하나요?'}));
+  assert.equal(asked.changed,true);
+  const repeated=await runOnce(SQL,asked.bytes,files,(db)=>accountCommunity(db,{...a,name:'직원 A2'},'question',{question:'연차 신청은 어떻게 하나요?'}));
+  assert.equal(repeated.changed,false); // 같은 질문은 다시 보상하지 않으므로 바뀐 것이 없다
+  const withStaff=await runOnce(SQL,asked.bytes,files,(db)=>accountCommunity(db,staff));
+  assert.equal(withStaff.changed,true);
+  const stats=await runOnce(SQL,withStaff.bytes,files,(db)=>statistics(db,staff));
+  assert.equal(stats.changed,false);assert.equal(stats.result.questions,1);
+});
+
+test('브라우저 저장소: 요청은 Web Locks로 탭 사이에서도 하나씩, 없으면 탭 안에서 차례로 처리한다', async () => {
+  const names=[];let held=Promise.resolve();
+  const locks={request(name,fn){names.push(name);const run=held.then(fn);held=run.catch(()=>{});return run;}};
+  const viaLocks=createSerializer('knowly-nyang',locks),order=[];
+  const slow=viaLocks(async()=>{await new Promise(r=>setTimeout(r,10));order.push('a');return 'a';});
+  const fast=viaLocks(async()=>{order.push('b');return 'b';});
+  assert.deepEqual(await Promise.all([slow,fast]),['a','b']);assert.deepEqual(order,['a','b']);assert.deepEqual(names,['knowly-nyang','knowly-nyang']);
+  const local=createSerializer('knowly-nyang',null),seen=[];
+  const failed=local(async()=>{await new Promise(r=>setTimeout(r,5));seen.push(1);throw new Error('실패');});
+  const next=local(async()=>{seen.push(2);return 'ok';});
+  await assert.rejects(failed,/실패/);assert.equal(await next,'ok');assert.deepEqual(seen,[1,2]);
 });

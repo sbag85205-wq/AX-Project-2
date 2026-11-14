@@ -49,7 +49,7 @@ export async function accountCommunity(database,username,action=null,input={}){
  const allowed=account.role==='staff'?['reply','delete-post','restore-post']:['question','attendance','post','like','reward','delete-post'];
  if(action&&!allowed.includes(action))fail(account.role==='staff'?'담당자는 게시판 관리와 통계 기능을 이용할 수 있어요.':'담당자만 이 작업을 할 수 있어요.',403);
  const db=accountDatabase(database),uid=account.id||'demo-'+username,email=account.id?account.id+'@knowly.internal':username+'@demo.invalid';
- await run(db,`INSERT INTO members(email,uid,role,department,name,active) VALUES(?,?,?,?,?,1) ON CONFLICT(email) DO UPDATE SET role=excluded.role,department=excluded.department,name=excluded.name`,email,uid,account.role,account.department,account.name);
+ await run(db,`INSERT INTO members(email,uid,role,department,name,active) VALUES(?,?,?,?,?,1) ON CONFLICT(email) DO UPDATE SET role=excluded.role,department=excluded.department,name=excluded.name WHERE role IS NOT excluded.role OR department IS NOT excluded.department OR name IS NOT excluded.name`,email,uid,account.role,account.department,account.name);
  let notice='';
  if(action==='delete-post'||action==='restore-post'){
   if(typeof input.post!=='string'||input.post.length>100)fail('질문을 확인해 주세요.',400);

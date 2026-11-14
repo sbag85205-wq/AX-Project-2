@@ -44,7 +44,9 @@ export function d1(sql) {
 
 /**
  * 저장된 DB(bytes, 없으면 새로)를 열어 스키마를 맞추고 work(db)를 한 번 실행한다.
- * 서버의 요청 하나 = 트랜잭션 하나와 같게, 성공했을 때만 바뀐 DB(bytes)를 돌려주고 실패하면 아무것도 저장하지 않는다.
+ * 서버의 요청 하나 = 트랜잭션 하나와 같게, 성공했을 때만 결과를 돌려주고 실패하면 아무것도 저장하지 않는다.
+ * changed: 스키마 적용이나 work가 행을 하나라도 바꿨는지(트리거 포함, SQLite total_changes).
+ * 바뀌지 않았으면 저장할 필요가 없고, bytes는 받은 그대로 돌려준다(읽기 전용 요청이 다른 탭의 변경을 덮어쓰지 않게).
  * SQL: initSqlJs() 결과, files: [이름, SQL][]
  */
 export async function runOnce(SQL, bytes, files, work) {
@@ -53,10 +55,25 @@ export async function runOnce(SQL, bytes, files, work) {
     sql.exec('PRAGMA foreign_keys = ON');
     migrate(sql, files);
     const result = await work(d1(sql));
-    return { result, bytes: sql.export() };
+    const changed = !bytes || sql.exec('SELECT total_changes()')[0].values[0][0] > 0;
+    return { result, changed, bytes: changed ? sql.export() : bytes };
   } finally {
     sql.close();
   }
+}
+
+/**
+ * fn을 한 번에 하나씩 실행한다. Web Locks가 있으면 같은 브라우저의 모든 탭에 걸쳐 차례로 실행하고
+ * (불러오기→처리→저장 사이에 다른 탭이 끼어들어 변경을 덮어쓰지 않게), 없으면 이 탭 안에서만 차례로 실행한다.
+ */
+export function createSerializer(name, locks = globalThis.navigator?.locks) {
+  let queue = Promise.resolve();
+  return (fn) => {
+    if (locks?.request) return locks.request(name, () => fn());
+    const job = queue.then(() => fn());
+    queue = job.catch(() => undefined);
+    return job;
+  };
 }
 
 /** 아직 적용하지 않은 스키마 파일만 이름 순서대로 적용한다. files: [이름, SQL][] */

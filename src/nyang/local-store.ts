@@ -3,7 +3,7 @@
 import initSqlJs, { type SqlJsStatic } from 'sql.js';
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 import { accountCommunity, statistics } from '../../nyang-frontend/lib/demo-account.mjs';
-import { runOnce } from './local-db.mjs';
+import { createSerializer, runOnce } from './local-db.mjs';
 
 export interface NyangAccount { id: string; username: string; name: string; department: string; role: 'staff' | 'employee' }
 
@@ -54,19 +54,19 @@ async function save(bytes: Uint8Array) {
 
 let memory: Uint8Array | null = null;
 let engine: Promise<SqlJsStatic> | null = null;
-let queue: Promise<unknown> = Promise.resolve();
+// 같은 브라우저의 모든 탭이 한 줄로 처리한다(Web Locks, 없으면 이 탭 안에서만).
+const serialize = createSerializer('knowly-nyang');
 
 /** 원래 nyang 서버 함수와 같은 요청을 브라우저 안에서 처리한다. 요청은 하나씩 차례로 처리한다. */
 export function localNyang(account: NyangAccount, action: string | null, input: Record<string, unknown>) {
-  const job = queue.then(async () => {
+  return serialize(async () => {
     engine ??= initSqlJs({ locateFile: () => wasmUrl });
     const SQL = await engine;
     // 다른 탭에서 바뀐 내용을 반영하려고 요청마다 저장본을 다시 읽는다.
-    const { result, bytes } = await runOnce(SQL, await load(), files, (db: unknown) =>
+    const { result, changed, bytes } = await runOnce(SQL, await load(), files, (db: unknown) =>
       action === 'stats' ? statistics(db, account) : accountCommunity(db, account, action, input));
-    await save(bytes);
+    // 읽기만 한 요청(새로고침·15초 갱신)은 저장하지 않는다.
+    if (changed) await save(bytes);
     return result;
   });
-  queue = job.catch(() => undefined);
-  return job;
 }

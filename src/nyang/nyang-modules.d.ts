@@ -5,5 +5,6 @@ declare module '*/nyang-frontend/lib/demo-account.mjs' {
 }
 declare module '*/local-db.mjs' {
   import type { SqlJsStatic } from 'sql.js';
-  export function runOnce<T>(SQL: SqlJsStatic, bytes: Uint8Array | null, files: [string, string][], work: (db: unknown) => Promise<T>): Promise<{ result: T; bytes: Uint8Array }>;
+  export function runOnce<T>(SQL: SqlJsStatic, bytes: Uint8Array | null, files: [string, string][], work: (db: unknown) => Promise<T>): Promise<{ result: T; changed: boolean; bytes: Uint8Array }>;
+  export function createSerializer(name: string, locks?: { request(name: string, fn: () => Promise<unknown>): Promise<unknown> }): <T>(fn: () => Promise<T>) => Promise<T>;
 }
