@@ -25,7 +25,7 @@ vi.mock('../src/lib/supabase', () => {
   return { supabase: { from: query, storage: { from: () => ({ remove: mocks.remove }) } } };
 });
 
-import { createFaqFromGroup, deleteDocument, FaqLeftBehindError, getChunkView, listReadyDocuments } from '../src/lib/db';
+import { createFaqFromGroup, deleteDocument, FaqLeftBehindError, getChunkView, listReadyDocuments, saveFaq } from '../src/lib/db';
 
 beforeEach(() => {
   mocks.results = [];
@@ -78,7 +78,7 @@ describe('deleteDocument', () => {
 });
 
 describe('createFaqFromGroup', () => {
-  const input = { question: ' 질문 ', answer: ' 답변 ', category: '휴가' };
+  const input = { question: ' 질문 ', answer: ' 답변 ', category: '휴가', active: true };
   it('FAQ를 만들고 묶음을 FAQ 등록 완료로 바꾼다', async () => {
     mocks.results.push({ data: { id: 'f1' } }, { data: [{ id: 'g1' }] });
     await createFaqFromGroup('g1', input);
@@ -103,5 +103,21 @@ describe('createFaqFromGroup', () => {
     mocks.results.push({ error: { message: 'down' } });
     await expect(createFaqFromGroup('g1', input)).rejects.toThrow('FAQ를 등록하지 못했어요.');
     expect(mocks.calls).toHaveLength(1);
+  });
+});
+
+describe('saveFaq', () => {
+  const keys = (call: string[]) => Object.keys(JSON.parse(call[1].replace(/^\w+\((.*)\)$/, '$1'))).sort();
+  it('추가와 수정이 같은 모양(질문·답변·카테고리·사용 여부·수정 시각)으로 저장한다', async () => {
+    mocks.results.push({ data: { id: 'n1' } }, { data: { id: 'e1' } });
+    expect(await saveFaq({ question: ' 새 질문 ', answer: '답', category: '휴가', active: true })).toBe('n1');
+    expect(await saveFaq({ id: 'e1', question: '질문', answer: '답', category: '휴가', active: false })).toBe('e1');
+    expect(mocks.calls[0][1]).toContain('"question":"새 질문"');
+    expect(keys(mocks.calls[0])).toEqual(['active', 'answer', 'category', 'question', 'updated_at']);
+    expect(keys(mocks.calls[1])).toEqual(keys(mocks.calls[0]));
+  });
+  it('수정이 0행이면(single 오류) 실패로 본다', async () => {
+    mocks.results.push({ error: { code: 'PGRST116' } });
+    await expect(saveFaq({ id: 'x', question: 'q', answer: 'a', category: '휴가', active: true })).rejects.toThrow('FAQ를 수정하지 못했어요.');
   });
 });

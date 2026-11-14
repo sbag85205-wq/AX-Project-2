@@ -153,6 +153,33 @@ export async function listFaqs(): Promise<Faq[]> {
   return (check(res, 'FAQ를 불러오지 못했어요.') as Faq[] | null) ?? [];
 }
 
+/** FAQ 추가·수정 창의 값. id가 있으면 수정, 없으면 새로 추가 */
+export interface FaqDraft {
+  id?: string;
+  question: string;
+  answer: string;
+  category: string;
+  active: boolean;
+}
+
+/** FAQ를 추가하거나 수정하고 id를 돌려준다. 추가·수정 모두 같은 모양으로 저장한다. */
+export async function saveFaq(draft: FaqDraft): Promise<string> {
+  const row = {
+    question: draft.question.trim(),
+    answer: draft.answer.trim(),
+    category: draft.category,
+    active: draft.active,
+    updated_at: new Date().toISOString()
+  };
+  // 수정이 권한(RLS)에 막혀 0행이 바뀌면 single()이 오류를 내 실패로 잡힌다
+  const res = draft.id
+    ? await supabase.from('faqs').update(row).eq('id', draft.id).select('id').single()
+    : await supabase.from('faqs').insert(row).select('id').single();
+  const saved = check(res, draft.id ? 'FAQ를 수정하지 못했어요.' : 'FAQ를 등록하지 못했어요.') as { id: string } | null;
+  if (!saved) throw new DbError('FAQ를 저장하지 못했어요.');
+  return saved.id;
+}
+
 export async function deleteFaq(id: string): Promise<void> {
   const { error } = await supabase.from('faqs').delete().eq('id', id);
   if (error) throw new DbError('삭제하지 못했어요.', error);
@@ -185,29 +212,17 @@ export function setQuestionGroupStatus(id: string, status: GroupStatus): Promise
 /** FAQ는 만들어졌는데 묶음 상태도 못 바꾸고 되돌리지도 못한 경우 (다시 등록하면 FAQ가 겹친다) */
 export class FaqLeftBehindError extends DbError {}
 
-export interface FaqInput {
-  question: string;
-  answer: string;
-  category: string;
-}
-
 /**
  * 미등록 질문 묶음을 FAQ로 등록한다: FAQ를 만들고 묶음을 "FAQ 등록 완료"로 바꾼다.
  * 묶음을 바꾸지 못하면 방금 만든 FAQ를 지워 되돌린다. 그대로 두면 묶음은 "신규"로 남아
  * 다시 등록할 때 같은 FAQ가 두 개 생기고, 챗봇이 두 FAQ 중 아무거나 쓰게 된다.
  */
-export async function createFaqFromGroup(groupId: string, input: FaqInput): Promise<void> {
-  const res = await supabase
-    .from('faqs')
-    .insert({ question: input.question.trim(), answer: input.answer.trim(), category: input.category })
-    .select('id')
-    .single();
-  const faq = check(res, 'FAQ를 등록하지 못했어요.') as { id: string } | null;
-  if (!faq) throw new DbError('FAQ를 등록하지 못했어요.');
+export async function createFaqFromGroup(groupId: string, draft: Omit<FaqDraft, 'id'>): Promise<void> {
+  const faqId = await saveFaq(draft);
   try {
-    await updateQuestionGroup(groupId, { status: 'FAQ 등록 완료', faq_id: faq.id, category: input.category }, '질문 묶음 상태를 바꾸지 못했어요.');
+    await updateQuestionGroup(groupId, { status: 'FAQ 등록 완료', faq_id: faqId, category: draft.category }, '질문 묶음 상태를 바꾸지 못했어요.');
   } catch (e) {
-    const { error: undoError } = await supabase.from('faqs').delete().eq('id', faq.id);
+    const { error: undoError } = await supabase.from('faqs').delete().eq('id', faqId);
     if (undoError) {
       throw new FaqLeftBehindError('FAQ는 만들어졌지만 질문 묶음을 "FAQ 등록 완료"로 바꾸지 못했어요. 다시 등록하지 말고 FAQ 관리에서 확인해 주세요.', e);
     }

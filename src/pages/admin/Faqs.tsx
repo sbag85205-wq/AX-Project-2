@@ -1,22 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ALL, CategoryChips } from '../../components/CategoryChips';
 import { LoadError } from '../../components/LoadError';
-import { Modal } from '../../components/Modal';
+import { FaqForm, isFaqDraftValid } from '../../components/FaqForm';
 import { useToast } from '../../components/Toast';
 import { errorMessage } from '../../lib/api';
 import { CATEGORIES } from '../../lib/constants';
-import { deleteFaq, listFaqs } from '../../lib/db';
-import { supabase } from '../../lib/supabase';
+import { deleteFaq, listFaqs, saveFaq, type FaqDraft } from '../../lib/db';
 import type { Faq } from '../../lib/types';
-
-type Draft = { id?: string; question: string; answer: string; category: string; active: boolean };
 
 export default function Faqs() {
   const toast = useToast();
   const [faqs, setFaqs] = useState<Faq[] | null>(null);
   const [error, setError] = useState('');
   const [cat, setCat] = useState(ALL);
-  const [draft, setDraft] = useState<Draft | null>(null);
+  const [draft, setDraft] = useState<FaqDraft | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     setError('');
@@ -32,10 +30,15 @@ export default function Faqs() {
   }, [load]);
 
   const save = async () => {
-    if (!draft || !draft.question.trim() || !draft.answer.trim()) return;
-    const row = { question: draft.question.trim(), answer: draft.answer.trim(), category: draft.category, active: draft.active, updated_at: new Date().toISOString() };
-    const { error } = draft.id ? await supabase.from('faqs').update(row).eq('id', draft.id) : await supabase.from('faqs').insert(row);
-    if (error) return toast('저장하지 못했어요.');
+    if (!draft || !isFaqDraftValid(draft)) return;
+    setSaving(true);
+    try {
+      await saveFaq(draft);
+    } catch (e) {
+      return toast(errorMessage(e));
+    } finally {
+      setSaving(false);
+    }
     toast(draft.id ? 'FAQ를 수정했어요.' : 'FAQ를 추가했어요.');
     setDraft(null);
     load();
@@ -76,41 +79,22 @@ export default function Faqs() {
             </div>
             <span className="pill pill-hold">{f.category}</span>
             {!f.active && <span className="pill pill-new">숨김</span>}
-            <button type="button" className="btn btn-sm" onClick={() => setDraft({ ...f })}>수정</button>
+            <button type="button" className="btn btn-sm" onClick={() => setDraft({ id: f.id, question: f.question, answer: f.answer, category: f.category, active: f.active })}>수정</button>
             <button type="button" className="btn btn-sm btn-danger" onClick={() => remove(f)}>삭제</button>
           </div>
         ))}
       </section>
 
       {draft && (
-        <Modal
+        <FaqForm
           title={draft.id ? 'FAQ 수정' : 'FAQ 추가'}
+          draft={draft}
+          onChange={setDraft}
+          onSubmit={save}
           onClose={() => setDraft(null)}
-          actions={
-            <>
-              <button type="button" className="btn" onClick={() => setDraft(null)}>취소</button>
-              <button type="button" className="btn btn-primary" onClick={save} disabled={!draft.question.trim() || !draft.answer.trim()}>저장</button>
-            </>
-          }
-        >
-          <div className="field">
-            <label htmlFor="faq-q">질문</label>
-            <input id="faq-q" className="input" value={draft.question} onChange={(e) => setDraft({ ...draft, question: e.target.value })} />
-          </div>
-          <div className="field">
-            <label htmlFor="faq-cat">카테고리</label>
-            <select id="faq-cat" className="select" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })}>
-              {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="faq-a">답변</label>
-            <textarea id="faq-a" className="textarea" rows={5} value={draft.answer} onChange={(e) => setDraft({ ...draft, answer: e.target.value })} />
-          </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
-            <input type="checkbox" checked={draft.active} onChange={(e) => setDraft({ ...draft, active: e.target.checked })} /> 챗봇에서 사용
-          </label>
-        </Modal>
+          saving={saving}
+          showActive
+        />
       )}
     </main>
   );

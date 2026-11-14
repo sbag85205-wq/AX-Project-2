@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { ALL, CategoryChips } from '../../components/CategoryChips';
 import { SearchIcon } from '../../components/Icons';
 import { LoadError } from '../../components/LoadError';
-import { Modal } from '../../components/Modal';
+import { FaqForm, isFaqDraftValid } from '../../components/FaqForm';
 import { useToast } from '../../components/Toast';
 import { errorMessage } from '../../lib/api';
 import { CATEGORIES } from '../../lib/constants';
-import { createFaqFromGroup, FaqLeftBehindError, setQuestionGroupStatus } from '../../lib/db';
+import { createFaqFromGroup, FaqLeftBehindError, setQuestionGroupStatus, type FaqDraft } from '../../lib/db';
 import { relativeDay } from '../../lib/format';
 import type { GroupStatus } from '../../lib/types';
 import { GroupDetail, PILL } from './GroupDetail';
@@ -23,7 +23,7 @@ export default function Unanswered() {
   const [cat, setCat] = useState(ALL);
   const [q, setQ] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<{ question: string; answer: string; category: string } | null>(null);
+  const [draft, setDraft] = useState<FaqDraft | null>(null);
   const [saving, setSaving] = useState(false);
 
   const filtered = items
@@ -46,7 +46,7 @@ export default function Unanswered() {
   };
 
   const saveFaq = async () => {
-    if (!selected || !draft || !draft.answer.trim() || !draft.question.trim()) return;
+    if (!selected || !draft || !isFaqDraftValid(draft)) return;
     setSaving(true);
     try {
       await createFaqFromGroup(selected.id, draft);
@@ -133,7 +133,7 @@ export default function Unanswered() {
 
         <GroupDetail
           selected={selected}
-          onRegister={(g) => setDraft({ question: g.question, answer: '', category: CATEGORIES.includes(g.category as never) ? g.category : '기타' })}
+          onRegister={(g) => setDraft({ question: g.question, answer: '', category: CATEGORIES.includes(g.category as never) ? g.category : '기타', active: true })}
           onSetStatus={setGroupStatus}
         />
       </div>
@@ -141,35 +141,18 @@ export default function Unanswered() {
       <UnansweredTrends stats={stats} />
 
       {draft && selected && (
-        <Modal
+        <FaqForm
           title="FAQ로 등록하기"
+          draft={draft}
+          onChange={setDraft}
+          onSubmit={saveFaq}
           onClose={() => setDraft(null)}
-          actions={
-            <>
-              <button type="button" className="btn" onClick={() => setDraft(null)}>취소</button>
-              <button type="button" className="btn btn-primary" disabled={saving || !draft.answer.trim() || !draft.question.trim()} onClick={saveFaq}>
-                {saving ? '등록 중…' : '등록하기'}
-              </button>
-            </>
-          }
-        >
-          <div className="field">
-            <label htmlFor="dlg-q">질문</label>
-            <input id="dlg-q" className="input" value={draft.question} onChange={(e) => setDraft({ ...draft, question: e.target.value })} />
-          </div>
-          <div className="field">
-            <label htmlFor="dlg-cat">카테고리</label>
-            <select id="dlg-cat" className="select" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })}>
-              {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="dlg-ans">답변</label>
-            <textarea id="dlg-ans" className="textarea" rows={5} placeholder="직원들이 바로 이해할 수 있게 답변을 작성해 주세요."
-              value={draft.answer} onChange={(e) => setDraft({ ...draft, answer: e.target.value })} />
-            <span className="hint">등록하면 직원 챗봇에 바로 반영되고, 비슷한 질문에도 이 답변이 쓰여요.</span>
-          </div>
-        </Modal>
+          saving={saving}
+          submitLabel="등록하기"
+          savingLabel="등록 중…"
+          answerPlaceholder="직원들이 바로 이해할 수 있게 답변을 작성해 주세요."
+          answerHint="등록하면 직원 챗봇에 바로 반영되고, 비슷한 질문에도 이 답변이 쓰여요."
+        />
       )}
     </main>
   );
