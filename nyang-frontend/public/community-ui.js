@@ -2,6 +2,7 @@ import {fetch} from './transport.js?v=fd4b994ba12d';
 import {boardView} from './board-view.js?v=008e53f7600c';
 import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=9cfeb982e79d';
 import {categoryLabels as labels,esc} from './common.js';
+import {rewardHelp} from './reward-rules.js';
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 let state={loading:true},hooks,filter='all',query='',busy=false,connecting=null,authEpoch=0,loginRole='employee',stats=null;
 export const communityState=()=>state;
@@ -62,7 +63,7 @@ export function activityHTML(content=''){
  const intro='<header class="activity-heading"><h1>내 활동</h1><button class="activity-text-button" data-community="refresh">새로고침</button></header>';
  const blocked=gate();if(blocked)return `<section class="community-page activity-page">${intro}${content}${blocked}</section>`;
  const {wallet:w,level:l,today,streak,receivedLikes}=state;
- const gift=today?(today.tokens?`츄르 ${today.tokens}개 받았어요`:`${today.points} P 받았어요`):'하루 한 번, 포인트 또는 츄르 선물';
+ const help=rewardHelp(),gift=today?(today.tokens?`츄르 ${today.tokens}개 받았어요`:`${today.points} P 받았어요`):'하루 한 번, 포인트 또는 츄르 선물';
  return `<section class="community-page activity-page">
   ${intro}
   ${content}
@@ -86,9 +87,9 @@ export function activityHTML(content=''){
   </div>
   <details class="activity-help"><summary>보상 안내</summary>
    <dl>
-    <div><dt>질문 · 좋아요</dt><dd>새 질문 +10 P · 같은 질문은 한 번만, 하루 최대 20개.<br>내 게시글에 다른 직원이 좋아요를 누르면 +5 P.</dd></div>
-    <div><dt>출석 선물</dt><dd>5 P 50% · 10 P 30% · 츄르 1개 15% · 츄르 3개 5%.<br>무료로 하루 한 번, 한국 시간 자정에 초기화돼요. 확률은 매일 같아요.</dd></div>
-    <div><dt>츄르 · 레벨</dt><dd>출석으로 받은 츄르부터 쓰고, 다 쓰면 10 P로 줄 수 있어요.<br>레벨은 질문 활동을 나타내며 업무 능력 평가에는 쓰이지 않아요.</dd></div>
+    <div><dt>질문 · 좋아요</dt><dd>${help.question}</dd></div>
+    <div><dt>출석 선물</dt><dd>${help.attendance}</dd></div>
+    <div><dt>츄르 · 레벨</dt><dd>${help.treat}</dd></div>
     <div><dt>활동 저장</dt><dd>포인트·레벨·출석·꾸미기는 계정별로 이 브라우저에만 저장돼요.<br>다른 기기·브라우저에서는 새로 시작하고, 브라우저 데이터를 지우면 초기화돼요.</dd></div>
    </dl>
   </details></details>

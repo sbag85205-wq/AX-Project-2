@@ -1,4 +1,4 @@
-import {normalizeRewards,rewardTransition,petOutcome} from '../public/companion.js';
+import {normalizeRewards,rewardTransition,petOutcome,drawAttendanceGift,QUESTION_POINTS,QUESTION_DAILY_LIMIT,POST_DAILY_LIMIT,LIKE_POINTS,PET_COOLDOWN_MS,HEARTS_PER_TREAT} from '../public/reward-rules.js';
 import {CATEGORY_IDS} from '../public/common.js';
 export class AppError extends Error {constructor(message,status=400){super(message);this.status=status;}}
 const fail=(message,status=400)=>{throw new AppError(message,status);};
@@ -7,10 +7,7 @@ const run=(db,sql,...args)=>db.prepare(sql).bind(...args).run();
 const rows=async(db,sql,...args)=>(await db.prepare(sql).bind(...args).all()).results;
 const categories=CATEGORY_IDS,roles=['employee','staff'];
 export const seoulDay=(date=new Date())=>new Date(date.getTime()+9*3600000).toISOString().slice(0,10);
-export function drawReward(roll){
- if(!Number.isFinite(roll)||roll<0||roll>=1)throw new Error('Invalid random roll');
- return roll<.5?{points:5,tokens:0}:roll<.8?{points:10,tokens:0}:roll<.95?{points:0,tokens:1}:{points:0,tokens:3};
-}
+export const drawReward=drawAttendanceGift;
 export function levelFor(count){
  const levels=[{at:0,name:'호기심 새싹'},{at:5,name:'질문 탐험가'},{at:15,name:'업무 탐정'},{at:30,name:'지식 연결자'},{at:50,name:'질문 마스터'}];
  const index=levels.findLastIndex(l=>count>=l.at),level=levels[Math.max(0,index)],next=levels[index+1];
@@ -88,8 +85,8 @@ export async function community(db,user,adminEmail,action=null,input={}){
  if(action==='question'){
   const q=text(input.question,2,1000,'질문'),h=await hash(q);
   const out=await run(db,`INSERT OR IGNORE INTO questions(id,uid,hash,day,created)
-   SELECT ?,?,?,?,? WHERE (SELECT COUNT(*) FROM questions WHERE uid=? AND day=?)<20`,crypto.randomUUID(),uid,h,day,now,uid,day);
-  notice=out.meta.changes?'새 질문 +10 P · 질문 경험치 +1':'같은 질문은 한 번만 보상해요. 하루 보상은 최대 20개예요.';
+   SELECT ?,?,?,?,? WHERE (SELECT COUNT(*) FROM questions WHERE uid=? AND day=?)<?`,crypto.randomUUID(),uid,h,day,now,uid,day,QUESTION_DAILY_LIMIT);
+  notice=out.meta.changes?`새 질문 +${QUESTION_POINTS} P · 질문 경험치 +1`:`같은 질문은 한 번만 보상해요. 하루 보상은 최대 ${QUESTION_DAILY_LIMIT}개예요.`;
  }else if(action==='attendance'){
   const reward=drawReward(rand());
   await run(db,'INSERT OR IGNORE INTO attendance(uid,day,points,tokens,created) VALUES(?,?,?,?,?)',uid,day,reward.points,reward.tokens,now);
@@ -100,14 +97,14 @@ export async function community(db,user,adminEmail,action=null,input={}){
   const body=text(input.body,5,2000,'질문'),h=await hash(body);
   const cutoff=new Date(new Date(day+'T00:00:00+09:00')).toISOString();
   const result=await run(db,`INSERT OR IGNORE INTO posts(id,author,hash,category,body,created)
-   SELECT ?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM posts WHERE author=? AND created>=?)<10`,crypto.randomUUID(),uid,h,input.category,body,now,uid,cutoff);
-  notice=result.meta.changes?'익명으로 게시했어요. 담당자의 답변을 기다려 주세요.':'이미 게시한 질문이거나 오늘 게시 한도(10개)에 도달했어요.';
+   SELECT ?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM posts WHERE author=? AND created>=?)<?`,crypto.randomUUID(),uid,h,input.category,body,now,uid,cutoff,POST_DAILY_LIMIT);
+  notice=result.meta.changes?'익명으로 게시했어요. 담당자의 답변을 기다려 주세요.':`이미 게시한 질문이거나 오늘 게시 한도(${POST_DAILY_LIMIT}개)에 도달했어요.`;
  }else if(action==='like'){
   const post=await one(db,'SELECT author FROM posts WHERE id=?',id(input.post));
   if(!post)fail('질문을 찾을 수 없어요.',404);
   if(post.author===uid)fail('내 질문에는 좋아요를 누를 수 없어요.');
   const result=await run(db,'INSERT OR IGNORE INTO likes(post,uid,created) VALUES(?,?,?)',input.post,uid,now);
-  notice=result.meta.changes?'질문 작성자에게 5 P를 보냈어요.':'이미 좋아요를 보낸 질문이에요.';
+  notice=result.meta.changes?`질문 작성자에게 ${LIKE_POINTS} P를 보냈어요.`:'이미 좋아요를 보낸 질문이에요.';
  }else if(action==='reply'){
   if(!['staff','admin'].includes(m.role))fail('등록된 담당자만 답변할 수 있어요.',403);
   const post=id(input.post),body=text(input.body,5,4000,'답변'),source=text(input.source,2,500,'근거 문서·규정'),replyId=id(input.id);
@@ -132,17 +129,17 @@ export async function community(db,user,adminEmail,action=null,input={}){
   eventResult=await mutateWallet(db,uid,id(input.id),type,w=>{
    let event={type},extra={};
    if(type==='pet'){
-    const at=Date.now();if(w.lastPetAt&&at-w.lastPetAt<4200)fail('잠깐, 여운을 즐기는 중이다냥.',429);
+    const at=Date.now();if(w.lastPetAt&&at-w.lastPetAt<PET_COOLDOWN_MS)fail('잠깐, 여운을 즐기는 중이다냥.',429);
     event={type,id:input.id,at,likeRoll:rand(),bonusRoll:rand()};extra.kind=petOutcome(event.likeRoll,event.bonusRoll);
    }
    if(type==='feed'){
     if(w.pending.length)fail('먼저 하트를 모아 주세요.');
-    event.ids=Array.from({length:3},()=>crypto.randomUUID());
-    if(w.treatTokens>0)return {next:{...w,treatTokens:w.treatTokens-1,treats:w.treats+1,pending:event.ids},result:{}};
+    event.ids=Array.from({length:HEARTS_PER_TREAT},()=>crypto.randomUUID());
+    event.token=w.treatTokens>0; // 출석으로 받은 츄르부터 쓴다
    }
    if(type==='collect')event.id=id(input.heart);
    if(type==='buy'||type==='equip')event.id=input.item??null;
-   let next;try{next={...rewardTransition(w,event),treatTokens:w.treatTokens};}catch(e){fail(e.message);}
+   let next;try{next={...rewardTransition(w,event),treatTokens:w.treatTokens-(event.token?1:0)};}catch(e){fail(e.message);}
    return {next,result:extra};
   });
  }else fail('지원하지 않는 요청입니다.');

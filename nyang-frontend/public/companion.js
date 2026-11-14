@@ -1,54 +1,7 @@
 import {makePlan,businessBefore,businessAfter,addDays,localDate,asDate} from './core.js?v=0ff57cf675c0';
 
-export const QUESTION_POINTS=10;
-export const TREAT_COST=10;
-export const PET_LIKE_CHANCE=.6;
-export const PET_BONUS_CHANCE=.03;
-export const PET_BONUS_POINTS=5;
-export const PET_COOLDOWN_MS=4200;
-export function petOutcome(likeRoll,bonusRoll){
- if([likeRoll,bonusRoll].some(n=>typeof n!=='number'||!Number.isFinite(n)||n<0||n>=1))throw Error('올바른 쓰다듬기 확률이 아니에요.');
- return likeRoll<PET_LIKE_CHANCE?(bonusRoll<PET_BONUS_CHANCE?'bonus':'like'):'dislike';
-}
-export const wardrobe=[
- {id:'ribbon',name:'딸기우유 리본',cost:3,description:'무심한 얼굴에 사랑스러운 한 끗.',symbol:'🎀'},
- {id:'crown',name:'오늘의 왕관',cost:5,description:'오늘도 출근한 우리 냥대리가 최고.',symbol:'♛'},
- {id:'starlight',name:'반짝이는 별빛',cost:8,description:'냥대리 곁에 작은 별들이 머물러요.',symbol:'✦'}
-];
-export function initialRewards(){return {points:0,hearts:0,pending:[],owned:[],equipped:null,questions:0,treats:0,pettings:0,petBonuses:0,lastPetAt:0,lastPetId:null};}
-export function normalizeRewards(value){
- const s=initialRewards();if(!value||typeof value!=='object')return s;
- for(const key of ['points','hearts','questions','treats','pettings','petBonuses','lastPetAt'])if(Number.isSafeInteger(value[key])&&value[key]>=0)s[key]=value[key];
- s.lastPetId=typeof value.lastPetId==='string'?value.lastPetId:null;
- s.pending=[...new Set((Array.isArray(value.pending)?value.pending:[]).filter(x=>typeof x==='string'))].slice(0,3);
- s.owned=[...new Set((Array.isArray(value.owned)?value.owned:[]).filter(x=>wardrobe.some(i=>i.id===x)))];
- s.equipped=s.owned.includes(value.equipped)?value.equipped:null;return s;
-}
-export function rewardTransition(previous,event){
- const s=normalizeRewards(previous);
- if(event.type==='pet'){
-  if(typeof event.id!=='string'||!event.id||!Number.isSafeInteger(event.at)||event.at<=0)throw Error('쓰다듬기를 다시 시도해 주세요.');
-  if(event.id===s.lastPetId||(s.lastPetAt&&event.at-s.lastPetAt<PET_COOLDOWN_MS))return s;
-  const outcome=petOutcome(event.likeRoll,event.bonusRoll);
-  s.lastPetId=event.id;s.lastPetAt=event.at;s.pettings++;
-  if(outcome==='bonus'){s.points+=PET_BONUS_POINTS;s.petBonuses++;}
- }else if(event.type==='question'){s.points+=QUESTION_POINTS;s.questions++;}
- else if(event.type==='feed'){
-  if(s.pending.length)throw Error('주변의 하트를 먼저 모아 줘.');
-  if(s.points<TREAT_COST)throw Error('질문을 한 번 하면 츄르를 줄 수 있어.');
-  if(!Array.isArray(event.ids)||event.ids.length!==3||new Set(event.ids).size!==3||event.ids.some(x=>typeof x!=='string'||!x))throw Error('하트를 준비하지 못했어요. 다시 시도해 주세요.');
-  s.points-=TREAT_COST;s.treats++;s.pending=[...event.ids];
- }else if(event.type==='collect'){
-  if(!s.pending.includes(event.id))return s;
-  s.pending=s.pending.filter(x=>x!==event.id);s.hearts++;
- }else if(event.type==='buy'){
-  const item=wardrobe.find(x=>x.id===event.id);if(!item)throw Error('없는 꾸미기 아이템이에요.');
-  if(!s.owned.includes(item.id)){if(s.hearts<item.cost)throw Error('하트가 조금 더 필요하다냥.');s.hearts-=item.cost;s.owned.push(item.id);}s.equipped=item.id;
- }else if(event.type==='equip'){
-  if(event.id!==null&&!s.owned.includes(event.id))throw Error('먼저 아이템을 열어 주세요.');s.equipped=event.id;
- }else throw Error('알 수 없는 보상 동작이에요.');
- return s;
-}
+// 보상 규칙은 reward-rules.js 한 곳에 있다. 기존 가져오기 경로를 위해 다시 내보낸다.
+export {QUESTION_POINTS,TREAT_COST,PET_LIKE_CHANCE,PET_BONUS_CHANCE,PET_BONUS_POINTS,PET_COOLDOWN_MS,petOutcome,wardrobe,initialRewards,normalizeRewards,rewardTransition} from './reward-rules.js';
 
 export const scheduleTypes={
  trip:{title:'국내 출장 준비',startLabel:'출발일',endLabel:'복귀일',refs:['approval','booking','receipt','settle']},
