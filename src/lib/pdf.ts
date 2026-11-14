@@ -19,11 +19,11 @@ export function loadPdfjs(): Promise<PdfJs> {
 
 /** vite.config.ts의 pdfjsAssets 플러그인이 배포하는 경로 */
 const ASSETS = {
-  cMapUrl: '/pdfjs/cmaps/',
+  cMapUrl: `${import.meta.env.BASE_URL}pdfjs/cmaps/`,
   cMapPacked: true,
-  standardFontDataUrl: '/pdfjs/standard_fonts/',
-  wasmUrl: '/pdfjs/wasm/',
-  iccUrl: '/pdfjs/iccs/'
+  standardFontDataUrl: `${import.meta.env.BASE_URL}pdfjs/standard_fonts/`,
+  wasmUrl: `${import.meta.env.BASE_URL}pdfjs/wasm/`,
+  iccUrl: `${import.meta.env.BASE_URL}pdfjs/iccs/`
 };
 
 export async function openPdf(data: Uint8Array) {

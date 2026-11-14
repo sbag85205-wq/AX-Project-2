@@ -1,0 +1,3 @@
+/* 냥대리 화면 안에 들어갈 때: 바깥 여백·배경은 냥대리가 맡는다 */
+body.knowly-embed { background: transparent; min-height: 0; }
+body.knowly-embed #root > .page, body.knowly-embed .page { padding-top: 8px; }
