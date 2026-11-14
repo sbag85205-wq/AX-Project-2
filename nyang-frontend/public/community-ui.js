@@ -1,8 +1,7 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {boardView} from './board-view.js?v=008e53f7600c';
 import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=9cfeb982e79d';
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const labels={hr:'휴가 · 근태',pay:'급여 · 복지',trip:'출장 · 정산',life:'사내 생활'};
+import {categoryLabels as labels,esc} from './common.js';
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 let state={loading:true},hooks,filter='all',query='',busy=false,connecting=null,authEpoch=0,loginRole='employee',stats=null;
 export const communityState=()=>state;

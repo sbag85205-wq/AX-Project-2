@@ -1,10 +1,11 @@
 import {normalizeRewards,rewardTransition,petOutcome} from '../public/companion.js';
+import {CATEGORY_IDS} from '../public/common.js';
 export class AppError extends Error {constructor(message,status=400){super(message);this.status=status;}}
 const fail=(message,status=400)=>{throw new AppError(message,status);};
 const one=(db,sql,...args)=>db.prepare(sql).bind(...args).first();
 const run=(db,sql,...args)=>db.prepare(sql).bind(...args).run();
 const rows=async(db,sql,...args)=>(await db.prepare(sql).bind(...args).all()).results;
-const categories=['hr','pay','trip','life'],roles=['employee','staff'];
+const categories=CATEGORY_IDS,roles=['employee','staff'];
 export const seoulDay=(date=new Date())=>new Date(date.getTime()+9*3600000).toISOString().slice(0,10);
 export function drawReward(roll){
  if(!Number.isFinite(roll)||roll<0||roll>=1)throw new Error('Invalid random roll');

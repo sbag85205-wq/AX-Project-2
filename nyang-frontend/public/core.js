@@ -1,9 +1,5 @@
-export const categories = [
-  { id: 'hr', label: '휴가 · 근태', icon: 'sun', detail: '연차부터 출퇴근까지' },
-  { id: 'pay', label: '급여 · 수당', icon: 'wallet', detail: '급여일과 지원 제도' },
-  { id: 'trip', label: '출장 · 정산', icon: 'case', detail: '준비부터 정산까지' },
-  { id: 'life', label: '사내 생활', icon: 'coffee', detail: '회사 생활의 작은 궁금증' }
-];
+// 분야 목록은 common.js 한 곳에서 관리한다(예전 가져오기 경로 호환용 다시 내보내기).
+export {categories} from './common.js';
 export const documents = [
   {id:'leave',category:'hr',title:'휴가·근태 가이드',version:'2026.10 · 샘플',sections:[
     {id:'annual',label:'제3조 · 연차 신청',text:'연차는 사용 3영업일 전까지 사내 인사 시스템에서 신청합니다. 신청 시 사용 날짜와 인수인계 내용을 입력하고 팀장의 승인을 받습니다. 신청 기한의 영업일은 토요일·일요일을 제외하며, 이 샘플 규정에서는 공휴일을 별도로 반영하지 않습니다.'},
