@@ -1,9 +1,13 @@
+// 질문 분야. label은 Knowly 문서·FAQ의 카테고리 이름(src/lib/constants.ts의 CATEGORIES)과 같아야
+// 고른 분야의 문서 안에서 먼저 검색된다.
 export const categories = [
-  { id: 'hr', label: '휴가 · 근태', icon: 'sun', detail: '연차부터 출퇴근까지' },
-  { id: 'pay', label: '급여 · 수당', icon: 'wallet', detail: '급여일과 지원 제도' },
-  { id: 'trip', label: '출장 · 정산', icon: 'case', detail: '준비부터 정산까지' },
-  { id: 'life', label: '사내 생활', icon: 'coffee', detail: '회사 생활의 작은 궁금증' }
+  { id: 'server', label: '서버 설치 · 설정', icon: 'settings', detail: 'OS·도메인부터 서버 설치, 기본 설정까지' },
+  { id: 'client', label: '클라이언트 접속', icon: 'send', detail: 'Linker Client 설치, 인증서버 등록, 접속' },
+  { id: 'trouble', label: '장애 조치', icon: 'info', detail: '이슈별 원인과 해결 방법' }
 ];
+export const defaultCategory = categories[0].id;
+/** 저장된 기록에 예전 분야(hr·pay·trip·life)가 남아 있어도 화면이 깨지지 않게 현재 분야로 맞춘다. */
+export const categoryOf = id => categories.find(c => c.id === id) || categories[0];
 export const documents = [
   {id:'leave',category:'hr',title:'휴가·근태 가이드',version:'2026.10 · 샘플',sections:[
     {id:'annual',label:'제3조 · 연차 신청',text:'연차는 사용 3영업일 전까지 사내 인사 시스템에서 신청합니다. 신청 시 사용 날짜와 인수인계 내용을 입력하고 팀장의 승인을 받습니다. 신청 기한의 영업일은 토요일·일요일을 제외하며, 이 샘플 규정에서는 공휴일을 별도로 반영하지 않습니다.'},
@@ -28,11 +32,11 @@ export const documents = [
     {id:'equipment',label:'제4절 · 장비 요청',text:'업무용 장비는 IT 지원 요청서를 작성해 팀장 승인 후 IT 지원팀에 제출합니다. 고장은 장비 번호와 증상을 함께 전달합니다.'},
     {id:'onboarding',label:'제5절 · 입사 첫날',text:'입사 첫날에는 인사팀에서 사원증을 수령하고 IT 지원팀에서 업무 계정을 확인합니다. 보안 서약서를 제출한 후 팀 온보딩 안내에 참여합니다.'}]}
 ];
+// 분야별 질문 예시. 답은 항상 등록된 문서에서 찾는다(정해 둔 답변 없음).
 export const faq = {
-  hr:[['연차는 어떻게 신청하나요?','annual'],['반차는 언제까지 신청하나요?','half'],['병가는 어떻게 신청하나요?','sick'],['신청한 휴가를 취소하고 싶어요','cancel']],
-  pay:[['급여는 언제 들어오나요?','payday'],['야근 식대는 얼마까지 지원되나요?','meal'],['연장근무는 어떻게 신청하나요?','overtime'],['외부 교육비를 지원받을 수 있나요?','education']],
-  trip:[['출장 준비 일정을 짜주세요','plan'],['출장비 정산은 어떻게 하나요?','settle'],['자차로 출장 가도 되나요?','car'],['숙박비는 얼마까지 지원되나요?','booking']],
-  life:[['사내 Wi-Fi는 어떻게 연결하나요?','wifi'],['회의실은 어떻게 예약하나요?','room'],['업무용 장비를 요청하고 싶어요','equipment'],['입사 첫날 무엇을 해야 하나요?','onboarding']]
+  server:['Dcenter는 어떻게 설치하나요?','Dstation 설치 순서를 알려주세요','Host agent는 어떻게 설치하나요?','도메인 환경은 어떻게 구성하나요?'],
+  client:['Dstation Linker Client는 어떻게 설치하나요?','인증서버는 어떻게 등록하나요?','Linker Client로 접속하는 방법을 알려주세요'],
+  trouble:['Linker Client 접속이 안 될 때 조치 방법을 알려주세요','설치 중 오류가 발생하면 어떻게 조치하나요?','이슈별 조치 방법을 알려주세요']
 };
 export const answers = {
   annual:{title:'사용일 3영업일 전까지 연차를 신청해.',text:'인사 시스템에 날짜와 인수인계 내용을 입력하고, 팀장 승인을 받으면 돼.',steps:['사용 날짜와 인수인계 내용을 준비해.','인사 시스템에서 사용일 3영업일 전까지 신청해. 이 샘플 규정의 영업일은 주말만 제외해.','팀장 승인이 완료됐는지 확인해.'],refs:['annual']},
