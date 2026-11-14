@@ -13,7 +13,7 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "prepare:site": "node stamp-assets.mjs",
-    "check": "node --check public/app.js && node --check public/community-ui.js && node check.mjs && node check-companion.mjs && node --test tests/community.test.mjs tests/pet-interaction.test.mjs tests/community-ui.test.mjs tests/activity-history.test.mjs tests/chat-history.test.mjs tests/personality.test.mjs tests/companion-behavior.test.mjs tests/account.test.mjs tests/knowly.test.mjs tests/knowly-admin.test.mjs tests/knowly-admin-ui.test.mjs"
+    "check": "node --check public/app.js && node --check public/community-ui.js && node check.mjs && node check-companion.mjs && node --test tests/community.test.mjs tests/pet-interaction.test.mjs tests/community-ui.test.mjs tests/activity-history.test.mjs tests/chat-history.test.mjs tests/personality.test.mjs tests/companion-behavior.test.mjs tests/account.test.mjs tests/knowly.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

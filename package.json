@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:nyang-embed": "vite build --config vite.embed.config.ts && node -e \"require('fs').renameSync('nyang-frontend/public/knowly/knowly-embed.html','nyang-frontend/public/knowly/index.html')\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

@@ -61,8 +61,27 @@ npm run build
 
 검증: 기존 FAQ/일정/고양이 보상 테스트, SQL migration을 적용한 SQLite 서비스 테스트(로그인·회원 경계, 직원/담당자 권한, 익명 응답, 좋아요, 출석, 질문 중복·한도, 동시 요청·재시도), 방문자 쿠키 유지·공유 게시·좋아요·출석·꾸미기, 직원 데이터와의 격리 테스트 및 로컬 D1 브라우저 흐름.
 
-## 사내 문서 검색 연결 (main 백엔드)
+## Knowly(main 백엔드) 연결
 
-직원 계정으로 질문하면 서버의 `/api/knowly`가 main 브랜치의 Supabase `chat` 함수(등록 FAQ → 문서 키워드·의미 검색 → AI 요약 → 출처 검증)에 질문을 전달하고, 근거가 있는 답을 기존 답변 카드 모양으로 보여 줍니다. 근거가 없거나 연결 설정이 없으면 기존 샘플 FAQ·키워드 답변을 그대로 씁니다. 질문 예시 버튼, 다른 분야 질문, 개인 정보 질문은 기존 방식으로 처리합니다.
+냥대리 화면은 그대로 두고, main 브랜치 Knowly의 기능을 각 화면에 붙였습니다. 연결 설정이 없으면 모든 화면이 기존 샘플 기능으로 동작합니다.
 
-서버 환경 변수(`.env.example` 참고, 값은 Sites secrets로만 설정): `KNOWLY_SUPABASE_URL`, `KNOWLY_SUPABASE_KEY`(publishable key), `KNOWLY_LOGIN_EMAIL`, `KNOWLY_LOGIN_PASSWORD`(Knowly 관리자 화면에서 발급한 직원 계정). 비밀번호와 토큰은 브라우저로 보내지 않습니다. 담당자(admin01) 화면의 FAQ 관리·문서 관리·사용자 관리·검색 모델 설정과 이용통계 하단의 ‘사내 문서 검색 이용 현황·답하지 못한 질문’은 `/api/knowly-admin`을 거쳐 main의 Knowly 관리자 기능(Supabase 테이블, `ingest`·`admin-users`·`admin-settings` 함수, `admin_usage_stats`)을 그대로 사용합니다. 이 기능에는 `KNOWLY_ADMIN_EMAIL`, `KNOWLY_ADMIN_PASSWORD`(Knowly 관리자 역할 계정)가 필요하며, 비어 있으면 기존 샘플 관리자 화면을 보여 줍니다. 서버는 정해 둔 작업만 허용하고 입력을 검사합니다. 냥대리에서는 텍스트 문서(.txt·.md·.csv)와 붙여 넣은 글을 등록할 수 있고, PDF·엑셀 원본 등록은 Knowly 관리자 화면에서 합니다.
+| 냥대리 화면 | Knowly 기능 |
+|---|---|
+| 물어보기 (직원) | 등록 FAQ → 문서 키워드·의미 검색 → AI 요약 → 출처 검증 답변, 사진·PDF·엑셀·텍스트 첨부(최대 3개), 답변 평가(도움돼요/아쉬워요), 출처를 누르면 원문 위치 열기 |
+| 사내 문서 (직원) | 등록 문서 목록, 원문 PDF·엑셀 보기와 검색 단위별 본문 |
+| 챗봇 미답변 (담당자) | 근거를 못 찾은 질문 묶음, 상태 변경, FAQ로 등록 |
+| 이용통계 (담당자) | 기존 냥대리 통계 아래에 Knowly 이용 통계(기간·부서·분야·모델별, CSV) |
+| FAQ 관리 · 문서 관리 · 사용자 관리 · 검색 모델 설정 (담당자) | Knowly 관리자 화면 그대로 (문서는 PDF·엑셀·텍스트 업로드와 재색인, 계정 발급·권한, 모델 선택·테스트·검색 기준·미리보기) |
+
+담당자 화면과 사내 문서 화면은 Knowly 화면 코드를 그대로 빌드한 `public/knowly/`를 냥대리 화면 안(iframe)에 띄웁니다. 저장소 루트에서 `npm run build:nyang-embed`로 다시 만듭니다(Knowly 화면을 고친 뒤 실행).
+
+### 동작 방식과 보안
+
+- 로그인은 냥대리 계정(user01·admin01)으로 합니다. 서버가 역할에 맞는 Knowly 계정(직원 → `KNOWLY_LOGIN_*`, 담당자 → `KNOWLY_ADMIN_*`)으로 대신 로그인합니다.
+- 직원 질문은 `/api/knowly`가 Knowly `chat` 함수로 전달합니다. 화면 안 Knowly 화면은 `/api/knowly-session`에서 받은 짧은 접속 토큰(약 1시간)만 씁니다. 비밀번호와 갱신 토큰은 브라우저로 보내지 않습니다.
+- 두 경로 모두 같은 사이트에서 온 요청과 로그인한 역할만 받습니다. 세션 쿠키 경로는 `/api`이고, 예전 `/api/account` 경로 쿠키는 다음 접속 때 자동으로 옮겨집니다.
+- Knowly 쪽 기록은 연결 계정 단위로 남습니다(직원 질문은 직원 연결 계정 하나의 질문으로 집계).
+
+### 서버 환경 변수 (`.env.example` 참고, 값은 Sites secrets로만 설정)
+
+`KNOWLY_SUPABASE_URL`, `KNOWLY_SUPABASE_KEY`(publishable key), `KNOWLY_LOGIN_EMAIL`, `KNOWLY_LOGIN_PASSWORD`(직원 역할 계정), `KNOWLY_ADMIN_EMAIL`, `KNOWLY_ADMIN_PASSWORD`(관리자 역할 계정). 계정은 Knowly 사용자 관리에서 발급하며 이메일은 `<아이디>@knowly.local` 형식입니다.

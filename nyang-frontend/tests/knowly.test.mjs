@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {askKnowly,knowlyConfig,resetKnowlyToken,toNyangAnswer} from '../lib/knowly.mjs';
-import {knowlyRequest} from '../lib/knowly-route.mjs';
+import {askKnowly,cleanAttachments,knowlyConfig,knowlyFeedback,knowlySession,resetKnowlyToken,toNyangAnswer} from '../lib/knowly.mjs';
+import {knowlyRequest,knowlySessionRequest} from '../lib/knowly-route.mjs';
 const env={KNOWLY_SUPABASE_URL:'https://demo.supabase.co/',KNOWLY_SUPABASE_KEY:'sb_publishable_test',KNOWLY_LOGIN_EMAIL:'user01@knowly.local',KNOWLY_LOGIN_PASSWORD:'pw'};
 const answer={status:'answered',mode:'llm',summary:['연차는 3일 전까지 신청해요.'],steps:['그룹웨어 접속','연차 신청서 작성'],details:'',warnings:[],citations:[{document_title:'취업규칙',version:'v2',page_start:3,page_end:4},{document_title:'취업규칙',version:'v2',page_start:3,page_end:4}]};
 function server(chatStatuses=[200]){
@@ -21,7 +21,7 @@ test('config requires every value and a https url',()=>{
 test('answer is reduced to display fields and duplicate citations are merged',()=>{
  const a=toNyangAnswer(answer);
  assert.equal(a.answered,true);assert.deepEqual(a.summary,['연차는 3일 전까지 신청해요.']);
- assert.deepEqual(a.citations,[{title:'취업규칙',version:'v2',pages:'3–4쪽'}]);
+ assert.deepEqual(a.citations,[{title:'취업규칙',version:'v2',pages:'3–4쪽',document_id:'',chunk_id:''}]);
  assert.equal(toNyangAnswer({status:'insufficient_evidence',summary:['없음']}).answered,false);
  assert.equal(toNyangAnswer(null).answered,false);
 });
@@ -53,4 +53,33 @@ test('route only serves signed-in employees from the same origin',async()=>{
  assert.equal(ok.status,200);assert.equal((await ok.json()).answer.answered,true);
  const off=await knowlyRequest(null,{},req(),{session:async()=>'user01'});
  assert.equal(off.status,503);
+});
+
+const adminEnv={...env,KNOWLY_ADMIN_EMAIL:'admin@knowly.local',KNOWLY_ADMIN_PASSWORD:'apw'};
+test('session token follows the nyang role and never exposes passwords',async()=>{
+ resetKnowlyToken();const seen=[];
+ const fetchImpl=async(url,init)=>{seen.push(JSON.parse(init.body).email);return Response.json({access_token:'tok-'+seen.length,expires_in:3600,user:{id:'u-'+seen.length},refresh_token:'never-forward'});};
+ const staff=await knowlySession(adminEnv,'staff',fetchImpl),emp=await knowlySession(adminEnv,'employee',fetchImpl);
+ assert.deepEqual(seen,['admin@knowly.local','user01@knowly.local']);
+ assert.equal(staff.access_token,'tok-1');assert.equal(staff.user_id,'u-1');assert.equal(emp.access_token,'tok-2');
+ assert.ok(!JSON.stringify([staff,emp]).match(/apw|"pw"|never-forward/));
+ await assert.rejects(knowlySession(env,'staff',fetchImpl),{status:503});
+ await assert.rejects(knowlySession(adminEnv,null,fetchImpl),{status:503});
+});
+test('session route serves both signed-in roles only',async()=>{
+ const open=async(_e,role)=>({role});
+ assert.equal((await knowlySessionRequest(null,adminEnv,req(),{session:async()=>null,knowlySession:open})).status,401);
+ assert.deepEqual(await (await knowlySessionRequest(null,adminEnv,req(),{session:async()=>'admin01',knowlySession:open})).json(),{role:'staff'});
+ assert.deepEqual(await (await knowlySessionRequest(null,adminEnv,req(),{session:async()=>'user01',knowlySession:open})).json(),{role:'employee'});
+});
+test('attachments follow the chat limits and feedback reaches the chat function',async()=>{
+ assert.deepEqual(cleanAttachments([{name:'a.txt',kind:'file',text:'x'.repeat(7000)}])[0].text.length,6000);
+ assert.throws(()=>cleanAttachments([{kind:'image',data_url:'javascript:alert(1)'}]),{status:400});
+ assert.throws(()=>cleanAttachments(new Array(4).fill({kind:'file',text:''})),{status:400});
+ resetKnowlyToken();const {calls,fetchImpl}=server();
+ const a=await askKnowly(env,'사진 확인',fetchImpl,Date.now(),[{name:'p.png',kind:'image',data_url:'data:image/png;base64,AAAA'}]);
+ assert.equal(JSON.parse(calls.find(c=>c.url.endsWith('/chat')).init.body).attachments[0].kind,'image');assert.equal(a.answered,true);
+ await knowlyFeedback(env,'11111111-2222-3333-4444-555555555555','up',fetchImpl);
+ assert.equal(JSON.parse(calls.at(-1).init.body).action,'feedback');
+ await assert.rejects(knowlyFeedback(env,'bad','up',fetchImpl),{status:404});
 });

@@ -18,7 +18,9 @@ export async function passwordHash(password,salt=hex(crypto.getRandomValues(new 
 }
 function config(env){const value=env.NYANG_DEMO_PASSWORD_HASH;if(!/^[a-f0-9]{32}:[a-f0-9]{64}$/.test(value||''))fail('로그인 설정을 준비 중이에요.',503);return value;}
 function tokenFrom(request){return (request.headers.get('cookie')||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('nyang-account='))?.slice(14);}
-function cookie(request,token,age=86400){return `nyang-account=${token}; HttpOnly; SameSite=Lax; Path=/api/account; Max-Age=${age}${new URL(request.url).protocol==='https:'?'; Secure':''}`;}
+// 세션 쿠키는 /api 아래 모든 경로(계정·사내 문서 검색 연결)에서 쓴다. 예전 /api/account 경로 쿠키는 지운다.
+function cookie(request,token,age=86400,path='/api'){return `nyang-account=${token}; HttpOnly; SameSite=Lax; Path=${path}; Max-Age=${age}${new URL(request.url).protocol==='https:'?'; Secure':''}`;}
+const legacyCookie=request=>cookie(request,'',0,'/api/account');
 export async function login(db,env,request,input,now=Date.now()){
  const expected=config(env),bucket=Math.floor(now/900000),ip=await digest(request.headers.get('cf-connecting-ip')||'local');
  await run(db,'DELETE FROM demo_login_limits WHERE bucket<?',bucket-1);
@@ -93,6 +95,7 @@ export async function accountRequest(db,env,request){
   if(request.method==='GET'){
    const username=await session(db,env,request);
    body=new URL(request.url).searchParams.get('view')==='stats'?await statistics(db,username):username?await accountCommunity(db,username):{authenticated:false,member:false};
+   if(username&&/(^|;\s*)nyang-account=/.test(request.headers.get('cookie')||''))setCookie=cookie(request,tokenFrom(request));
   }else if(request.method==='POST'){
    if(request.headers.get('origin')!==new URL(request.url).origin)fail('허용되지 않은 요청입니다.',403);
    if(!request.headers.get('content-type')?.startsWith('application/json'))fail('JSON 요청이 필요합니다.',415);
@@ -104,6 +107,7 @@ export async function accountRequest(db,env,request){
   }else fail('지원하지 않는 요청입니다.',405);
  }catch(e){status=e.status||(e instanceof SyntaxError?400:503);body={error:e.status?e.message:e instanceof SyntaxError?'요청 내용을 확인해 주세요.':'연결이 원활하지 않아요. 잠시 후 다시 시도해 주세요.'};}
  const headers={'Cache-Control':'private, no-store','Vary':'Cookie','X-Content-Type-Options':'nosniff'};
- if(setCookie)headers['Set-Cookie']=setCookie;
- return Response.json(body,{status,headers});
+ const out=new Headers(headers);
+ if(setCookie){out.append('Set-Cookie',setCookie);out.append('Set-Cookie',legacyCookie(request));}
+ return Response.json(body,{status,headers:out});
 }

@@ -91,3 +91,9 @@ test('employees delete only their own posts across sessions without exposing aut
  assert.equal(restored.data.posts.find(p=>p.id===post.id).replies.length,1);
  assert.deepEqual((await call(owner.cookie)).data.wallet,balance);
 });
+test('session cookie covers every /api route and clears the legacy /api/account cookie',async()=>{
+ const {sign}=fixture(),a=await sign();
+ const cookies=a.headers.getSetCookie();
+ assert.ok(cookies.some(c=>/^nyang-account=[a-f0-9]{64};.*Path=\/api;/.test(c)));
+ assert.ok(cookies.some(c=>/^nyang-account=;.*Path=\/api\/account; Max-Age=0/.test(c)));
+});
