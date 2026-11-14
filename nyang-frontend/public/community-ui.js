@@ -1,5 +1,6 @@
-import {boardView} from './board-view.js?v=4d8e85e9c584';
-import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=3b39d73ccec3';
+import {fetch} from './transport.js?v=fd4b994ba12d';
+import {boardView} from './board-view.js?v=008e53f7600c';
+import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=9cfeb982e79d';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const labels={hr:'휴가 · 근태',pay:'급여 · 복지',trip:'출장 · 정산',life:'사내 생활'};
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
@@ -14,13 +15,10 @@ export async function loadStatistics(){
  catch(e){if(epoch!==authEpoch)return;stats={error:e.message};}
  hooks.render();
 }
-// Knowly 연결 시 로그인·로그아웃은 Knowly 코드(public/knowly/client.js)로 한다. 연결이 없으면 기존 시연 계정 로그인.
-let knowlyClient=null;
-export function loadKnowlyClient(){knowlyClient??=import('/knowly/client.js').then(m=>m.configured?m:null).catch(()=>null);return knowlyClient;}
 function broadcastAuth(){try{localStorage.setItem('nyang-account-change',String(Date.now()));}catch{}}
 export async function logoutAccount(){
- try{await (await loadKnowlyClient())?.signOut().catch(()=>{});const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})});if(!res.ok)throw Error('로그아웃하지 못했어요. 다시 시도해 주세요.');
- authEpoch++;connecting=null;stats=null;state={authenticated:false,member:false,knowly:state.knowly};filter='all';query='';hooks.close();hooks.update(state);broadcastAuth();}
+ try{const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})});if(!res.ok)throw Error('로그아웃하지 못했어요. 다시 시도해 주세요.');
+ authEpoch++;connecting=null;stats=null;state={authenticated:false,member:false};filter='all';query='';hooks.close();hooks.update(state);broadcastAuth();}
  catch(e){hooks.toast(e.message);}
 }
 
@@ -49,7 +47,7 @@ export async function communityAction(action,body={}){
  try{
   const response=action==='reward'&&body.type==='pet'?'wallet':undefined;
   const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...body,response})});
-  const data=await res.json();if(epoch!==authEpoch)return null;if(res.status===401){authEpoch++;state={authenticated:false,member:false,knowly:state.knowly};hooks.update(state);throw Error('로그인이 만료됐어요. 다시 로그인해 주세요.');}if(!res.ok)throw Error(data.error);
+  const data=await res.json();if(epoch!==authEpoch)return null;if(res.status===401){authEpoch++;state={authenticated:false,member:false};hooks.update(state);throw Error('로그인이 만료됐어요. 다시 로그인해 주세요.');}if(!res.ok)throw Error(data.error);
   state=data.partial==='wallet'?{...state,wallet:data.wallet,level:data.level}:data;
   hooks.update(state);if(data.notice)hooks.toast(data.notice);return data;
  }catch(e){hooks.toast(e.message||'연결을 확인하고 다시 시도해 주세요.');return null;}
@@ -112,7 +110,7 @@ export function unknownOffer(r){
 }
 export function showPostDialog(r){
  if(!state.member){hooks.show('activity');hooks.toast('체험 연결을 준비하고 있어요. 잠시 후 다시 시도해 주세요.');return;}
- hooks.modal(`<h2 id="modal-title">익명 질문 작성</h2><p class="modal-sub">게시할 내용을 확인해 주세요. 이름·급여·개인 계정 정보 등은 적지 마세요.</p>${r.personal?'<p class="privacy-note">개인별 정보는 공개 게시판에서 확인할 수 없어요. 일반적인 절차에 대한 질문으로 바꿔 주세요.</p>':''}<form id="anonymous-post"><label>질문 분야<select name="category">${Object.entries(labels).map(([v,t])=>`<option value="${v}" ${v===r.category?'selected':''}>${t}</option>`).join('')}</select></label><label>게시할 질문<textarea name="body" rows="5" minlength="5" maxlength="2000" required>${r.personal?'':esc(r.q)}</textarea></label><p class="community-caption">게시판에는 ‘익명의 직원’으로 보여요. 로그인한 두 시연 계정이 함께 보는 게시판에 등록됩니다.</p><label class="consent-check"><input type="checkbox" required> 이 내용을 시연용 질문 게시판에 공유할게요.</label><div class="modal-button-row"><button class="primary-button">확인하고 익명으로 게시</button><button type="button" class="text-button" data-action="close-modal">취소</button></div></form>`);
+ hooks.modal(`<h2 id="modal-title">익명 질문 작성</h2><p class="modal-sub">게시할 내용을 확인해 주세요. 이름·급여·개인 계정 정보 등은 적지 마세요.</p>${r.personal?'<p class="privacy-note">개인별 정보는 공개 게시판에서 확인할 수 없어요. 일반적인 절차에 대한 질문으로 바꿔 주세요.</p>':''}<form id="anonymous-post"><label>질문 분야<select name="category">${Object.entries(labels).map(([v,t])=>`<option value="${v}" ${v===r.category?'selected':''}>${t}</option>`).join('')}</select></label><label>게시할 질문<textarea name="body" rows="5" minlength="5" maxlength="2000" required>${r.personal?'':esc(r.q)}</textarea></label><p class="community-caption">게시판에는 ‘익명의 직원’으로 보여요. 지금은 이 브라우저에만 저장돼서, 같은 브라우저로 로그인한 직원·담당자만 볼 수 있어요.</p><label class="consent-check"><input type="checkbox" required> 이 내용을 직원 질문 게시판에 공유할게요.</label><div class="modal-button-row"><button class="primary-button">확인하고 익명으로 게시</button><button type="button" class="text-button" data-action="close-modal">취소</button></div></form>`);
 }
 document.addEventListener('click',async e=>{
  const b=e.target.closest('button');if(!b||b.disabled)return;
@@ -144,9 +142,7 @@ document.addEventListener('submit',async e=>{
  if(f.id==='account-login'){
   e.preventDefault();if(busy)return;busy=true;const button=f.querySelector('[type="submit"]'),error=f.querySelector('#login-error');button.disabled=true;button.textContent='로그인 중…';error.textContent='';
   const epoch=++authEpoch;connecting=null;
-  const kc=await loadKnowlyClient();
-  try{const form=Object.fromEntries(new FormData(f)),body=kc?{action:'login',role:form.role,access_token:await kc.signIn(form.username,form.password,form.role)}:{action:'login',...form};
-   const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),data=await res.json();if(!res.ok&&kc)await kc.signOut().catch(()=>{});if(epoch!==authEpoch)return;if(!res.ok)throw Error(data.error);state=data;stats=null;filter='all';query='';hooks.update(state);broadcastAuth();}
+  try{const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'login',...Object.fromEntries(new FormData(f))})}),data=await res.json();if(epoch!==authEpoch)return;if(!res.ok)throw Error(data.error);state=data;stats=null;filter='all';query='';hooks.update(state);broadcastAuth();}
   catch(e){if(epoch===authEpoch){error.textContent=e.message;f.querySelector('[name="password"]').focus();}}
   finally{busy=false;button.disabled=false;button.textContent=loginRole==='staff'?'담당자로 로그인':'직원으로 로그인';}return;
  }

@@ -16,7 +16,7 @@ interface AuthState {
 const AuthContext = createContext<AuthState | null>(null);
 
 /** expectedRole을 주면 그 유형의 계정만 들어올 수 있다. 다르면 바로 로그아웃하고 맞는 탭을 안내한다.
- *  (냥대리 로그인 화면도 이 함수를 그대로 쓴다: src/embed/client.ts) */
+ *  (냥대리 화면은 src/nyang/transport.ts에서 같은 확인을 한다) */
 export async function signInAs(loginId: string, password: string, expectedRole?: Role) {
   const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail(loginId), password });
   if (error) throw new Error(error.message.includes('Invalid') ? '아이디 또는 비밀번호가 맞지 않아요.' : error.message);

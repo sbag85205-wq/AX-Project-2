@@ -1,7 +1,8 @@
 // 냥대리 화면 안(iframe)에 넣는 Knowly 화면: 관리자 6개 화면과 사내 문서 목록·원문 보기. 화면 코드는 Knowly 것을 그대로 쓴다.
 import { useEffect } from 'react';
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { useAuth } from '../lib/auth';
+import { AuthProvider, useAuth } from '../lib/auth';
+import Chat from '../pages/Chat';
 import DocumentList from '../pages/DocumentList';
 import DocumentView from '../pages/DocumentView';
 import Documents from '../pages/admin/Documents';
@@ -20,17 +21,14 @@ function RouteReporter() {
 
 function Routed() {
   const { session, profile, loading } = useAuth();
-  useEffect(() => {
-    if (!loading && !session) notifyParent({ type: 'knowly-embed-error', message: '로그인이 만료됐어요. 다시 로그인해 주세요.', status: 401 });
-  }, [loading, session]);
   if (loading) return <div className="empty">불러오는 중…</div>;
-  if (!session) return <div className="empty">로그인이 만료됐어요. 로그아웃한 뒤 다시 로그인해 주세요.</div>;
-  if (!profile) return <div className="empty">Knowly 계정 정보를 찾을 수 없어요. 관리자에게 계정을 확인해 달라고 알려 주세요.</div>;
+  if (!session || !profile) return <div className="empty">연결된 Knowly 계정 정보를 찾을 수 없어요. 관리자에게 연결 계정을 확인해 달라고 알려 주세요.</div>;
   const admin = profile.role === 'admin';
   return (
     <>
       <RouteReporter />
       <Routes>
+        <Route path="/history" element={<Chat />} />
         <Route path="/docs" element={<DocumentList />} />
         <Route path="/docs/:id" element={<DocumentView />} />
         {admin && <Route path="/admin/unanswered" element={<Unanswered />} />}
@@ -47,8 +45,10 @@ function Routed() {
 
 export default function EmbedApp() {
   return (
-    <HashRouter>
-      <Routed />
-    </HashRouter>
+    <AuthProvider>
+      <HashRouter>
+        <Routed />
+      </HashRouter>
+    </AuthProvider>
   );
 }

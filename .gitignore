@@ -11,3 +11,7 @@ supabase/functions/.env
 .DS_Store
 *.tsbuildinfo
 .env*
+
+/public/nyang/
+/public/knowly/
+/nyang-frontend/public/knowly/

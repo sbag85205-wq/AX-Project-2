@@ -34,7 +34,7 @@ jobs:
           cache: npm
       - run: npm ci
       - name: 단위 테스트
-        run: npx vitest run
+        run: npm test
       - name: Vercel 환경변수 받기
         run: npx --yes vercel@65.9.0 pull --yes --environment=production --token "$VERCEL_TOKEN"
       - name: 빌드

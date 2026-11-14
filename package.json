@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run prepare:nyang && tsc -b && npm run build:nyang-embed && vite build",
     "preview": "vite preview",
-    "test": "vitest run",
-    "build:nyang-embed": "vite build --config vite.embed.config.ts && node -e \"require('fs').renameSync('nyang-frontend/public/knowly/knowly-embed.html','nyang-frontend/public/knowly/index.html')\""
+    "test": "vitest run && node --test tests/nyang-local.test.mjs nyang-frontend/tests/*.test.mjs",
+    "build:nyang-embed": "vite build --config vite.embed.config.ts && node -e \"require('fs').renameSync('public/knowly/knowly-embed.html','public/knowly/index.html')\"",
+    "prepare:nyang": "node scripts/prepare-nyang.mjs",
+    "predev": "npm run prepare:nyang && npm run build:nyang-embed",
+    "test:nyang": "node --test nyang-frontend/tests/*.test.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
@@ -16,11 +19,13 @@
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.5",
+    "sql.js": "^1.13.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/sql.js": "^1.4.11",
     "@vitejs/plugin-react": "^6.1.2",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
