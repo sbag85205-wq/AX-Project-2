@@ -8,3 +8,12 @@ declare module '*/local-db.mjs' {
   export function runOnce<T>(SQL: SqlJsStatic, bytes: Uint8Array | null, files: [string, string][], work: (db: unknown) => Promise<T>): Promise<{ result: T; changed: boolean; bytes: Uint8Array }>;
   export function createSerializer(name: string, locks?: { request(name: string, fn: () => Promise<unknown>): Promise<unknown> }): <T>(fn: () => Promise<T>) => Promise<T>;
 }
+declare module '*/nyang-frontend/lib/knowly-answer.mjs' {
+  export interface NyangKnowlyAnswer {
+    answered: boolean; status: string; mode: string; summary: string[]; steps: string[]; details: string; warnings: string[];
+    citations: { title: string; version: string; pages: string; document_id: string; chunk_id: string }[];
+    attachments: { name: string; read: boolean }[];
+  }
+  export function pageLabel(start: unknown, end: unknown): string;
+  export function normalizeKnowlyAnswer(answer: unknown): NyangKnowlyAnswer;
+}

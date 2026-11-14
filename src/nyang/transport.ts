@@ -1,6 +1,7 @@
 import { loginEmail, supabase, supabaseConfigured } from '../lib/supabase';
 import { callFunction, type AskResult } from '../lib/api';
 import { localNyang, type NyangAccount } from './local-store';
+import { normalizeKnowlyAnswer } from '../../nyang-frontend/lib/knowly-answer.mjs';
 
 // 냥대리 활동(포인트·출석·게시판)은 운영 DB 대신 이 브라우저에 저장한다(local-store.ts).
 // 계정·역할은 요청 본문이 아니라 로그인한 Knowly 프로필에서 가져온다(원래 nyang 서버 함수와 같은 규칙).
@@ -46,9 +47,8 @@ export async function request(path: string, init: RequestInit = {}): Promise<Res
     if (path === '/api/knowly') {
       if (input.action === 'feedback') return Response.json(await callFunction('chat', input));
       const data = await callFunction<AskResult>('chat', input);
-      const a = data.answer;
-      return Response.json({ answer: { ...a, answered: a.status === 'answered', message_id: data.message_id, conversation_id: data.conversation_id,
-        citations: a.citations.map(c => ({ ...c, title: c.document_title, pages: c.page_start ? `${c.page_start}–${c.page_end}쪽` : '' })) } });
+      // 독립 프로토타입과 같은 정리 규칙(출처 중복 제거·최대 6개, "3쪽"/"3–5쪽", 요약 없는 답은 answered=false)
+      return Response.json({ answer: { ...normalizeKnowlyAnswer(data.answer), message_id: data.message_id, conversation_id: data.conversation_id } });
     }
     const action = path.includes('view=stats') ? 'stats' : input.action ?? null;
     return Response.json(await localNyang(await currentAccount(session.user.id), action, input));

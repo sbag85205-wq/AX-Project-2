@@ -1,6 +1,7 @@
 // main 브랜치의 Supabase 백엔드(chat Edge Function: FAQ·문서 검색·LLM 요약·출처 검증)에 냥대리 질문을 전달한다.
 // 비밀 값(로그인 비밀번호 등)은 서버 환경 변수로만 읽고 브라우저에는 정리된 답변만 돌려준다.
 import {AppError} from './community.mjs';
+import {normalizeKnowlyAnswer} from './knowly-answer.mjs';
 
 const MAX_QUESTION=1000;
 const TIMEOUT_MS=25000;
@@ -19,24 +20,11 @@ export const knowlyConfig=(env={})=>baseConfig(env,'KNOWLY_LOGIN_EMAIL','KNOWLY_
 export const knowlyAdminConfig=(env={})=>baseConfig(env,'KNOWLY_ADMIN_EMAIL','KNOWLY_ADMIN_PASSWORD');
 
 const text=(v,max=600)=>typeof v==='string'?v.trim().slice(0,max):'';
-const list=(v,max=8,len=600)=>(Array.isArray(v)?v:[]).map(x=>text(x,len)).filter(Boolean).slice(0,max);
 
-/** chat 함수의 Answer를 냥대리 화면이 쓰는 결과로 줄인다. 근거 없는 답은 answered=false. */
+/** chat 함수의 Answer를 냥대리 화면이 쓰는 결과로 줄인다(knowly-answer.mjs와 같음). 독립 프로토타입은 절차(steps)가 있으면 긴 설명을 숨긴다. */
 export function toNyangAnswer(answer){
- const a=answer&&typeof answer==='object'?answer:{};
- const status=['answered','insufficient_evidence','conflicting_sources'].includes(a.status)?a.status:'insufficient_evidence';
- const summary=list(a.summary,4),steps=list(a.steps,12),warnings=list(a.warnings,4);
- const seen=new Set(),citations=[];
- for(const c of Array.isArray(a.citations)?a.citations:[]){
-  const title=text(c?.document_title,200);if(!title)continue;
-  const start=Number(c.page_start)||0,end=Number(c.page_end)||start,pages=start?(end>start?`${start}–${end}쪽`:`${start}쪽`):'';
-  const id=`${title}|${pages}`;if(seen.has(id))continue;seen.add(id);
-  const uuid=v=>typeof v==='string'&&/^[0-9a-f-]{36}$/i.test(v)?v:'';
-  citations.push({title,version:text(c.version,40),pages,document_id:uuid(c.document_id),chunk_id:uuid(c.chunk_id)});if(citations.length>=6)break;
- }
- const details=text(a.details,4000);
- const notes=(Array.isArray(a.attachments)?a.attachments:[]).slice(0,3).map(n=>({name:text(n?.name,120),read:n?.read===true})).filter(n=>n.name);
- return {answered:status==='answered'&&summary.length>0,status,mode:['faq','llm','search'].includes(a.mode)?a.mode:'search',summary,steps,details:steps.length?'':details,warnings,citations,attachments:notes};
+ const a=normalizeKnowlyAnswer(answer);
+ return {...a,details:a.steps.length?'':a.details.slice(0,4000)};
 }
 
 async function timed(fetchImpl,url,init){

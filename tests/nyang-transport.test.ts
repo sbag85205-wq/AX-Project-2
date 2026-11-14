@@ -46,6 +46,17 @@ describe('main Knowly transport', () => {
     const data=await (await request('/api/knowly',post(body))).json();
     expect(mocks.call).toHaveBeenCalledWith('chat',body);expect(data.answer).toMatchObject({...answer,answered:false,conversation_id:'thread-a',message_id:'answer-a'});
   });
+  it('shapes answers with the shared normalizer: single pages, merged citations, no answered without a summary', async () => {
+    const doc = '11111111-1111-1111-1111-111111111111';
+    const cite = (page_start: number, page_end: number) => ({ source_id: 'S1', chunk_id: doc, document_id: doc, document_title: '취업규칙', version: 'v2', page_start, page_end });
+    const answer = { status: 'answered', mode: 'llm', summary: ['연차는 3일 전까지 신청해요.'], steps: ['신청'], details: '자세히', warnings: [], citations: [cite(3, 3), cite(3, 3), cite(4, 6)] };
+    mocks.call.mockResolvedValue({ answer, conversation_id: 'thread-a', message_id: 'answer-a' });
+    const data = await (await request('/api/knowly', post({ question: '연차' }))).json();
+    expect(data.answer.citations.map((c: { pages: string }) => c.pages)).toEqual(['3쪽', '4–6쪽']);
+    expect(data.answer).toMatchObject({ answered: true, details: '자세히', steps: ['신청'], message_id: 'answer-a' });
+    mocks.call.mockResolvedValue({ answer: { ...answer, summary: [] }, conversation_id: 'thread-a', message_id: 'answer-b' });
+    expect((await (await request('/api/knowly', post({ question: '연차' }))).json()).answer.answered).toBe(false);
+  });
   it('does not substitute a sample answer when the real chat API fails', async () => {
     mocks.call.mockRejectedValue(new Error('검색 실패'));
     const r=await request('/api/knowly',post({question:'휴가 규정'}));
