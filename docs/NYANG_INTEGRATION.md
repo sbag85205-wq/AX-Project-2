@@ -13,8 +13,8 @@
 | 미답변·통계·FAQ·문서·사용자·모델 설정 | main의 실제 관리자 화면을 같은 출처의 iframe에 표시 |
 | 서버 대화 기록 | main의 대화 화면; 기존 대화와 새 질문은 Supabase에서 본인만 조회 |
 | 대화 폴더·제목·저장 답변·내 일정 | 원래 냥대리 기능, 계정 UUID로 구분한 브라우저 저장 |
-| 질문 게시판·답변·삭제/복원·좋아요 | 새 `nyang` Edge Function과 PostgreSQL 비공개 `nyang` 스키마 |
-| 출석·질문 경험치·포인트·츄르·하트·꾸미기·쓰다듬기 | 기존 냥대리 보상 규칙, 개인 계정별 서버 저장 |
+| 질문 게시판·답변·삭제/복원·좋아요 | **이 브라우저에만 저장**(브라우저 안 SQLite). 같은 브라우저로 로그인한 직원·담당자만 공유 |
+| 출석·질문 경험치·포인트·츄르·하트·꾸미기·쓰다듬기 | 기존 냥대리 보상 규칙, 계정별로 **이 브라우저에만 저장** |
 | 고양이 성격·표정·배경·다크 모드·움직임 설정 | 원래 냥대리 화면/상호작용 유지 |
 
 질문 예시 버튼도 실제 Knowly에 질문합니다. 검색 실패나 근거 부족을 샘플 FAQ 답변으로 바꾸지 않습니다. 분야 선택은 화면 분류이며 Knowly 검색은 기존처럼 등록된 전체 문서/FAQ를 대상으로 합니다. 일정은 브라우저 계획 도구이며 기존 샘플 일정 규칙을 사용하므로 회사 규정의 자동 승인이나 외부 캘린더 연동이 아닙니다.
@@ -33,23 +33,23 @@ npm run build
 
 `prepare:nyang`가 원본 UI 자산을 `public/nyang/`에 준비하고, `build:nyang-embed`가 main의 화면·첨부 모듈을 `public/knowly/`에 빌드합니다. 생성물은 커밋하지 않습니다. 최종 `dist/`는 기존 Vercel 정적 배포 대상입니다. `/docs/*`, `/admin/*` 링크도 Knowly 화면으로 이어집니다.
 
-운영 반영 전 **마이그레이션과 `nyang` Edge Function을 먼저 배포**해야 합니다. 기존 저장소의 main 배포 워크플로가 이를 지원합니다. 새 프론트엔드만 먼저 배포하면 활동 데이터 호출이 실패합니다.
+### 운영 DB를 바꾸지 않는 방식 (2026-11-14)
 
-```sh
-supabase db push --linked --dry-run
-supabase db push --linked
-supabase functions deploy nyang --project-ref <project-ref>
-```
+처음 설계는 게시판·보상을 운영 Supabase의 새 `nyang` 스키마와 `nyang` Edge Function에 저장했지만,
+운영 DB 변경 없이 먼저 배포하기 위해 **브라우저 저장**으로 바꿨습니다. 마이그레이션·`nyang` 함수는 없습니다.
 
-새 함수는 기존 함수와 같은 `getCaller`로 JWT와 프로필을 검증합니다. 서버의 `SUPABASE_DB_URL`을 사용하며, 별도의 D1·데모 비밀번호·공용 Knowly 직원/관리자 비밀번호가 필요하지 않습니다. DB 연결은 [Supabase 공식 Edge Function/Postgres 안내](https://supabase.com/docs/guides/functions/connect-to-postgres)를 따릅니다. DB URL은 브라우저에 전달하지 않습니다.
-
-기존 D1 데모 계정의 보상을 실제 직원에게 자동 이관하지 않습니다. 기존 Knowly 테이블·RLS·검색 함수·문서 저장소는 변경하지 않습니다. 새 스키마는 anon/authenticated의 직접 접근을 차단하고 인증된 서버 함수에서만 접근합니다. 보상/한도 검사는 트랜잭션과 잠금으로 직렬화합니다. 사내 소규모 사용을 위한 방식이며 사용량이 늘면 잠금 분할을 검토해야 합니다.
-
-공통 보상 규칙을 수정하면 `npm run sync:nyang-server`로 Edge Function용 모듈도 갱신하고 `npm test`를 실행하세요.
+- `src/nyang/local-store.ts`: 원래 냥대리 서버(Cloudflare D1)와 같은 SQLite 스키마(`nyang-frontend/drizzle/*.sql`)와
+  같은 규칙 코드(`nyang-frontend/lib/demo-account.mjs`)를 브라우저 안 SQLite(sql.js)에서 실행하고 IndexedDB에 저장합니다.
+  요청 하나가 끝까지 성공했을 때만 저장합니다(서버의 트랜잭션과 같은 효과).
+- 계정·역할은 요청 본문이 아니라 로그인한 Knowly 프로필(`profiles`)에서 가져옵니다(`src/nyang/transport.ts`).
+- 한계: 다른 기기·브라우저와 공유되지 않고, 브라우저 데이터를 지우면 포인트·게시판이 초기화됩니다.
+  담당자 통계도 이 브라우저의 활동만 집계합니다. 기존 Knowly 이용 통계(관리자 화면)는 그대로입니다.
+- 나중에 여러 사람이 함께 쓰는 게시판이 필요하면, 이 브랜치 이전 커밋(`knowly-nyang-unified`)의
+  `nyang` 마이그레이션·Edge Function을 팀 합의 후 다시 추가하면 됩니다.
 
 ## 검증 및 운영 확인
 
-자동 검증: main 검색 테스트, 개인 로그인/역할 확인·첨부·연속 대화·평가 전송 테스트, 냥대리 회귀 테스트, 실제 PostgreSQL 엔진(PGlite)에서 마이그레이션·보상·중복 요청·계정 격리·게시판 권한·직접 DB 접근 차단 테스트.
+자동 검증: main 검색 테스트, 개인 로그인/역할 확인·첨부·연속 대화·평가 전송 테스트, 냥대리 회귀 테스트, 브라우저 저장소(sql.js)에서 같은 시나리오로 보상·중복 요청·계정 격리·게시판 권한·실패 시 저장 안 함 테스트(`tests/nyang-local.test.mjs`).
 
 브라우저 확인은 로컬 서버 접근 시간 초과 및 Windows 컴퓨터 사용 도구의 URL 판별 실패로 완료하지 못했습니다. 실제 Supabase 로그인·LLM·원문 파일 요청도 운영 자격 증명 없이 검증하지 않았습니다. 배포 후 아래를 확인하세요.
 

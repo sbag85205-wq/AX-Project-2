@@ -1,22 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { PGlite } from '@electric-sql/pglite';
-import { postgresDatabase } from '../supabase/functions/_shared/nyang/postgres.mjs';
-import { accountCommunity, statistics } from '../supabase/functions/_shared/nyang/demo-account.mjs';
+import initSqlJs from 'sql.js';
+import { runOnce } from '../src/nyang/local-db.mjs';
+import { accountCommunity, statistics } from '../nyang-frontend/lib/demo-account.mjs';
 
-test('Knowly identities keep Nyang rewards private; PostgreSQL migration supports all community actions', async () => {
-  const pg = new PGlite();
-  await pg.exec('CREATE ROLE anon; CREATE ROLE authenticated;');
-  await pg.exec(fs.readFileSync(new URL('../supabase/migrations/20261114000000_nyang.sql', import.meta.url), 'utf8'));
+// 브라우저 저장(src/nyang/local-store.ts)과 같은 경로: 요청마다 저장된 DB를 열고, 성공했을 때만 저장한다.
+const dir = new URL('../nyang-frontend/drizzle/', import.meta.url);
+const files = fs.readdirSync(dir).filter((f) => f.endsWith('.sql')).map((f) => [f, fs.readFileSync(new URL(f, dir), 'utf8')]);
+
+test('브라우저 저장소: Knowly 계정별 보상이 분리되고 게시판·통계·보상 규칙이 서버와 같이 동작한다', async () => {
+  const SQL = await initSqlJs();
+  let saved = null;
   const a={id:'user-a',username:'alice',name:'직원 A',department:'개발',role:'employee'};
   const b={id:'user-b',username:'bob',name:'직원 B',department:'개발',role:'employee'};
   const staff={id:'staff-a',username:'manager',name:'담당자',department:'운영',role:'staff'};
-  const call=(user,action=null,input={})=>pg.transaction(async tx=>{
-    const db=postgresDatabase(async(q,args)=>{const r=await tx.query(q,args);return {rows:r.rows,count:r.affectedRows??r.rows.length};});
-    return action==='stats'?statistics(db,user):accountCommunity(db,user,action,input);
-  });
-  try {
+  const call=async(user,action=null,input={})=>{
+    const r=await runOnce(SQL,saved,files,(db)=>action==='stats'?statistics(db,user):accountCommunity(db,user,action,input));
+    saved=r.bytes;return r.result;
+  };
+  assert.equal((await call(a)).me.id, a.id);
     assert.equal((await call(a)).me.id, a.id);
     await call(b);await call(staff);
     await call(a,'question',{question:'연차 신청은 어떻게 하나요?'});
@@ -50,9 +53,18 @@ test('Knowly identities keep Nyang rewards private; PostgreSQL migration support
     assert.equal((await call(a)).wallet.equipped,'ribbon');
     for(let i=0;i<25;i++)await call(a,'question',{question:'서로 다른 질문 '+i});
     assert.equal((await call(a)).wallet.questions,20);
-    // The HTTP role/id payload cannot replace the trusted profile passed by getCaller.
     await assert.rejects(call(a,'reply',{post:post.id,id:'bad2',body:'무단 답변입니다',source:'위조',idOverride:staff.id,role:'staff'}),/담당자/);
-    await pg.exec('SET ROLE authenticated;');
-    await assert.rejects(pg.query('SELECT * FROM nyang.wallets'),/permission denied/);
-  } finally { await pg.close(); }
+});
+
+test('브라우저 저장소: 실패한 요청은 저장하지 않고, 스키마는 한 번만 적용한다', async () => {
+  const SQL = await initSqlJs();
+  const a={id:'user-a',username:'alice',name:'직원 A',department:'개발',role:'employee'};
+  const first=await runOnce(SQL,null,files,(db)=>accountCommunity(db,a,'question',{question:'연차 신청은 어떻게 하나요?'}));
+  await assert.rejects(runOnce(SQL,first.bytes,files,async(db)=>{await accountCommunity(db,a,'question',{question:'저장되면 안 되는 질문'});throw new Error('중간 실패');}),/중간 실패/);
+  const after=await runOnce(SQL,first.bytes,files,(db)=>accountCommunity(db,a));
+  assert.equal(after.result.wallet.questions,1);
+  const again=await runOnce(SQL,after.bytes,files,async()=>null);
+  const db=new SQL.Database(again.bytes);
+  assert.equal(db.exec('SELECT COUNT(*) FROM local_migrations')[0].values[0][0],files.length);
+  db.close();
 });

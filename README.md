@@ -1,6 +1,6 @@
 # AX-Project-2 · Knowly
 
-**냥대리 통합 앱:** 루트에서 `npm run dev` / `npm run build`를 실행하면 냥대리 화면에 기존 Knowly 기능이 연결됩니다. 개인 Knowly 계정과 기존 Supabase를 그대로 사용합니다. 게시판·보상을 위한 새 마이그레이션과 `nyang` 함수 배포, 전체 기능 대응표·검증 범위는 **[통합 안내](docs/NYANG_INTEGRATION.md)** 를 확인하세요.
+**냥대리 통합 앱:** 루트에서 `npm run dev` / `npm run build`를 실행하면 냥대리 화면에 기존 Knowly 기능이 연결됩니다. 개인 Knowly 계정과 기존 Supabase를 그대로 사용하고, 운영 DB는 바꾸지 않습니다(게시판·포인트는 이 브라우저에만 저장). 전체 기능 대응표·검증 범위는 **[통합 안내](docs/NYANG_INTEGRATION.md)** 를 확인하세요.
 
 사내 문서를 근거로 답하는 업무 도우미 챗봇입니다. 천안 AX 액션러닝 2조 프로젝트예요.
 
