@@ -8,19 +8,15 @@ import {documents,faq,starters,answers,reference,localDate,addDays,asDate,displa
 import {categories,categoryLabels,categoryOf,esc,isStaff,canEarnRewards} from './common.js?v=b28f10812dc5';
 import {scheduleTypes,makeSchedule,mergeSchedule} from './companion.js?v=b330209ae6c3';
 import {TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,HEARTS_PER_TREAT,wardrobe,normalizeRewards,rewardHelp} from './reward-rules.js?v=a99b0c80721c';
+import {icon} from './icons.js';
+import {backgroundPresets} from './backgrounds.js';
+import {VIEWS,NAV,HOME,canView,navVisible,navOf} from './views.js';
 import {createPetInteraction} from './pet-interaction.js?v=355c0da8eb14';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies} from './activity-history.js?v=d76a89d9987b';
 const $=s=>document.querySelector(s);
 const mode=document.body.dataset.mode;
 const root='/nyang/';
-const paths={spark:'m12 3 2.4 6.6L21 12l-6.6 2.4L12 21l-2.4-6.6L3 12l6.6-2.4L12 3Z',chat:'M21 11.5a8.4 8.4 0 0 1-9 8.5 10 10 0 0 1-4-.9L3 21l1.7-5a8.5 8.5 0 1 1 16.3-4.5Z',list:'m3 6 1 1 2-2M10 6h11M3 12l1 1 2-2m4 1h11M3 18l1 1 2-2m4 1h11',book:'M4 3h13a3 3 0 0 1 3 3v15H6a3 3 0 0 1-3-3V6a3 3 0 0 1 1-3ZM3 17h17M7 7h9M7 11h7',arrow:'M5 12h14m-6-6 6 6-6 6',chevron:'m9 5 7 7-7 7',down:'m6 9 6 6 6-6',sun:'M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',wallet:'M20 8H5a3 3 0 0 1 0-6h13v6M3 5v14a2 2 0 0 0 2 2h15V8m0 5h-5v4h5',case:'M3 7h18v14H3V7Zm5 0V3h8v4M3 12l9 3 9-3M10 12h4',coffee:'M3 7h13v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7Zm13 1h3a3 3 0 0 1 0 6h-3M6 2v2m5-2v2',picture:'M3 3h18v18H3V3Zm0 14 6-6 5 5 3-3 4 4M8 7h.01',check:'m5 12 4 4L19 6',close:'m6 6 12 12M6 18 18 6',send:'M12 19V5m-6 6 6-6 6 6',plus:'M12 5v14M5 12h14',back:'M19 12H5m6-6-6 6 6 6',calendar:'M3 5h18v16H3V5Zm4-3v6m10-6v6M3 11h18',trash:'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7',info:'M12 11v6m0-10v.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z',menu:'M4 6h16M4 12h16M4 18h16',clock:'M12 7v5l3 2M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z',logout:'M9 4H4v16h5m5-13 5 5-5 5m-6-5h12'};
-const icon=(name,cls='')=>`<svg class="icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[name]||paths.spark}"/></svg>`;
 const cat=(mood='',extra='')=>`<div class="cat-art ${mood} ${extra}" role="img" aria-label="${mood==='annoyed'?'귀찮은 표정의':mood==='happy'?'행복한 표정의':'차갑지만 귀여운'} 고양이 냥대리"></div>`;
-paths.settings='M9 3h6l1 3 3 1v6l-3 1-1 3H9l-1-3-3-1V7l3-1 1-3ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z';
-paths.moon='M20.9 13.1A9 9 0 0 1 10.9 3a9 9 0 1 0 10 10.1Z';
-paths.cat='M5 9 4 3l6 4h4l6-4-1 6a8 8 0 1 1-14 0ZM8 12h.01M16 12h.01m-6 4 2 1 2-1';
-paths.activity='M4 20h16M7 16V9m5 7V4m5 12v-5';
-paths.shirt='m8 3-5 4 3 4 2-1v11h8V10l2 1 3-4-5-4a4 4 0 0 1-8 0Z';
 // 브라우저 저장(localStorage). 키 이름은 예전과 같다.
 // read/save: 이 브라우저 공통 설정(테마·움직임·배경).
 // readMine/saveMine: 로그인 계정별 기록(대화·일정·질문 기록·성격 등) → 'nyang-account:<계정>:<키>'.
@@ -98,26 +94,34 @@ function updateWallet(){
  const unread=unseenReplies(communityState().posts,seenReplies).length,indicator=$('#activity-unread');
  indicator.hidden=!unread;indicator.textContent=unread;indicator.setAttribute('aria-label','새 답변이 달린 내 질문 '+unread+'개');
 }
+// 화면별 그리기. Knowly 화면(VIEWS[…].knowly)은 mountKnowly가 그린다.
+const viewRenderers={
+ chat:()=>renderCat(),
+ calendar:()=>renderCalendar(),
+ todos:()=>renderTodos(),
+ activity:()=>{$('#main').innerHTML=activityHTML(activityContent());},
+ board:()=>{$('#main').innerHTML=boardHTML();},
+ statistics:()=>{$('#main').innerHTML=knowlyStatsHTML();}
+};
 function render(){
  document.body.dataset.personality=personality;
  const personalityButton=$('#personality-button');if(personalityButton)personalityButton.innerHTML=icon(personality==='warm'?'sun':'moon')+'<span>'+voice().label+'</span>';
  document.body.dataset.view=view;
  const session=communityState(),staff=isStaff(session);document.body.dataset.authenticated=String(!!session.member);document.body.dataset.role=staff?'staff':'employee';
- for(const name of ['chat','schedule','activity'])$('#nav-'+name).hidden=staff;
- if(staff&&!['board','statistics','faq','documents','users','model','unanswered','library'].includes(view))view='unanswered';
+ for(const [id,who] of NAV)$('#nav-'+id).hidden=!navVisible(who,staff);
+ // 볼 수 없는 화면이면 그 계정의 첫 화면으로 바꾼다(로그인 전에는 로그인 화면만 그린다).
+ if(staff&&!canView(view,true))view=HOME.staff;
  document.body.dataset.view=view;
- for(const name of ['statistics','faq','documents','users','model'])$('#nav-'+name).hidden=!staff;
- $('#nav-unanswered').hidden=!staff;$('#nav-library').hidden=staff;
  if(!session.member){$('#wallet').innerHTML='';$('#account-button').textContent='';$('#workspace-title').textContent='로그인';$('#main').classList.add('work-view');$('#main').innerHTML=accountGateHTML();return;}
- if(['statistics','faq','documents','users','model','unanswered'].includes(view)&&!staff)view='chat';
+ if(!staff&&!canView(view,false))view=HOME.employee;
  $('#account-button').innerHTML='<span>'+esc(session.me.username)+'</span><small>'+(staff?'담당자':'직원')+'</small>';
  $('#account-button').setAttribute('aria-label',session.me.username+' 내 계정');
- $('#workspace-title').textContent={chat:'물어보기',calendar:'내 일정',todos:'내 일정',activity:'내 활동',board:'질문 게시판',statistics:'이용통계',faq:'FAQ 관리',documents:'문서 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서'}[view];
+ $('#workspace-title').textContent=VIEWS[view].title;
 
- for(const name of ['chat','schedule','activity','board','statistics','faq','documents','users','model','unanswered','library']){const nav=$('#nav-'+name),active=name==='schedule'?['calendar','todos'].includes(view):view===name;nav?.classList.toggle('active',active);if(active)nav?.setAttribute('aria-current','page');else nav?.removeAttribute('aria-current');}
- $('#page-title').textContent={chat:'냥대리에게 물어보기',calendar:'내 캘린더',todos:'내가 해야 할 일',activity:'나의 질문 활동',board:'익명 질문 게시판 · 이 브라우저에만 저장',statistics:'이용통계',faq:'FAQ 관리',documents:'문서 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서'}[view];
+ for(const [id] of NAV){const nav=$('#nav-'+id),active=navOf(view)===id;nav?.classList.toggle('active',active);if(active)nav?.setAttribute('aria-current','page');else nav?.removeAttribute('aria-current');}
+ $('#page-title').textContent=VIEWS[view].pageTitle;
  $('#main').classList.toggle('work-view',view!=='chat');updateWallet();
- if(KNOWLY_ROUTES[view])mountKnowly(view);else if(view==='statistics')$('#main').innerHTML=knowlyStatsHTML();else if(view==='activity')$('#main').innerHTML=activityHTML(activityContent());else if(view==='board')$('#main').innerHTML=boardHTML();else if(view==='calendar')renderCalendar();else if(view==='todos')renderTodos();else renderCat();
+ if(VIEWS[view].knowly)mountKnowly(view);else viewRenderers[view]();
 }
 async function commitReward(event){
  const payload={type:event.type,id:crypto.randomUUID()};
@@ -214,12 +218,11 @@ function knowlyHTML(r){
 }
 // ── Knowly(main 백엔드) 연결 ─────────────────────────────────────────
 // 통합 앱은 항상 실제 Knowly 기능을 사용한다. 연결 오류를 샘플로 대체하지 않는다.
-const KNOWLY_ROUTES={faq:'/admin/faqs',documents:'/admin/documents',users:'/admin/users',model:'/admin/settings',unanswered:'/admin/unanswered',library:'/docs'};
 let libraryRoute='/docs',attachments=[],attachBusy=false;
 function knowlyFrameHTML(key,route){return `<div class="knowly-frame-wrap" data-knowly-key="${esc(key)}"><iframe class="knowly-frame" title="Knowly ${esc(key)}" src="/knowly/index.html#${esc(route)}"></iframe></div>`;}
 // 같은 화면을 다시 그릴 때 iframe을 새로 불러오지 않도록, 이미 떠 있으면 그대로 둔다.
 function mountKnowly(name){
- const key=name==='library'?'library:'+libraryRoute:name,route=name==='library'?libraryRoute:KNOWLY_ROUTES[name];
+ const key=name==='library'?'library:'+libraryRoute:name,route=name==='library'?libraryRoute:VIEWS[name].knowly;
  const current=$('#main > .knowly-frame-wrap');
  if(current?.dataset.knowlyKey===key)return;
  $('#main').innerHTML=knowlyFrameHTML(key,route);
@@ -497,12 +500,6 @@ function renderTodos(){
 function openModal(content,wide=false){const m=$('#modal');if(!m.open)dialogOpener=document.activeElement;m.className=wide?'wide':'';m.innerHTML=`<button class="icon-button modal-close" data-action="close-modal" aria-label="닫기">${icon('close')}</button>${content}`;if(!m.open)m.showModal();}
 function closeModal(){ $('#modal').close();dialogOpener?.focus(); }
 function openSource(id){const r=reference(id,allDocs());if(!r)return;openModal(`<div class="modal-eyebrow">${icon('book')} 근거 원문</div><h2 id="modal-title">${esc(r.doc.title)}</h2><p class="modal-sub">${esc(r.doc.version)} · ${categoryLabels[r.doc.category]||''}</p><div class="source-document">${r.doc.sections.map(s=>`<section class="${s.id===id?'highlight':''}"><h3>${esc(s.label)}</h3><p>${esc(s.text)}</p>${s.id===id?'<span class="source-marker">이 답변의 근거</span>':''}</section>`).join('')}</div>`);requestAnimationFrame(()=>$('.source-document .highlight')?.scrollIntoView({block:'nearest'}));}
-const backgroundPresets=[
- {id:'cafe',label:'따뜻한 카페',caption:'커피 한 잔 같은 포근함',file:'bg-cafe.png'},
- {id:'nature',label:'초록빛 자연',caption:'숲속에서 잠시 숨 고르기',file:'bg-nature.png'},
- {id:'ocean',label:'잔잔한 바다',caption:'파도 곁에서 가볍게',file:'bg-ocean.png'},
- {id:'mountain',label:'고요한 산',caption:'맑은 공기와 느긋한 하루',file:'bg-mountain.png'}
-];
 function backgroundState(){
  const uploaded=read('om-bg-'+mode,null);
  const saved=read('om-bg-theme-'+mode,null);
@@ -551,88 +548,86 @@ function endPetGesture(e,cancelled=false){
 document.addEventListener('pointerup',e=>endPetGesture(e));
 document.addEventListener('pointercancel',e=>endPetGesture(e,true));
 document.addEventListener('lostpointercapture',e=>endPetGesture(e,true));
-// 클릭 처리: 게시판·로그인·출석·좋아요 버튼(COMMUNITY_CLICK_SELECTOR)은 community-ui.js가, 나머지는 여기서 맡는다.
+// 클릭 처리. 게시판·로그인·출석·좋아요 버튼(COMMUNITY_CLICK_SELECTOR)은 community-ui.js가, 나머지는 여기서 맡는다.
+// 1) 속성 표: 위에서부터 처음 맞는 하나만 실행한다(문자열은 그 data-* 값이 있을 때, 함수는 그 결과로 판별).
+// 2) 속성 표에 맞는 것이 없으면 data-action 값으로 actionHandlers를 실행한다.
+const attributeHandlers=[
+ ['knowlyDoc',(b,e)=>{openLibrary(`/docs/${encodeURIComponent(b.dataset.knowlyDoc)}${b.dataset.chunk?`?chunk=${encodeURIComponent(b.dataset.chunk)}`:''}`);}],
+ ['knowlyVote',(b,e)=>{voteKnowly(b.dataset.message,b.dataset.knowlyVote);}],
+ ['removeAttach',(b,e)=>{chat.draft=$('#question-form textarea')?.value??chat.draft;attachments=attachments.filter(a=>a.id!==b.dataset.removeAttach);render();}],
+ [b=>b.dataset.action==='attach',(b,e)=>{$('#knowly-attach')?.click();}],
+ ['customize',(b,e)=>{({outfit:showWardrobe,background:showBackground,motion:showMotion}[b.dataset.customize])?.();}],
+ ['selectCategory',(b,e)=>{chat.category=b.dataset.selectCategory;closeModal();render();$('#question-form textarea')?.focus();}],
+ ['scheduleView',(b,e)=>{view=b.dataset.scheduleView;scheduleView=view;render();}],
+ ['activityTab',(b,e)=>{activityTab=b.dataset.activityTab;render();}],
+ ['historyOpen',(b,e)=>{openHistory(b.dataset.historyOpen);}],
+ ['saveAnswer',(b,e)=>{const r=chat.messages.find(m=>m.result?.messageId===b.dataset.saveAnswer)?.result;if(r&&!history.some(x=>x.id===r.messageId)){const next=recordAnswer(history,r);if(!saveMine('om-question-history',next))return;history=next;}try{const next=toggleSaved(history,b.dataset.saveAnswer);if(saveMine('om-question-history',next)){history=next;render();toast(history.find(x=>x.id===b.dataset.saveAnswer)?.saved?'내 활동에 답변을 저장했어요.':'답변 저장을 해제했어요.');}}catch(e){toast(e.message);}}],
+ ['activityPost',(b,e)=>{const post=communityState().posts?.find(p=>p.id===b.dataset.activityPost);if(post){const next={...seenReplies,[post.id]:post.replies.length};if(saveMine('om-seen-replies',next))seenReplies=next;showMyPost(post.id);}}],
+ ['heart',async (b,e)=>{if(await commitReward({type:'collect',id:b.dataset.heart})){refreshPet();toast('하트 +1 ♥ · 꾸미기에 쓸 수 있다냥.');if(!rewards.pending.length){$('.resident-speech h1')?.replaceChildren(voice().heart);$('.resident-speech p')?.replaceChildren(voice().heartDetail);clearTimeout(happyTimer);happyTimer=setTimeout(()=>{happyUntil=0;refreshPet();},3500);}}}],
+ ['item',async (b,e)=>{if(await commitReward({type:b.dataset.owned==='true'?'equip':'buy',id:b.dataset.item})){refreshPet();showWardrobe();toast('제법 잘 어울린다냥!');}}],
+ ['answerPanel',(b,e)=>{const r=chat.messages.find(m=>m.result?.messageId===b.dataset.message)?.result;if(r){r.expandedPanel=r.expandedPanel===b.dataset.answerPanel?null:b.dataset.answerPanel;render();$(`[data-answer-panel="${b.dataset.answerPanel}"][data-message="${r.messageId}"]`)?.focus({preventScroll:true});}}],
+ ['consent',(b,e)=>{const r=chat.messages.find(m=>m.result?.messageId===b.dataset.message)?.result;if(r&&r.decision!=='added'){r.decision=b.dataset.consent;render();requestAnimationFrame(()=>{const form=$(`[data-plan-form="${r.messageId}"]`);if(form){form.querySelector('input')?.focus({preventScroll:true});form.scrollIntoView({block:'nearest'});}else $(`[data-consent][data-message="${r.messageId}"]`)?.focus({preventScroll:true});});}}],
+ ['openPlan',(b,e)=>{calendarDay=b.dataset.openPlan;calendarMonth=calendarDay.slice(0,7);view='calendar';scheduleView='calendar';render();}],
+ ['month',(b,e)=>{const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=localDate(new Date(y,m-1+Number(b.dataset.month),1,12)).slice(0,7);render();}],
+ ['calendarDay',(b,e)=>{calendarDay=b.dataset.calendarDay;render();}],
+ ['background',(b,e)=>{if(save('om-bg-theme-'+mode,b.dataset.background)){applyBackground();closeModal();toast(backgroundState().label+' 배경으로 바꿨어요.');}}],
+ ['source',(b,e)=>{openSource(b.dataset.source);}],
+ ['question',(b,e)=>{if($('#modal').open)closeModal();chat.category=b.dataset.cat;ask(b.dataset.question);}],
+ ['switchCategory',(b,e)=>{chat.category=b.dataset.switchCategory;ask(b.dataset.retry,false);}],
+ ['filter',(b,e)=>{filter=b.dataset.filter;render();}],
+ ['day',(b,e)=>{selectedDay=b.dataset.day;filter='day';render();}],
+ ['delete',(b,e)=>{const next=tasks.filter(t=>t.id!==b.dataset.delete);if(saveMine('om-tasks',next)){tasks=next;render();toast('할 일을 삭제했어요.');}}],
+ ['postQuestion',(b,e)=>{const r=chat.messages.find(m=>m.result?.messageId===b.dataset.postQuestion)?.result;if(r)showPostDialog(r);}],
+ ['chatSettings',(b,e)=>{showChatSettings(b.dataset.chatSettings);}],
+ [b=>b.dataset.action==='rename-chat-folder',(b,e)=>{showRenameFolder();}],
+ [b=>b.dataset.action==='toggle-chat-folders',(b,e)=>{const list=$('#chat-existing-folders');if(!list)return;list.hidden=!list.hidden;b.setAttribute('aria-expanded',String(!list.hidden));}],
+ [b=>b.hasAttribute('data-chat-folder-choice'),(b,e)=>{const input=$('#chat-custom-folder'),list=$('#chat-existing-folders');if(!input||!list)return;input.value=b.dataset.chatFolderChoice;list.hidden=true;$('[data-action="toggle-chat-folders"]')?.setAttribute('aria-expanded','false');input.focus();}],
+ ['chatDelete',(b,e)=>{showDeleteChat(b.dataset.chatDelete);}],
+ ['chatDeleteConfirm',(b,e)=>{deleteChat(b.dataset.chatDeleteConfirm);}],
+ ['chatOpen',(b,e)=>{openChat(b.dataset.chatOpen,b.dataset.chatMessage||null);}],
+ ['personality',(b,e)=>{if(!canEarnRewards(communityState()))return;const next=normalizePersonality(b.dataset.personality);if(!saveMine('om-personality',next))return;personality=next;petInteraction.reset();closeModal();render();companionBehavior.greet(personality);toast(voice().label+'로 바꿨어요.');}]
+];
+const actionHandlers={
+ personality:(b,e)=>{showPersonality();},
+ 'toggle-chat-history':(b,e)=>{chatHistoryCollapsed=!chatHistoryCollapsed;render();},
+ 'login-pet':(b,e)=>{reactLoginPet();},
+ logout:async (b,e)=>{await logoutAccount();},
+ account:(b,e)=>{const me=communityState().me;openModal('<div class="account-menu"><h2 id="modal-title">내 계정</h2><strong>'+esc(me.username)+' · '+(isStaff(communityState())?'담당자':'직원')+'</strong><p>'+ (isStaff(communityState())?'질문 게시판 관리와 통계에 접근할 수 있어요.':'포인트와 보상은 이 브라우저에만 저장돼요.<br>다른 기기·브라우저에서는 새로 시작해요.') +'</p><p>Knowly 개인 계정으로 연결되어 있어요.<br>대화와 보상은 계정별로 구분됩니다.</p><button class="primary-button" data-action="logout">로그아웃</button></div>');},
+ library:(b,e)=>{openLibrary();},
+ unanswered:(b,e)=>{if(isStaff(communityState()))showView('unanswered');},
+ faq:(b,e)=>{if(isStaff(communityState()))showView('faq');},
+ documents:(b,e)=>{if(isStaff(communityState()))showView('documents');},
+ users:(b,e)=>{if(isStaff(communityState()))showView('users');},
+ model:(b,e)=>{if(isStaff(communityState()))showView('model');},
+ statistics:(b,e)=>{if(isStaff(communityState()))showView('statistics');},
+ 'toggle-theme':(b,e)=>{const next=document.documentElement.dataset.theme==='dark'?'light':'dark';applyColorTheme(next);save('nyang-color-theme',next);},
+ pet:(b,e)=>{if(e.detail===0||performance.now()>=ignorePetClickUntil)petCat();},
+ reset:(b,e)=>{resetChat();},
+ 'choose-category':(b,e)=>{showCategories();},
+ schedule:(b,e)=>{petInteraction.reset();view=scheduleView;render();$('#main').scrollTop=0;},
+ activity:(b,e)=>{refreshCommunity();if(view!=='activity')petInteraction.reset();view='activity';render();$('#main').scrollTop=0;},
+ chat:(b,e)=>{if(view!=='chat')petInteraction.reset();view='chat';render();$('#main').scrollTop=0;},
+ todos:(b,e)=>{if(view!=='todos')petInteraction.reset();view='todos';render();$('#main').scrollTop=0;},
+ calendar:(b,e)=>{if(view!=='calendar')petInteraction.reset();view='calendar';render();$('#main').scrollTop=0;},
+ board:(b,e)=>{if(view!=='board')petInteraction.reset();view='board';render();$('#main').scrollTop=0;},
+ 'calendar-today':(b,e)=>{calendarMonth=localDate().slice(0,7);calendarDay=localDate();render();},
+ 'chat-examples':(b,e)=>{showChatExamples();},
+ 'sample-plan':(b,e)=>{view='chat';ask('출장 준비 일정을 짜주세요');},
+ feed:async (b,e)=>{if(await commitReward({type:'feed'})){petInteraction.reset();happyUntil=Date.now()+6000;companionBehavior.feed(personality);refreshPet();$('.resident-speech h1')?.replaceChildren(voice().feed);$('.resident-speech p')?.replaceChildren(voice().feedDetail);toast(`츄르 고맙다냥! 주변 하트 ${HEARTS_PER_TREAT}개를 눌러 모아보라냥.`);}},
+ wardrobe:(b,e)=>{showWardrobe();},
+ unequip:async (b,e)=>{if(await commitReward({type:'equip',id:null})){refreshPet();showWardrobe();}},
+ docs:(b,e)=>{if(communityState().member)openLibrary();},
+ background:(b,e)=>{showBackground();},
+ 'toggle-motion':(b,e)=>{const moving=!read('om-cat-motion',true);if(save('om-cat-motion',moving)){document.body.classList.toggle('motion-paused',!moving);b.setAttribute('aria-pressed',String(moving));b.setAttribute('aria-label',moving?'고양이 움직임 끄기':'고양이 움직임 켜기');b.innerHTML=`<span class="motion-mark">${moving?'Ⅱ':'▷'}</span><span>${moving?'움직임 끄기':'움직임 켜기'}</span>`;}},
+ 'close-modal':(b,e)=>{closeModal();}
+};
+/** 담당자 화면(Knowly 관리 화면·이용통계)으로 옮긴다. */
+function showView(name){view=name;petInteraction.reset();render();$('#main').scrollTop=0;}
 document.addEventListener('click',async e=>{
  const b=e.target.closest('button,a[data-action]');if(!b||b.disabled||b.matches(COMMUNITY_CLICK_SELECTOR))return;
- if(b.dataset.knowlyDoc){openLibrary(`/docs/${encodeURIComponent(b.dataset.knowlyDoc)}${b.dataset.chunk?`?chunk=${encodeURIComponent(b.dataset.chunk)}`:''}`);return;}
- if(b.dataset.knowlyVote){voteKnowly(b.dataset.message,b.dataset.knowlyVote);return;}
- if(b.dataset.removeAttach){chat.draft=$('#question-form textarea')?.value??chat.draft;attachments=attachments.filter(a=>a.id!==b.dataset.removeAttach);render();return;}
- if(b.dataset.action==='attach'){$('#knowly-attach')?.click();return;}
- if(b.dataset.customize){({outfit:showWardrobe,background:showBackground,motion:showMotion}[b.dataset.customize])?.();return;}
- if(b.dataset.selectCategory){chat.category=b.dataset.selectCategory;closeModal();render();$('#question-form textarea')?.focus();return;}
- if(b.dataset.scheduleView){view=b.dataset.scheduleView;scheduleView=view;render();return;}
- if(b.dataset.activityTab){activityTab=b.dataset.activityTab;render();return;}
- if(b.dataset.historyOpen){openHistory(b.dataset.historyOpen);return;}
- if(b.dataset.saveAnswer){const r=chat.messages.find(m=>m.result?.messageId===b.dataset.saveAnswer)?.result;if(r&&!history.some(x=>x.id===r.messageId)){const next=recordAnswer(history,r);if(!saveMine('om-question-history',next))return;history=next;}try{const next=toggleSaved(history,b.dataset.saveAnswer);if(saveMine('om-question-history',next)){history=next;render();toast(history.find(x=>x.id===b.dataset.saveAnswer)?.saved?'내 활동에 답변을 저장했어요.':'답변 저장을 해제했어요.');}}catch(e){toast(e.message);}return;}
- if(b.dataset.activityPost){const post=communityState().posts?.find(p=>p.id===b.dataset.activityPost);if(post){const next={...seenReplies,[post.id]:post.replies.length};if(saveMine('om-seen-replies',next))seenReplies=next;showMyPost(post.id);}return;}
- if(b.dataset.heart){if(await commitReward({type:'collect',id:b.dataset.heart})){refreshPet();toast('하트 +1 ♥ · 꾸미기에 쓸 수 있다냥.');if(!rewards.pending.length){$('.resident-speech h1')?.replaceChildren(voice().heart);$('.resident-speech p')?.replaceChildren(voice().heartDetail);clearTimeout(happyTimer);happyTimer=setTimeout(()=>{happyUntil=0;refreshPet();},3500);}}return;}
- if(b.dataset.item){if(await commitReward({type:b.dataset.owned==='true'?'equip':'buy',id:b.dataset.item})){refreshPet();showWardrobe();toast('제법 잘 어울린다냥!');}return;}
- if(b.dataset.answerPanel){const r=chat.messages.find(m=>m.result?.messageId===b.dataset.message)?.result;if(r){r.expandedPanel=r.expandedPanel===b.dataset.answerPanel?null:b.dataset.answerPanel;render();$(`[data-answer-panel="${b.dataset.answerPanel}"][data-message="${r.messageId}"]`)?.focus({preventScroll:true});}return;}
- if(b.dataset.consent){const r=chat.messages.find(m=>m.result?.messageId===b.dataset.message)?.result;if(r&&r.decision!=='added'){r.decision=b.dataset.consent;render();requestAnimationFrame(()=>{const form=$(`[data-plan-form="${r.messageId}"]`);if(form){form.querySelector('input')?.focus({preventScroll:true});form.scrollIntoView({block:'nearest'});}else $(`[data-consent][data-message="${r.messageId}"]`)?.focus({preventScroll:true});});}return;}
- if(b.dataset.openPlan){calendarDay=b.dataset.openPlan;calendarMonth=calendarDay.slice(0,7);view='calendar';scheduleView='calendar';render();return;}
- if(b.dataset.month){const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=localDate(new Date(y,m-1+Number(b.dataset.month),1,12)).slice(0,7);render();return;}
- if(b.dataset.calendarDay){calendarDay=b.dataset.calendarDay;render();return;}
- if(b.dataset.background){if(save('om-bg-theme-'+mode,b.dataset.background)){applyBackground();closeModal();toast(backgroundState().label+' 배경으로 바꿨어요.');}return;}
- if(b.dataset.source){openSource(b.dataset.source);return;}
- if(b.dataset.question){if($('#modal').open)closeModal();chat.category=b.dataset.cat;ask(b.dataset.question);return;}
- if(b.dataset.faq){if($('#modal').open)closeModal();ask(b.dataset.q);return;}
-  if(b.dataset.switchCategory){chat.category=b.dataset.switchCategory;ask(b.dataset.retry,false);return;}
- if(b.dataset.filter){filter=b.dataset.filter;render();return;}
- if(b.dataset.day){selectedDay=b.dataset.day;filter='day';render();return;}
- if(b.dataset.delete){const next=tasks.filter(t=>t.id!==b.dataset.delete);if(saveMine('om-tasks',next)){tasks=next;render();toast('할 일을 삭제했어요.');}return;}
- if(b.dataset.postQuestion){const r=chat.messages.find(m=>m.result?.messageId===b.dataset.postQuestion)?.result;if(r)showPostDialog(r);return;}
- if(b.dataset.chatSettings){showChatSettings(b.dataset.chatSettings);return;}
- if(b.dataset.action==='rename-chat-folder'){showRenameFolder();return;}
- if(b.dataset.action==='toggle-chat-folders'){
-  const list=$('#chat-existing-folders');if(!list)return;
-  list.hidden=!list.hidden;b.setAttribute('aria-expanded',String(!list.hidden));return;
- }
- if(b.hasAttribute('data-chat-folder-choice')){
-  const input=$('#chat-custom-folder'),list=$('#chat-existing-folders');if(!input||!list)return;
-  input.value=b.dataset.chatFolderChoice;list.hidden=true;
-  $('[data-action="toggle-chat-folders"]')?.setAttribute('aria-expanded','false');input.focus();return;
- }
- if(b.dataset.chatDelete){showDeleteChat(b.dataset.chatDelete);return;}
- if(b.dataset.chatDeleteConfirm){deleteChat(b.dataset.chatDeleteConfirm);return;}
- if(b.dataset.chatOpen){openChat(b.dataset.chatOpen,b.dataset.chatMessage||null);return;}
- if(b.dataset.personality){
-  if(!canEarnRewards(communityState()))return;
-  const next=normalizePersonality(b.dataset.personality);if(!saveMine('om-personality',next))return;
-  personality=next;petInteraction.reset();closeModal();render();companionBehavior.greet(personality);toast(voice().label+'로 바꿨어요.');return;
- }
- const a=b.dataset.action;
- if(a==='personality'){showPersonality();return;}
- if(a==='toggle-chat-history'){chatHistoryCollapsed=!chatHistoryCollapsed;render();return;}
- if(a==='login-pet'){reactLoginPet();return;}
- if(a==='logout'){await logoutAccount();return;}
- if(a==='account'){const me=communityState().me;openModal('<div class="account-menu"><h2 id="modal-title">내 계정</h2><strong>'+esc(me.username)+' · '+(isStaff(communityState())?'담당자':'직원')+'</strong><p>'+ (isStaff(communityState())?'질문 게시판 관리와 통계에 접근할 수 있어요.':'포인트와 보상은 이 브라우저에만 저장돼요.<br>다른 기기·브라우저에서는 새로 시작해요.') +'</p><p>Knowly 개인 계정으로 연결되어 있어요.<br>대화와 보상은 계정별로 구분됩니다.</p><button class="primary-button" data-action="logout">로그아웃</button></div>');return;}
- if(a==='unanswered'||a==='library'){if(a==='library')openLibrary();else if(isStaff(communityState())){view=a;petInteraction.reset();render();$('#main').scrollTop=0;}return;}
- if(['faq','documents','users','model'].includes(a)){if(isStaff(communityState())){view=a;petInteraction.reset();render();$('#main').scrollTop=0;}return;}
- if(a==='statistics'){if(isStaff(communityState())){view='statistics';petInteraction.reset();render();$('#main').scrollTop=0;}return;}
- if(a==='toggle-theme'){
-  const next=document.documentElement.dataset.theme==='dark'?'light':'dark';
-  applyColorTheme(next);save('nyang-color-theme',next);return;
- }
- if(a==='pet'){if(e.detail===0||performance.now()>=ignorePetClickUntil)petCat();return;}
- if(a==='reset')resetChat();
- if(a==='choose-category')showCategories();
- if(a==='schedule'){petInteraction.reset();view=scheduleView;render();$('#main').scrollTop=0;}
- if(a==='activity')refreshCommunity();
- if(['chat','todos','calendar','board','activity'].includes(a)){if(view!==a)petInteraction.reset();view=a;render();$('#main').scrollTop=0;}
- if(a==='calendar-today'){calendarMonth=localDate().slice(0,7);calendarDay=localDate();render();}
-
-
-
-
- if(a==='chat-examples')showChatExamples();
- if(a==='sample-plan'){view='chat';ask('출장 준비 일정을 짜주세요');}
- if(a==='feed'){if(await commitReward({type:'feed'})){petInteraction.reset();happyUntil=Date.now()+6000;companionBehavior.feed(personality);refreshPet();$('.resident-speech h1')?.replaceChildren(voice().feed);$('.resident-speech p')?.replaceChildren(voice().feedDetail);toast(`츄르 고맙다냥! 주변 하트 ${HEARTS_PER_TREAT}개를 눌러 모아보라냥.`);}}
- if(a==='wardrobe')showWardrobe();
- if(a==='unequip'&&await commitReward({type:'equip',id:null})){refreshPet();showWardrobe();}
- if(a==='docs'){if(communityState().member)openLibrary();return;}
- if(a==='background')showBackground();
- if(a==='toggle-motion'){const moving=!read('om-cat-motion',true);if(save('om-cat-motion',moving)){document.body.classList.toggle('motion-paused',!moving);b.setAttribute('aria-pressed',String(moving));b.setAttribute('aria-label',moving?'고양이 움직임 끄기':'고양이 움직임 켜기');b.innerHTML=`<span class="motion-mark">${moving?'Ⅱ':'▷'}</span><span>${moving?'움직임 끄기':'움직임 켜기'}</span>`;}}
- if(a==='close-modal')closeModal();
+ for(const [match,handler] of attributeHandlers)if(typeof match==='string'?b.dataset[match]:match(b)){await handler(b,e);return;}
+ const action=b.dataset.action;
+ if(action&&Object.hasOwn(actionHandlers,action))await actionHandlers[action](b,e);
 });
 // submit 처리: #activity-search, #question-form, [data-plan-form], #chat-settings-form, #chat-folder-form.
 // 로그인·게시판 검색·익명 질문·담당자 답변 폼은 community-ui.js가 맡는다.
