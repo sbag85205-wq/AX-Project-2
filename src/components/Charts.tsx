@@ -35,12 +35,16 @@ export interface Column {
   title?: string;
 }
 
-/** 세로 막대: 마지막 막대(가장 최근)를 진하게 칠한다. 막대 최대 높이는 CSS의 --column-bar-max. */
-export function ColumnChart({ columns, showValues = true }: { columns: Column[]; showValues?: boolean }) {
+/**
+ * 세로 막대: 마지막 막대(가장 최근)를 진하게 칠한다. 막대 최대 높이는 CSS의 --column-bar-max.
+ * 막대가 31개를 넘으면 간격을 2px로 좁히고, 그 이하에서는 gap(px, 기본은 CSS의 10px)을 쓴다.
+ */
+export function ColumnChart({ columns, showValues = true, gap }: { columns: Column[]; showValues?: boolean; gap?: number }) {
   const max = Math.max(1, ...columns.map((c) => c.n));
-  const style = { '--n': columns.length } as CSSProperties;
+  const dense = columns.length > 31;
+  const style = { '--n': columns.length, ...(!dense && gap !== undefined ? { gap } : {}) } as CSSProperties;
   return (
-    <div className={`columns${columns.length > 31 ? ' columns-dense' : ''}`} style={style}>
+    <div className={`columns${dense ? ' columns-dense' : ''}`} style={style}>
       {columns.map((c, i) => (
         <div key={c.key} className={`column${i === columns.length - 1 ? ' latest' : ''}`} title={c.title}>
           {showValues && <b>{c.n}</b>}

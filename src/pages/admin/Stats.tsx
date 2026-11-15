@@ -127,6 +127,7 @@ export default function Stats() {
               <div className="hint">아직 데이터가 없어요.</div>
             ) : (
               <ColumnChart
+                gap={8}
                 showValues={stats.daily.length <= 31}
                 columns={stats.daily.map((d) => ({
                   key: d.date,
