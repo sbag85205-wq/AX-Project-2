@@ -169,7 +169,7 @@ function petHTML(){
  const wag=pose?pose.wag:base.wag;
  if(pose){appearance.sleepy=pose.eyes==='closed';appearance.soft=false;appearance.mark=pose.mark;}
  if(searching){appearance.sleepy=false;appearance.mark='';}
- return `<span class="resident-shadow"></span><button class="pet-touch" data-action="pet" aria-label="냥대리 쓰다듬기" aria-busy="${petPending}" aria-describedby="pet-guide" title="클릭하거나 드래그해서 쓰다듬어 주세요"><span class="pet-stroke-mark" aria-hidden="true">✦</span></button><div class="pet-body behavior-${companionPhase} ${pose?'gesture-'+pose.motion:''} ${appearance.soft?'pet-soft-boundary':''} ${petReaction?.affection?'pet-affection':''} ${petMoving?'pet-engaged':''} ${reaction?'pet-'+reaction:happy?'delighted':''}"><div class="pet-resolution">${wag?'<span class="pet-wag-tail" aria-hidden="true"></span>':''}${cat(expression,'resident'+(wag?' pet-bonus-body':'')+(appearance.sleepy?' pet-sleepy':''))}${searching?'':outfitHTML()}</div></div><span class="resident-spark spark-one">✧</span><span class="resident-spark spark-two">✦</span><div class="pet-feedback ${reaction?'has-reaction reaction-'+reaction:''}" ${reaction||appearance.mark?'':'aria-hidden="true"'}>${appearance.mark?`<span class="companion-emote" aria-hidden="true">${appearance.mark}</span>`:''}${reaction?`<span class="pet-feedback-kicker">${reaction==='bonus'?'아주 드문 친밀감 보너스':reaction==='like'?'골골, 기분 좋은가 봐요':personality==='warm'?'지금은 쉬고 싶대요':'오늘은 조금 까칠해요'}</span><strong>${petReaction.line}</strong>${reaction==='bonus'?`<span class="pet-point-pop">+${PET_BONUS_POINTS} <small>P</small></span><small>작은 마음의 표시다냥.</small>`:`<small>${reaction==='like'?(personality==='warm'?'조금 더 함께 있자냥.':'좋아하는 건 비밀이다냥.'):(personality==='warm'?'기다려줘서 고맙다냥.':'잠깐 쉬었다 만나자냥.')}</small>`}`:''}</div>${rewards.pending.map((id,i)=>`<button class="collect-heart heart-${i}" data-heart="${id}" aria-label="하트 ${i+1} 모으기"><span>♥</span><small>+1</small></button>`).join('')}<div class="pet-actions"><button class="treat-button" data-action="feed" ${(rewards.points<TREAT_COST&&!rewards.treatTokens)||rewards.pending.length?'disabled':''}><span class="treat-stick" aria-hidden="true"></span> 츄르 주기 <b>${rewards.treatTokens?`보유 ${rewards.treatTokens}개`:'10 P'}</b></button><span>${rewards.pending.length?'하트를 눌러서 모아달라냥!':rewards.treatTokens?'출석 선물부터 먼저 쓰겠다냥.':rewards.points<TREAT_COST?'질문하면 포인트가 쌓여요':(personality==='warm'?'고맙다냥. 맛있게 먹겠다냥!':'이건… 조금 기대된다냥.')}</span><span class="pet-guide" id="pet-guide">클릭하거나 드래그해서 쓰다듬기</span></div>`;
+ return `<span class="resident-shadow"></span><button class="pet-touch" data-action="pet" aria-label="냥대리 쓰다듬기" aria-busy="${petPending}" aria-describedby="pet-guide" title="클릭하거나 드래그해서 쓰다듬어 주세요"></button><div class="pet-body behavior-${companionPhase} ${pose?'gesture-'+pose.motion:''} ${appearance.soft?'pet-soft-boundary':''} ${petReaction?.affection?'pet-affection':''} ${petMoving?'pet-engaged':''} ${reaction?'pet-'+reaction:happy?'delighted':''}"><div class="pet-resolution">${wag?'<span class="pet-wag-tail" aria-hidden="true"></span>':''}${cat(expression,'resident'+(wag?' pet-bonus-body':'')+(appearance.sleepy?' pet-sleepy':''))}${searching?'':outfitHTML()}</div></div><span class="resident-spark spark-one">✧</span><span class="resident-spark spark-two">✦</span><div class="pet-feedback ${reaction?'has-reaction reaction-'+reaction:''}" ${reaction||appearance.mark?'':'aria-hidden="true"'}>${appearance.mark?`<span class="companion-emote" aria-hidden="true">${appearance.mark}</span>`:''}${reaction?`<span class="pet-feedback-kicker">${reaction==='bonus'?'아주 드문 친밀감 보너스':reaction==='like'?'골골, 기분 좋은가 봐요':personality==='warm'?'지금은 쉬고 싶대요':'오늘은 조금 까칠해요'}</span><strong>${petReaction.line}</strong>${reaction==='bonus'?`<span class="pet-point-pop">+${PET_BONUS_POINTS} <small>P</small></span><small>작은 마음의 표시다냥.</small>`:`<small>${reaction==='like'?(personality==='warm'?'조금 더 함께 있자냥.':'좋아하는 건 비밀이다냥.'):(personality==='warm'?'기다려줘서 고맙다냥.':'잠깐 쉬었다 만나자냥.')}</small>`}`:''}</div>${rewards.pending.map((id,i)=>`<button class="collect-heart heart-${i}" data-heart="${id}" aria-label="하트 ${i+1} 모으기"><span>♥</span><small>+1</small></button>`).join('')}<div class="pet-actions"><button class="treat-button" data-action="feed" ${(rewards.points<TREAT_COST&&!rewards.treatTokens)||rewards.pending.length?'disabled':''}><span class="treat-stick" aria-hidden="true"></span> 츄르 주기 <b>${rewards.treatTokens?`보유 ${rewards.treatTokens}개`:'10 P'}</b></button><span>${rewards.pending.length?'하트를 눌러서 모아달라냥!':rewards.treatTokens?'출석 선물부터 먼저 쓰겠다냥.':rewards.points<TREAT_COST?'질문하면 포인트가 쌓여요':(personality==='warm'?'고맙다냥. 맛있게 먹겠다냥!':'이건… 조금 기대된다냥.')}</span><span class="pet-guide" id="pet-guide">클릭하거나 드래그해서 쓰다듬기</span></div>`;
 }
 function refreshPet(){
  refreshChatRewards();
@@ -541,22 +541,14 @@ async function loadBackground(file){if(!file)return;if(!['image/png','image/jpeg
 document.addEventListener('pointerdown',e=>{
  const button=e.target.closest('.pet-touch');
  if(!button||!e.isPrimary||e.button!==0)return;
- petGesture={id:e.pointerId,button,x:e.clientX,y:e.clientY,distance:0};
- button.setPointerCapture(e.pointerId);button.classList.add('is-stroking');
+ petGesture={id:e.pointerId,button};
+ button.setPointerCapture(e.pointerId);
  ignorePetClickUntil=Infinity;
  petCat();
 });
-document.addEventListener('pointermove',e=>{
- if(!petGesture||e.pointerId!==petGesture.id)return;
- petGesture.distance+=Math.hypot(e.clientX-petGesture.x,e.clientY-petGesture.y);
- petGesture.x=e.clientX;petGesture.y=e.clientY;
- const box=petGesture.button.getBoundingClientRect();
- petGesture.button.style.setProperty('--stroke-x',`${e.clientX-box.left}px`);
- petGesture.button.style.setProperty('--stroke-y',`${e.clientY-box.top}px`);
-});
 function endPetGesture(e,cancelled=false){
  if(!petGesture||e.pointerId!==petGesture.id)return;
- const {button}=petGesture;petGesture=null;button.classList.remove('is-stroking');
+ const {button}=petGesture;petGesture=null;
  if(button.hasPointerCapture(e.pointerId))button.releasePointerCapture(e.pointerId);
  ignorePetClickUntil=performance.now()+500;
 }
