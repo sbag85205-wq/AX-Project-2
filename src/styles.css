@@ -86,7 +86,7 @@ h1, h2, h3 { margin: 0; line-height: 1.35; }
 /* ── 챗봇 ── */
 .chat-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); flex: 1; min-height: 0; }
 .chat-side { background: var(--surface); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
-.chat-side-head { padding: 16px; border-bottom: 1px solid var(--line-soft); }
+.chat-side-head { display: flex; gap: 8px; padding: 16px; border-bottom: 1px solid var(--line-soft); }
 .conv-list { list-style: none; margin: 0; padding: 8px; overflow-y: auto; flex: 1; }
 .conv-item { display: flex; align-items: center; border-radius: 8px; }
 .conv-item button.open {

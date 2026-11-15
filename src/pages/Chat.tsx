@@ -242,8 +242,12 @@ export default function Chat() {
     <div className="chat-layout">
       <aside className={`chat-side${sideOpen ? ' open' : ''}`} aria-label="대화 기록">
         <div className="chat-side-head">
-          <button type="button" className="btn btn-primary" style={{ width: '100%' }} onClick={newConversation}>
+          <button type="button" className="btn btn-primary" style={{ flex: 1 }} onClick={newConversation}>
             <PlusIcon /> 새 대화
+          </button>
+          {/* 좁은 화면에서는 패널이 화면을 덮어 여는 버튼이 가려지므로 패널 안에 닫기 버튼을 둔다 */}
+          <button type="button" className="btn mobile-only" aria-label="대화 기록 닫기" onClick={() => setSideOpen(false)}>
+            <CloseIcon />
           </button>
         </div>
         <ul className="conv-list">
