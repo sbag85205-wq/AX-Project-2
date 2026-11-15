@@ -39,15 +39,16 @@ export const faq = {
   client:['Linker Client는 어떻게 설치하나요?','Linker Client 설치 요구사항을 알려주세요','.NET Framework 3.5는 어떻게 설치하나요?','인증서버는 어떻게 등록하나요?','VD에 접속하는 방법을 알려주세요','VD 접속 전에 어떤 준비가 필요한가요?','VD 전원 켜기·끄기·재시작은 어떻게 하나요?','VD 화면 위 툴바는 어떤 기능인가요?','Linker Client는 어떻게 삭제하나요?'],
   trouble:['VD 접속이 안 될 때 무엇을 확인하나요?','웹서버에 접속이 안 될 때 어떻게 하나요?','로그인했는데 VD가 보이지 않아요','VD가 느릴 때 어떻게 조치하나요?','접속할 때 표시되는 오류코드의 뜻을 알려주세요','관리 화면에 VD 상태 오류가 표시되면 어떻게 조치하나요?','VDAgent는 어떻게 재설치하나요?','프로비전이 실패하면 무엇을 확인하나요?','Hyper-V에서 VM이 보이지 않을 때 어떻게 하나요?','데이터 백업과 복구는 어떻게 하나요?']
 };
-// 첫 화면 입력칸 위에 보이는 추천 질문: 직원이 가장 자주 물을 만한 순서. label은 화면에 보이는 짧은 글, q는 실제로 보내는 질문.
+// 첫 화면 입력칸 위에 보이는 추천 질문: 세 분야에서 서로 다른 주제로 고른다(같은 주제가 겹치지 않게).
+// label은 화면에 보이는 짧은 글, q는 실제로 보내는 질문.
 export const starters = [
-  { label: 'Linker Client 설치 방법', q: 'Linker Client는 어떻게 설치하나요?', category: 'client' },
-  { label: '인증서버 등록 방법', q: '인증서버는 어떻게 등록하나요?', category: 'client' },
-  { label: 'VD 접속 방법', q: 'VD에 접속하는 방법을 알려주세요', category: 'client' },
+  { label: 'Dstation 설치 순서', q: 'Dstation 설치 순서를 알려주세요', category: 'server' },
+  { label: '도메인 환경 구성', q: '도메인 환경은 어떻게 구성하나요?', category: 'server' },
+  { label: 'Linker Client 설치', q: 'Linker Client는 어떻게 설치하나요?', category: 'client' },
+  { label: '인증서버 등록', q: '인증서버는 어떻게 등록하나요?', category: 'client' },
   { label: 'VD 접속이 안 돼요', q: 'VD 접속이 안 될 때 무엇을 확인하나요?', category: 'trouble' },
-  { label: '로그인했는데 VD가 안 보여요', q: '로그인했는데 VD가 보이지 않아요', category: 'trouble' },
   { label: 'VD가 느려요', q: 'VD가 느릴 때 어떻게 조치하나요?', category: 'trouble' },
-  { label: 'VD 재시작 방법', q: 'VD 전원 켜기·끄기·재시작은 어떻게 하나요?', category: 'client' }
+  { label: '데이터 백업·복구', q: '데이터 백업과 복구는 어떻게 하나요?', category: 'trouble' }
 ];
 export const answers = {
   annual:{title:'사용일 3영업일 전까지 연차를 신청해.',text:'인사 시스템에 날짜와 인수인계 내용을 입력하고, 팀장 승인을 받으면 돼.',steps:['사용 날짜와 인수인계 내용을 준비해.','인사 시스템에서 사용일 3영업일 전까지 신청해. 이 샘플 규정의 영업일은 주말만 제외해.','팀장 승인이 완료됐는지 확인해.'],refs:['annual']},
