@@ -1,5 +1,5 @@
 const kinds=new Set(['answer','plan','excerpt','unknown','scope','knowly']);
-const categories=new Set(['server','client','trouble','hr','pay','trip','life']);
+const categories=new Set(['server','client','trouble','etc','hr','pay','trip','life']);
 export const canSaveAnswer=result=>['answer','plan','excerpt','knowly'].includes(result?.kind);
 export function normalizeHistory(value){
  const seen=new Set();

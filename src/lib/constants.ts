@@ -26,5 +26,9 @@ export const CATEGORY_SUGGESTIONS: Record<string, { questions: string[]; keyword
   '장애 조치': {
     questions: ['VM 접속이 실패할 때 무엇을 확인하나요?', '로그인했는데 VD가 보이지 않아요', 'VM이 느릴 경우 무엇을 확인하나요?', '프로비전이 실패하면 무엇을 확인하나요?'],
     keywords: ['웹서버 접속 불가', 'VDAgent 재설치', 'VM 접속 실패', '백업 및 복구']
+  },
+  기타: {
+    questions: ['Dstation 제품 소개를 알려주세요', 'Dstation의 가상화 기능을 알려주세요', '문제가 해결되지 않으면 기술지원센터에 어떻게 연락하나요?', 'Dstation 무상 유지보수 기간은 얼마나 되나요?'],
+    keywords: ['제품 소개', '보안 특성', '기술지원센터', '유지보수']
   }
 };

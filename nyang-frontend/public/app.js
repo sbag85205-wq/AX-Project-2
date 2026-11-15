@@ -2,13 +2,13 @@ import {fetch} from './transport.js?v=fd4b994ba12d';
 import {createReactionPicker} from './reaction-variety.js?v=115ea2f34987';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=ef11f91be08e';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
-import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=3e865096f4ea';
-import {adminView} from './admin-view.js?v=4fb2ee3579cd';
+import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=9b753157ee28';
+import {adminView} from './admin-view.js?v=d084b0d0aae6';
 import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount} from './community-ui.js?v=6658bcdf0328';
-import {categories,defaultCategory,categoryOf,documents,faq,starters,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=310e82e660a7';
-import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=617eea04a551';
+import {categories,defaultCategory,categoryOf,documents,faq,starters,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=d23baa70cc1c';
+import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=51cccf0d59f9';
 import {createPetInteraction} from './pet-interaction.js?v=355c0da8eb14';
-import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies} from './activity-history.js?v=fd0c4d4b0686';
+import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies} from './activity-history.js?v=d8480aee4246';
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const mode=document.body.dataset.mode;
@@ -269,7 +269,7 @@ function openLibrary(route='/docs'){libraryRoute=route;view='library';petInterac
 async function askKnowly(question,files=[]){
  try{
   const conversation_id=messages.findLast(m=>m.result?.knowly?.conversation_id)?.result.knowly.conversation_id||null;
-  const res=await fetch('/api/knowly',{method:'POST',body:JSON.stringify({question,conversation_id,category:categoryOf(category).label,attachments:files.map(a=>a.kind==='image'?{name:a.name,kind:'image',data_url:a.dataUrl}:{name:a.name,kind:'file',text:a.text})})});
+  const res=await fetch('/api/knowly',{method:'POST',body:JSON.stringify({question,conversation_id,category:categoryOf(category).searchAll?null:categoryOf(category).label,attachments:files.map(a=>a.kind==='image'?{name:a.name,kind:'image',data_url:a.dataUrl}:{name:a.name,kind:'file',text:a.text})})});
   const data=await res.json();if(!res.ok)throw Error(data.error||'문서 검색에 실패했어요.');return data.answer;
  }catch(e){return {error:true,answered:false,summary:[e.message||'연결을 확인한 뒤 다시 질문해 주세요.'],citations:[]};}
 }
@@ -416,7 +416,7 @@ function renderCat(){
  }
 }
 function composer(home=false){const current=categoryOf(category);return `<form class="composer chat-composer" id="question-form"><div class="composer-scope"><span>${icon(current.icon)}<strong id="scope-name">${current.label}</strong>에 질문 중</span><div class="composer-scope-actions"><button type="button" class="text-button" data-action="chat-examples">질문 예시 ${icon('chevron')}</button><button type="button" class="text-button" data-action="choose-category">분야 변경 ${icon('down')}</button></div></div>${attachmentChips()}<div class="input-row">${knowlyOff.employee?'':`<button type="button" class="attach-button" data-action="attach" aria-label="${attachBusy?'첨부 파일을 읽는 중':'사진·파일 첨부'}" title="${attachBusy?'읽는 중…':'사진·파일 첨부'}" ${attachBusy?'disabled':''}>${icon('plus')}</button><input type="file" id="knowly-attach" hidden multiple accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.xlsx,.xls,.csv,.txt,.md">`}<textarea name="question" rows="1" maxlength="1000" aria-label="질문 입력" placeholder="${home?'회사 생활에서 궁금한 점을 물어보세요.':'이어서 질문해 보세요…'}" required>${esc(chatDraft)}</textarea><button class="send-button" aria-label="질문 보내기" title="질문 보내기" type="submit" ${pendingReply?'disabled':''}>${icon('send')}</button></div><div class="composer-meta"><span>등록된 사내 문서와 FAQ에서 답해요.</span><small>Enter 전송 · Shift+Enter 줄바꿈</small></div></form>`;}
-function showCategories(){openModal(`<h2 id="modal-title">어떤 분야가 궁금하세요?</h2><p class="modal-sub">고른 분야의 문서에서 먼저 찾고, 없으면 전체 자료에서 찾아요. 작성 중인 질문은 유지됩니다.</p><div class="category-options">${categories.map(c=>`<button data-select-category="${c.id}" aria-pressed="${c.id===categoryOf(category).id}">${icon(c.icon)}<span><strong>${c.label}</strong><small>${c.detail}</small></span>${icon(c.id===categoryOf(category).id?'check':'chevron')}</button>`).join('')}</div>`);}
+function showCategories(){openModal(`<h2 id="modal-title">어떤 분야가 궁금하세요?</h2><p class="modal-sub">고른 분야의 문서에서 먼저 찾고, 없으면 전체 자료에서 찾아요. 어느 분야인지 모르면 기타를 고르세요. 작성 중인 질문은 유지됩니다.</p><div class="category-options">${categories.map(c=>`<button data-select-category="${c.id}" aria-pressed="${c.id===categoryOf(category).id}">${icon(c.icon)}<span><strong>${c.label}</strong><small>${c.detail}</small></span>${icon(c.id===categoryOf(category).id?'check':'chevron')}</button>`).join('')}</div>`);}
 function resizeComposer(){const field=$('#question-form textarea');if(!field)return;field.style.height='auto';field.style.height=Math.min(140,Math.max(30,field.scrollHeight))+'px';}
 function scrollConversation(){const pane=$('.chat-transcript'),last=pane?.querySelector('.assistant-message:last-child');if(!pane)return;requestAnimationFrame(()=>{if(!pane.isConnected)return;if(last)pane.scrollTop+=last.getBoundingClientRect().top-pane.getBoundingClientRect().top-24;else pane.scrollTop=pane.scrollHeight;});}
 function showChatExamples(){const c=categoryOf(category);openModal(`<h2 id="modal-title">질문 예시</h2><p class="modal-sub">${c.label} 분야에서 물어볼 수 있는 질문이에요.</p><div class="chat-example-list">${faq[c.id].map(q=>`<button class="secondary-button" data-question="${esc(q)}" data-cat="${c.id}">${esc(q)} ${icon('arrow')}</button>`).join('')}</div>`);}
