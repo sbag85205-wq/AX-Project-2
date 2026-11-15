@@ -5,7 +5,19 @@
 .activity-unread{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 4px;border-radius:10px;background:var(--ui-accent);color:var(--ui-bg);font-size:11px}
 .activity-unread[hidden]{display:none}
 .desktop-workspace .chat-home-below{max-width:760px;gap:18px}
-.desktop-workspace .chat-home .home-cat-rewards{position:absolute;left:calc(50% + var(--resident-size)/2 + 20px);top:calc(var(--room-center) + 25px);z-index:8;display:flex;flex-direction:column;align-items:flex-start}
+/* Reserve separate space for the cat, reaction text, and treat button.
+   Long reactions grow the stage instead of covering the cat or composer. */
+.desktop-workspace .chat-home .cat-resident-stage{display:grid;grid-template-columns:minmax(0,1fr) var(--resident-size) minmax(0,1fr);column-gap:64px;row-gap:24px;align-items:start;height:auto;min-height:0;padding:max(24px,calc(var(--room-center) - var(--resident-size)/2 - 108px)) 0 30px}
+.desktop-workspace .chat-home .resident-speech{position:relative;grid-column:1/-1;grid-row:1;top:auto;left:auto;transform:none;justify-self:center}
+.desktop-workspace .chat-home .resident-portrait{position:relative;grid-column:2;grid-row:2;top:auto;left:auto;transform:none}
+.home-cat-aside{grid-column:3;grid-row:2;display:flex;flex-direction:column;align-items:flex-start;gap:16px;min-width:0;padding-top:12px;z-index:3}
+.home-cat-aside .pet-feedback{position:static;width:100%;min-width:0;overflow-wrap:anywhere;animation:none}
+.home-cat-aside .pet-feedback:empty{display:none}
+.home-cat-aside .pet-feedback.has-reaction{animation:emote-appear .2s ease-out both}
+.home-cat-aside .pet-feedback .companion-emote{position:static;display:block;white-space:normal;word-break:keep-all;overflow-wrap:anywhere;line-height:1.6;margin-bottom:10px;animation:none}
+.desktop-workspace .chat-home .home-cat-rewards{position:static;display:flex;flex-direction:column;align-items:flex-start;max-width:100%}
+.desktop-workspace .home-cat-rewards .chat-treat-button{max-width:100%;flex-wrap:wrap;white-space:normal}
+.desktop-workspace .chat-home .heart-2{right:-18%}
 .home-cat-rewards .chat-collect-heart{display:none}
 .desktop-workspace .chat-rewards .chat-treat-button{border:1px solid var(--ui-line);background:var(--ui-panel);color:var(--ui-sub);border-radius:20px;font-size:12px;padding:8px 12px;box-shadow:none;white-space:nowrap}
 .desktop-workspace .chat-rewards .chat-treat-button small{font-size:11px}
