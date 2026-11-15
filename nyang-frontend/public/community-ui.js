@@ -1,8 +1,8 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
-import {boardView} from './board-view.js?v=641388d2d898';
-import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=f613c32ee316';
+import {boardView} from './board-view.js?v=8d0c3f4884c1';
+import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=6baa3024bd67';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const labels={server:'서버 설치 · 설정',client:'클라이언트 접속',trouble:'장애 조치'};
+const labels={server:'서버 설치 · 설정',client:'클라이언트 접속',trouble:'장애 조치',etc:'기타'};
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 let state={loading:true},hooks,filter='all',query='',boardCategory='all',busy=false,connecting=null,authEpoch=0,loginRole='employee',stats=null;
 export const communityState=()=>state;

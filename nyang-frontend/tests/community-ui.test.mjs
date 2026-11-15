@@ -60,6 +60,8 @@ test('board can be narrowed to one category, with counts, and keeps old-category
  assert.ok(client.includes('id="post-b"')&&client.includes('id="post-c"'));assert.ok(!client.includes('id="post-a"')&&!client.includes('id="post-d"'));
  const waiting=boardView(state,'waiting','','client');assert.ok(waiting.includes('id="post-b"')&&!waiting.includes('id="post-c"'));
  assert.ok(boardView(state,'all','','old').includes('id="post-d"'));
+ assert.match(all,/data-board-category="etc"[^>]*>기타<span>0<\/span>/);
+ assert.ok(boardView({...state,posts:[...state.posts,post('e','etc')]},'all','','etc').includes('id="post-e"'));
  assert.ok(boardView(state,'all','','trouble').includes('이 분야에 해당하는 질문이 없어요.'));
  assert.ok(!boardView({...state,posts:state.posts.slice(0,3)}).includes('data-board-category="old"'));
 });

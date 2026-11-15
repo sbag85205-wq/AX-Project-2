@@ -1,7 +1,7 @@
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const labels={server:'서버 설치 · 설정',client:'클라이언트 접속',trouble:'장애 조치',hr:'휴가 · 근태',pay:'급여 · 복지',trip:'출장 · 정산',life:'사내 생활'};
+const labels={server:'서버 설치 · 설정',client:'클라이언트 접속',trouble:'장애 조치',etc:'기타',hr:'휴가 · 근태',pay:'급여 · 복지',trip:'출장 · 정산',life:'사내 생활'};
 // 지금 고를 수 있는 분야. 예전 분야(hr·pay·trip·life)로 올라온 글은 '이전 분야'로 묶어 보여 준다.
-const current=['server','client','trouble'];
+const current=['server','client','trouble','etc'];
 const inCategory=(p,category)=>category==='all'||(category==='old'?!current.includes(p.category):p.category===category);
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 export function boardView(state,filter='all',query='',category='all'){
