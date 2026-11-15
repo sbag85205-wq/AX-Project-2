@@ -107,7 +107,7 @@ tests/                      검색·청크·첨부·출력 검증 단위 테스�
 docs/USER_GUIDE.md          직원·담당자용 사용자 가이드
 docs/tests/                 검색 품질 진단 보고서, VDI 2차 테스트 질문지(정답표 포함)
 .github/workflows/          자동 배포 (프론트엔드 → Vercel, 백엔드 → Supabase)
-vite.config.ts              pdf.js 글꼴 자료(CMap 등)를 /pdfjs/ 로 함께 배포
+vite.embed.config.ts        Knowly 화면 빌드 (pdf.js 글꼴 자료(CMap 등)를 /knowly/pdfjs/ 로 함께 배포)
 ```
 
 ## 처음 설정하기
