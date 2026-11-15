@@ -64,7 +64,7 @@ const tone=text=>personalityText(text,personality);
 function shell(){
  $('#app').innerHTML=`<div class="app-shell studio-shell desktop-workspace">
   <header class="workspace-header">
-   <div class="header-brand"><button class="brand" data-action="reset" aria-label="냥대리 처음으로"><span class="brand-lockup"><img src="${root}assets/tilon-nyang-lockup.png" width="2172" height="724" alt="Tilon — Your dream starts here · 냥대리" fetchpriority="high" decoding="async"></span></button><button class="account-menu-button" data-action="account" id="account-button"></button></div>
+   <div class="header-brand"><button class="brand" data-action="reset" aria-label="냥대리 처음으로"><img class="company-logo" src="${root}assets/tilon-logo.png" width="434" height="118" alt="Tilon — Your dream starts here"><span>냥대리</span></button><button class="account-menu-button" data-action="account" id="account-button"></button></div>
    <nav class="workspace-nav side-nav" aria-label="주 메뉴">
     <button data-action="chat" id="nav-chat">${icon('chat')}<span>물어보기</span></button>
     <button data-action="schedule" id="nav-schedule">${icon('calendar')}<span>내 일정</span><span id="task-count" class="count"></span></button>
