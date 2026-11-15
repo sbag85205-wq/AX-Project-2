@@ -3,10 +3,10 @@
 export const CATEGORIES = ['서버 설치 · 설정', '클라이언트 접속', '장애 조치', '기타'] as const;
 
 export const SUGGESTED_QUESTIONS = [
-  'Linker Client는 어떻게 설치하나요?',
-  '인증서버는 어떻게 등록하나요?',
-  'VD에 접속하는 방법을 알려주세요',
-  'VD 접속이 안 될 때 무엇을 확인하나요?'
+  '사용자 PC에 Linker Client를 설치하는 방법을 알려주세요',
+  '관리서버 인증을 받으려면 인증서버를 어떻게 등록하나요?',
+  '웹서버에 접속이 안 될 때 어떻게 하나요?',
+  'VM이 느릴 경우 무엇을 확인하나요?'
 ];
 
 /**
@@ -20,11 +20,11 @@ export const CATEGORY_SUGGESTIONS: Record<string, { questions: string[]; keyword
     keywords: ['Dcenter 설치', 'CenterPost 설치', 'VDAgent 설치', '기본 설정']
   },
   '클라이언트 접속': {
-    questions: ['Linker Client는 어떻게 설치하나요?', '인증서버는 어떻게 등록하나요?', 'VD에 접속하는 방법을 알려주세요', 'VD 전원 켜기·끄기·재시작은 어떻게 하나요?'],
-    keywords: ['설치 요구사항', '인증서버 등록', 'VD 접속', 'Linker Client 삭제']
+    questions: ['사용자 PC에 Linker Client를 설치하는 방법을 알려주세요', '관리서버 인증을 받으려면 인증서버를 어떻게 등록하나요?', 'VD 접속 전 준비 절차를 알려주세요', 'VD 전원 켜기·끄기·재시작은 어떻게 하나요?'],
+    keywords: ['설치 요구사항', '인증서버 등록', 'VD 툴바', 'Linker Client 삭제']
   },
   '장애 조치': {
-    questions: ['VD 접속이 안 될 때 무엇을 확인하나요?', '로그인했는데 VD가 보이지 않아요', 'VD가 느릴 때 어떻게 조치하나요?', '프로비전이 실패하면 무엇을 확인하나요?'],
-    keywords: ['접속 오류코드', 'VDAgent 재설치', '웹서버 접속 불가', '백업·복구']
+    questions: ['VM 접속이 실패할 때 무엇을 확인하나요?', '로그인했는데 VD가 보이지 않아요', 'VM이 느릴 경우 무엇을 확인하나요?', '프로비전이 실패하면 무엇을 확인하나요?'],
+    keywords: ['웹서버 접속 불가', 'VDAgent 재설치', 'VM 접속 실패', '백업 및 복구']
   }
 };
