@@ -95,6 +95,15 @@ function updateWallet(){
  const unread=unseenReplies(communityState().posts,seenReplies).length,indicator=$('#activity-unread');
  indicator.hidden=!unread;indicator.textContent=unread;indicator.setAttribute('aria-label','새 답변이 달린 내 질문 '+unread+'개');
 }
+// 주 메뉴 순서. 담당자는 '질문 게시판'이 FAQ 관리 뒤에 온다. 순서가 다를 때만 옮긴다(옮기면 버튼의 포커스가 풀리므로).
+const NAV_ORDER={
+ employee:['chat','schedule','board','activity','library','unanswered','statistics','faq','documents','users','model'],
+ staff:['chat','statistics','unanswered','faq','board','documents','users','model','schedule','activity','library']
+};
+function orderNav(staff){
+ const nav=$('.workspace-nav'),want=NAV_ORDER[staff?'staff':'employee'].map(name=>$('#nav-'+name));
+ if(want.some((button,i)=>nav.children[i]!==button))nav.append(...want);
+}
 function render(){
  document.body.dataset.personality=personality;
  const personalityButton=$('#personality-button');if(personalityButton)personalityButton.innerHTML=icon(personality==='warm'?'sun':'moon')+'<span>'+voice().label+'</span>';
@@ -102,6 +111,7 @@ function render(){
  const session=communityState(),staff=session.me?.role==='staff';document.body.dataset.authenticated=String(!!session.member);document.body.dataset.role=staff?'staff':'employee';
  for(const name of ['schedule','activity'])$('#nav-'+name).hidden=staff;
  $('#nav-chat span').textContent=staff?'냥대리 테스트':'물어보기';
+ orderNav(staff);
  if(staff&&!['chat','board','statistics','faq','documents','users','model','unanswered','library'].includes(view))view='unanswered';
  document.body.dataset.view=view;
  for(const name of ['statistics','faq','documents','users','model'])$('#nav-'+name).hidden=!staff;
