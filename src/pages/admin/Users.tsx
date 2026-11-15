@@ -152,12 +152,12 @@ export default function Users() {
               <div className="list-meta">{deptName(u.department_id)}</div>
             </div>
             <label className="sr" htmlFor={`dept-${u.id}`}>{u.login_id} 부서</label>
-            <select id={`dept-${u.id}`} className="select" style={{ width: 130, minHeight: 36 }} value={u.department_id ?? ''} onChange={(e) => update(u, { department_id: e.target.value || null })}>
+            <select id={`dept-${u.id}`} className="select" style={{ width: 130, minHeight: 30 }} value={u.department_id ?? ''} onChange={(e) => update(u, { department_id: e.target.value || null })}>
               <option value="">미지정</option>
               {depts.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
             <label className="sr" htmlFor={`role-${u.id}`}>{u.login_id} 권한</label>
-            <select id={`role-${u.id}`} className="select" style={{ width: 110, minHeight: 36 }} value={u.role} disabled={u.id === me?.id} onChange={(e) => update(u, { role: e.target.value as Role })}>
+            <select id={`role-${u.id}`} className="select" style={{ width: 110, minHeight: 30 }} value={u.role} disabled={u.id === me?.id} onChange={(e) => update(u, { role: e.target.value as Role })}>
               <option value="employee">직원</option>
               <option value="admin">관리자</option>
             </select>

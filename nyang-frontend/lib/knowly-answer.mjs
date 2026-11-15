@@ -14,6 +14,7 @@ export function pageLabel(start,end){
 /**
  * 근거가 있는 답(status 'answered' + 요약 1개 이상)만 answered=true.
  * 출처는 같은 문서·쪽을 한 번만, 최대 6개. details는 steps가 있어도 유지한다(Knowly 답변 카드와 같게).
+ * outside_category: 고른 분야에 근거가 없어 전체 문서에서 찾은 답(chat 함수가 true일 때만 보낸다).
  */
 export function normalizeKnowlyAnswer(answer){
  const a=answer&&typeof answer==='object'?answer:{};
@@ -28,5 +29,5 @@ export function normalizeKnowlyAnswer(answer){
   if(citations.length>=6)break;
  }
  const attachments=(Array.isArray(a.attachments)?a.attachments:[]).slice(0,3).map(n=>({name:text(n?.name,120),read:n?.read===true})).filter(n=>n.name);
- return {answered:status==='answered'&&summary.length>0,status,mode:['faq','llm','search'].includes(a.mode)?a.mode:'search',summary,steps,details:text(a.details,8000),warnings,citations,attachments};
+ return {answered:status==='answered'&&summary.length>0,status,mode:['faq','llm','search'].includes(a.mode)?a.mode:'search',summary,steps,details:text(a.details,8000),warnings,citations,attachments,...(a.outside_category===true?{outside_category:true}:{})};
 }

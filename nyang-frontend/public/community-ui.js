@@ -1,8 +1,8 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
-import {boardView} from './board-view.js?v=008e53f7600c';
-import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=9cfeb982e79d';
-import {categoryLabels as labels,esc,isStaff} from './common.js';
-import {rewardHelp} from './reward-rules.js';
+import {boardView} from './board-view.js?v=08ed8bb0e01b';
+import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=3839cedc6a34';
+import {categories,esc,isStaff} from './common.js?v=b28f10812dc5';
+import {rewardHelp} from './reward-rules.js?v=a99b0c80721c';
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 let state={loading:true},hooks,filter='all',query='',connecting=null,authEpoch=0,loginRole='employee',stats=null;
 // 진행 중인 요청: 같은 동작(같은 글의 좋아요·답변 등)만 겹치지 않게 막고, 다른 동작은 함께 할 수 있다.
@@ -117,7 +117,7 @@ export function unknownOffer(r){
 }
 export function showPostDialog(r){
  if(!state.member){hooks.show('activity');hooks.toast('체험 연결을 준비하고 있어요. 잠시 후 다시 시도해 주세요.');return;}
- hooks.modal(`<h2 id="modal-title">익명 질문 작성</h2><p class="modal-sub">게시할 내용을 확인해 주세요. 이름·급여·개인 계정 정보 등은 적지 마세요.</p>${r.personal?'<p class="privacy-note">개인별 정보는 공개 게시판에서 확인할 수 없어요. 일반적인 절차에 대한 질문으로 바꿔 주세요.</p>':''}<form id="anonymous-post"><label>질문 분야<select name="category">${Object.entries(labels).map(([v,t])=>`<option value="${v}" ${v===r.category?'selected':''}>${t}</option>`).join('')}</select></label><label>게시할 질문<textarea name="body" rows="5" minlength="5" maxlength="2000" required>${r.personal?'':esc(r.q)}</textarea></label><p class="community-caption">게시판에는 ‘익명의 직원’으로 보여요. 지금은 이 브라우저에만 저장돼서, 같은 브라우저로 로그인한 직원·담당자만 볼 수 있어요.</p><label class="consent-check"><input type="checkbox" required> 이 내용을 직원 질문 게시판에 공유할게요.</label><div class="modal-button-row"><button class="primary-button">확인하고 익명으로 게시</button><button type="button" class="text-button" data-action="close-modal">취소</button></div></form>`);
+ hooks.modal(`<h2 id="modal-title">익명 질문 작성</h2><p class="modal-sub">게시할 내용을 확인해 주세요. 이름·급여·개인 계정 정보 등은 적지 마세요.</p>${r.personal?'<p class="privacy-note">개인별 정보는 공개 게시판에서 확인할 수 없어요. 일반적인 절차에 대한 질문으로 바꿔 주세요.</p>':''}<form id="anonymous-post"><label>질문 분야<select name="category">${categories.map(c=>`<option value="${c.id}" ${c.id===r.category?'selected':''}>${c.label}</option>`).join('')}</select></label><label>게시할 질문<textarea name="body" rows="5" minlength="5" maxlength="2000" required>${r.personal?'':esc(r.q)}</textarea></label><p class="community-caption">게시판에는 ‘익명의 직원’으로 보여요. 지금은 이 브라우저에만 저장돼서, 같은 브라우저로 로그인한 직원·담당자만 볼 수 있어요.</p><label class="consent-check"><input type="checkbox" required> 이 내용을 직원 질문 게시판에 공유할게요.</label><div class="modal-button-row"><button class="primary-button">확인하고 익명으로 게시</button><button type="button" class="text-button" data-action="close-modal">취소</button></div></form>`);
 }
 // 이 파일의 클릭 처리는 아래 속성을 가진 버튼만 맡는다. 나머지(data-action 등)는 app.js가 맡는다.
 export const COMMUNITY_CLICK_SELECTOR='[data-delete-post],[data-confirm-delete],[data-restore-post],[data-login-role],[data-community],[data-board-filter],[data-like]';

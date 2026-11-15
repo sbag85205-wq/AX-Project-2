@@ -35,6 +35,8 @@ export interface Answer {
   faq_id?: string;
   /** 질문에 첨부한 파일 이름과 읽었는지 여부 (파일 자체는 저장하지 않는다) */
   attachments?: AttachmentNote[];
+  /** 고른 분야에 근거가 없어 전체 문서에서 찾았을 때만 true */
+  outside_category?: boolean;
 }
 
 // ───────────── 질문 첨부 ─────────────

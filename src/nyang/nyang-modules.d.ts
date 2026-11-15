@@ -16,6 +16,7 @@ declare module '*/nyang-frontend/lib/knowly-answer.mjs' {
     answered: boolean; status: string; mode: string; summary: string[]; steps: string[]; details: string; warnings: string[];
     citations: { title: string; version: string; pages: string; document_id: string; chunk_id: string }[];
     attachments: { name: string; read: boolean }[];
+    outside_category?: true;
   }
   export function pageLabel(start: unknown, end: unknown): string;
   export function normalizeKnowlyAnswer(answer: unknown): NyangKnowlyAnswer;

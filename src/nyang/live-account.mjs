@@ -3,7 +3,7 @@
 //   {id: Knowly 사용자 UUID, username: 로그인 아이디, name, department, role: 'employee'|'staff'}
 // 보상·게시판 규칙은 원래 냥대리 서버와 같은 nyang-frontend/lib/community.mjs를 그대로 쓴다.
 import {AppError,community,seoulDay,wallet} from '../../nyang-frontend/lib/community.mjs';
-import {CATEGORY_IDS} from '../../nyang-frontend/public/common.js';
+import {categoryCounts} from '../../nyang-frontend/public/common.js';
 
 /** 데이터가 들어 있는 테이블. 원래 냥대리 서버의 계정 데모(demo_*) 테이블과 같은 스키마(drizzle 0003·0005)를 쓴다. */
 export const TABLES={members:'demo_members',wallets:'demo_wallets',questions:'demo_questions',posts:'demo_posts',likes:'demo_likes',
@@ -87,6 +87,6 @@ export async function statistics(db,account){
   rows(db,`SELECT m.uid,m.name,m.role,w.data FROM ${T.members} m JOIN ${T.wallets} w ON w.uid=m.uid WHERE m.role='employee'`)]);
  return {day,updatedAt:new Date().toISOString(),accounts:await count(`SELECT COUNT(*) AS n FROM ${T.members} WHERE role='employee' AND active=1`),questions,posts,answered,waiting:posts-answered,attendance,likes,
   daily:Array.from({length:7},(_,i)=>{const d=new Date(new Date(start).getTime()+i*86400000).toISOString().slice(0,10);return {day:d,n:daily.find(x=>x.day===d)?.n||0};}),
-  categories:CATEGORY_IDS.map(category=>({category,n:categories.find(x=>x.category===category)?.n||0})),
+  categories:categoryCounts(categories),
   ranking:rank.map(r=>({username:r.name,name:r.name,role:r.role,points:wallet(r.data).points,questions:wallet(r.data).questions})).sort((a,b)=>b.points-a.points||a.username.localeCompare(b.username)).slice(0,3)};
 }

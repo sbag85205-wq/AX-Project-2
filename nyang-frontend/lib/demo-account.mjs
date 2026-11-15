@@ -1,7 +1,7 @@
 // 이전 독립 프로토타입(Cloudflare Worker + D1)의 공용 시연 계정 2개(user01·admin01) 처리. 통합 앱은 쓰지 않는다
 // (통합 앱의 계정별 활동은 src/nyang/live-account.mjs).
 import {AppError,community,seoulDay,wallet} from './community.mjs';
-import {CATEGORY_IDS} from '../public/common.js';
+import {categoryCounts} from '../public/common.js';
 const accounts={user01:{role:'employee',name:'직원',department:''},admin01:{role:'staff',name:'담당자',department:'운영 담당'}};
 export const accountRole=username=>accounts[username]?.role||null;
 const hex=a=>Array.from(new Uint8Array(a),x=>x.toString(16).padStart(2,'0')).join('');
@@ -90,7 +90,7 @@ export async function statistics(db,username){
   rows(db,"SELECT m.uid,m.name,m.role,w.data FROM demo_members m JOIN demo_wallets w ON w.uid=m.uid WHERE m.role='employee'")]);
  return {day,updatedAt:new Date().toISOString(),accounts:await count("SELECT COUNT(*) AS n FROM demo_members WHERE role='employee' AND active=1"),questions,posts,answered,waiting:posts-answered,attendance,likes,
   daily:Array.from({length:7},(_,i)=>{const d=new Date(new Date(start).getTime()+i*86400000).toISOString().slice(0,10);return {day:d,n:daily.find(x=>x.day===d)?.n||0};}),
-  categories:CATEGORY_IDS.map(category=>({category,n:categories.find(x=>x.category===category)?.n||0})),
+  categories:categoryCounts(categories),
   ranking:rank.map(r=>({username:r.uid.slice(5),name:r.name,role:r.role,points:wallet(r.data).points,questions:wallet(r.data).questions})).sort((a,b)=>b.points-a.points||a.username.localeCompare(b.username)).slice(0,3)};
 }
 export async function accountRequest(db,env,request){

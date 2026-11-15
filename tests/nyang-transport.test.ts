@@ -54,6 +54,9 @@ describe('main Knowly transport', () => {
     const data = await (await request('/api/knowly', post({ question: '연차' }))).json();
     expect(data.answer.citations.map((c: { pages: string }) => c.pages)).toEqual(['3쪽', '4–6쪽']);
     expect(data.answer).toMatchObject({ answered: true, details: '자세히', steps: ['신청'], message_id: 'answer-a' });
+    expect(data.answer.outside_category).toBeUndefined();
+    mocks.call.mockResolvedValue({ answer: { ...answer, outside_category: true }, conversation_id: 'thread-a', message_id: 'answer-c' });
+    expect((await (await request('/api/knowly', post({ question: '연차' }))).json()).answer.outside_category).toBe(true);
     mocks.call.mockResolvedValue({ answer: { ...answer, summary: [] }, conversation_id: 'thread-a', message_id: 'answer-b' });
     expect((await (await request('/api/knowly', post({ question: '연차' }))).json()).answer.answered).toBe(false);
   });

@@ -16,6 +16,7 @@ const FAQ_MIN_SIMILARITY = 0.6;
 const REWRITE_MIN_CHARS = 15;
 const REWRITE_TIMEOUT_MS = 10000;
 const GROUP_MIN_SIMILARITY = 0.45;
+const MAX_CATEGORY = 40;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -46,6 +47,10 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
   const question = typeof body.question === 'string' ? body.question.trim() : '';
   if (!question) return errorResponse(400, 'empty_question', '질문을 입력해 주세요.');
   if (question.length > MAX_QUESTION) return errorResponse(400, 'too_long', `질문은 ${MAX_QUESTION}자 이하로 입력해 주세요.`);
+  // 채팅에서 고른 분야. 있으면 그 분야 문서에서 먼저 찾고, 근거가 없을 때만 전체 문서에서 다시 찾는다.
+  const selectedCategory = typeof body.category === 'string' && body.category.trim().length <= MAX_CATEGORY
+    ? body.category.trim() || null
+    : null;
   let attachments: AttachmentInput[];
   try {
     attachments = parseAttachments(body.attachments);
@@ -74,6 +79,7 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
   let model: string | null = null;
   let inputTokens: number | null = null;
   let outputTokens: number | null = null;
+  let outsideCategory = false;
 
   // 0) 첨부 읽기: 파일은 브라우저가 뽑은 글자를 그대로, 사진은 판독 모델로 글자·설명을 얻는다.
   //    첨부 자체는 저장하지 않고 이번 답변에만 쓴다 (대화에는 파일 이름과 읽었는지만 남는다).
@@ -155,12 +161,13 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
       return null;
     })) ?? [];
     type Row = Record<string, unknown> & { id: string; keyword_score: number; vector_score: number | null };
-    const search = async (searchTermList: string[], embedding: number[] | null | undefined): Promise<(Row & { score: number })[]> => {
+    const search = async (searchTermList: string[], embedding: number[] | null | undefined, filterCategory: string | null): Promise<(Row & { score: number })[]> => {
       const { data, error } = await db.rpc('search_chunks', {
         terms: searchTermList,
         query_embedding: embedding ? JSON.stringify(embedding) : null,
         match_count: CANDIDATE_COUNT,
-        vector_weight: settings.vector_weight
+        vector_weight: settings.vector_weight,
+        filter_category: filterCategory
       });
       if (error) throw error;
       // 관리자 미리보기와 같은 규칙: 후보 8개 → 점수 보정·재정렬 → 기준 통과한 앞의 5개
@@ -168,59 +175,69 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
     };
     // 질문 모양마다, 그리고 첨부 내용으로 따로 찾은 뒤 합친다.
     // 키워드 점수는 검색어 중 맞은 비율이라 한데 섞으면 부연 설명·첨부 때문에 점수가 낮아진다.
-    const lists = await Promise.all([
-      ...bases.map((q, i) => search(searchTerms(q).length ? searchTerms(q) : [q], embeddings[i])),
-      ...(attachedText && searchTerms(attachedText, 16).length ? [search(searchTerms(attachedText, 16), embeddings[bases.length])] : [])
-    ]);
-    const rows = mergeEvidence(lists);
+    const searchAll = async (filterCategory: string | null) => mergeEvidence(await Promise.all([
+      ...bases.map((q, i) => search(searchTerms(q).length ? searchTerms(q) : [q], embeddings[i], filterCategory)),
+      ...(attachedText && searchTerms(attachedText, 16).length ? [search(searchTerms(attachedText, 16), embeddings[bases.length], filterCategory)] : [])
+    ]));
+    // 찾은 근거로 답을 만든다 (근거가 없으면 '근거 없음' 답)
+    const answerFrom = async (rows: Record<string, unknown>[]): Promise<Answer> => {
+      const evidence: Evidence[] = rows
+        .slice(0, EVIDENCE_COUNT)
+        .map((r, i) => ({
+          source_id: `S${i + 1}`,
+          chunk_id: r.id as string,
+          document_id: r.document_id as string,
+          document_title: r.document_title as string,
+          version: r.document_version as string,
+          page_start: r.page_start as number,
+          page_end: r.page_end as number,
+          section_title: (r.section_title as string) ?? null,
+          content: r.content as string
+        }));
 
-    const evidence: Evidence[] = rows
-      .slice(0, EVIDENCE_COUNT)
-      .map((r: Record<string, unknown>, i: number) => ({
-        source_id: `S${i + 1}`,
-        chunk_id: r.id as string,
-        document_id: r.document_id as string,
-        document_title: r.document_title as string,
-        version: r.document_version as string,
-        page_start: r.page_start as number,
-        page_end: r.page_end as number,
-        section_title: (r.section_title as string) ?? null,
-        content: r.content as string
-      }));
-
-    if (!evidence.length) {
-      answer = noEvidenceAnswer();
-    } else {
+      if (!evidence.length) return noEvidenceAnswer();
       const { data: doc } = await db.from('documents').select('category').eq('id', evidence[0].document_id).single();
       category = doc?.category ?? null;
-      if (llmConfigured()) {
+      if (!llmConfigured()) return searchOnlyAnswer(evidence);
+      try {
+        const prompt = buildUserPrompt(question, evidence, attached);
+        let result = await chatCompletion(SYSTEM_PROMPT, prompt, settings.llm_model);
+        model = result.model;
+        inputTokens = (inputTokens ?? 0) + (result.input_tokens ?? 0);
+        outputTokens = (outputTokens ?? 0) + (result.output_tokens ?? 0);
+        let parsed: Answer;
         try {
-          const prompt = buildUserPrompt(question, evidence, attached);
-          let result = await chatCompletion(SYSTEM_PROMPT, prompt, settings.llm_model);
-          model = result.model;
+          parsed = parseModelAnswer(result.text, evidence);
+        } catch (parseError) {
+          // 형식이 깨지면 1회만 다시 요청
+          result = await chatCompletion(SYSTEM_PROMPT,
+            `${prompt}\n\n이전 출력이 규칙에 맞지 않았습니다(${(parseError as Error).message}). 지정한 JSON 형식으로만 다시 답하세요.`,
+            settings.llm_model);
           inputTokens = (inputTokens ?? 0) + (result.input_tokens ?? 0);
           outputTokens = (outputTokens ?? 0) + (result.output_tokens ?? 0);
-          try {
-            answer = parseModelAnswer(result.text, evidence);
-          } catch (parseError) {
-            // 형식이 깨지면 1회만 다시 요청
-            result = await chatCompletion(SYSTEM_PROMPT,
-              `${prompt}\n\n이전 출력이 규칙에 맞지 않았습니다(${(parseError as Error).message}). 지정한 JSON 형식으로만 다시 답하세요.`,
-              settings.llm_model);
-            inputTokens = (inputTokens ?? 0) + (result.input_tokens ?? 0);
-            outputTokens = (outputTokens ?? 0) + (result.output_tokens ?? 0);
-            answer = parseModelAnswer(result.text, evidence);
-          }
-          if (answer.status === 'insufficient_evidence') answer = noMatchingRuleAnswer(answer, evidence);
-        } catch (e) {
-          console.error('llm failed', (e as Error).message);
-          answer = searchOnlyAnswer(evidence);
-          answer.warnings = ['요약 모델 응답에 문제가 있어 관련 문서 내용을 그대로 보여드려요.'];
+          parsed = parseModelAnswer(result.text, evidence);
         }
-      } else {
-        answer = searchOnlyAnswer(evidence);
+        return parsed.status === 'insufficient_evidence' ? noMatchingRuleAnswer(parsed, evidence) : parsed;
+      } catch (e) {
+        console.error('llm failed', (e as Error).message);
+        const fallback = searchOnlyAnswer(evidence);
+        fallback.warnings = ['요약 모델 응답에 문제가 있어 관련 문서 내용을 그대로 보여드려요.'];
+        return fallback;
+      }
+    };
+
+    const rows = await searchAll(selectedCategory);
+    let found: Answer = await answerFrom(rows);
+    // 고른 분야에서 답을 내지 못했으면(근거 없음·근거 부족) 전체 문서에서 한 번 더 찾는다.
+    // 분야를 잘못 골라도 답을 놓치지 않게 하려는 것이고, 다른 분야에서 새 근거가 나올 때만 다시 답한다.
+    if (selectedCategory && found.status === 'insufficient_evidence') {
+      const allRows = await searchAll(null);
+      if (allRows.some((r) => !rows.some((p) => p.id === r.id))) {
+        found = await answerFrom(allRows);
+        outsideCategory = true;
       }
     }
+    answer = found;
   }
 
   if (notes.length) {
@@ -234,8 +251,10 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
     };
   }
 
+  if (outsideCategory) answer = { ...answer, outside_category: true };
+
   if (answer.status === 'insufficient_evidence') {
-    await recordUnanswered(db, question, category ?? '기타', 'no_answer');
+    await recordUnanswered(db, question, category ?? selectedCategory ?? '기타', 'no_answer');
   }
 
   const { data: message, error: msgError } = await db.from('messages').insert({
@@ -248,7 +267,7 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
     message_id: message.id,
     user_id: caller.user.id,
     department_id: caller.profile.department_id,
-    category,
+    category: category ?? selectedCategory,
     status: answer.status === 'insufficient_evidence' ? 'insufficient_evidence' : 'answered',
     mode: answer.mode,
     model,
