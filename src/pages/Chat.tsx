@@ -73,6 +73,8 @@ export default function Chat() {
   // 대화를 바꿀 때마다 view 번호를 올리고 await 뒤에 같은 화면인지 확인한다.
   const activeId = useRef<string | null>(null);
   const view = useRef(0);
+  /** 이 화면에서 지운 대화 (답변을 기다리는 사이 지웠으면 늦게 온 결과를 조용히 버린다) */
+  const deletedIds = useRef(new Set<string>());
 
   /** 보이는 대화를 바꾼다. 새 view 번호를 돌려준다. */
   const showConversation = (id: string | null) => {
@@ -167,6 +169,7 @@ export default function Chat() {
     } catch (e) {
       return toast(errorMessage(e));
     }
+    deletedIds.current.add(id);
     if (id === activeId.current) newConversation();
     setConversations((list) => list.filter((c) => c.id !== id));
     toast('대화를 삭제했어요.');
@@ -176,6 +179,7 @@ export default function Chat() {
     const question = text.trim() || (files.length ? ATTACH_ONLY_QUESTION : '');
     if (!question || busy || preparing) return;
     const token = view.current;
+    const sentTo = activeId.current;
     const now = new Date().toISOString();
     const tempUser: Message = { id: `u-${now}`, role: 'user', content: question, answer: null, vote: null, created_at: now, attachments: files };
     const tempBot: Message = { id: `b-${now}`, role: 'assistant', content: '', answer: null, vote: null, created_at: now, pending: true };
@@ -184,10 +188,15 @@ export default function Chat() {
     setAttachments([]);
     setBusy(true);
     try {
-      const res = await ask(question, activeId.current, files);
+      const res = await ask(question, sentTo, files);
       loadConversations();
       // 기다리는 사이 다른 대화로 옮겼으면 지금 화면에 붙이지 않는다 (답변은 원래 대화에 저장돼 있다)
-      if (view.current !== token) return toast('이전 대화의 답변이 도착했어요. 대화 기록에서 볼 수 있어요.');
+      if (view.current !== token) {
+        if (deletedIds.current.has(res.conversation_id)) return;
+        // 다른 대화를 보다가 같은 대화로 돌아와 있으면(A → B → A) 저장된 답변까지 다시 불러온다
+        if (activeId.current === res.conversation_id) return void loadMessages(res.conversation_id, view.current);
+        return toast('이전 대화의 답변이 도착했어요. 대화 기록에서 볼 수 있어요.');
+      }
       const notes = res.answer.attachments ?? [];
       setMessages((m) => m.map((x) => {
         if (x.id === tempBot.id) return { ...x, id: res.message_id, answer: res.answer, content: res.answer.summary.join('\n'), pending: false };
@@ -197,7 +206,10 @@ export default function Chat() {
       activeId.current ??= res.conversation_id;
       setCurrentId((prev) => prev ?? res.conversation_id);
     } catch (e) {
-      if (view.current !== token) return toast(`이전 대화에서 보낸 질문에 답하지 못했어요. ${errorMessage(e)}`);
+      if (view.current !== token) {
+        if (sentTo && deletedIds.current.has(sentTo)) return;
+        return toast(`이전 대화에서 보낸 질문에 답하지 못했어요. ${errorMessage(e)}`);
+      }
       setMessages((m) => m.map((x) => (x.id === tempBot.id ? { ...x, pending: false, error: errorMessage(e) } : x)));
     } finally {
       setBusy(false);
