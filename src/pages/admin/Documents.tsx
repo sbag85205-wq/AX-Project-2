@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState, type DragEvent, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { GearIcon } from '../../components/Icons';
+import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { callFunction, errorMessage } from '../../lib/api';
 import { CATEGORIES } from '../../lib/constants';
@@ -27,6 +29,8 @@ export default function Documents() {
   const [progress, setProgress] = useState('');
   const [error, setError] = useState('');
   const [dragging, setDragging] = useState(false);
+  const [editing, setEditing] = useState<{ doc: DocumentRow; title: string; category: string } | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     const { data } = await supabase.from('documents').select('*').order('created_at', { ascending: false });
@@ -36,6 +40,22 @@ export default function Documents() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // 톱니바퀴: 문서명과 카테고리만 바꾼다. 내용(조각)은 그대로라 다시 올릴 필요가 없다.
+  const saveEdit = async () => {
+    if (!editing) return;
+    const title = editing.title.trim();
+    if (!title) return toast('문서명을 입력해 주세요.');
+    setSaving(true);
+    const { error: e } = await supabase.from('documents')
+      .update({ title, category: editing.category, updated_at: new Date().toISOString() })
+      .eq('id', editing.doc.id);
+    setSaving(false);
+    if (e) return toast('문서 정보를 바꾸지 못했어요.');
+    toast('문서 정보를 바꿨어요.');
+    setEditing(null);
+    load();
+  };
 
   // 끌어다 놓은 파일을 파일 입력칸에 그대로 넣어, 선택한 것과 똑같이 동작하게 한다.
   const drop = (e: DragEvent<HTMLDivElement>) => {
@@ -162,12 +182,39 @@ export default function Documents() {
             </div>
             <span className={`pill ${STATUS[d.status][1]}`}>{STATUS[d.status][0]}</span>
             {d.status !== 'processing' && <Link className="btn btn-sm" to={`/docs/${d.id}`}>보기</Link>}
+            <button type="button" className="btn btn-sm btn-ghost doc-settings" onClick={() => setEditing({ doc: d, title: d.title, category: d.category })} aria-label={`${d.title} 문서명·카테고리 수정`} title="문서명·카테고리 수정"><GearIcon /></button>
             {d.status === 'ready' && <button type="button" className="btn btn-sm" onClick={() => setStatus(d, 'archived')}>검색 제외</button>}
             {d.status === 'archived' && <button type="button" className="btn btn-sm" onClick={() => setStatus(d, 'ready')}>다시 사용</button>}
             <button type="button" className="btn btn-sm btn-danger" onClick={() => remove(d)}>삭제</button>
           </div>
         ))}
       </section>
+
+      {editing && (
+        <Modal
+          title="문서 정보 수정"
+          onClose={() => setEditing(null)}
+          actions={
+            <>
+              <button type="button" className="btn" onClick={() => setEditing(null)}>취소</button>
+              <button type="button" className="btn btn-primary" disabled={saving || !editing.title.trim()} onClick={saveEdit}>{saving ? '저장 중…' : '저장'}</button>
+            </>
+          }
+        >
+          <div className="field">
+            <label htmlFor="edit-title">문서명</label>
+            <input id="edit-title" className="input" value={editing.title} maxLength={200} onChange={(e) => setEditing({ ...editing, title: e.target.value })} />
+          </div>
+          <div className="field">
+            <label htmlFor="edit-cat">카테고리</label>
+            <select id="edit-cat" className="select" value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value })}>
+              {!(CATEGORIES as readonly string[]).includes(editing.doc.category) && <option value={editing.doc.category}>{editing.doc.category} (이전 분류)</option>}
+              {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+            </select>
+            <span className="hint">채팅에서 고른 분야와 카테고리가 같은 문서를 먼저 찾아요. 파일 내용은 그대로라 다시 올릴 필요가 없어요.</span>
+          </div>
+        </Modal>
+      )}
     </main>
   );
 }

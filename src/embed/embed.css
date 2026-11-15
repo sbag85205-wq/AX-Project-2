@@ -175,3 +175,7 @@ html[data-theme=dark] .chat-scroll { scrollbar-color: #555967 transparent; }
 .dept-pill { display: inline-flex; align-items: center; gap: 4px; padding-right: 4px; }
 .dept-remove { display: grid; place-items: center; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--faint); font-size: 14px; line-height: 1; cursor: pointer; }
 .dept-remove:hover { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+
+/* 문서 관리: 문서명·카테고리 수정 톱니바퀴 */
+.doc-settings { width: 30px; padding: 0; color: var(--muted); }
+.doc-settings:hover { background: var(--surface-2); color: var(--text); }
