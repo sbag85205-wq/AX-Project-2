@@ -21,16 +21,24 @@ paths.moon='M20.9 13.1A9 9 0 0 1 10.9 3a9 9 0 1 0 10 10.1Z';
 paths.cat='M5 9 4 3l6 4h4l6-4-1 6a8 8 0 1 1-14 0ZM8 12h.01M16 12h.01m-6 4 2 1 2-1';
 paths.activity='M4 20h16M7 16V9m5 7V4m5 12v-5';
 paths.shirt='m8 3-5 4 3 4 2-1v11h8V10l2 1 3-4-5-4a4 4 0 0 1-8 0Z';
+// 브라우저 저장(localStorage). 키 이름은 예전과 같다.
+// read/save: 이 브라우저 공통 설정(테마·움직임·배경).
+// readMine/saveMine: 로그인 계정별 기록(대화·일정·질문 기록·성격 등) → 'nyang-account:<계정>:<키>'.
 let activeAccount=null;
-const personalKeys=new Set(['om-docs','om-tasks','om-question-history','om-seen-replies','om-chat-sessions','om-chat-active','om-personality']);
-const storageKey=key=>personalKeys.has(key)?'nyang-account:'+(activeAccount||'signed-out')+':'+key:key;
-function read(key,fallback){try{return JSON.parse(localStorage.getItem(storageKey(key)))??fallback;}catch{return fallback;}}
-function save(key,value){try{localStorage.setItem(storageKey(key),JSON.stringify(value));return true;}catch{toast('브라우저 저장 공간이 부족해 저장하지 못했어요.');return false;}}
-let uploads=read('om-docs',[]),tasks=read('om-tasks',[]),messages=[],category=null,view='chat',filter='today',selectedDay=localDate(),dialogOpener=null;
-let chats=[],activeChatId=null,chatHistoryCollapsed=false,chatHistoryCategory='all',chatHistoryFolder='all',historyMessageId=null;
-let chatDraft='',pendingReply=null,replyTimer=null,heroTransition=null;
-let history=normalizeHistory(read('om-question-history',[])),activityTab='recent',activityQuery='',seenReplies=read('om-seen-replies',{}),scheduleView='todos';
-if(!seenReplies||typeof seenReplies!=='object')seenReplies={};
+const accountKey=key=>'nyang-account:'+(activeAccount||'signed-out')+':'+key;
+function read(key,fallback){try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}}
+function save(key,value){try{localStorage.setItem(key,JSON.stringify(value));return true;}catch{toast('브라우저 저장 공간이 부족해 저장하지 못했어요.');return false;}}
+const readMine=(key,fallback)=>read(accountKey(key),fallback);
+const saveMine=(key,value)=>save(accountKey(key),value);
+let uploads=readMine('om-docs',[]),tasks=readMine('om-tasks',[]),view='chat',filter='today',selectedDay=localDate(),dialogOpener=null;
+// 열려 있는 대화 하나의 상태. 대화를 열거나 새로 시작하거나 계정이 바뀌면 통째로 바꾼다.
+// id: 대화 기록 id, messages: 질문·답변, category: 고른 분야, draft: 입력 중인 글, pendingReply·replyTimer: 기다리는 답변,
+// heroTransition: 첫 질문 때 고양이가 옮겨가는 애니메이션 시작 위치, historyMessageId: 분야별 기록에서 연 질문
+const newChat=(fields={})=>({id:null,messages:[],category:null,draft:'',pendingReply:null,replyTimer:null,heroTransition:null,historyMessageId:null,...fields});
+let chat=newChat();
+let chats=[],chatHistoryCollapsed=false,chatHistoryCategory='all',chatHistoryFolder='all';
+const readSeenReplies=()=>{const value=readMine('om-seen-replies',{});return value&&typeof value==='object'?value:{};};
+let history=normalizeHistory(readMine('om-question-history',[])),activityTab='recent',activityQuery='',seenReplies=readSeenReplies(),scheduleView='todos';
 const allDocs=()=>[...documents,...uploads];
 const badge=(text,cls='')=>`<span class="badge ${cls}">${text}</span>`;
 let toastTimer=null,happyTimer=null;
@@ -228,13 +236,13 @@ function openLibrary(route='/docs'){libraryRoute=route;view='library';petInterac
 // 개인 Knowly 세션의 답변 또는 명시적인 오류를 표시한다.
 async function askKnowly(question,files=[]){
  try{
-  const conversation_id=messages.findLast(m=>m.result?.knowly?.conversation_id)?.result.knowly.conversation_id||null;
-  const res=await fetch('/api/knowly',{method:'POST',body:JSON.stringify({question,conversation_id,category:categoryOf(category).label,attachments:files.map(a=>a.kind==='image'?{name:a.name,kind:'image',data_url:a.dataUrl}:{name:a.name,kind:'file',text:a.text})})});
+  const conversation_id=chat.messages.findLast(m=>m.result?.knowly?.conversation_id)?.result.knowly.conversation_id||null;
+  const res=await fetch('/api/knowly',{method:'POST',body:JSON.stringify({question,conversation_id,category:categoryOf(chat.category).label,attachments:files.map(a=>a.kind==='image'?{name:a.name,kind:'image',data_url:a.dataUrl}:{name:a.name,kind:'file',text:a.text})})});
   const data=await res.json();if(!res.ok)throw Error(data.error||'문서 검색에 실패했어요.');return data.answer;
  }catch(e){return {error:true,answered:false,summary:[e.message||'연결을 확인한 뒤 다시 질문해 주세요.'],citations:[]};}
 }
 async function voteKnowly(messageId,vote){
- const m=messages.find(x=>x.result?.messageId===messageId),k=m?.result?.knowly;if(!k?.message_id)return;
+ const m=chat.messages.find(x=>x.result?.messageId===messageId),k=m?.result?.knowly;if(!k?.message_id)return;
  const next=k.vote===vote?null:vote;
  try{const res=await fetch('/api/knowly',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'feedback',message_id:k.message_id,vote:next})}),data=await res.json().catch(()=>null);if(!res.ok)throw Error(data?.error||'평가를 저장하지 못했어요.');k.vote=next;saveCurrentChat();render();toast(next?'평가를 남겼어요. 고마워요!':'평가를 취소했어요.');}
  catch(err){toast(err.message);}
@@ -260,14 +268,14 @@ async function addAttachments(files){
    try{attachments.push(await lib.prepareAttachment(file));}catch(err){toast(err.message||`${file.name}을(를) 읽지 못했어요.`);}
   }
  }catch{toast('첨부 기능을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.');}
- finally{attachBusy=false;const draft=$('#question-form textarea')?.value;if(draft!=null)chatDraft=draft;render();}
+ finally{attachBusy=false;const draft=$('#question-form textarea')?.value;if(draft!=null)chat.draft=draft;render();}
 }
 function attachmentChips(){return attachments.length?`<div class="composer-attachments" aria-label="첨부한 파일">${attachments.map(a=>`<span class="admin-tag">${esc(a.kind==='image'?'사진':'파일')} · ${esc(a.name)} <button type="button" class="text-button" data-remove-attach="${esc(a.id)}" aria-label="${esc(a.name)} 첨부 빼기">×</button></span>`).join('')}</div>`:'';}
 function resultHTML(r){
  if(r.kind==='answer'){const a=personalityAnswer(answers[r.id],personality),detail=a.steps?`<ol class="answer-steps">${a.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`:'';return `<div class="answer-content"><span class="answer-label">${icon('check')} 자료에서 확인한 답변</span><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p>${answerTools(r,a.refs,detail)}</div>`;}
  if(r.kind==='knowly')return knowlyHTML(r);
  if(r.kind==='unknown')return `<div class="answer-content"><span class="answer-label muted">${icon('info')} 확인할 수 없는 내용</span><h3>${voice().unknown}</h3><p>${r.personal?'개인별 잔여 연차·급여·계정 정보에는 접근할 수 없어요. 사내 시스템이나 담당 부서에서 확인해 주세요.':voice().unknownDetail}</p></div>${unknownOffer(r)}`;
- if(r.kind==='scope')return `<div class="answer-content"><h3>${voice().scope}</h3><p>지금은 ${categoryLabels[r.category||category]||''} 자료 안에서 답하고 있어요.</p><button class="secondary-button" data-switch-category="${r.target}" data-retry="${esc(r.q)}">${categoryLabels[r.target]} 분야로 바꿔서 질문 ${icon('arrow')}</button></div>`;
+ if(r.kind==='scope')return `<div class="answer-content"><h3>${voice().scope}</h3><p>지금은 ${categoryLabels[r.category||chat.category]||''} 자료 안에서 답하고 있어요.</p><button class="secondary-button" data-switch-category="${r.target}" data-retry="${esc(r.q)}">${categoryLabels[r.target]} 분야로 바꿔서 질문 ${icon('arrow')}</button></div>`;
  if(r.kind==='excerpt'){const long=r.text.length>180;return `<div class="answer-content"><span class="answer-label">${icon('book')} 업로드 자료 원문 검색</span><h3>${esc(r.title)}</h3><p class="excerpt">${esc(long?r.text.slice(0,180)+'…':r.text)}</p><p class="caption">${long?'문단 일부예요. ':''}${personality==='warm'?'답변으로 확인된 내용은 아니니 원문을 확인해 주세요.':'답변으로 확인된 내용은 아니니 원문을 확인해 줘.'}</p>${answerTools(r,[r.ref],long?`<p class="excerpt">${esc(r.text)}</p>`:'','문단 펼치기')}</div>`;}
  if(r.kind==='plan')return `<div class="answer-content"><span class="answer-label">${icon('check')} 자료에서 확인한 답변</span><h3>${tone('출장은 출발 3영업일 전까지 신청해.')}</h3><ul class="answer-essentials"><li>팀장 승인 후 교통·숙박 예약</li><li>출장 중 영수증 보관</li><li>복귀 다음 날부터 7일 이내 정산 신청</li></ul>${answerTools(r,['approval','booking','receipt','settle'],tone('<ol class="answer-steps"><li><strong>출장 신청</strong>목적·일정·목적지·예상 비용을 작성하고 팀장 승인을 받아.</li><li><strong>교통·숙박 예약</strong>승인 후 예약하고 확인서를 보관해. 숙박비는 1박 100,000원까지, 초과 비용은 별도 사전 승인이 필요해.</li><li><strong>증빙 보관</strong>결제 날짜·사용처·금액이 보이는 영수증을 챙겨.</li><li><strong>정산 신청</strong>영수증·출장 승인 내역·정산 신청서를 첨부해 팀장에게 승인 요청해.</li></ol>'))}</div>`;
  return '';
@@ -290,7 +298,7 @@ function addTodo(r,title,date){
  const key=`todo:${r.messageId}:${date}:${title}`,exists=tasks.some(t=>t.key===key);
  const item={id:crypto.randomUUID(),key,title,date,ref:null,note:r.q?'냥대리에게 물어본 질문: '+r.q:'냥대리 답변에서 추가한 할 일',deadline:null,type:'내 할 일',planType:'todo',planLabel:'냥대리 답변',tripStart:date,done:false};
  const next=exists?tasks:[...tasks,item];
- if(exists||save('om-tasks',next)){tasks=next;r.start=date;r.end=date;r.items=[{title}];r.decision='added';render();toast(exists?'이미 캘린더에 챙겨 둔 일정이야.':'1개의 할 일을 내 일정에 넣었어.');}
+ if(exists||saveMine('om-tasks',next)){tasks=next;r.start=date;r.end=date;r.items=[{title}];r.decision='added';render();toast(exists?'이미 캘린더에 챙겨 둔 일정이야.':'1개의 할 일을 내 일정에 넣었어.');}
 }
 function scheduleOffer(r){
  const mode=scheduleMode(r);
@@ -307,18 +315,18 @@ function schedulePreview(r){
 function messageTime(value){return new Date(value||Date.now()).toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'});}
 function miniCat(){return `<div class="message-avatar mini-cat" aria-hidden="true"><div class="pet-body"><div class="pet-resolution">${cat('','resident')}${outfitHTML()}</div></div></div>`;}
 function conversation(){
- const lastAssistant=messages.findLastIndex(m=>m.role==='assistant');
- const markup=messages.map((m,i)=>{const day=!i||localDate(new Date(m.at))!==localDate(new Date(messages[i-1].at))?`<div class="chat-day-divider"><span>${new Date(m.at).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'long'})}</span></div>`:'';return day+(m.role==='user'?`<article class="chat-row from-me"><div class="user-message">${esc(m.text)}${Array.isArray(m.files)&&m.files.length?`<small class="user-attachments">첨부 · ${m.files.map(esc).join(', ')}</small>`:''}</div><time>${messageTime(m.at)}</time></article>`:`<article class="chat-row from-nyang assistant-message" data-reply="${m.result.messageId}">${i===lastAssistant&&!pendingReply?'<div class="active-cat-slot"></div>':miniCat()}<div class="chat-message-body"><div class="assistant-name">냥대리 <span>업무 메이트</span>${i===lastAssistant&&!pendingReply?`<div class="chat-rewards inline-cat-rewards">${chatRewards()}</div>`:''}</div><div class="answer-wrap">${resultHTML(m.result)}${scheduleOffer(m.result)}</div><time>${messageTime(m.at)}</time></div></article>`);}).join('');
- return `<div class="conversation" role="log" aria-label="냥대리와의 대화" aria-live="polite" aria-relevant="additions text">${markup}${pendingReply?`<article class="chat-row from-nyang assistant-message typing-message"><div class="active-cat-slot"></div><div class="chat-message-body"><div class="assistant-name">냥대리 <span>업무 메이트</span></div><div class="typing-bubble" role="status" aria-label="냥대리가 답변을 준비하고 있어요"><i></i><i></i><i></i></div></div></article>`:''}</div>`;
+ const lastAssistant=chat.messages.findLastIndex(m=>m.role==='assistant');
+ const markup=chat.messages.map((m,i)=>{const day=!i||localDate(new Date(m.at))!==localDate(new Date(chat.messages[i-1].at))?`<div class="chat-day-divider"><span>${new Date(m.at).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'long'})}</span></div>`:'';return day+(m.role==='user'?`<article class="chat-row from-me"><div class="user-message">${esc(m.text)}${Array.isArray(m.files)&&m.files.length?`<small class="user-attachments">첨부 · ${m.files.map(esc).join(', ')}</small>`:''}</div><time>${messageTime(m.at)}</time></article>`:`<article class="chat-row from-nyang assistant-message" data-reply="${m.result.messageId}">${i===lastAssistant&&!chat.pendingReply?'<div class="active-cat-slot"></div>':miniCat()}<div class="chat-message-body"><div class="assistant-name">냥대리 <span>업무 메이트</span>${i===lastAssistant&&!chat.pendingReply?`<div class="chat-rewards inline-cat-rewards">${chatRewards()}</div>`:''}</div><div class="answer-wrap">${resultHTML(m.result)}${scheduleOffer(m.result)}</div><time>${messageTime(m.at)}</time></div></article>`);}).join('');
+ return `<div class="conversation" role="log" aria-label="냥대리와의 대화" aria-live="polite" aria-relevant="additions text">${markup}${chat.pendingReply?`<article class="chat-row from-nyang assistant-message typing-message"><div class="active-cat-slot"></div><div class="chat-message-body"><div class="assistant-name">냥대리 <span>업무 메이트</span></div><div class="typing-bubble" role="status" aria-label="냥대리가 답변을 준비하고 있어요"><i></i><i></i><i></i></div></div></article>`:''}</div>`;
 }
 function chatRewards(){return `<button class="chat-treat-button" data-action="feed" ${(rewards.points<TREAT_COST&&!rewards.treatTokens)||rewards.pending.length?'disabled':''}><span class="treat-stick" aria-hidden="true"></span> 츄르 주기 <small>${rewards.treatTokens?`보유 ${rewards.treatTokens}개`:TREAT_COST+' P'}</small></button>${rewards.pending.map((id,i)=>`<button class="chat-collect-heart" data-heart="${id}" aria-label="하트 ${i+1} 모으기">♥ <small>+1</small></button>`).join('')}`;}
 function refreshChatRewards(){document.querySelectorAll('.chat-rewards').forEach(area=>area.innerHTML=chatRewards());}
 function motionButton(){const moving=read('om-cat-motion',true);return `<button class="motion-control" data-action="toggle-motion" aria-pressed="${moving}" aria-label="${moving?'고양이 움직임 끄기':'고양이 움직임 켜기'}"><span class="motion-mark">${moving?'Ⅱ':'▷'}</span><span>${moving?'움직임 끄기':'움직임 켜기'}</span></button>`;}
 function starterQuestions(){return `<div class="chat-starters" aria-label="추천 질문">${starters.map(s=>`<button data-question="${esc(s.q)}" data-cat="${s.category}">${esc(s.label)}</button>`).join('')}</div>`;}
 function saveCurrentChat(){
- if(!activeAccount||isStaff(communityState())||!activeChatId)return;
- const next=rememberChat(chats,activeChatId,messages,category);
- if(JSON.stringify(next)!==JSON.stringify(chats)&&save('om-chat-sessions',next))chats=next;
+ if(!activeAccount||isStaff(communityState())||!chat.id)return;
+ const next=rememberChat(chats,chat.id,chat.messages,chat.category);
+ if(JSON.stringify(next)!==JSON.stringify(chats)&&saveMine('om-chat-sessions',next))chats=next;
 }
 function chatHistoryHTML(){
  if(chatHistoryFolder!=='all'&&chatHistoryFolder!=='folder:'&&!chatFolders(chats).includes(chatHistoryFolder.slice(7)))chatHistoryFolder='all';
@@ -329,7 +337,7 @@ function chatHistoryHTML(){
   const date=localDate(new Date(row.at));
   const label=date===today?'오늘':date===yesterday?'어제':new Date(row.at).toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});
   const heading=label!==group?`<h3>${esc(label)}</h3>`:'';group=label;
-  const selected=row.threadId===activeChatId&&(!filtered||row.messageId===historyMessageId);
+  const selected=row.threadId===chat.id&&(!filtered||row.messageId===chat.historyMessageId);
   return `${heading}<div class="chat-history-row"><button class="chat-history-item ${selected?'selected':''}" data-chat-open="${esc(row.threadId)}" ${filtered?`data-chat-message="${esc(row.messageId)}"`:''} aria-current="${selected?'true':'false'}" title="${esc(row.title)}"><span>${esc(row.title)}</span>${filtered&&row.question!==row.title?`<small class="chat-question-preview">${esc(row.question)}</small>`:''}<small>${row.folder?esc(row.folder)+' · ':''}${filtered?'질문 다시 보기':row.count+'개 질문'} · ${esc(categoryLabels[row.category]||'업무 질문')}</small></button><button class="chat-history-settings icon-button" data-chat-settings="${esc(row.threadId)}" aria-label="${esc(row.title)} 대화 설정" title="제목 · 폴더 설정">${icon('settings')}</button><button class="chat-history-delete icon-button" data-chat-delete="${esc(row.threadId)}" aria-label="${esc(row.title)} 대화 삭제" title="대화 전체 삭제">${icon('trash')}</button></div>`;
  }).join('');
  const empty=chatHistoryFolder!=='all'?'<p>이 조건에 맞는 대화가 없어요.</p><span>다른 폴더나 분야를 선택해 보세요.</span>':filtered?'<p>이 분야의 질문이 아직 없어요.</p><span>다른 분야나 전체 대화를 선택해 보세요.</span>':'<p>아직 대화가 없어요.</p><span>냥대리에게 질문하면<br>여기에 차곡차곡 모여요.</span>';
@@ -349,37 +357,37 @@ function showRenameFolder(){
 }
 function showDeleteChat(id){
  if(!canEarnRewards(communityState()))return;
- if(pendingReply){toast('답변을 마친 뒤 대화를 삭제해 주세요.');return;}
+ if(chat.pendingReply){toast('답변을 마친 뒤 대화를 삭제해 주세요.');return;}
  saveCurrentChat();const thread=chats.find(x=>x.id===id);if(!thread)return;
  openModal(`<h2 id="modal-title">이 대화를 삭제할까요?</h2><p class="chat-delete-title">${esc(thread.title)}</p><p class="modal-sub">대화에 포함된 모든 질문과 답변, 내 활동 기록과 저장한 답변이 이 브라우저에서 삭제돼요. 삭제한 대화는 복구할 수 없어요.</p><p class="modal-sub">게시판에 올린 질문과 등록한 일정, 포인트는 유지돼요.</p><div class="chat-delete-actions"><button class="secondary-button" data-action="close-modal">취소</button><button class="chat-delete-confirm" data-chat-delete-confirm="${esc(id)}">대화 삭제</button></div>`);
  $('.chat-delete-actions [data-action="close-modal"]')?.focus();
 }
 function deleteChat(id){
  if(!canEarnRewards(communityState())||!chats.some(x=>x.id===id))return;
- if(pendingReply){toast('답변을 마친 뒤 대화를 삭제해 주세요.');return;}
+ if(chat.pendingReply){toast('답변을 마친 뒤 대화를 삭제해 주세요.');return;}
  const next=removeChat(chats,history,id);
- if(!save('om-question-history',next.history))return;
- if(!save('om-chat-sessions',next.chats)){save('om-question-history',history);return;}
+ if(!saveMine('om-question-history',next.history))return;
+ if(!saveMine('om-chat-sessions',next.chats)){saveMine('om-question-history',history);return;}
  chats=next.chats;history=next.history;
- if(activeChatId===id){
-  activeChatId=null;save('om-chat-active',null);historyMessageId=null;
-  messages=[];chatDraft='';heroTransition=null;category=null;petInteraction.reset();
+ if(chat.id===id){
+  chat=newChat();saveMine('om-chat-active',null);petInteraction.reset();
  }
  closeModal();render();$('#chat-history-category')?.focus({preventScroll:true});toast('대화를 삭제했어요.');
 }
 function openChat(id,messageId=null){
  if(!canEarnRewards(communityState()))return;
- if(pendingReply){toast('답변을 마친 뒤 이전 대화를 열어 주세요.');return;}
+ if(chat.pendingReply){toast('답변을 마친 뒤 이전 대화를 열어 주세요.');return;}
  saveCurrentChat();const thread=chats.find(x=>x.id===id);if(!thread)return;
  if(thread.messages.some(m=>m.result?.kind==='answer'&&!answers[m.result.id]||m.result?.kind==='scope'&&!categoryLabels[m.result.target])){toast('이전 답변을 읽을 수 없어요. 다시 질문해 주세요.');return;}
- petInteraction.reset();activeChatId=id;historyMessageId=messageId;save('om-chat-active',id);
- messages=structuredClone(thread.messages);category=messages.find(m=>m.result?.messageId===messageId)?.result.category||thread.category;chatDraft='';heroTransition=null;view='chat';render();
+ petInteraction.reset();saveMine('om-chat-active',id);
+ const messages=structuredClone(thread.messages);
+ chat=newChat({id,historyMessageId:messageId,messages,category:messages.find(m=>m.result?.messageId===messageId)?.result.category||thread.category});view='chat';render();
  if(messageId){requestAnimationFrame(()=>{const pane=$('.chat-transcript'),reply=[...document.querySelectorAll('[data-reply]')].find(el=>el.dataset.reply===messageId);if(pane&&reply){const question=reply.previousElementSibling;pane.scrollTop+=(question||reply).getBoundingClientRect().top-pane.getBoundingClientRect().top-24;}});}else scrollConversation();
  $('#question-form textarea')?.focus({preventScroll:true});
 }
 function renderCat(){
  saveCurrentChat();
- const previousPet=$('.resident-portrait'),home=!messages.length&&!pendingReply;
+ const previousPet=$('.resident-portrait'),home=!chat.messages.length&&!chat.pendingReply;
  const focusInput=document.activeElement?.matches('#question-form textarea');
  const selection=focusInput?[$('#question-form textarea').selectionStart,$('#question-form textarea').selectionEnd]:null;
  const oldScroll=$('.chat-transcript')?.scrollTop;
@@ -397,8 +405,8 @@ function renderCat(){
  if(!home&&oldScroll!==undefined)$('.chat-transcript').scrollTop=oldScroll;
  resizeComposer();
  if(focusInput){const field=$('#question-form textarea');field.focus({preventScroll:true});field.setSelectionRange(...selection);}
- if(heroTransition&&!home){
-  const from=heroTransition;heroTransition=null;
+ if(chat.heroTransition&&!home){
+  const from=chat.heroTransition;chat.heroTransition=null;
   scrollConversation();
   requestAnimationFrame(()=>{
    if(!pet.isConnected||read('om-cat-motion',true)===false||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
@@ -408,34 +416,34 @@ function renderCat(){
   });
  }
 }
-function composer(home=false){const current=categoryOf(category);return `<form class="composer chat-composer" id="question-form"><div class="composer-scope"><span>${icon(current.icon)}<strong id="scope-name">${current.label}</strong>에 질문 중</span><div class="composer-scope-actions"><button type="button" class="text-button" data-action="chat-examples">질문 예시 ${icon('chevron')}</button><button type="button" class="text-button" data-action="choose-category">분야 변경 ${icon('down')}</button></div></div>${attachmentChips()}<div class="input-row"><button type="button" class="attach-button" data-action="attach" aria-label="${attachBusy?'첨부 파일을 읽는 중':'사진·파일 첨부'}" title="${attachBusy?'읽는 중…':'사진·파일 첨부'}" ${attachBusy?'disabled':''}>${icon('plus')}</button><input type="file" id="knowly-attach" hidden multiple accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.xlsx,.xls,.csv,.txt,.md"><textarea name="question" rows="1" maxlength="1000" aria-label="질문 입력" placeholder="${home?'회사 생활에서 궁금한 점을 물어보세요.':'이어서 질문해 보세요…'}" required>${esc(chatDraft)}</textarea><button class="send-button" aria-label="질문 보내기" title="질문 보내기" type="submit" ${pendingReply?'disabled':''}>${icon('send')}</button></div><div class="composer-meta"><span>등록된 사내 문서와 FAQ에서 답해요.</span><small>Enter 전송 · Shift+Enter 줄바꿈</small></div></form>`;}
-function showCategories(){openModal(`<h2 id="modal-title">어떤 분야가 궁금하세요?</h2><p class="modal-sub">고른 분야의 문서에서 먼저 찾고, 없으면 전체 자료에서 찾아요. 작성 중인 질문은 유지됩니다.</p><div class="category-options">${categories.map(c=>`<button data-select-category="${c.id}" aria-pressed="${c.id===categoryOf(category).id}">${icon(c.icon)}<span><strong>${c.label}</strong><small>${c.detail}</small></span>${icon(c.id===categoryOf(category).id?'check':'chevron')}</button>`).join('')}</div>`);}
+function composer(home=false){const current=categoryOf(chat.category);return `<form class="composer chat-composer" id="question-form"><div class="composer-scope"><span>${icon(current.icon)}<strong id="scope-name">${current.label}</strong>에 질문 중</span><div class="composer-scope-actions"><button type="button" class="text-button" data-action="chat-examples">질문 예시 ${icon('chevron')}</button><button type="button" class="text-button" data-action="choose-category">분야 변경 ${icon('down')}</button></div></div>${attachmentChips()}<div class="input-row"><button type="button" class="attach-button" data-action="attach" aria-label="${attachBusy?'첨부 파일을 읽는 중':'사진·파일 첨부'}" title="${attachBusy?'읽는 중…':'사진·파일 첨부'}" ${attachBusy?'disabled':''}>${icon('plus')}</button><input type="file" id="knowly-attach" hidden multiple accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.xlsx,.xls,.csv,.txt,.md"><textarea name="question" rows="1" maxlength="1000" aria-label="질문 입력" placeholder="${home?'회사 생활에서 궁금한 점을 물어보세요.':'이어서 질문해 보세요…'}" required>${esc(chat.draft)}</textarea><button class="send-button" aria-label="질문 보내기" title="질문 보내기" type="submit" ${chat.pendingReply?'disabled':''}>${icon('send')}</button></div><div class="composer-meta"><span>등록된 사내 문서와 FAQ에서 답해요.</span><small>Enter 전송 · Shift+Enter 줄바꿈</small></div></form>`;}
+function showCategories(){openModal(`<h2 id="modal-title">어떤 분야가 궁금하세요?</h2><p class="modal-sub">고른 분야의 문서에서 먼저 찾고, 없으면 전체 자료에서 찾아요. 작성 중인 질문은 유지됩니다.</p><div class="category-options">${categories.map(c=>`<button data-select-category="${c.id}" aria-pressed="${c.id===categoryOf(chat.category).id}">${icon(c.icon)}<span><strong>${c.label}</strong><small>${c.detail}</small></span>${icon(c.id===categoryOf(chat.category).id?'check':'chevron')}</button>`).join('')}</div>`);}
 function resizeComposer(){const field=$('#question-form textarea');if(!field)return;field.style.height='auto';field.style.height=Math.min(140,Math.max(30,field.scrollHeight))+'px';}
 function scrollConversation(){const pane=$('.chat-transcript'),last=pane?.querySelector('.assistant-message:last-child');if(!pane)return;requestAnimationFrame(()=>{if(!pane.isConnected)return;if(last)pane.scrollTop+=last.getBoundingClientRect().top-pane.getBoundingClientRect().top-24;else pane.scrollTop=pane.scrollHeight;});}
-function showChatExamples(){const c=categoryOf(category);openModal(`<h2 id="modal-title">질문 예시</h2><p class="modal-sub">${c.label} 분야에서 물어볼 수 있는 질문이에요.</p><div class="chat-example-list">${faq[c.id].map(q=>`<button class="secondary-button" data-question="${esc(q)}" data-cat="${c.id}">${esc(q)} ${icon('arrow')}</button>`).join('')}</div>`);}
-function resetChat(){saveCurrentChat();activeChatId=null;if(activeAccount)save('om-chat-active',null);clearTimeout(replyTimer);replyTimer=null;pendingReply=null;heroTransition=null;messages=[];chatDraft='';view='chat';category=null;petInteraction.reset();render();}
+function showChatExamples(){const c=categoryOf(chat.category);openModal(`<h2 id="modal-title">질문 예시</h2><p class="modal-sub">${c.label} 분야에서 물어볼 수 있는 질문이에요.</p><div class="chat-example-list">${faq[c.id].map(q=>`<button class="secondary-button" data-question="${esc(q)}" data-cat="${c.id}">${esc(q)} ${icon('arrow')}</button>`).join('')}</div>`);}
+function resetChat(){saveCurrentChat();if(activeAccount)saveMine('om-chat-active',null);clearTimeout(chat.replyTimer);chat=newChat();view='chat';petInteraction.reset();render();}
 function ask(q,reward=true){
  if(!canEarnRewards(communityState())){render();return;}
  q=String(q).trim();if(!q)return;
- if(pendingReply){toast('답변을 마치면 이어서 물어봐 줘.');return;}
+ if(chat.pendingReply){toast('답변을 마치면 이어서 물어봐 줘.');return;}
  if(q.length>1000){toast('질문은 1,000자 이내로 적어 주세요.');return;}
- if(!activeChatId){activeChatId=crypto.randomUUID();save('om-chat-active',activeChatId);}
- const first=!messages.length,portrait=$('.chat-home .resident-portrait');
- if(first&&portrait)heroTransition=portrait.getBoundingClientRect();
- category=categoryOf(category).id;petInteraction.reset();
+ if(!chat.id){chat.id=crypto.randomUUID();saveMine('om-chat-active',chat.id);}
+ const first=!chat.messages.length,portrait=$('.chat-home .resident-portrait');
+ if(first&&portrait)chat.heroTransition=portrait.getBoundingClientRect();
+ chat.category=categoryOf(chat.category).id;petInteraction.reset();
  // 답변은 항상 Knowly에서 받는다. 샘플 규칙(resolveQuestion·샘플 일정)으로 분류하거나 기한을 만들지 않는다.
- const r={q,category,messageId:crypto.randomUUID()};
+ const r={q,category:chat.category,messageId:crypto.randomUUID()};
  const files=attachments;attachments=[];
- messages.push({role:'user',text:q,at:Date.now(),...(files.length?{files:files.map(a=>a.name)}:{})});pendingReply=r;chatDraft='';view='chat';
+ chat.messages.push({role:'user',text:q,at:Date.now(),...(files.length?{files:files.map(a=>a.name)}:{})});chat.pendingReply=r;chat.draft='';view='chat';
  render();refreshPet();scrollConversation();$('#question-form textarea')?.focus({preventScroll:true});
  if(reward)communityAction('question',{question:q});
  const remote=askKnowly(q,files);
- replyTimer=setTimeout(async()=>{
-  if(pendingReply!==r)return;
-  const k=remote&&await remote;if(pendingReply!==r)return;
+ chat.replyTimer=setTimeout(async()=>{
+  if(chat.pendingReply!==r)return;
+  const k=remote&&await remote;if(chat.pendingReply!==r)return;
   r.kind='knowly';r.knowly=k;
-  pendingReply=null;replyTimer=null;messages.push({role:'assistant',result:r,at:Date.now()});saveCurrentChat();
-  const next=recordAnswer(history,r);if(save('om-question-history',next))history=next;
+  chat.pendingReply=null;chat.replyTimer=null;chat.messages.push({role:'assistant',result:r,at:Date.now()});saveCurrentChat();
+  const next=recordAnswer(history,r);if(saveMine('om-question-history',next))history=next;
   if(view==='activity')render();
   if(view==='chat'){render();scrollConversation();}
  },first?950:480);
@@ -462,13 +470,13 @@ function activityContent(){
 function openHistory(id){
  const existing=chats.find(x=>x.messages.some(m=>m.result?.messageId===id));if(existing){openChat(existing.id);return;}
  const entry=history.find(x=>x.id===id);if(!entry)return;
- if(pendingReply){toast('지금 답변을 마친 뒤 이전 질문을 열어 주세요.');return;}
+ if(chat.pendingReply){toast('지금 답변을 마친 뒤 이전 질문을 열어 주세요.');return;}
  const r={...entry.result,messageId:entry.id};
  if(r.kind==='answer'&&!answers[r.id]||r.kind==='scope'&&!categoryLabels[r.target]){toast('이전 답변을 읽을 수 없어요. 다시 질문해 주세요.');return;}
  if(r.kind==='excerpt'&&!reference(r.ref,allDocs())){toast('이 답변의 원문 자료가 삭제되어 출처를 열 수 없어요.');}
- saveCurrentChat();activeChatId='legacy-'+id;save('om-chat-active',activeChatId);
- petInteraction.reset();category=r.category;chatDraft='';heroTransition=null;
- messages=[{role:'user',text:entry.q,at:entry.at},{role:'assistant',result:r,at:entry.at}];view='chat';render();scrollConversation();
+ saveCurrentChat();saveMine('om-chat-active','legacy-'+id);
+ petInteraction.reset();
+ chat=newChat({id:'legacy-'+id,category:r.category,messages:[{role:'user',text:entry.q,at:entry.at},{role:'assistant',result:r,at:entry.at}]});view='chat';render();scrollConversation();
 }
 
 function showPersonality(){
@@ -548,31 +556,31 @@ document.addEventListener('click',async e=>{
  const b=e.target.closest('button,a[data-action]');if(!b||b.disabled||b.matches(COMMUNITY_CLICK_SELECTOR))return;
  if(b.dataset.knowlyDoc){openLibrary(`/docs/${encodeURIComponent(b.dataset.knowlyDoc)}${b.dataset.chunk?`?chunk=${encodeURIComponent(b.dataset.chunk)}`:''}`);return;}
  if(b.dataset.knowlyVote){voteKnowly(b.dataset.message,b.dataset.knowlyVote);return;}
- if(b.dataset.removeAttach){chatDraft=$('#question-form textarea')?.value??chatDraft;attachments=attachments.filter(a=>a.id!==b.dataset.removeAttach);render();return;}
+ if(b.dataset.removeAttach){chat.draft=$('#question-form textarea')?.value??chat.draft;attachments=attachments.filter(a=>a.id!==b.dataset.removeAttach);render();return;}
  if(b.dataset.action==='attach'){$('#knowly-attach')?.click();return;}
  if(b.dataset.customize){({outfit:showWardrobe,background:showBackground,motion:showMotion}[b.dataset.customize])?.();return;}
- if(b.dataset.selectCategory){category=b.dataset.selectCategory;closeModal();render();$('#question-form textarea')?.focus();return;}
+ if(b.dataset.selectCategory){chat.category=b.dataset.selectCategory;closeModal();render();$('#question-form textarea')?.focus();return;}
  if(b.dataset.scheduleView){view=b.dataset.scheduleView;scheduleView=view;render();return;}
  if(b.dataset.activityTab){activityTab=b.dataset.activityTab;render();return;}
  if(b.dataset.historyOpen){openHistory(b.dataset.historyOpen);return;}
- if(b.dataset.saveAnswer){const r=messages.find(m=>m.result?.messageId===b.dataset.saveAnswer)?.result;if(r&&!history.some(x=>x.id===r.messageId)){const next=recordAnswer(history,r);if(!save('om-question-history',next))return;history=next;}try{const next=toggleSaved(history,b.dataset.saveAnswer);if(save('om-question-history',next)){history=next;render();toast(history.find(x=>x.id===b.dataset.saveAnswer)?.saved?'내 활동에 답변을 저장했어요.':'답변 저장을 해제했어요.');}}catch(e){toast(e.message);}return;}
- if(b.dataset.activityPost){const post=communityState().posts?.find(p=>p.id===b.dataset.activityPost);if(post){const next={...seenReplies,[post.id]:post.replies.length};if(save('om-seen-replies',next))seenReplies=next;showMyPost(post.id);}return;}
+ if(b.dataset.saveAnswer){const r=chat.messages.find(m=>m.result?.messageId===b.dataset.saveAnswer)?.result;if(r&&!history.some(x=>x.id===r.messageId)){const next=recordAnswer(history,r);if(!saveMine('om-question-history',next))return;history=next;}try{const next=toggleSaved(history,b.dataset.saveAnswer);if(saveMine('om-question-history',next)){history=next;render();toast(history.find(x=>x.id===b.dataset.saveAnswer)?.saved?'내 활동에 답변을 저장했어요.':'답변 저장을 해제했어요.');}}catch(e){toast(e.message);}return;}
+ if(b.dataset.activityPost){const post=communityState().posts?.find(p=>p.id===b.dataset.activityPost);if(post){const next={...seenReplies,[post.id]:post.replies.length};if(saveMine('om-seen-replies',next))seenReplies=next;showMyPost(post.id);}return;}
  if(b.dataset.heart){if(await commitReward({type:'collect',id:b.dataset.heart})){refreshPet();toast('하트 +1 ♥ · 꾸미기에 쓸 수 있다냥.');if(!rewards.pending.length){$('.resident-speech h1')?.replaceChildren(voice().heart);$('.resident-speech p')?.replaceChildren(voice().heartDetail);clearTimeout(happyTimer);happyTimer=setTimeout(()=>{happyUntil=0;refreshPet();},3500);}}return;}
  if(b.dataset.item){if(await commitReward({type:b.dataset.owned==='true'?'equip':'buy',id:b.dataset.item})){refreshPet();showWardrobe();toast('제법 잘 어울린다냥!');}return;}
- if(b.dataset.answerPanel){const r=messages.find(m=>m.result?.messageId===b.dataset.message)?.result;if(r){r.expandedPanel=r.expandedPanel===b.dataset.answerPanel?null:b.dataset.answerPanel;render();$(`[data-answer-panel="${b.dataset.answerPanel}"][data-message="${r.messageId}"]`)?.focus({preventScroll:true});}return;}
- if(b.dataset.consent){const r=messages.find(m=>m.result?.messageId===b.dataset.message)?.result;if(r&&r.decision!=='added'){r.decision=b.dataset.consent;render();requestAnimationFrame(()=>{const form=$(`[data-plan-form="${r.messageId}"]`);if(form){form.querySelector('input')?.focus({preventScroll:true});form.scrollIntoView({block:'nearest'});}else $(`[data-consent][data-message="${r.messageId}"]`)?.focus({preventScroll:true});});}return;}
+ if(b.dataset.answerPanel){const r=chat.messages.find(m=>m.result?.messageId===b.dataset.message)?.result;if(r){r.expandedPanel=r.expandedPanel===b.dataset.answerPanel?null:b.dataset.answerPanel;render();$(`[data-answer-panel="${b.dataset.answerPanel}"][data-message="${r.messageId}"]`)?.focus({preventScroll:true});}return;}
+ if(b.dataset.consent){const r=chat.messages.find(m=>m.result?.messageId===b.dataset.message)?.result;if(r&&r.decision!=='added'){r.decision=b.dataset.consent;render();requestAnimationFrame(()=>{const form=$(`[data-plan-form="${r.messageId}"]`);if(form){form.querySelector('input')?.focus({preventScroll:true});form.scrollIntoView({block:'nearest'});}else $(`[data-consent][data-message="${r.messageId}"]`)?.focus({preventScroll:true});});}return;}
  if(b.dataset.openPlan){calendarDay=b.dataset.openPlan;calendarMonth=calendarDay.slice(0,7);view='calendar';scheduleView='calendar';render();return;}
  if(b.dataset.month){const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=localDate(new Date(y,m-1+Number(b.dataset.month),1,12)).slice(0,7);render();return;}
  if(b.dataset.calendarDay){calendarDay=b.dataset.calendarDay;render();return;}
  if(b.dataset.background){if(save('om-bg-theme-'+mode,b.dataset.background)){applyBackground();closeModal();toast(backgroundState().label+' 배경으로 바꿨어요.');}return;}
  if(b.dataset.source){openSource(b.dataset.source);return;}
- if(b.dataset.question){if($('#modal').open)closeModal();category=b.dataset.cat;ask(b.dataset.question);return;}
+ if(b.dataset.question){if($('#modal').open)closeModal();chat.category=b.dataset.cat;ask(b.dataset.question);return;}
  if(b.dataset.faq){if($('#modal').open)closeModal();ask(b.dataset.q);return;}
-  if(b.dataset.switchCategory){category=b.dataset.switchCategory;ask(b.dataset.retry,false);return;}
+  if(b.dataset.switchCategory){chat.category=b.dataset.switchCategory;ask(b.dataset.retry,false);return;}
  if(b.dataset.filter){filter=b.dataset.filter;render();return;}
  if(b.dataset.day){selectedDay=b.dataset.day;filter='day';render();return;}
- if(b.dataset.delete){const next=tasks.filter(t=>t.id!==b.dataset.delete);if(save('om-tasks',next)){tasks=next;render();toast('할 일을 삭제했어요.');}return;}
- if(b.dataset.postQuestion){const r=messages.find(m=>m.result?.messageId===b.dataset.postQuestion)?.result;if(r)showPostDialog(r);return;}
+ if(b.dataset.delete){const next=tasks.filter(t=>t.id!==b.dataset.delete);if(saveMine('om-tasks',next)){tasks=next;render();toast('할 일을 삭제했어요.');}return;}
+ if(b.dataset.postQuestion){const r=chat.messages.find(m=>m.result?.messageId===b.dataset.postQuestion)?.result;if(r)showPostDialog(r);return;}
  if(b.dataset.chatSettings){showChatSettings(b.dataset.chatSettings);return;}
  if(b.dataset.action==='rename-chat-folder'){showRenameFolder();return;}
  if(b.dataset.action==='toggle-chat-folders'){
@@ -589,7 +597,7 @@ document.addEventListener('click',async e=>{
  if(b.dataset.chatOpen){openChat(b.dataset.chatOpen,b.dataset.chatMessage||null);return;}
  if(b.dataset.personality){
   if(!canEarnRewards(communityState()))return;
-  const next=normalizePersonality(b.dataset.personality);if(!save('om-personality',next))return;
+  const next=normalizePersonality(b.dataset.personality);if(!saveMine('om-personality',next))return;
   personality=next;petInteraction.reset();closeModal();render();companionBehavior.greet(personality);toast(voice().label+'로 바꿨어요.');return;
  }
  const a=b.dataset.action;
@@ -633,16 +641,16 @@ document.addEventListener('submit',e=>{
  if(e.target.id==='activity-search'){e.preventDefault();activityQuery=String(new FormData(e.target).get('query')||'').trim();render();return;}
  if(e.target.id==='question-form'){e.preventDefault();const text=new FormData(e.target).get('question');ask(text);}
  if(e.target.dataset.planForm){
-  e.preventDefault();const r=messages.find(m=>m.result?.messageId===e.target.dataset.planForm)?.result;
+  e.preventDefault();const r=chat.messages.find(m=>m.result?.messageId===e.target.dataset.planForm)?.result;
   if(!r||r.decision!=='yes')return;
   const fd=new FormData(e.target),start=fd.get('start'),end=fd.get('end')||start;
   if(scheduleMode(r)==='todo'){addTodo(r,String(fd.get('title')||'').trim().slice(0,80),String(start||''));return;}
   try{const items=makeSchedule(r.scheduleType,start,end),result=mergeSchedule(tasks,{type:r.scheduleType,start,end,items},()=>crypto.randomUUID());
-   if(save('om-tasks',result.tasks)){tasks=result.tasks;r.start=start;r.end=end;r.items=items;r.decision='added';render();toast(result.added?`${result.added}개의 할 일을 내 일정에 넣었어.`:'이미 캘린더에 챙겨 둔 일정이야.');}
+   if(saveMine('om-tasks',result.tasks)){tasks=result.tasks;r.start=start;r.end=end;r.items=items;r.decision='added';render();toast(result.added?`${result.added}개의 할 일을 내 일정에 넣었어.`:'이미 캘린더에 챙겨 둔 일정이야.');}
   }catch(err){toast(err.message);}
  }
 });
-document.addEventListener('input',e=>{if(e.target.matches('#question-form textarea')){chatDraft=e.target.value;resizeComposer();}});
+document.addEventListener('input',e=>{if(e.target.matches('#question-form textarea')){chat.draft=e.target.value;resizeComposer();}});
 document.addEventListener('keydown',e=>{if(e.target.matches('#question-form textarea')&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();e.target.form.requestSubmit();}});
 document.addEventListener('change',async e=>{
  if(e.target.id==='knowly-attach'){const files=[...e.target.files];e.target.value='';if(files.length)addAttachments(files);return;}
@@ -651,30 +659,35 @@ document.addEventListener('change',async e=>{
   chatHistoryCategory=categories.some(c=>c.id===e.target.value)?e.target.value:'all';
   $('.chat-history').outerHTML=chatHistoryHTML();$('#chat-history-category')?.focus({preventScroll:true});return;
  }
- if(e.target.closest('[data-plan-form]')){const form=e.target.closest('[data-plan-form]'),r=messages.find(m=>m.result?.messageId===form.dataset.planForm)?.result;if(r&&scheduleMode(r)==='todo'){r.todoTitle=form.elements.title.value;r.todoDate=form.elements.start.value;}else if(r){r.start=form.elements.start.value;if(form.elements.end){form.elements.end.min=r.start;if(form.elements.end.value<r.start)form.elements.end.value=r.start;r.end=form.elements.end.value;}else r.end=r.start;form.querySelector('.schedule-preview').innerHTML=schedulePreview(r);}}
- if(e.target.id==='active-category'){category=e.target.value;toast(`${categoryOf(category).label} 분야로 변경했어요.`);}
- if(e.target.dataset.complete){const next=tasks.map(t=>t.id===e.target.dataset.complete?{...t,done:e.target.checked}:t);if(save('om-tasks',next)){tasks=next;render();}}
- if(e.target.dataset.taskDate){if(!e.target.value)return;const next=tasks.map(t=>t.id===e.target.dataset.taskDate?{...t,date:e.target.value}:t);if(save('om-tasks',next)){tasks=next;render();toast('작업일을 바꿨어요. 규정상 마감은 유지됩니다.');}}
+ if(e.target.closest('[data-plan-form]')){const form=e.target.closest('[data-plan-form]'),r=chat.messages.find(m=>m.result?.messageId===form.dataset.planForm)?.result;if(r&&scheduleMode(r)==='todo'){r.todoTitle=form.elements.title.value;r.todoDate=form.elements.start.value;}else if(r){r.start=form.elements.start.value;if(form.elements.end){form.elements.end.min=r.start;if(form.elements.end.value<r.start)form.elements.end.value=r.start;r.end=form.elements.end.value;}else r.end=r.start;form.querySelector('.schedule-preview').innerHTML=schedulePreview(r);}}
+ if(e.target.id==='active-category'){chat.category=e.target.value;toast(`${categoryOf(chat.category).label} 분야로 변경했어요.`);}
+ if(e.target.dataset.complete){const next=tasks.map(t=>t.id===e.target.dataset.complete?{...t,done:e.target.checked}:t);if(saveMine('om-tasks',next)){tasks=next;render();}}
+ if(e.target.dataset.taskDate){if(!e.target.value)return;const next=tasks.map(t=>t.id===e.target.dataset.taskDate?{...t,date:e.target.value}:t);if(saveMine('om-tasks',next)){tasks=next;render();toast('작업일을 바꿨어요. 규정상 마감은 유지됩니다.');}}
  if(e.target.id==='bg-upload')await loadBackground(e.target.files[0]);
 });
+/** 로그인 계정이 바뀌면(로그인·로그아웃·다른 계정) 계정별 상태를 한 번에 바꾸고 그 계정의 기록을 다시 읽는다. */
+function resetForAccount(next,state){
+ clearTimeout(chat.replyTimer);petInteraction.reset();
+ if($('#modal').open)closeModal();
+ activeAccount=next;
+ chat=newChat();chats=[];chatHistoryCollapsed=false;chatHistoryCategory='all';chatHistoryFolder='all';
+ view='chat';activityTab='recent';activityQuery='';
+ personality=normalizePersonality(next?readMine('om-personality','cold'):'cold');
+ uploads=readMine('om-docs',[]);tasks=readMine('om-tasks',[]);history=normalizeHistory(readMine('om-question-history',[]));seenReplies=readSeenReplies();
+ if(canEarnRewards(state)){
+  const stored=readMine('om-chat-sessions',null);chats=stored===null?importQuestionHistory(history):normalizeChats(stored);
+  const selected=chats.find(x=>x.id===readMine('om-chat-active',null));
+  if(selected)chat=newChat({id:selected.id,messages:structuredClone(selected.messages),category:selected.category});
+ }
+ rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};
+}
 shell();
 initCommunity({
  toast,modal:openModal,close:closeModal,render,
  show(next){view=next;render();$('#main').scrollTop=0;},
  update(state){
   const next=state.member?(state.me.id||state.me.username):null;
-  if(next!==activeAccount){
-   chats=[];activeChatId=null;chatHistoryCollapsed=false;chatHistoryCategory='all';chatHistoryFolder='all';historyMessageId=null;heroTransition=null;
-   clearTimeout(replyTimer);replyTimer=null;pendingReply=null;messages=[];chatDraft='';category=null;view='chat';activityTab='recent';activityQuery='';petInteraction.reset();
-   if($('#modal').open)closeModal();activeAccount=next;personality=normalizePersonality(next?read('om-personality','cold'):'cold');
-   uploads=read('om-docs',[]);tasks=read('om-tasks',[]);history=normalizeHistory(read('om-question-history',[]));seenReplies=read('om-seen-replies',{});if(!seenReplies||typeof seenReplies!=='object')seenReplies={};
-   if(canEarnRewards(state)){
-    const stored=read('om-chat-sessions',null);chats=stored===null?importQuestionHistory(history):normalizeChats(stored);
-    activeChatId=read('om-chat-active',null);const selected=chats.find(x=>x.id===activeChatId);
-    if(selected){messages=structuredClone(selected.messages);category=selected.category;}else activeChatId=null;
-   }
-   rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};render();if(canEarnRewards(state))companionBehavior.greet(personality);return;
-  }
+  if(next!==activeAccount){resetForAccount(next,state);render();if(canEarnRewards(state))companionBehavior.greet(personality);return;}
   if(!state.member){render();return;}
   rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};updateWallet();refreshPet();if(['activity','board'].includes(view)&&!$('#modal').open)render();}
 });
@@ -686,7 +699,7 @@ function submitChatSettings(form){
  if(form.id==='chat-folder-form'&&!folder){toast('폴더 이름을 입력해 주세요.');return;}
  if(form.id==='chat-settings-form'&&!chats.some(x=>x.id===form.dataset.threadId))return;
  const next=form.id==='chat-settings-form'?updateChatDetails(chats,form.dataset.threadId,{customTitle:String(data.get('customTitle')||''),folder}):renameChatFolder(chats,form.dataset.folder,folder);
- if(!save('om-chat-sessions',next))return;
+ if(!saveMine('om-chat-sessions',next))return;
  chats=next;
  if(chatHistoryFolder!=='all')chatHistoryFolder='folder:'+folder;
  closeModal();render();toast(form.id==='chat-settings-form'?'대화 제목과 폴더를 저장했어요.':'폴더 이름을 변경했어요.');
