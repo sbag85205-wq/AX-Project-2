@@ -717,7 +717,13 @@ document.addEventListener('click',async e=>{
 
  if(a==='chat-examples')showChatExamples();
  if(a==='sample-plan'){view='chat';ask('출장 준비 일정을 짜주세요','plan');}
- if(a==='feed'){if(await commitReward({type:'feed',ids:Array.from({length:3},()=>crypto.randomUUID())})){petInteraction.reset();happyUntil=Date.now()+6000;companionBehavior.feed(personality);refreshPet();$('.resident-speech h1')?.replaceChildren(voice().feed);$('.resident-speech p')?.replaceChildren(voice().feedDetail);toast('츄르 고맙다냥! 주변 하트 3개를 눌러 모아보라냥.');}}
+ if(a==='feed'){ // 바로 주지 않고 먼저 확인을 받는다. 보유한 츄르가 있으면 그것을 먼저 쓴다(포인트 차감 없음).
+ if(rewards.pending.length||(rewards.points<TREAT_COST&&!rewards.treatTokens))return;
+ const useToken=rewards.treatTokens>0;
+ openModal(`<div class="treat-confirm"><h2 id="modal-title">츄르 주기</h2><p class="modal-sub">${useToken?`보유한 츄르 1개를 사용해 츄르를 주시겠습니까?`:`${TREAT_COST}포인트를 이용해 츄르를 주시겠습니까?`}</p><div class="modal-button-row"><button type="button" class="primary-button" data-action="feed-confirm">확인</button><button type="button" class="secondary-button" data-action="close-modal">취소</button></div></div>`);
+ $('#modal [data-action="feed-confirm"]')?.focus();
+ return;}
+ if(a==='feed-confirm'){closeModal();if(await commitReward({type:'feed',ids:Array.from({length:3},()=>crypto.randomUUID())})){petInteraction.reset();happyUntil=Date.now()+6000;companionBehavior.feed(personality);refreshPet();$('.resident-speech h1')?.replaceChildren(voice().feed);$('.resident-speech p')?.replaceChildren(voice().feedDetail);toast('츄르 고맙다냥! 주변 하트 3개를 눌러 모아보라냥.');}}
  if(a==='wardrobe')showWardrobe();
  if(a==='unequip'&&await commitReward({type:'equip',id:null})){refreshPet();showWardrobe();}
  if(a==='docs'){if(!knowlyOff.employee&&communityState().me?.role!=='staff'&&communityState().member){openLibrary();return;}showDocs();}
