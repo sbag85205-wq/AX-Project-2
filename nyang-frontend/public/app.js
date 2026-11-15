@@ -77,6 +77,7 @@ function shell(){
     <button data-action="documents" id="nav-documents" hidden>문서 관리</button>
     <button data-action="users" id="nav-users" hidden>사용자 관리</button>
     <button data-action="model" id="nav-model" hidden>검색 모델 설정</button>
+    ${['chat:채팅 관리','admin:관리'].map(g=>{const [id,label]=g.split(':');return `<div class="nav-group" id="nav-group-${id}" hidden><button type="button" class="nav-group-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="nav-submenu-${id}">${label}${icon('down')}</button><div class="nav-submenu" id="nav-submenu-${id}"></div></div>`;}).join('')}
    </nav>
    <div class="header-account"><div id="wallet" class="wallet" aria-label="보유 포인트와 하트"></div></div>
   </header>
@@ -95,15 +96,31 @@ function updateWallet(){
  const unread=unseenReplies(communityState().posts,seenReplies).length,indicator=$('#activity-unread');
  indicator.hidden=!unread;indicator.textContent=unread;indicator.setAttribute('aria-label','새 답변이 달린 내 질문 '+unread+'개');
 }
-// 주 메뉴 순서. 담당자는 '질문 게시판'이 FAQ 관리 뒤에 온다. 순서가 다를 때만 옮긴다(옮기면 버튼의 포커스가 풀리므로).
-const NAV_ORDER={
- employee:['chat','schedule','board','activity','library','unanswered','statistics','faq','documents','users','model'],
- staff:['chat','statistics','unanswered','faq','board','documents','users','model','schedule','activity','library']
+// 주 메뉴 배치. 직원은 한 줄로, 담당자는 '채팅 관리'·'관리' 묶음 아래로 펼쳐지는 메뉴를 쓴다.
+// 버튼 자체(id·동작)는 그대로 두고 자리만 옮긴다. 배치가 다를 때만 옮긴다(옮기면 버튼의 포커스가 풀리므로).
+const NAV_LAYOUT={
+ employee:{top:['nav-chat','nav-schedule','nav-board','nav-activity','nav-library','nav-unanswered','nav-statistics','nav-faq','nav-documents','nav-users','nav-model','nav-group-chat','nav-group-admin'],groups:{chat:[],admin:[]}},
+ staff:{top:['nav-chat','nav-statistics','nav-group-chat','nav-group-admin','nav-schedule','nav-activity','nav-library'],groups:{chat:['nav-unanswered','nav-faq','nav-board'],admin:['nav-documents','nav-users','nav-model']}}
 };
 function orderNav(staff){
- const nav=$('.workspace-nav'),want=NAV_ORDER[staff?'staff':'employee'].map(name=>$('#nav-'+name));
- if(want.some((button,i)=>nav.children[i]!==button))nav.append(...want);
+ const layout=NAV_LAYOUT[staff?'staff':'employee'],by=id=>document.getElementById(id);
+ const slots=[[$('.workspace-nav'),layout.top],...Object.entries(layout.groups).map(([g,ids])=>[by('nav-submenu-'+g),ids])].map(([box,ids])=>[box,ids.map(by)]);
+ if(slots.some(([box,want])=>box.children.length!==want.length||want.some((el,i)=>box.children[i]!==el))){
+  // 묶음 안을 먼저 맞추고 윗줄을 맞춘다 (묶음 상자 자체가 윗줄의 자식이라 순서가 중요하다)
+  for(const [box,want] of slots.slice(1))box.replaceChildren(...want);
+  slots[0][0].replaceChildren(...slots[0][1]);
+ }
+ for(const g of ['chat','admin'])by('nav-group-'+g).hidden=!staff;
+ if(!staff)closeNavGroups();
 }
+function closeNavGroups(except=null){
+ document.querySelectorAll('.nav-group').forEach(g=>{const open=g===except;g.classList.toggle('open',open);g.querySelector('.nav-group-toggle').setAttribute('aria-expanded',String(open));});
+}
+// 묶음 이름을 누르면 아래로 펼치고, 다른 곳을 누르거나 Esc를 누르면 접는다. 항목을 고르면 접힌다.
+document.addEventListener('click',e=>{const toggle=e.target.closest?.('.nav-group-toggle'),group=toggle?.parentElement;closeNavGroups(group&&!group.classList.contains('open')?group:null);});
+// 관리자 화면 대부분은 안에 끼워 넣은 화면(iframe)이라 그 안을 누르면 클릭이 여기로 오지 않는다. 포커스가 넘어갈 때 접는다.
+window.addEventListener('blur',()=>closeNavGroups());
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const open=document.querySelector('.nav-group.open');if(!open)return;closeNavGroups();open.querySelector('.nav-group-toggle').focus();});
 function render(){
  document.body.dataset.personality=personality;
  const personalityButton=$('#personality-button');if(personalityButton)personalityButton.innerHTML=icon(personality==='warm'?'sun':'moon')+'<span>'+voice().label+'</span>';
@@ -125,6 +142,7 @@ function render(){
 
  const docCount=$('.side-nav [data-action="docs"] .count');if(docCount)docCount.textContent=allDocs().length;
  for(const name of ['chat','schedule','activity','board','statistics','faq','documents','users','model','unanswered','library']){const nav=$('#nav-'+name),active=name==='schedule'?['calendar','todos'].includes(view):view===name;nav?.classList.toggle('active',active);if(active)nav?.setAttribute('aria-current','page');else nav?.removeAttribute('aria-current');}
+ document.querySelectorAll('.nav-group').forEach(g=>g.querySelector('.nav-group-toggle').classList.toggle('active',!!g.querySelector('.nav-submenu .active')));
  $('#page-title').textContent={chat:'냥대리에게 물어보기',calendar:'내 캘린더',todos:'내가 해야 할 일',activity:'나의 질문 활동',board:'익명 질문 게시판 · 이 브라우저에만 저장',statistics:'이용통계',faq:'FAQ 관리',documents:'문서 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서'}[view];
  if(staff&&view==='chat')$('#workspace-title').textContent='냥대리 테스트';
  $('#main').classList.toggle('work-view',view!=='chat');updateWallet();
