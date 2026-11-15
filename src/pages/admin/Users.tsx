@@ -87,6 +87,17 @@ export default function Users() {
     load();
   };
 
+  // 부서를 지우면 그 부서였던 직원은 '미지정'이 된다 (DB가 자동으로 비운다). 지난 이용 통계의 부서 표시도 비워진다.
+  const removeDept = async (d: Department) => {
+    const count = users.filter((u) => u.department_id === d.id).length;
+    const note = count ? ` 이 부서의 직원 ${count}명은 '미지정'으로 바뀌어요.` : '';
+    if (!window.confirm(`'${d.name}' 부서를 삭제할까요?${note}`)) return;
+    const { error: e } = await supabase.from('departments').delete().eq('id', d.id);
+    if (e) return toast('부서를 삭제하지 못했어요.');
+    toast(`'${d.name}' 부서를 삭제했어요.`);
+    load();
+  };
+
   const deptName = (id: string | null) => depts.find((d) => d.id === id)?.name ?? '미지정';
 
   return (
@@ -135,7 +146,15 @@ export default function Users() {
 
         <section className="card panel" style={{ flex: '1 1 280px', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <h2>부서</h2>
-          <div className="chips">{depts.map((d) => <span key={d.id} className="pill pill-hold">{d.name}</span>)}</div>
+          <div className="chips">
+            {depts.map((d) => (
+              <span key={d.id} className="pill pill-hold dept-pill">
+                {d.name}
+                <button type="button" className="dept-remove" onClick={() => removeDept(d)} aria-label={`${d.name} 부서 삭제`} title="부서 삭제">×</button>
+              </span>
+            ))}
+            {!depts.length && <span className="hint">등록된 부서가 없어요.</span>}
+          </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <label htmlFor="new-dept" className="sr">새 부서 이름</label>
             <input id="new-dept" className="input" placeholder="새 부서 이름" value={newDept} onChange={(e) => setNewDept(e.target.value)} />

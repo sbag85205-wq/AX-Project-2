@@ -170,3 +170,8 @@ html[data-theme=dark] .toast { background: #e4e7ee; color: #17191e; }
 .composer { border-color: var(--line); }
 .login-types { background: var(--surface-2); }
 html[data-theme=dark] .chat-scroll { scrollbar-color: #555967 transparent; }
+
+/* 사용자 관리: 부서 이름표의 삭제 버튼 */
+.dept-pill { display: inline-flex; align-items: center; gap: 4px; padding-right: 4px; }
+.dept-remove { display: grid; place-items: center; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--faint); font-size: 14px; line-height: 1; cursor: pointer; }
+.dept-remove:hover { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
