@@ -70,10 +70,16 @@ const matches = [
  ['wifi',/와이파이|wi.?fi/i],['room',/회의실/],['equipment',/장비.*(요청|신청|고장)|노트북.*(고장|신청)/],['onboarding',/입사.*첫|첫날/]
 ];
 export function reference(id,docs=documents){for(const doc of docs){const section=doc.sections.find(s=>s.id===id);if(section)return {doc,section};}return null;}
+/** 개인 정보(잔여 연차·내 급여·비밀번호 등)를 묻는 질문인지. 게시판에 올릴 때 질문 내용을 그대로 채우지 않는다. */
+export const isPersonalQuestion=q=>/잔여|남은.*연차|내.*(급여|월급).*얼마|비밀번호|비번/.test(String(q).trim());
+/** 냥대리가 Knowly에 보내는 질문 하나의 결과 틀. 답을 받으면 kind·knowly가 채워진다. */
+export function newQuestion(q,category,messageId=crypto.randomUUID()){
+ return {q,category,messageId,...(isPersonalQuestion(q)?{personal:true}:{})};
+}
 export function resolveQuestion(q,category,uploaded=[]){
  const query=q.trim();
  if(/해외|국외|파견|육아휴직|출산휴가/.test(query))return {kind:'unknown'};
- if(/잔여|남은.*연차|내.*(급여|월급).*얼마|비밀번호|비번/.test(query))return {kind:'unknown',personal:true};
+ if(isPersonalQuestion(query))return {kind:'unknown',personal:true};
  const matched=matches.find(([,rx])=>rx.test(query));
  let id=matched?.[0];
  if(/출장/.test(query)&&/(일정|계획|준비|절차|뭘|해야|갈|가는데|가요)/.test(query)) id='plan';

@@ -4,7 +4,7 @@ import {createCompanionBehavior,companionAppearance} from './companion-behavior.
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js';
 import {COMMUNITY_CLICK_SELECTOR,initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount} from './community-ui.js';
-import {documents,faq,starters,answers,reference,localDate,addDays,asDate,displayDate} from './core.js';
+import {documents,faq,starters,answers,reference,newQuestion,localDate,addDays,asDate,displayDate} from './core.js';
 import {categories,categoryLabels,categoryOf,esc,isStaff,canEarnRewards} from './common.js';
 import {scheduleTypes,makeSchedule,mergeSchedule} from './companion.js';
 import {TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,HEARTS_PER_TREAT,wardrobe,normalizeRewards,rewardHelp} from './reward-rules.js';
@@ -435,7 +435,8 @@ function ask(q,reward=true){
  if(first&&portrait)chat.heroTransition=portrait.getBoundingClientRect();
  chat.category=categoryOf(chat.category).id;petInteraction.reset();
  // 답변은 항상 Knowly에서 받는다. 샘플 규칙(resolveQuestion·샘플 일정)으로 분류하거나 기한을 만들지 않는다.
- const r={q,category:chat.category,messageId:crypto.randomUUID()};
+ // personal: 개인 정보 질문이면 게시판 글쓰기에서 질문을 채우지 않고 안내를 보여준다(showPostDialog).
+ const r=newQuestion(q,chat.category);
  const files=attachments;attachments=[];
  chat.messages.push({role:'user',text:q,at:Date.now(),...(files.length?{files:files.map(a=>a.name)}:{})});chat.pendingReply=r;chat.draft='';view='chat';
  render();refreshPet();scrollConversation();$('#question-form textarea')?.focus({preventScroll:true});
