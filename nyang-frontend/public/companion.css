@@ -37,3 +37,10 @@ body[data-mode=cat] .main-content.work-view{overflow:auto;background:#fbfcfe!imp
 @media(min-height:950px){body[data-mode=cat]{--resident-size:322px}}
 @media(max-height:760px){body[data-mode=cat]{--resident-size:222px}.reward-guide{margin-top:16px;padding:12px}.reward-guide p{font-size:11px;margin:6px 0}.sidebar-bottom .sidebar-note{display:none}.calendar-page{padding-top:24px}.calendar-cell{height:85px}}
 @media(prefers-reduced-motion:reduce){.pet-body,.cat-art::before,.cat-art::after,.cat-art.happy,.collect-heart,.cat-outfit{animation:none!important}}
+/* 답을 찾는 동안: 책을 읽는 냥대리 (cat-sprite.png의 오른쪽 칸). 책장을 넘기듯 살짝 끄덕인다. */
+.cat-art.searching{background-image:url('./assets/cat-sprite.png')!important;background-size:300% 100%!important;background-position:right center!important;clip-path:none}
+.cat-art.searching::before,.cat-art.searching::after{display:none!important}
+.cat-art.resident.searching{transform-origin:50% 90%;animation:cat-reading 1.7s ease-in-out infinite!important}
+@keyframes cat-reading{0%,100%{transform:translateY(0) rotate(0)}30%{transform:translateY(-2px) rotate(-1.6deg)}60%{transform:translateY(0) rotate(1.1deg)}80%{transform:translateY(-1px) rotate(0)}}
+.motion-paused .cat-art.resident.searching{animation-play-state:paused!important}
+@media(prefers-reduced-motion:reduce){.cat-art.resident.searching{animation:none!important}}
