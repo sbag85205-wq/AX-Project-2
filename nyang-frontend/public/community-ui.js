@@ -1,5 +1,5 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
-import {boardView} from './board-view.js?v=2108a2784cc8';
+import {boardView} from './board-view.js?v=226a2d113c12';
 import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=f613c32ee316';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const labels={server:'서버 설치 · 설정',client:'클라이언트 접속',trouble:'장애 조치'};
