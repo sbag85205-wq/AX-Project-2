@@ -39,8 +39,16 @@ const allDocs=()=>[...documents,...uploads];
 const badge=(text,cls='')=>`<span class="badge ${cls}">${text}</span>`;
 let toastTimer=null,happyTimer=null;
 function toast(text){let el=$('#toast');if(!el){el=document.createElement('div');el.id='toast';el.setAttribute('role','status');document.body.append(el);}el.textContent=text;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3500);}
-// 테마 결정·적용 규칙은 theme.js(<head>에서 먼저 실행) 한 곳에 있다.
-const colorTheme=window.nyangTheme;
+// 테마 결정·적용 규칙은 theme.js(<head>에서 먼저 실행)에 있다. theme.js를 불러오지 못했을 때도
+// 앱이 뜨도록 같은 규칙의 작은 대체본을 쓴다(이때는 첫 화면이 잠깐 밝게 보일 수 있다).
+const colorTheme=window.nyangTheme||(()=>{
+ const media=matchMedia('(prefers-color-scheme: dark)');
+ return {
+  media,
+  preferred(){const saved=read('nyang-color-theme',null);return saved==='dark'||saved==='light'?saved:media.matches?'dark':'light';},
+  apply(theme){const dark=theme==='dark';document.documentElement.dataset.theme=dark?'dark':'light';$('meta[name="theme-color"]')?.setAttribute('content',dark?'#111214':'#ffffff');return dark;}
+ };
+})();
 function applyColorTheme(theme){
  const dark=colorTheme.apply(theme);
  const button=$('[data-action="toggle-theme"]');
