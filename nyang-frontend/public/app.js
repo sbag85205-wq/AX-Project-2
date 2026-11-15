@@ -3,7 +3,7 @@ import {createReactionPicker} from './reaction-variety.js?v=115ea2f34987';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=ef11f91be08e';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=06e0b81b016b';
-import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,statsHTML,loadStatistics,logoutAccount} from './community-ui.js?v=ffe23cf4c50f';
+import {COMMUNITY_CLICK_SELECTOR,initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,statsHTML,loadStatistics,logoutAccount} from './community-ui.js?v=ffe23cf4c50f';
 import {documents,faq,answers,reference,localDate,addDays,asDate,displayDate} from './core.js?v=0ff57cf675c0';
 import {categories,esc,isStaff,canEarnRewards} from './common.js';
 import {scheduleTypes,makeSchedule,mergeSchedule} from './companion.js?v=7d55f062fd27';
@@ -545,8 +545,9 @@ function endPetGesture(e,cancelled=false){
 document.addEventListener('pointerup',e=>endPetGesture(e));
 document.addEventListener('pointercancel',e=>endPetGesture(e,true));
 document.addEventListener('lostpointercapture',e=>endPetGesture(e,true));
+// 클릭 처리: 게시판·로그인·출석·좋아요 버튼(COMMUNITY_CLICK_SELECTOR)은 community-ui.js가, 나머지는 여기서 맡는다.
 document.addEventListener('click',async e=>{
- const b=e.target.closest('button,a[data-action]');if(!b||b.disabled)return;
+ const b=e.target.closest('button,a[data-action]');if(!b||b.disabled||b.matches(COMMUNITY_CLICK_SELECTOR))return;
  if(b.dataset.knowlyDoc){openLibrary(`/docs/${encodeURIComponent(b.dataset.knowlyDoc)}${b.dataset.chunk?`?chunk=${encodeURIComponent(b.dataset.chunk)}`:''}`);return;}
  if(b.dataset.knowlyVote){voteKnowly(b.dataset.message,b.dataset.knowlyVote);return;}
  if(b.dataset.removeAttach){chatDraft=$('#question-form textarea')?.value??chatDraft;attachments=attachments.filter(a=>a.id!==b.dataset.removeAttach);render();return;}
@@ -628,7 +629,10 @@ document.addEventListener('click',async e=>{
  if(a==='toggle-motion'){const moving=!read('om-cat-motion',true);if(save('om-cat-motion',moving)){document.body.classList.toggle('motion-paused',!moving);b.setAttribute('aria-pressed',String(moving));b.setAttribute('aria-label',moving?'고양이 움직임 끄기':'고양이 움직임 켜기');b.innerHTML=`<span class="motion-mark">${moving?'Ⅱ':'▷'}</span><span>${moving?'움직임 끄기':'움직임 켜기'}</span>`;}}
  if(a==='close-modal')closeModal();
 });
+// submit 처리: #activity-search, #question-form, [data-plan-form], #chat-settings-form, #chat-folder-form.
+// 로그인·게시판 검색·익명 질문·담당자 답변 폼은 community-ui.js가 맡는다.
 document.addEventListener('submit',e=>{
+ if(['chat-settings-form','chat-folder-form'].includes(e.target.id)){e.preventDefault();submitChatSettings(e.target);return;}
  if(e.target.id==='activity-search'){e.preventDefault();activityQuery=String(new FormData(e.target).get('query')||'').trim();render();return;}
  if(e.target.id==='question-form'){e.preventDefault();const text=new FormData(e.target).get('question');ask(text);}
  if(e.target.dataset.planForm){
@@ -678,10 +682,9 @@ initCommunity({
   rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};updateWallet();refreshPet();if(['activity','board'].includes(view)&&!$('#modal').open)render();}
 });
 
-document.addEventListener('submit',e=>{
- if(!['chat-settings-form','chat-folder-form'].includes(e.target.id))return;
- e.preventDefault();if(!canEarnRewards(communityState()))return;
- const form=e.target,data=new FormData(form);saveCurrentChat();
+function submitChatSettings(form){
+ if(!canEarnRewards(communityState()))return;
+ const data=new FormData(form);saveCurrentChat();
  const folder=String(data.get('folder')||'').trim();
  if(form.id==='chat-folder-form'&&!folder){toast('폴더 이름을 입력해 주세요.');return;}
  if(form.id==='chat-settings-form'&&!chats.some(x=>x.id===form.dataset.threadId))return;
@@ -690,4 +693,4 @@ document.addEventListener('submit',e=>{
  chats=next;
  if(chatHistoryFolder!=='all')chatHistoryFolder='folder:'+folder;
  closeModal();render();toast(form.id==='chat-settings-form'?'대화 제목과 폴더를 저장했어요.':'폴더 이름을 변경했어요.');
-});
+}

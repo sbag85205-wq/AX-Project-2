@@ -4,7 +4,14 @@ import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=9cfeb98
 import {categoryLabels as labels,esc,isStaff} from './common.js';
 import {rewardHelp} from './reward-rules.js';
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
-let state={loading:true},hooks,filter='all',query='',busy=false,connecting=null,authEpoch=0,loginRole='employee',stats=null;
+let state={loading:true},hooks,filter='all',query='',connecting=null,authEpoch=0,loginRole='employee',stats=null;
+// 진행 중인 요청: 같은 동작(같은 글의 좋아요·답변 등)만 겹치지 않게 막고, 다른 동작은 함께 할 수 있다.
+const pending=new Set();
+async function once(key,work){
+ if(pending.has(key))return;
+ pending.add(key);
+ try{return await work();}finally{pending.delete(key);}
+}
 export const communityState=()=>state;
 export const accountGateHTML=()=>loginView(loginRole,state);
 export const statsHTML=()=>statisticsHTML(stats);
@@ -24,7 +31,7 @@ export async function logoutAccount(){
 
 export function initCommunity(options){hooks=options;refreshCommunity();
  if(typeof window!=='undefined'){
-  const idle=()=>!busy&&state.member&&!document.activeElement?.matches('input,textarea,select')&&!document.querySelector('dialog[open],details.staff-composer[open]');
+  const idle=()=>!pending.size&&state.member&&!document.activeElement?.matches('input,textarea,select')&&!document.querySelector('dialog[open],details.staff-composer[open]');
   window.addEventListener('focus',()=>{if(idle())refreshCommunity();});
   window.addEventListener('storage',e=>{if(e.key==='nyang-account-change'){authEpoch++;connecting=null;refreshCommunity();}});
   setInterval(()=>{if(!document.hidden&&idle())refreshCommunity();},15000);
@@ -112,48 +119,61 @@ export function showPostDialog(r){
  if(!state.member){hooks.show('activity');hooks.toast('체험 연결을 준비하고 있어요. 잠시 후 다시 시도해 주세요.');return;}
  hooks.modal(`<h2 id="modal-title">익명 질문 작성</h2><p class="modal-sub">게시할 내용을 확인해 주세요. 이름·급여·개인 계정 정보 등은 적지 마세요.</p>${r.personal?'<p class="privacy-note">개인별 정보는 공개 게시판에서 확인할 수 없어요. 일반적인 절차에 대한 질문으로 바꿔 주세요.</p>':''}<form id="anonymous-post"><label>질문 분야<select name="category">${Object.entries(labels).map(([v,t])=>`<option value="${v}" ${v===r.category?'selected':''}>${t}</option>`).join('')}</select></label><label>게시할 질문<textarea name="body" rows="5" minlength="5" maxlength="2000" required>${r.personal?'':esc(r.q)}</textarea></label><p class="community-caption">게시판에는 ‘익명의 직원’으로 보여요. 지금은 이 브라우저에만 저장돼서, 같은 브라우저로 로그인한 직원·담당자만 볼 수 있어요.</p><label class="consent-check"><input type="checkbox" required> 이 내용을 직원 질문 게시판에 공유할게요.</label><div class="modal-button-row"><button class="primary-button">확인하고 익명으로 게시</button><button type="button" class="text-button" data-action="close-modal">취소</button></div></form>`);
 }
+// 이 파일의 클릭 처리는 아래 속성을 가진 버튼만 맡는다. 나머지(data-action 등)는 app.js가 맡는다.
+export const COMMUNITY_CLICK_SELECTOR='[data-delete-post],[data-confirm-delete],[data-restore-post],[data-login-role],[data-community],[data-board-filter],[data-like]';
 document.addEventListener('click',async e=>{
- const b=e.target.closest('button');if(!b||b.disabled)return;
+ const b=e.target.closest('button');if(!b||b.disabled||!b.matches(COMMUNITY_CLICK_SELECTOR))return;
  if(b.dataset.deletePost){showDeleteDialog(b.dataset.deletePost);return;}
  if(b.dataset.confirmDelete||b.dataset.restorePost){
-  if(busy||!state.member)return;
+  if(!state.member)return;
   const staff=isStaff(state),post=state.posts.find(p=>p.id===b.dataset.confirmDelete);
   if(b.dataset.restorePost?!staff:!staff&&!post?.mine)return;
-  busy=true;b.disabled=true;
-  try{const restore=!!b.dataset.restorePost,result=await communityAction(restore?'restore-post':'delete-post',{post:b.dataset.restorePost||b.dataset.confirmDelete});if(result){if(!restore)hooks.close();hooks.show('board');}}finally{busy=false;b.disabled=false;}return;
+  const restore=!!b.dataset.restorePost,id=b.dataset.restorePost||b.dataset.confirmDelete;
+  await once('delete:'+id,async()=>{
+   b.disabled=true;
+   try{const result=await communityAction(restore?'restore-post':'delete-post',{post:id});if(result){if(!restore)hooks.close();hooks.show('board');}}finally{b.disabled=false;}
+  });return;
  }
  if(b.dataset.loginRole){loginRole=b.dataset.loginRole;hooks.render();return;}
  if(b.dataset.community==='statistics'){await loadStatistics();return;}
  if(b.dataset.boardFilter){filter=b.dataset.boardFilter;hooks.show('board');return;}
  const action=b.dataset.community;
  if(action==='refresh'){b.disabled=true;await refreshCommunity();hooks.render();return;}
- if(!action&&!b.dataset.like)return;
- if(busy)return;busy=true;b.disabled=true;
- try{
-  if(action==='attendance'){
-   b.textContent='오늘의 선물을 여는 중…';
-   const result=await communityAction('attendance');if(result){hooks.render();hooks.toast(result.notice);}
-  }
-  if(b.dataset.like){if(await communityAction('like',{post:b.dataset.like}))hooks.render();}
- }finally{busy=false;b.disabled=false;}
+ if(action==='attendance'){
+  await once('attendance',async()=>{
+   b.disabled=true;b.textContent='오늘의 선물을 여는 중…';
+   try{const result=await communityAction('attendance');if(result){hooks.render();hooks.toast(result.notice);}}finally{b.disabled=false;}
+  });return;
+ }
+ if(b.dataset.like){
+  await once('like:'+b.dataset.like,async()=>{
+   b.disabled=true;
+   try{if(await communityAction('like',{post:b.dataset.like}))hooks.render();}finally{b.disabled=false;}
+  });
+ }
 });
+// 이 파일의 submit 처리: #account-login, #board-search, #anonymous-post, [data-staff-reply]. 나머지 폼은 app.js가 맡는다.
 document.addEventListener('submit',async e=>{
  const f=e.target;
  if(f.id==='account-login'){
-  e.preventDefault();if(busy)return;busy=true;const button=f.querySelector('[type="submit"]'),error=f.querySelector('#login-error');button.disabled=true;button.textContent='로그인 중…';error.textContent='';
-  const epoch=++authEpoch;connecting=null;
-  try{const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'login',...Object.fromEntries(new FormData(f))})}),data=await res.json();if(epoch!==authEpoch)return;if(!res.ok)throw Error(data.error);state=data;stats=null;filter='all';query='';hooks.update(state);broadcastAuth();}
-  catch(e){if(epoch===authEpoch){error.textContent=e.message;f.querySelector('[name="password"]').focus();}}
-  finally{busy=false;button.disabled=false;button.textContent=loginRole==='staff'?'담당자로 로그인':'직원으로 로그인';}return;
+  e.preventDefault();
+  await once('login',async()=>{
+   const button=f.querySelector('[type="submit"]'),error=f.querySelector('#login-error');button.disabled=true;button.textContent='로그인 중…';error.textContent='';
+   const epoch=++authEpoch;connecting=null;
+   try{const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'login',...Object.fromEntries(new FormData(f))})}),data=await res.json();if(epoch!==authEpoch)return;if(!res.ok)throw Error(data.error);state=data;stats=null;filter='all';query='';hooks.update(state);broadcastAuth();}
+   catch(e){if(epoch===authEpoch){error.textContent=e.message;f.querySelector('[name="password"]').focus();}}
+   finally{button.disabled=false;button.textContent=loginRole==='staff'?'담당자로 로그인':'직원으로 로그인';}
+  });return;
  }
-
  if(f.id==='board-search'){e.preventDefault();query=new FormData(f).get('query').trim();hooks.render();return;}
  if(f.id!=='anonymous-post'&&!f.dataset.staffReply)return;
- e.preventDefault();if(busy)return;busy=true;
- const submit=f.querySelector('[type="submit"],button.primary-button');submit.disabled=true;
- try{
-  const data=Object.fromEntries(new FormData(f));let result;
-  if(f.id==='anonymous-post'){result=await communityAction('post',data);if(result){hooks.close();filter='mine';query='';hooks.show('board');}}
-  else{f.dataset.requestId??=crypto.randomUUID();result=await communityAction('reply',{...data,post:f.dataset.staffReply,id:f.dataset.requestId});if(result)hooks.render();}
- }finally{busy=false;submit.disabled=false;}
+ e.preventDefault();
+ await once(f.id==='anonymous-post'?'post':'reply:'+f.dataset.staffReply,async()=>{
+  const submit=f.querySelector('[type="submit"],button.primary-button');submit.disabled=true;
+  try{
+   const data=Object.fromEntries(new FormData(f));let result;
+   if(f.id==='anonymous-post'){result=await communityAction('post',data);if(result){hooks.close();filter='mine';query='';hooks.show('board');}}
+   else{f.dataset.requestId??=crypto.randomUUID();result=await communityAction('reply',{...data,post:f.dataset.staffReply,id:f.dataset.requestId});if(result)hooks.render();}
+  }finally{submit.disabled=false;}
+ });
 });
