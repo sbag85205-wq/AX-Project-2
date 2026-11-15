@@ -89,3 +89,11 @@ body[data-role=staff] .desktop-workspace .chat-home-below{gap:12px}
 body[data-role=staff] .desktop-workspace .main-content:has(.chat-home){overflow-y:auto}
 /* 담당자 첫 화면에서는 '쓰다듬기' 안내 글이 추천 질문과 겹치므로 숨긴다 */
 body[data-role=staff] .desktop-workspace .chat-home #pet-guide,body[data-role=staff] .desktop-workspace .chat-home .pet-guide{display:none}
+/* 냥대리 테스트 화면을 전체 화면 기준 가운데에 둔다.
+   세로: 남는 높이가 있으면 냥대리·추천 질문·입력칸·설정 칸을 한 덩어리로 가운데 정렬한다(넘치면 위에서부터 스크롤).
+   가로: 왼쪽 대화 기록 칸만큼 오른쪽에도 여백을 두어, 내용이 창 한가운데 오게 한다(넓은 창에서만). */
+body[data-role=staff] .desktop-workspace .chat-home{justify-content:safe center}
+@media(min-width:1200px){
+ body[data-role=staff] .chat-layout:has(.chat-history:not(.is-collapsed)) .chat-workspace{padding-right:240px}
+ body[data-role=staff] .chat-layout:has(.chat-history.is-collapsed) .chat-workspace{padding-right:50px}
+}

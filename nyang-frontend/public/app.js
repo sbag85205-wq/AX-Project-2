@@ -708,7 +708,8 @@ document.addEventListener('click',async e=>{
  if(a==='choose-category')showCategories();
  if(a==='schedule'){petInteraction.reset();view=scheduleView;render();$('#main').scrollTop=0;}
  if(a==='activity')refreshCommunity();
- if(['chat','todos','calendar','board','activity'].includes(a)){if(view!==a)petInteraction.reset();view=a;render();$('#main').scrollTop=0;}
+ if(['chat','todos','calendar','board','activity'].includes(a)){if(a==='chat')ss.open=true; // 냥대리 테스트를 열 때마다 설정 칸은 펼친 상태로 보여 준다
+ if(view!==a)petInteraction.reset();view=a;render();$('#main').scrollTop=0;}
  if(a==='calendar-today'){calendarMonth=localDate().slice(0,7);calendarDay=localDate();render();}
 
 
