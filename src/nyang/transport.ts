@@ -40,6 +40,8 @@ export async function request(path: string, init: RequestInit = {}): Promise<Res
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return Response.json({ authenticated: false, member: false }, { status: path.startsWith('/api/account') && !input.action ? 200 : 401 });
     if (path === '/api/knowly-session') return Response.json({ connected: true });
+    // 냥대리 테스트 화면의 검색·모델 설정 (관리자인지는 서버 함수가 확인한다)
+    if (path === '/api/knowly-settings') return Response.json(await callFunction('admin-settings', input));
     if (path === '/api/knowly') {
       if (input.action === 'feedback') return Response.json(await callFunction('chat', input));
       const data = await callFunction<AskResult>('chat', input);

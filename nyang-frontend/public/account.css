@@ -46,3 +46,46 @@ body[data-role=staff] .workspace-header{grid-template-columns:minmax(270px,1fr) 
 .workspace-nav.side-nav .nav-submenu>button:hover{background:var(--ui-fill);color:var(--ui-ink)}
 .workspace-nav.side-nav .nav-submenu>button.active{background:var(--ui-selection);color:var(--ui-ink);font-weight:600}
 html[data-theme=dark] .workspace-nav .nav-submenu{box-shadow:0 10px 30px #00000066}
+/* 냥대리 테스트: 채팅 입력칸 아래의 검색·모델 설정 */
+.staff-settings{width:100%;box-sizing:border-box;border:1px solid var(--ui-line);border-radius:14px;background:var(--ui-panel);padding:9px 16px 12px}
+.staff-settings.collapsed{padding-bottom:9px}
+.ss-head{display:flex;align-items:center;gap:12px;min-height:30px}
+.ss-toggle{display:flex;align-items:center;gap:6px;padding:2px 0;border:0;background:none;color:var(--ui-ink);font-size:13px;cursor:pointer;white-space:nowrap}
+.ss-toggle strong{font-weight:600}.ss-toggle .icon{width:15px;height:15px;color:var(--ui-sub);transition:transform .15s}
+.staff-settings.collapsed .ss-toggle .icon:last-child{transform:rotate(-90deg)}
+.ss-note{flex:1;min-width:0;font-size:11px;color:var(--ui-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ss-actions{display:flex;align-items:center;gap:10px;flex:none;margin-left:auto}
+.ss-actions .text-button{font-size:12px}body[data-mode=cat] .staff-settings .ss-actions .primary-button{height:30px;min-height:0;padding:0 16px;font-size:12px;line-height:30px}
+.ss-actions button:disabled{opacity:.4;cursor:default}
+.ss-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.45fr);gap:20px;margin-top:9px;padding-top:11px;border-top:1px solid var(--ui-line)}
+.ss-body[hidden]{display:none}
+.ss-model>label{display:block;margin-bottom:6px;font-size:12px;color:var(--ui-sub)}
+.ss-model-row{display:flex;align-items:center;gap:6px}
+.ss-model-row input{flex:1;min-width:0;height:30px;box-sizing:border-box;padding:0 10px;border:1px solid var(--ui-line);border-radius:7px;background:var(--ui-bg);color:var(--ui-ink);font-size:12px}
+.ss-model-row .secondary-button{min-height:30px;padding:4px 10px;font-size:12px}
+.ss-model-row .text-button{font-size:12px;white-space:nowrap}.ss-model-row button:disabled{opacity:.4}
+.ss-model-hint{display:block;margin-top:6px;font-size:11px;color:var(--ui-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ss-test{margin:4px 0 0;font-size:11px;overflow-wrap:anywhere}.ss-test.ok{color:#1f7a45}.ss-test.warn,.ss-message.warn{color:#a2540c}
+html[data-theme=dark] .ss-test.ok{color:#8fd6ad}html[data-theme=dark] .ss-test.warn,html[data-theme=dark] .ss-message.warn{color:#f1b98a}
+.ss-ranges{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.ss-range{display:flex;flex-direction:column;gap:7px;font-size:12px;color:var(--ui-sub);cursor:help}
+.ss-range b{margin-left:3px;color:var(--ui-ink);font-weight:600;font-variant-numeric:tabular-nums}
+.ss-range input{width:100%;margin:0;accent-color:var(--ui-accent);cursor:pointer}.ss-range input:disabled{opacity:.4;cursor:not-allowed}
+.ss-message{margin:0;font-size:12px;color:var(--ui-sub)}
+.chat-compose-dock>.staff-settings{max-width:860px;margin:8px auto 0}
+@media(max-width:1000px){.ss-note{display:none}}
+@media(max-width:760px){.ss-body{grid-template-columns:1fr;gap:12px}}
+/* 설정 칸이 함께 보이도록 담당자 첫 화면의 냥대리를 위로 올리고 조금 줄인다 */
+body[data-role=staff] .desktop-workspace .chat-home{--resident-size:clamp(110px,17dvh,210px);--room-center:calc(var(--resident-size)/2 + 62px)}
+body[data-role=staff] .desktop-workspace .chat-home .cat-resident-stage{min-height:0;height:calc(var(--room-center) + var(--resident-size)/2 + 22px)}
+body[data-role=staff] .desktop-workspace .chat-home .resident-speech{top:calc(var(--room-center) - var(--resident-size)/2 - 54px)}
+body[data-role=staff] .desktop-workspace .chat-home .resident-speech h1{font-size:22px;letter-spacing:-.6px}
+body[data-role=staff] .desktop-workspace .chat-home .resident-speech p{display:none}
+body[data-role=staff] .desktop-workspace .chat-home-below{gap:12px}
+@media(max-height:820px){body[data-role=staff] .desktop-workspace .chat-home-below>.chat-starters{--rows:1}}
+/* 낮은 창: 인사말을 빼고 냥대리를 더 줄여 설정 칸까지 한 화면에 들어가게 한다 */
+@media(max-height:700px){body[data-role=staff] .desktop-workspace .chat-home{--resident-size:100px;--room-center:calc(var(--resident-size)/2 + 8px)}body[data-role=staff] .desktop-workspace .chat-home .cat-resident-stage{height:calc(var(--room-center) + var(--resident-size)/2 + 40px)}body[data-role=staff] .desktop-workspace .chat-home .resident-speech{display:none}body[data-role=staff] .desktop-workspace .chat-home-below{gap:10px}}
+/* 그래도 넘치면 잘리지 않고 스크롤된다 */
+body[data-role=staff] .desktop-workspace .main-content:has(.chat-home){overflow-y:auto}
+/* 담당자 첫 화면에서는 '쓰다듬기' 안내 글이 추천 질문과 겹치므로 숨긴다 */
+body[data-role=staff] .desktop-workspace .chat-home #pet-guide,body[data-role=staff] .desktop-workspace .chat-home .pet-guide{display:none}
