@@ -55,6 +55,11 @@ describe('main Knowly transport', () => {
     expect(data.answer.citations.map((c: { pages: string }) => c.pages)).toEqual(['3쪽', '4–6쪽']);
     expect(data.answer).toMatchObject({ answered: true, details: '자세히', steps: ['신청'], message_id: 'answer-a' });
     expect(data.answer.outside_category).toBeUndefined();
+    // 서버가 보낸 주의·설명은 줄이지 않는다(chat 함수는 주의를 5개까지 보낸다).
+    const warnings = ['주의 1', '주의 2', '주의 3', '주의 4', '주의 5'], details = '긴 설명 '.repeat(2000);
+    mocks.call.mockResolvedValue({ answer: { ...answer, warnings, details }, conversation_id: 'thread-a', message_id: 'answer-d' });
+    const full = (await (await request('/api/knowly', post({ question: '연차' }))).json()).answer;
+    expect(full.warnings).toEqual(warnings); expect(full.details).toBe(details.trim());
     mocks.call.mockResolvedValue({ answer: { ...answer, outside_category: true }, conversation_id: 'thread-a', message_id: 'answer-c' });
     expect((await (await request('/api/knowly', post({ question: '연차' }))).json()).answer.outside_category).toBe(true);
     mocks.call.mockResolvedValue({ answer: { ...answer, summary: [] }, conversation_id: 'thread-a', message_id: 'answer-b' });

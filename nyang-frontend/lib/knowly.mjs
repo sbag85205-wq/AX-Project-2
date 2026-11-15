@@ -24,7 +24,12 @@ const text=(v,max=600)=>typeof v==='string'?v.trim().slice(0,max):'';
 /** chat 함수의 Answer를 냥대리 화면이 쓰는 결과로 줄인다(knowly-answer.mjs와 같음). 독립 프로토타입은 절차(steps)가 있으면 긴 설명을 숨긴다. */
 export function toNyangAnswer(answer){
  const a=normalizeKnowlyAnswer(answer);
- return {...a,details:a.steps.length?'':a.details.slice(0,4000)};
+ // 프로토타입은 서버 저장 크기를 줄이려고 개수·길이를 제한했다(예전과 같음).
+ const cap=(list,max,len=600)=>list.map(x=>x.slice(0,len)).slice(0,max);
+ return {...a,summary:cap(a.summary,4),steps:cap(a.steps,12),warnings:cap(a.warnings,4),
+  citations:a.citations.map(c=>({...c,title:c.title.slice(0,200),version:c.version.slice(0,40)})),
+  attachments:a.attachments.slice(0,3).map(n=>({...n,name:n.name.slice(0,120)})),
+  details:a.steps.length?'':a.details.slice(0,4000)};
 }
 
 async function timed(fetchImpl,url,init){
