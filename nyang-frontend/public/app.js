@@ -4,7 +4,7 @@ import {createCompanionBehavior,companionAppearance} from './companion-behavior.
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=3e865096f4ea';
 import {adminView} from './admin-view.js?v=4fb2ee3579cd';
-import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount} from './community-ui.js?v=7db75e78a887';
+import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount} from './community-ui.js?v=c8ff9d62a389';
 import {categories,defaultCategory,categoryOf,documents,faq,starters,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=310e82e660a7';
 import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=617eea04a551';
 import {createPetInteraction} from './pet-interaction.js?v=355c0da8eb14';
@@ -505,6 +505,8 @@ const backgroundPresets=[
  {id:'mountain',label:'고요한 산',caption:'맑은 공기와 느긋한 하루',file:'bg-mountain.png'}
 ];
 function backgroundState(){
+ // 담당자의 '냥대리 테스트'는 배경 없이 쓴다 (담당자 화면에는 꾸미기 메뉴가 없다)
+ if(communityState().me?.role==='staff')return {id:'white',label:'하얀 작업실',url:null};
  const uploaded=read('om-bg-'+mode,null);
  const saved=read('om-bg-theme-'+mode,null);
  const id=saved||(uploaded?'custom':isCat?'cafe':'white');
@@ -680,7 +682,7 @@ initCommunity({
     activeChatId=read('om-chat-active',null);const selected=chats.find(x=>x.id===activeChatId);
     if(selected){messages=structuredClone(selected.messages);category=selected.category;}else activeChatId=null;
    }
-   rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};render();if(next&&state.me.role!=='staff')companionBehavior.greet(personality);return;
+   rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};applyBackground();render();if(next&&state.me.role!=='staff')companionBehavior.greet(personality);return;
   }
   if(!state.member){render();return;}
   rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};updateWallet();refreshPet();if(['activity','board'].includes(view)&&!$('#modal').open)render();}

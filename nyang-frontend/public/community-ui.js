@@ -1,10 +1,10 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
-import {boardView} from './board-view.js?v=226a2d113c12';
+import {boardView} from './board-view.js?v=641388d2d898';
 import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=f613c32ee316';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const labels={server:'서버 설치 · 설정',client:'클라이언트 접속',trouble:'장애 조치'};
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
-let state={loading:true},hooks,filter='all',query='',busy=false,connecting=null,authEpoch=0,loginRole='employee',stats=null;
+let state={loading:true},hooks,filter='all',query='',boardCategory='all',busy=false,connecting=null,authEpoch=0,loginRole='employee',stats=null;
 export const communityState=()=>state;
 export const accountGateHTML=()=>loginView(loginRole,state);
 export const statsHTML=()=>statisticsHTML(stats);
@@ -18,7 +18,7 @@ export async function loadStatistics(){
 function broadcastAuth(){try{localStorage.setItem('nyang-account-change',String(Date.now()));}catch{}}
 export async function logoutAccount(){
  try{const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'logout'})});if(!res.ok)throw Error('로그아웃하지 못했어요. 다시 시도해 주세요.');
- authEpoch++;connecting=null;stats=null;state={authenticated:false,member:false};filter='all';query='';hooks.close();hooks.update(state);broadcastAuth();}
+ authEpoch++;connecting=null;stats=null;state={authenticated:false,member:false};filter='all';query='';boardCategory='all';hooks.close();hooks.update(state);broadcastAuth();}
  catch(e){hooks.toast(e.message);}
 }
 
@@ -95,10 +95,10 @@ export function activityHTML(content=''){
   </details></details>
  </section>`;
 }
-export function showMyPost(id){filter='mine';query='';hooks.show('board');requestAnimationFrame(()=>document.getElementById('post-'+id)?.scrollIntoView({block:'center'}));}
+export function showMyPost(id){filter='mine';query='';boardCategory='all';hooks.show('board');requestAnimationFrame(()=>document.getElementById('post-'+id)?.scrollIntoView({block:'center'}));}
 export function boardHTML(){
  const blocked=gate();if(blocked)return '<section class="community-page">'+blocked+'</section>';
- return boardView(state,filter,query);
+ return boardView(state,filter,query,boardCategory);
 }
 function showDeleteDialog(id){
  const post=state.posts.find(p=>p.id===id);if(!post||(state.me?.role!=='staff'&&!post.mine))return;
@@ -110,7 +110,7 @@ export function unknownOffer(r){
 }
 export function showPostDialog(r){
  if(!state.member){hooks.show('activity');hooks.toast('체험 연결을 준비하고 있어요. 잠시 후 다시 시도해 주세요.');return;}
- hooks.modal(`<h2 id="modal-title">익명 질문 작성</h2><p class="modal-sub">게시할 내용을 확인해 주세요. 이름·급여·개인 계정 정보 등은 적지 마세요.</p>${r.personal?'<p class="privacy-note">개인별 정보는 공개 게시판에서 확인할 수 없어요. 일반적인 절차에 대한 질문으로 바꿔 주세요.</p>':''}<form id="anonymous-post"><label>질문 분야<select name="category">${Object.entries(labels).map(([v,t])=>`<option value="${v}" ${v===r.category?'selected':''}>${t}</option>`).join('')}</select></label><label>게시할 질문<textarea name="body" rows="5" minlength="5" maxlength="2000" required>${r.personal?'':esc(r.q)}</textarea></label><p class="community-caption">게시판에는 ‘익명의 직원’으로 보여요. 지금은 이 브라우저에만 저장돼서, 같은 브라우저로 로그인한 직원·담당자만 볼 수 있어요.</p><label class="consent-check"><input type="checkbox" required> 이 내용을 직원 질문 게시판에 공유할게요.</label><div class="modal-button-row"><button class="primary-button">확인하고 익명으로 게시</button><button type="button" class="text-button" data-action="close-modal">취소</button></div></form>`);
+ hooks.modal(`<h2 id="modal-title">익명 질문 작성</h2><p class="modal-sub">게시할 내용을 확인해 주세요. 이름·급여·개인 계정 정보 등은 적지 마세요.</p>${r.personal?'<p class="privacy-note">개인별 정보는 공개 게시판에서 확인할 수 없어요. 일반적인 절차에 대한 질문으로 바꿔 주세요.</p>':''}<form id="anonymous-post"><fieldset class="post-category"><legend>어느 분야에 올릴까요?</legend><div>${Object.entries(labels).map(([v,t])=>`<label><input type="radio" name="category" value="${v}" required><span>${t}</span></label>`).join('')}</div><p>게시판에서 분야별로 모아 볼 수 있어요.</p></fieldset><label>게시할 질문<textarea name="body" rows="5" minlength="5" maxlength="2000" required>${r.personal?'':esc(r.q)}</textarea></label><p class="community-caption">게시판에는 ‘익명의 직원’으로 보여요. 지금은 이 브라우저에만 저장돼서, 같은 브라우저로 로그인한 직원·담당자만 볼 수 있어요.</p><label class="consent-check"><input type="checkbox" required> 이 내용을 직원 질문 게시판에 공유할게요.</label><div class="modal-button-row"><button class="primary-button">확인하고 익명으로 게시</button><button type="button" class="text-button" data-action="close-modal">취소</button></div></form>`);
 }
 document.addEventListener('click',async e=>{
  const b=e.target.closest('button');if(!b||b.disabled)return;
@@ -125,6 +125,7 @@ document.addEventListener('click',async e=>{
  if(b.dataset.loginRole){loginRole=b.dataset.loginRole;hooks.render();return;}
  if(b.dataset.community==='statistics'){await loadStatistics();return;}
  if(b.dataset.boardFilter){filter=b.dataset.boardFilter;hooks.show('board');return;}
+ if(b.dataset.boardCategory){boardCategory=b.dataset.boardCategory;hooks.show('board');return;}
  const action=b.dataset.community;
  if(action==='refresh'){b.disabled=true;await refreshCommunity();hooks.render();return;}
  if(!action&&!b.dataset.like)return;
@@ -153,7 +154,7 @@ document.addEventListener('submit',async e=>{
  const submit=f.querySelector('[type="submit"],button.primary-button');submit.disabled=true;
  try{
   const data=Object.fromEntries(new FormData(f));let result;
-  if(f.id==='anonymous-post'){result=await communityAction('post',data);if(result){hooks.close();filter='mine';query='';hooks.show('board');}}
+  if(f.id==='anonymous-post'){result=await communityAction('post',data);if(result){hooks.close();filter='mine';query='';boardCategory='all';hooks.show('board');}}
   else{f.dataset.requestId??=crypto.randomUUID();result=await communityAction('reply',{...data,post:f.dataset.staffReply,id:f.dataset.requestId});if(result)hooks.render();}
  }finally{busy=false;submit.disabled=false;}
 });

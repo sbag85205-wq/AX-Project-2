@@ -48,3 +48,18 @@ test('board exposes delete only for own questions or staff, including the mine f
  const staff=boardView({...state,me:{role:'staff'}});
  assert.ok(staff.includes('data-delete-post="own"'));assert.ok(staff.includes('data-delete-post="other"'));
 });
+test('board can be narrowed to one category, with counts, and keeps old-category posts reachable',async()=>{
+ const {boardView}=await import('../public/board-view.js');
+ const post=(id,category,replies=[])=>({id,mine:false,category,body:'질문 '+id,created:'2026-11-15',likes:0,replies});
+ const state={me:{role:'employee',username:'emp'},posts:[post('a','server'),post('b','client'),post('c','client',[{body:'답',source:'근거',created:'2026-11-15',department:'IT',name:'담당'}]),post('d','hr')]};
+ const all=boardView(state);
+ for(const id of ['a','b','c','d'])assert.ok(all.includes('id="post-'+id+'"'));
+ assert.match(all,/data-board-category="client"[^>]*>클라이언트 접속<span>2<\/span>/);
+ assert.match(all,/data-board-category="old"[^>]*>이전 분야<span>1<\/span>/);
+ const client=boardView(state,'all','','client');
+ assert.ok(client.includes('id="post-b"')&&client.includes('id="post-c"'));assert.ok(!client.includes('id="post-a"')&&!client.includes('id="post-d"'));
+ const waiting=boardView(state,'waiting','','client');assert.ok(waiting.includes('id="post-b"')&&!waiting.includes('id="post-c"'));
+ assert.ok(boardView(state,'all','','old').includes('id="post-d"'));
+ assert.ok(boardView(state,'all','','trouble').includes('이 분야에 해당하는 질문이 없어요.'));
+ assert.ok(!boardView({...state,posts:state.posts.slice(0,3)}).includes('data-board-category="old"'));
+});
