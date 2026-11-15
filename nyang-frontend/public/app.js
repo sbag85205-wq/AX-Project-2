@@ -4,7 +4,7 @@ import {createCompanionBehavior,companionAppearance} from './companion-behavior.
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=3e865096f4ea';
 import {adminView} from './admin-view.js?v=4fb2ee3579cd';
-import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,statsHTML,loadStatistics,logoutAccount} from './community-ui.js?v=dd7e4b42d6d1';
+import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount} from './community-ui.js?v=dd7e4b42d6d1';
 import {categories,defaultCategory,categoryOf,documents,faq,starters,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=310e82e660a7';
 import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=617eea04a551';
 import {createPetInteraction} from './pet-interaction.js?v=355c0da8eb14';
@@ -116,7 +116,7 @@ function render(){
  for(const name of ['chat','schedule','activity','board','statistics','faq','documents','users','model','unanswered','library']){const nav=$('#nav-'+name),active=name==='schedule'?['calendar','todos'].includes(view):view===name;nav?.classList.toggle('active',active);if(active)nav?.setAttribute('aria-current','page');else nav?.removeAttribute('aria-current');}
  $('#page-title').textContent={chat:'냥대리에게 물어보기',calendar:'내 캘린더',todos:'내가 해야 할 일',activity:'나의 질문 활동',board:'익명 질문 게시판 · 이 브라우저에만 저장',statistics:'이용통계',faq:'FAQ 관리',documents:'문서 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서'}[view];
  $('#main').classList.toggle('work-view',view!=='chat');updateWallet();
- if(KNOWLY_ROUTES[view]&&!knowlyOff[staff?'staff':'employee']){mountKnowly(view);}else if(view==='unanswered'||view==='library'){$('#main').innerHTML=`<section class="admin-page"><p class="admin-notice">${esc(knowlyOffMessage||'사내 문서 검색(Knowly)이 아직 연결되지 않았어요.')}</p></section>`;}else if(['faq','documents','users','model'].includes(view))$('#main').innerHTML=adminView(view,session.me.role,view==='documents'?documentQuery:adminQuery,view==='documents'?documentCategory:adminCategory,allDocs());else if(view==='statistics')$('#main').innerHTML=statsHTML()+knowlyStatsHTML();else if(view==='activity')$('#main').innerHTML=activityHTML(activityContent());else if(view==='board')$('#main').innerHTML=boardHTML();else if(view==='calendar')renderCalendar();else if(view==='todos')renderTodos();else renderCat();
+ if(KNOWLY_ROUTES[view]&&!knowlyOff[staff?'staff':'employee']){mountKnowly(view);}else if(view==='unanswered'||view==='library'){$('#main').innerHTML=`<section class="admin-page"><p class="admin-notice">${esc(knowlyOffMessage||'사내 문서 검색(Knowly)이 아직 연결되지 않았어요.')}</p></section>`;}else if(['faq','documents','users','model'].includes(view))$('#main').innerHTML=adminView(view,session.me.role,view==='documents'?documentQuery:adminQuery,view==='documents'?documentCategory:adminCategory,allDocs());else if(view==='statistics')$('#main').innerHTML=knowlyStatsHTML();else if(view==='activity')$('#main').innerHTML=activityHTML(activityContent());else if(view==='board')$('#main').innerHTML=boardHTML();else if(view==='calendar')renderCalendar();else if(view==='todos')renderTodos();else renderCat();
 }
 async function commitReward(event){
  const payload={type:event.type,id:crypto.randomUUID()};
@@ -224,7 +224,7 @@ function mountKnowly(name){
  if(current?.dataset.knowlyKey===key)return;
  $('#main').innerHTML=knowlyFrameHTML(key,route);
 }
-function knowlyStatsHTML(){return knowlyOff.staff?'':`<section class="admin-page knowly-stats"><header class="admin-heading"><p>사내 문서 검색 · Knowly</p><h1>문서 검색 이용 통계</h1></header>${knowlyFrameHTML('stats','/admin/stats')}</section>`;}
+function knowlyStatsHTML(){return knowlyOff.staff?'':`<section class="admin-page knowly-stats"><header class="admin-heading"><h1>문서 검색 이용 통계</h1></header>${knowlyFrameHTML('stats','/admin/stats')}</section>`;}
 window.addEventListener('message',e=>{
  if(e.origin!==location.origin||!e.data||typeof e.data.type!=='string')return;
  const frame=[...document.querySelectorAll('iframe.knowly-frame')].find(f=>f.contentWindow===e.source);if(!frame)return;
@@ -578,7 +578,7 @@ document.addEventListener('click',async e=>{
  if(a==='account'){const me=communityState().me;openModal('<div class="account-menu"><h2 id="modal-title">내 계정</h2><strong>'+esc(me.username)+' · '+(me.role==='staff'?'담당자':'직원')+'</strong><p>'+ (me.role==='staff'?'질문 게시판 관리와 통계에 접근할 수 있어요.':'포인트와 보상은 같은 계정으로 로그인한<br>모든 기기에서 이어져요.') +'</p><p>Knowly 개인 계정으로 연결되어 있어요.<br>대화와 보상은 계정별로 구분됩니다.</p><button class="primary-button" data-action="logout">로그아웃</button></div>');return;}
  if(a==='unanswered'||a==='library'){if(a==='library')openLibrary();else if(communityState().me?.role==='staff'){view=a;petInteraction.reset();render();$('#main').scrollTop=0;}return;}
  if(['faq','documents','users','model'].includes(a)){if(communityState().me?.role==='staff'){view=a;petInteraction.reset();render();$('#main').scrollTop=0;}return;}
- if(a==='statistics'){if(communityState().me?.role==='staff'){view='statistics';petInteraction.reset();await loadStatistics();}return;}
+ if(a==='statistics'){if(communityState().me?.role==='staff'){view='statistics';petInteraction.reset();render();$('#main').scrollTop=0;}return;}
  if(a==='toggle-theme'){
   const next=document.documentElement.dataset.theme==='dark'?'light':'dark';
   applyColorTheme(next);save('nyang-color-theme',next);return;

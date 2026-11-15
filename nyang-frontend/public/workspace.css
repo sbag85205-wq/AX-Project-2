@@ -388,7 +388,7 @@ body.motion-paused[data-personality] .resident-portrait .pet-body,body.motion-pa
 .chat-folder-picker p{margin:8px;font-size:12px;line-height:1.7;color:var(--ui-sub)}
 /* Knowly(main 백엔드) 화면·첨부 */
 .knowly-frame-wrap{width:100%}.knowly-frame{display:block;width:100%;min-height:480px;border:0;background:transparent}
-.knowly-stats{padding-top:0}.knowly-stats .knowly-frame-wrap{margin-top:16px}
+.knowly-stats .knowly-frame-wrap{margin-top:16px}
 .composer-attachments{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}.composer-attachments .text-button{padding:0 2px;min-height:0}
 .user-attachments{display:block;margin-top:6px;font-size:12px;opacity:.75}
 .knowly-source{display:flex;align-items:center;gap:8px;font-size:13px}
