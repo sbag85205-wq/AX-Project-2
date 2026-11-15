@@ -185,3 +185,10 @@ html[data-theme=dark] .chat-scroll { scrollbar-color: #555967 transparent; }
 .user-filters .label { font-size: 12px; font-weight: 600; color: var(--text-2); }
 .chip-count { margin-left: 2px; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
 .chip[aria-pressed='true'] .chip-count { color: var(--muted); }
+
+/* 미등록 질문 모음: 요약 숫자(미등록 질문 수 · 질문 유형 · 처리 대기 · FAQ로 등록됨)를 크게 */
+body[data-route='/admin/unanswered'] .stats-row { padding: 26px 0; }
+body[data-route='/admin/unanswered'] .stat-label { font-size: 16px; font-weight: 600; color: var(--text-2); }
+body[data-route='/admin/unanswered'] .stat-value { margin-top: 10px; font-size: 38px; }
+body[data-route='/admin/unanswered'] .stat-value small { font-size: 16px; margin-left: 5px; }
+body[data-route='/admin/unanswered'] .stat-sub { margin-top: 4px; font-size: 14px; }
