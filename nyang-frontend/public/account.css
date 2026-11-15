@@ -97,3 +97,18 @@ body[data-role=staff] .desktop-workspace .chat-home{justify-content:safe center}
  body[data-role=staff] .chat-layout:has(.chat-history:not(.is-collapsed)) .chat-workspace{padding-right:240px}
  body[data-role=staff] .chat-layout:has(.chat-history.is-collapsed) .chat-workspace{padding-right:50px}
 }
+/* 큰 화면에서는 냥대리 테스트 화면을 조금 더 크게 쓴다 (낮은 화면은 그대로) */
+@media(min-height:701px){body[data-role=staff] .desktop-workspace .chat-home{--resident-size:clamp(110px,calc(32dvh - 110px),250px)}}
+body[data-role=staff] .desktop-workspace .chat-home-below{max-width:clamp(760px,50vw,940px)}
+body[data-role=staff] .desktop-workspace .chat-home .resident-speech h1{font-size:clamp(22px,2.7dvh,30px)}
+@media(min-height:860px){
+ body[data-role=staff] .desktop-workspace .chat-home .chat-composer .input-row textarea{font-size:17px}
+ body[data-role=staff] .staff-settings{padding:12px 20px 16px}
+ body[data-role=staff] .ss-toggle{font-size:14px}
+ body[data-role=staff] .ss-model>label,body[data-role=staff] .ss-range{font-size:13px}
+ body[data-role=staff] .ss-model-row input{height:34px;font-size:13px}
+ body[data-role=staff] .ss-model-row .secondary-button{min-height:34px}
+ body[data-role=staff] .desktop-workspace .chat-home .cat-resident-stage{height:calc(var(--room-center) + var(--resident-size)/2 + 36px)}
+ body[data-role=staff] .desktop-workspace .chat-home-below>.chat-starters{--chip-h:32px}
+ body[data-role=staff] .desktop-workspace .chat-home-below>.chat-starters>button{font-size:13.5px;padding:0 14px}
+}
