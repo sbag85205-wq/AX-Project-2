@@ -483,7 +483,7 @@ function renderCat(){
  document.body.classList.toggle('motion-paused',!read('om-cat-motion',true));
  let content;
  if(home){
-  content=`<section class="cat-room home-scene chat-home"><div class="cat-resident-stage"><div class="scene-window" aria-hidden="true"></div><div class="active-cat-slot"></div><div class="home-cat-aside"><div class="chat-rewards home-cat-rewards" aria-label="냥대리에게 츄르 주기">${chatRewards()}</div></div><div class="resident-speech"><h1>${voice().greeting}</h1><p>${voice().intro}</p></div></div><div class="cat-below chat-home-below">${starterQuestions()}${composer(true)}${staffSettingsHTML()}</div></section>`;
+  content=`<section class="cat-room home-scene chat-home"><div class="cat-resident-stage"><div class="scene-window" aria-hidden="true"></div><div class="active-cat-slot"></div><div class="home-cat-aside"></div><div class="chat-rewards home-cat-rewards" aria-label="냥대리에게 츄르 주기">${chatRewards()}</div><div class="resident-speech"><h1>${voice().greeting}</h1><p>${voice().intro}</p></div></div><div class="cat-below chat-home-below">${starterQuestions()}${composer(true)}${staffSettingsHTML()}</div></section>`;
  }else{
   content=`<section class="chat-room" aria-label="냥대리 채팅방"><div class="chat-transcript" tabindex="0" aria-label="대화 내역"><div class="chat-transcript-inner">${conversation()}</div></div><div class="chat-compose-dock">${composer()}${staffSettingsHTML()}<p class="chat-dock-note">중요한 내용은 답변의 출처에서 확인하세요.</p></div></section>`;
  }

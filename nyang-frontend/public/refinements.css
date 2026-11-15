@@ -84,3 +84,11 @@
 .activity-rewards>summary>span{float:right;font-size:13px;font-weight:400;color:var(--ui-sub)}
 .activity-rewards[open]>.activity-panel{padding-top:18px}
 @media(max-height:760px){.desktop-workspace .chat-home-below{gap:9px}.desktop-workspace .chat-home-below .composer-scope{padding-top:9px;padding-bottom:8px}.desktop-workspace .chat-home-below .input-row{padding-top:12px;padding-bottom:8px}.desktop-workspace .chat-home-below .composer-meta{padding-bottom:9px}.desktop-workspace .chat-starters>button{padding-top:4px;padding-bottom:4px;font-size:12px}}
+/* 츄르 주기: 냥대리 아래 '쓰다듬기' 안내 글 바로 밑, 가운데에 둔다 */
+.desktop-workspace .chat-home .cat-resident-stage>.home-cat-rewards{grid-column:2;grid-row:3;justify-self:center;align-items:center;margin-top:-2px;z-index:3}
+.desktop-workspace .chat-home .cat-resident-stage>.home-cat-rewards .chat-treat-button{flex-wrap:nowrap;white-space:nowrap;max-width:none}
+.desktop-workspace .chat-home .cat-resident-stage:has(>.home-cat-rewards){padding-bottom:10px}
+/* 츄르 버튼 줄이 생긴 만큼, 낮은 화면에서는 위쪽 여백·줄 간격·냥대리 크기를 줄여 입력칸이 가려지지 않게 한다 (직원 화면) */
+@media(max-height:760px){body:not([data-role=staff]) .desktop-workspace .chat-home{--resident-size:168px}body:not([data-role=staff]) .desktop-workspace .chat-home .cat-resident-stage:has(>.home-cat-rewards){row-gap:12px;padding-top:max(10px,calc(var(--room-center) - var(--resident-size)/2 - 124px))}body:not([data-role=staff]) .desktop-workspace .chat-home .cat-resident-stage>.home-cat-rewards{margin-top:11px}}
+@media(max-height:690px){body:not([data-role=staff]) .desktop-workspace .chat-home{--resident-size:132px}}
+@media(max-height:620px){body:not([data-role=staff]) .desktop-workspace .chat-home{--resident-size:110px}}
