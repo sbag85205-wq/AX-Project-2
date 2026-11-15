@@ -16,7 +16,7 @@ export const SUGGESTED_QUESTIONS = [
  */
 export const CATEGORY_SUGGESTIONS: Record<string, { questions: string[]; keywords: string[] }> = {
   '서버 설치 · 설정': {
-    questions: ['Dcenter는 어떻게 설치하나요?', 'Dstation 설치 순서를 알려주세요', 'Host agent는 어떻게 설치하나요?', '도메인 환경은 어떻게 구성하나요?'],
+    questions: ['서버 OS 설치 및 기본설정은 어떻게 하나요?', '도메인 환경구성은 어떻게 하나요?', 'Dcenter 설치 방법을 알려주세요', 'Dstation 기본 설정은 어떻게 하나요?'],
     keywords: ['Dcenter 설치', 'CenterPost 설치', 'VDAgent 설치', '기본 설정']
   },
   '클라이언트 접속': {
