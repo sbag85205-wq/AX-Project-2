@@ -19,6 +19,9 @@ export default function Users() {
   const [newDept, setNewDept] = useState('');
   const [resetFor, setResetFor] = useState<Profile | null>(null);
   const [newPw, setNewPw] = useState('');
+  // 목록 거르기: 부서('all' · 'none'=미지정 · 부서 id), 권한('all' · employee · admin)
+  const [deptFilter, setDeptFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | Role>('all');
 
   const load = useCallback(async () => {
     const [{ data: u }, { data: d }] = await Promise.all([
@@ -87,6 +90,11 @@ export default function Users() {
     load();
   };
 
+  // 거르던 부서가 지워지면 전체로 되돌린다
+  useEffect(() => {
+    if (deptFilter !== 'all' && deptFilter !== 'none' && !depts.some((d) => d.id === deptFilter)) setDeptFilter('all');
+  }, [depts, deptFilter]);
+
   // 부서를 지우면 그 부서였던 직원은 '미지정'이 된다 (DB가 자동으로 비운다). 지난 이용 통계의 부서 표시도 비워진다.
   const removeDept = async (d: Department) => {
     const count = users.filter((u) => u.department_id === d.id).length;
@@ -97,6 +105,12 @@ export default function Users() {
     toast(`'${d.name}' 부서를 삭제했어요.`);
     load();
   };
+
+  const shown = users.filter((u) =>
+    (deptFilter === 'all' || (deptFilter === 'none' ? !u.department_id : u.department_id === deptFilter)) &&
+    (roleFilter === 'all' || u.role === roleFilter));
+  const deptCount = (id: string) => users.filter((u) => (id === 'none' ? !u.department_id : u.department_id === id) && (roleFilter === 'all' || u.role === roleFilter)).length;
+  const roleCount = (r: Role) => users.filter((u) => u.role === r && (deptFilter === 'all' || (deptFilter === 'none' ? !u.department_id : u.department_id === deptFilter))).length;
 
   const deptName = (id: string | null) => depts.find((d) => d.id === id)?.name ?? '미지정';
 
@@ -163,8 +177,39 @@ export default function Users() {
         </section>
       </div>
 
+      <div className="user-filters">
+        <div className="field">
+          <span className="label">권한</span>
+          <div className="chips" role="group" aria-label="권한별로 보기">
+            {([['all', '전체'], ['employee', '직원'], ['admin', '관리자']] as const).map(([v, t]) => (
+              <button key={v} type="button" className="chip" aria-pressed={roleFilter === v} onClick={() => setRoleFilter(v)}>
+                {t} <span className="chip-count">{v === 'all' ? roleCount('employee') + roleCount('admin') : roleCount(v)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="field">
+          <span className="label">부서</span>
+          <div className="chips" role="group" aria-label="부서별로 보기">
+            <button type="button" className="chip" aria-pressed={deptFilter === 'all'} onClick={() => setDeptFilter('all')}>
+              전체 <span className="chip-count">{users.filter((u) => roleFilter === 'all' || u.role === roleFilter).length}</span>
+            </button>
+            {depts.map((d) => (
+              <button key={d.id} type="button" className="chip" aria-pressed={deptFilter === d.id} onClick={() => setDeptFilter(d.id)}>
+                {d.name} <span className="chip-count">{deptCount(d.id)}</span>
+              </button>
+            ))}
+            <button type="button" className="chip" aria-pressed={deptFilter === 'none'} onClick={() => setDeptFilter('none')}>
+              미지정 <span className="chip-count">{deptCount('none')}</span>
+            </button>
+          </div>
+        </div>
+        <p className="hint" role="status">사용자 {users.length}명 중 {shown.length}명 표시</p>
+      </div>
+
       <section className="card" aria-label="사용자 목록" style={{ overflow: 'hidden' }}>
-        {users.map((u) => (
+        {!shown.length && <div className="empty">{users.length ? '조건에 맞는 사용자가 없어요.' : '등록된 사용자가 없어요.'}</div>}
+        {shown.map((u) => (
           <div key={u.id} className="list-row">
             <div className="list-main">
               <div className="list-title">{u.display_name} <span className="hint">({u.login_id})</span></div>

@@ -179,3 +179,9 @@ html[data-theme=dark] .chat-scroll { scrollbar-color: #555967 transparent; }
 /* 문서 관리: 문서명·카테고리 수정 톱니바퀴 */
 .doc-settings { width: 30px; padding: 0; color: var(--muted); }
 .doc-settings:hover { background: var(--surface-2); color: var(--text); }
+
+/* 사용자 관리: 권한·부서별로 보기 */
+.user-filters { display: flex; flex-direction: column; gap: 12px; }
+.user-filters .label { font-size: 12px; font-weight: 600; color: var(--text-2); }
+.chip-count { margin-left: 2px; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.chip[aria-pressed='true'] .chip-count { color: var(--muted); }
