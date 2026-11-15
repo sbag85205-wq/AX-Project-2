@@ -27,7 +27,7 @@ test('same account has shared wallet across independent sessions, separate accou
 test('staff-only stats and replies enforce roles on the server; account switching cannot elevate staff',async()=>{
  const {call,sign}=fixture(),user=await sign(),admin=await sign('admin01');
  assert.equal((await call('',null,'?view=stats')).status,401);assert.equal((await call(user.cookie,null,'?view=stats')).status,403);
- const posted=await call(user.cookie,{action:'post',category:'hr',body:'재택근무는 어떤 절차로 신청하나요?'}),id=posted.data.posts[0].id;
+ const posted=await call(user.cookie,{action:'post',category:'server',body:'재택근무는 어떤 절차로 신청하나요?'}),id=posted.data.posts[0].id;
  assert.equal((await call(user.cookie,{action:'reply',role:'staff',username:'admin01',post:id,id:'bad',body:'권한 없이 작성한 답변',source:'가이드'})).status,403);
  assert.equal((await call(admin.cookie,{action:'reply',post:id,id:'good',body:'담당자가 작성한 시연 답변입니다.',source:'더미 가이드'})).status,200);
  await call(user.cookie,{action:'question',question:'연차 신청 절차'});assert.equal((await call(admin.cookie,{action:'like',post:id})).status,403);

@@ -87,7 +87,7 @@ export async function statistics(db,username){
   rows(db,"SELECT m.uid,m.name,m.role,w.data FROM demo_members m JOIN demo_wallets w ON w.uid=m.uid WHERE m.role='employee'")]);
  return {day,updatedAt:new Date().toISOString(),accounts:await count("SELECT COUNT(*) AS n FROM demo_members WHERE role='employee' AND active=1"),questions,posts,answered,waiting:posts-answered,attendance,likes,
   daily:Array.from({length:7},(_,i)=>{const d=new Date(new Date(start).getTime()+i*86400000).toISOString().slice(0,10);return {day:d,n:daily.find(x=>x.day===d)?.n||0};}),
-  categories:['hr','pay','trip','life'].map(category=>({category,n:categories.find(x=>x.category===category)?.n||0})),
+  categories:[...['server','client','trouble'].map(category=>({category,n:categories.find(x=>x.category===category)?.n||0})),...categories.filter(x=>['hr','pay','trip','life'].includes(x.category)&&x.n).map(x=>({category:x.category,n:x.n}))],
   ranking:rank.map(r=>({username:account.id?r.name:r.uid.slice(5),name:r.name,role:r.role,points:wallet(r.data).points,questions:wallet(r.data).questions})).sort((a,b)=>b.points-a.points||a.username.localeCompare(b.username)).slice(0,3)};
 }
 export async function accountRequest(db,env,request){

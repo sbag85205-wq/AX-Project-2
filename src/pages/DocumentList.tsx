@@ -41,8 +41,8 @@ export default function DocumentList() {
         </div>
         <div style={{ position: 'relative', flex: '0 1 300px' }}>
           <label htmlFor="doc-search" className="sr">문서 검색</label>
-          <input id="doc-search" type="search" className="input" style={{ paddingLeft: 40 }} placeholder="문서명 검색" value={q} onChange={(e) => setQ(e.target.value)} />
-          <span style={{ position: 'absolute', left: 13, top: 13, color: 'var(--faint)' }}><SearchIcon /></span>
+          <input id="doc-search" type="search" className="input" style={{ paddingLeft: 36 }} placeholder="문서명 검색" value={q} onChange={(e) => setQ(e.target.value)} />
+          <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', display: 'flex', color: 'var(--faint)' }}><SearchIcon /></span>
         </div>
       </div>
 

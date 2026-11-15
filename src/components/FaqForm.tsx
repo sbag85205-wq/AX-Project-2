@@ -51,7 +51,7 @@ export function FaqForm({ title, draft, onChange, onSubmit, onClose, saving, sub
         {answerHint && <span className="hint">{answerHint}</span>}
       </div>
       {showActive && (
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <input type="checkbox" checked={draft.active} onChange={(e) => onChange({ ...draft, active: e.target.checked })} /> 챗봇에서 사용
         </label>
       )}

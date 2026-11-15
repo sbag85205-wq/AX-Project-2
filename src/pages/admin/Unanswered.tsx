@@ -87,11 +87,11 @@ export default function Unanswered() {
         <section className="card" aria-label="자주 묻는 미등록 질문" style={{ flex: '999 1 560px', minWidth: 0, overflow: 'hidden' }}>
           <div style={{ padding: '20px 24px 16px', display: 'flex', flexDirection: 'column', gap: 14, borderBottom: '1px solid var(--line)' }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <h2 style={{ fontSize: 19 }}>자주 묻는 미등록 질문</h2>
+              <h2>자주 묻는 미등록 질문</h2>
               <div style={{ position: 'relative', flex: '0 1 280px' }}>
                 <label htmlFor="q-search" className="sr">질문 검색</label>
-                <input id="q-search" type="search" className="input" style={{ paddingLeft: 40 }} placeholder="질문 검색" value={q} onChange={(e) => setQ(e.target.value)} />
-                <span style={{ position: 'absolute', left: 13, top: 13, color: 'var(--faint)' }}><SearchIcon /></span>
+                <input id="q-search" type="search" className="input" style={{ paddingLeft: 36 }} placeholder="질문 검색" value={q} onChange={(e) => setQ(e.target.value)} />
+                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', display: 'flex', color: 'var(--faint)' }}><SearchIcon /></span>
               </div>
             </div>
             <div role="group" aria-label="처리 상태" className="tabs">
@@ -113,17 +113,17 @@ export default function Unanswered() {
               {!loading && !error && filtered.length === 0 && <div className="empty">조건에 맞는 질문이 없어요.</div>}
               {filtered.map((i, idx) => (
                 <button key={i.id} type="button" className="grid-row" style={{ gridTemplateColumns: COLS }} aria-pressed={selected?.id === i.id} onClick={() => setSelectedId(i.id)}>
-                  <div style={{ fontSize: 17, fontWeight: 700, color: 'var(--muted)' }}>{idx + 1}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted)' }}>{idx + 1}</div>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontWeight: 600 }}>{i.question}</div>
                     <div className="hint">비슷한 표현 {i.count}개 · 이번 주 +{i.week}</div>
                   </div>
-                  <div style={{ fontSize: 14 }}>{i.category}</div>
+                  <div>{i.category}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <b style={{ minWidth: 28 }}>{i.count}</b>
                     <span className="bar-track"><span className="bar-fill" style={{ width: `${Math.round((i.count / max) * 100)}%` }} /></span>
                   </div>
-                  <div className="hint" style={{ fontSize: 14 }}>{relativeDay(i.last_asked_at)}</div>
+                  <div className="hint">{relativeDay(i.last_asked_at)}</div>
                   <div><span className={`pill ${PILL[i.status]}`}>{i.status}</span></div>
                 </button>
               ))}

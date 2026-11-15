@@ -239,8 +239,8 @@ button.grid-row[aria-pressed='true'] { background: #f2f5fe; box-shadow: inset 4p
 .hbar-label { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hbar-value { text-align: right; }
 .faq-answer-box { background: var(--ok-tint); border: 1px solid var(--ok-line); border-radius: 10px; padding: 14px 16px; }
-.faq-answer-box > div:first-child { font-size: 13px; font-weight: 700; color: var(--ok); margin-bottom: 4px; }
-.faq-answer-box > div:last-child { font-size: 14px; white-space: pre-line; }
+.faq-answer-box > div:first-child { font-size: 12px; font-weight: 600; color: var(--ok); margin-bottom: 4px; }
+.faq-answer-box > div:last-child { white-space: pre-line; }
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
 .dropzone { padding: 14px; border: 2px dashed var(--input); border-radius: 12px; }
 .dropzone.dragging { border-color: var(--primary); background: var(--primary-soft); }

@@ -1,7 +1,7 @@
 // Store complete exchanges only; opening a thread never resubmits a question.
 export const CHAT_LIMIT=100;
 const kinds=new Set(['answer','plan','excerpt','unknown','scope','knowly']);
-const categories=new Set(['hr','pay','trip','life']);
+const categories=new Set(['server','client','trouble','hr','pay','trip','life']);
 const label=(value,max)=>typeof value==='string'?value.trim().slice(0,max):'';
 export const chatFolders=chats=>[...new Set(chats.map(x=>x.folder).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
 export function updateChatDetails(chats,id,{customTitle,folder}){
@@ -26,7 +26,7 @@ export function normalizeChats(value){
  return (Array.isArray(value)?value:[]).filter(x=>x&&typeof x.id==='string'&&!seen.has(x.id)&&seen.add(x.id)).map(x=>{
   const messages=completedMessages(x.messages);
   const customTitle=label(x.customTitle,80),folder=label(x.folder,40);
-  return {id:x.id,customTitle,folder,title:customTitle||messages[0]?.text||'',updatedAt:messages.at(-1)?.at||0,category:categories.has(x.category)?x.category:messages.at(-1)?.result.category||'hr',messages};
+  return {id:x.id,customTitle,folder,title:customTitle||messages[0]?.text||'',updatedAt:messages.at(-1)?.at||0,category:categories.has(x.category)?x.category:messages.at(-1)?.result.category||'server',messages};
  }).filter(x=>x.messages.length).sort((a,b)=>b.updatedAt-a.updatedAt).slice(0,CHAT_LIMIT);
 }
 export function rememberChat(chats,id,messages,category){

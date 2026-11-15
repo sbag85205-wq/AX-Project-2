@@ -43,6 +43,8 @@ body[data-mode=cat] .desktop-workspace .workspace-toolbar{height:48px;min-height
 .workspace-toolbar .appearance-button .icon{width:17px;height:17px}
 body[data-mode=cat] .desktop-workspace .main-content,html[data-theme=dark] body[data-mode=cat] .desktop-workspace .main-content{background:var(--ui-bg)!important;min-height:0;overflow:hidden}
 body[data-mode=cat] .desktop-workspace .main-content.work-view{overflow:auto;background:var(--ui-bg)!important;scrollbar-width:thin;scrollbar-color:var(--ui-line) transparent}
+/* 다크모드용 위 선택자가 더 구체적이라 overflow:hidden이 이겨 스크롤이 막히던 것을 되돌린다. */
+html[data-theme=dark] body[data-mode=cat] .desktop-workspace .main-content.work-view{overflow:auto}
 body[data-mode=cat] .desktop-workspace .bottom-note{height:27px;min-height:27px;padding:0 28px;border:0;background:var(--ui-bg);color:var(--ui-faint);justify-content:center;gap:12px;font-size:10px}
 .desktop-workspace .bottom-note>button{font-size:10px;color:var(--ui-sub)}
 /* Home: the character stays in the centre, with one input and three quiet shortcuts. */
@@ -74,6 +76,14 @@ html[data-theme=dark] .desktop-workspace .workspace-toolbar .theme-toggle[aria-p
 .desktop-workspace .chat-composer .input-row textarea::placeholder{color:var(--ui-faint)}
 .desktop-workspace .chat-composer .send-button{width:30px;height:30px;background:#007aff;color:white;border-radius:50%}
 .desktop-workspace .chat-composer .send-button .icon{width:16px;height:16px}
+/* 사진·파일 첨부: 입력칸 왼쪽의 둥근 + 버튼 */
+.desktop-workspace .chat-composer .attach-button{display:grid;place-items:center;flex:none;width:30px;height:30px;border:1px solid var(--ui-line);border-radius:50%;background:var(--ui-panel);color:var(--ui-sub)}
+.desktop-workspace .chat-composer .attach-button:hover:not(:disabled){background:var(--ui-fill);color:var(--ui-ink)}
+.desktop-workspace .chat-composer .attach-button:disabled{opacity:.45}
+.desktop-workspace .chat-composer .attach-button .icon{width:16px;height:16px}
+/* 첨부한 파일 표시는 입력칸과 같은 왼쪽 여백에 맞춘다 */
+.desktop-workspace .chat-composer .composer-attachments{margin:0;padding:12px 18px 0}
+.desktop-workspace .chat-composer .composer-attachments+.input-row{padding-top:10px}
 .desktop-workspace .chat-composer .composer-meta{padding:0 18px 13px;gap:12px}
 .desktop-workspace .chat-composer .category-select{padding:4px 0;background:none;color:var(--ui-sub)}
 .desktop-workspace .chat-composer .category-select select{color:var(--ui-sub);font-size:11px}
@@ -84,6 +94,15 @@ html[data-theme=dark] .desktop-workspace .workspace-toolbar .theme-toggle[aria-p
 .desktop-workspace .chat-starters>button{border:0;border-radius:0;background:none!important;color:var(--ui-sub)!important;font-size:12px;padding:3px 20px;gap:10px;line-height:1.5}
 .desktop-workspace .chat-starters>button+button{border-left:1px solid var(--ui-line)}
 .desktop-workspace .chat-starters>button:hover{color:var(--ui-accent)!important}.desktop-workspace .chat-starters .icon{width:11px;height:11px;opacity:.65}
+/* 첫 화면의 추천 질문: 입력칸 바로 위에 알약 모양으로 최대 두 줄. 넘치는 줄은 가려서 입력칸을 아래로 밀지 않는다(전체 목록은 '질문 예시'에 있다). */
+.desktop-workspace .chat-home-below>.chat-starters{--chip-h:28px;--chip-gap:7px;--rows:2;flex-wrap:wrap;justify-content:center;gap:var(--chip-gap);max-height:calc(var(--chip-h)*var(--rows) + var(--chip-gap)*(var(--rows) - 1));overflow:hidden}
+.desktop-workspace .chat-home-below>.chat-starters>button{flex:none;box-sizing:border-box;height:var(--chip-h);padding:0 12px;border:1px solid var(--ui-line);border-radius:999px;font-size:12.5px;line-height:1;white-space:nowrap}
+.desktop-workspace .chat-home-below>.chat-starters>button:hover{border-color:var(--ui-accent)}
+/* 추천 질문 두 줄이 들어갈 만큼 첫 화면의 고양이 자리를 위로 올리고, 낮은 화면일수록 고양이를 줄여 입력칸이 화면 아래로 가려지지 않게 한다. */
+.desktop-workspace .chat-home{--room-center:calc((100dvh - 150px)*.47 - 20px)}
+@media(max-height:760px){.desktop-workspace .chat-home{--resident-size:185px;--room-center:calc((100dvh - 150px)*.45 - 16px)}}
+@media(max-height:690px){.desktop-workspace .chat-home{--resident-size:150px;--room-center:calc((100dvh - 150px)*.45 - 28px)}.desktop-workspace .chat-home .cat-resident-stage{min-height:0}}
+@media(max-height:620px){.desktop-workspace .chat-home{--room-center:calc((100dvh - 150px)*.45 - 16px)}.desktop-workspace .chat-home-below>.chat-starters{--rows:1}}
 /* Conversation: familiar messages, compact citations, no decorative panels. */
 .desktop-workspace .chat-room{--chat-bg:var(--ui-bg);--chat-card:var(--ui-fill);--chat-line:var(--ui-line);--chat-muted:var(--ui-faint);--chat-ink:var(--ui-ink);--chat-me:#007aff}
 .desktop-workspace .chat-transcript{padding:28px 40px 30px;background-color:var(--ui-bg);background-image:linear-gradient(#ffffffd9,#ffffffd9),var(--user-bg);background-size:cover;background-position:center;scrollbar-color:var(--ui-line) transparent}
@@ -369,7 +388,7 @@ body.motion-paused[data-personality] .resident-portrait .pet-body,body.motion-pa
 .chat-folder-picker p{margin:8px;font-size:12px;line-height:1.7;color:var(--ui-sub)}
 /* Knowly(main 백엔드) 화면·첨부 */
 .knowly-frame-wrap{width:100%}.knowly-frame{display:block;width:100%;min-height:480px;border:0;background:transparent}
-.knowly-stats{padding-top:0}.knowly-stats .knowly-frame-wrap{margin-top:16px}
+.knowly-stats .knowly-frame-wrap{margin-top:16px}
 .composer-attachments{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}.composer-attachments .text-button{padding:0 2px;min-height:0}
 .user-attachments{display:block;margin-top:6px;font-size:12px;opacity:.75}
 .knowly-source{display:flex;align-items:center;gap:8px;font-size:13px}

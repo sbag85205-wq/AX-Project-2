@@ -1,9 +1,13 @@
+// 질문 분야. label은 Knowly 문서·FAQ의 카테고리 이름(src/lib/constants.ts의 CATEGORIES)과 같아야
+// 고른 분야의 문서 안에서 먼저 검색된다.
 export const categories = [
-  { id: 'hr', label: '휴가 · 근태', icon: 'sun', detail: '연차부터 출퇴근까지' },
-  { id: 'pay', label: '급여 · 수당', icon: 'wallet', detail: '급여일과 지원 제도' },
-  { id: 'trip', label: '출장 · 정산', icon: 'case', detail: '준비부터 정산까지' },
-  { id: 'life', label: '사내 생활', icon: 'coffee', detail: '회사 생활의 작은 궁금증' }
+  { id: 'server', label: '서버 설치 · 설정', icon: 'settings', detail: 'OS·도메인부터 서버 설치, 기본 설정까지' },
+  { id: 'client', label: '클라이언트 접속', icon: 'send', detail: 'Linker Client 설치, 인증서버 등록, 접속' },
+  { id: 'trouble', label: '장애 조치', icon: 'info', detail: '이슈별 원인과 해결 방법' }
 ];
+export const defaultCategory = categories[0].id;
+/** 저장된 기록에 예전 분야(hr·pay·trip·life)가 남아 있어도 화면이 깨지지 않게 현재 분야로 맞춘다. */
+export const categoryOf = id => categories.find(c => c.id === id) || categories[0];
 export const documents = [
   {id:'leave',category:'hr',title:'휴가·근태 가이드',version:'2026.10 · 샘플',sections:[
     {id:'annual',label:'제3조 · 연차 신청',text:'연차는 사용 3영업일 전까지 사내 인사 시스템에서 신청합니다. 신청 시 사용 날짜와 인수인계 내용을 입력하고 팀장의 승인을 받습니다. 신청 기한의 영업일은 토요일·일요일을 제외하며, 이 샘플 규정에서는 공휴일을 별도로 반영하지 않습니다.'},
@@ -28,12 +32,27 @@ export const documents = [
     {id:'equipment',label:'제4절 · 장비 요청',text:'업무용 장비는 IT 지원 요청서를 작성해 팀장 승인 후 IT 지원팀에 제출합니다. 고장은 장비 번호와 증상을 함께 전달합니다.'},
     {id:'onboarding',label:'제5절 · 입사 첫날',text:'입사 첫날에는 인사팀에서 사원증을 수령하고 IT 지원팀에서 업무 계정을 확인합니다. 보안 서약서를 제출한 후 팀 온보딩 안내에 참여합니다.'}]}
 ];
+// 분야별 질문 예시. 답은 항상 등록된 문서에서 찾는다(정해 둔 답변 없음).
+// 문서 내용은 여기에 적지 않는다: 이 파일은 로그인 없이도 내려받을 수 있으므로 질문 문장만 둔다.
+// 질문은 매뉴얼에 실제로 쓰인 낱말로 적는다. 검색이 낱말 일치를 보기 때문에, 매뉴얼이 'VM'이라고 쓴 내용을
+// 'VD'로 물으면 맞는 문단을 못 찾는다. 표로만 된 내용(오류코드 등)은 지금 검색이 잘 못 찾아 넣지 않았다.
+// server 분야는 해당 매뉴얼(기본 교육·설치·관리자)을 확인하지 못해, 목차의 제목 낱말을 그대로 써서 만든 것이다.
 export const faq = {
-  hr:[['연차는 어떻게 신청하나요?','annual'],['반차는 언제까지 신청하나요?','half'],['병가는 어떻게 신청하나요?','sick'],['신청한 휴가를 취소하고 싶어요','cancel']],
-  pay:[['급여는 언제 들어오나요?','payday'],['야근 식대는 얼마까지 지원되나요?','meal'],['연장근무는 어떻게 신청하나요?','overtime'],['외부 교육비를 지원받을 수 있나요?','education']],
-  trip:[['출장 준비 일정을 짜주세요','plan'],['출장비 정산은 어떻게 하나요?','settle'],['자차로 출장 가도 되나요?','car'],['숙박비는 얼마까지 지원되나요?','booking']],
-  life:[['사내 Wi-Fi는 어떻게 연결하나요?','wifi'],['회의실은 어떻게 예약하나요?','room'],['업무용 장비를 요청하고 싶어요','equipment'],['입사 첫날 무엇을 해야 하나요?','onboarding']]
+  server:['서버 OS 설치 및 기본설정은 어떻게 하나요?','도메인 환경구성은 어떻게 하나요?','Dstation 필요기능 설치 방법을 알려주세요','Dstation Package 설치 방법을 알려주세요','Dcenter 설치 방법을 알려주세요','Host agent 설치 방법을 알려주세요','CenterPost 설치 방법을 알려주세요','관리 서버 구성은 어떻게 하나요?','Dstation VDAgent 설치 방법을 알려주세요','Dstation 기본 설정은 어떻게 하나요?'],
+  client:['사용자 PC에 Linker Client를 설치하는 방법을 알려주세요','Linker Client 설치 요구사항을 알려주세요','관리서버 인증을 받으려면 인증서버를 어떻게 등록하나요?','VD 접속 전 준비 절차를 알려주세요','VD 전원 켜기·끄기·재시작은 어떻게 하나요?','VD 화면 위 툴바는 어떤 기능인가요?','Linker Client는 제어판에서 어떻게 삭제하나요?','Linker Client 아이콘을 실행하는 방법을 알려주세요','인증 서버가 설정되어 있지 않다고 나오면 어떻게 하나요?','할당 받은 VD의 이름과 상태는 어디서 확인하나요?','VD 연결끊기를 누르면 어떻게 되나요?','VD에서 Dstation 설치 폴더에 접근이 제한되는 이유가 뭔가요?'],
+  trouble:['VM 접속이 실패할 때 무엇을 확인하나요?','웹서버에 접속이 안 될 때 어떻게 하나요?','로그인했는데 VD가 보이지 않아요','VM이 느릴 경우 무엇을 확인하나요?','Hyper-V에서 VM이 보이지 않을 때 어떻게 하나요?','VM에 명령이 먹히지 않을 때 어떻게 하나요?','VDAgent 재설치 전에 무엇을 백업해야 하나요?','프로비전이 실패하면 무엇을 확인하나요?','클러스터 스토리지 볼륨이 느릴 때 무엇을 확인하나요?','데이터 백업 및 복구 절차를 알려주세요','웹서버 접근은 되는데 로그인이 안 될 때 무엇을 확인하나요?','Master VD 파일 복제가 실패하면 무엇을 확인하나요?','VDAgent 서비스가 실행 중인지 어떻게 확인하나요?','문제가 해결되지 않으면 기술지원센터에 어떻게 연락하나요?','Dstation 무상 유지보수 기간은 얼마나 되나요?']
 };
+// 첫 화면 입력칸 위에 보이는 추천 질문: 등록된 매뉴얼에서 맞는 문단이 찾아지는 것만, 주제가 겹치지 않게 고른다.
+// label은 화면에 보이는 짧은 글, q는 실제로 보내는 질문.
+export const starters = [
+  { label: 'Linker Client 설치', q: '사용자 PC에 Linker Client를 설치하는 방법을 알려주세요', category: 'client' },
+  { label: '설치 요구사항', q: 'Linker Client 설치 요구사항을 알려주세요', category: 'client' },
+  { label: '인증서버 등록', q: '관리서버 인증을 받으려면 인증서버를 어떻게 등록하나요?', category: 'client' },
+  { label: 'VD 전원·재시작', q: 'VD 전원 켜기·끄기·재시작은 어떻게 하나요?', category: 'client' },
+  { label: '웹서버 접속이 안 돼요', q: '웹서버에 접속이 안 될 때 어떻게 하나요?', category: 'trouble' },
+  { label: 'VM이 느려요', q: 'VM이 느릴 경우 무엇을 확인하나요?', category: 'trouble' },
+  { label: '데이터 백업·복구', q: '데이터 백업 및 복구 절차를 알려주세요', category: 'trouble' }
+];
 export const answers = {
   annual:{title:'사용일 3영업일 전까지 연차를 신청해.',text:'인사 시스템에 날짜와 인수인계 내용을 입력하고, 팀장 승인을 받으면 돼.',steps:['사용 날짜와 인수인계 내용을 준비해.','인사 시스템에서 사용일 3영업일 전까지 신청해. 이 샘플 규정의 영업일은 주말만 제외해.','팀장 승인이 완료됐는지 확인해.'],refs:['annual']},
   half:{title:'반차는 사용 전일까지 신청하세요.',text:'오전 또는 오후 4시간 단위로 사용할 수 있어요. 인사 시스템에서 신청 후 팀장 승인을 받아야 합니다.',refs:['half']},

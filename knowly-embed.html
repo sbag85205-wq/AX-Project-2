@@ -4,6 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Knowly</title>
+    <script>
+      // 냥대리(바깥 화면)의 라이트·다크 설정을 그대로 따른다. 설정값은 같은 사이트의 localStorage에 있다.
+      (() => {
+        const system = matchMedia('(prefers-color-scheme: dark)');
+        const apply = () => {
+          let saved = null;
+          try { saved = JSON.parse(localStorage.getItem('nyang-color-theme')); } catch {}
+          document.documentElement.dataset.theme = saved === 'dark' || saved === 'light' ? saved : system.matches ? 'dark' : 'light';
+        };
+        apply();
+        system.addEventListener('change', apply);
+        addEventListener('storage', e => { if (e.key === 'nyang-color-theme' || e.key === null) apply(); });
+      })();
+    </script>
   </head>
   <body class="knowly-embed">
     <div id="root"></div>

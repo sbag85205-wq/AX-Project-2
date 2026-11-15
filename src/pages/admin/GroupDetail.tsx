@@ -22,14 +22,14 @@ export function GroupDetail({ selected, onRegister, onSetStatus }: Props) {
             <span className="hint" style={{ fontWeight: 600 }}>선택한 질문 · {selected.category}</span>
             <span className={`pill ${PILL[selected.status]}`}>{selected.status}</span>
           </div>
-          <h2 style={{ fontSize: 20 }}>{selected.question}</h2>
+          <h2>{selected.question}</h2>
           <div className="mini-stats">
             <div className="mini-stat"><div>총 질문</div><div>{selected.count}회</div></div>
             <div className="mini-stat"><div>이번 주</div><div>+{selected.week}</div></div>
             <div className="mini-stat"><div>최근</div><div>{relativeDay(selected.last_asked_at)}</div></div>
           </div>
           <div>
-            <h3 style={{ fontSize: 15, marginBottom: 10 }}>직원들은 이렇게 물어봤어요</h3>
+            <h3 style={{ fontSize: 14, marginBottom: 10 }}>직원들은 이렇게 물어봤어요</h3>
             <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {[...selected.question_variants]
                 .sort((a, b) => b.created_at.localeCompare(a.created_at))
@@ -49,7 +49,7 @@ export function GroupDetail({ selected, onRegister, onSetStatus }: Props) {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <button type="button" className="btn btn-primary" style={{ minHeight: 48, fontSize: 16 }} onClick={() => onRegister(selected)}>
+              <button type="button" className="btn btn-primary" style={{ minHeight: 40, fontSize: 14 }} onClick={() => onRegister(selected)}>
                 FAQ로 등록하기
               </button>
               <div style={{ display: 'flex', gap: 8 }}>
