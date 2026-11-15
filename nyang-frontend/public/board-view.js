@@ -1,5 +1,5 @@
-import {categoryLabels as labels,esc,isStaff} from './common.js?v=b28f10812dc5';
-import {LIKE_POINTS} from './reward-rules.js?v=a99b0c80721c';
+import {categoryLabels as labels,esc,isStaff} from './common.js';
+import {LIKE_POINTS} from './reward-rules.js';
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 export function boardView(state,filter='all',query=''){
  const staff=isStaff(state),deleted=staff&&filter==='deleted';

@@ -31,7 +31,7 @@ npm run dev
 npm run build
 ```
 
-`prepare:nyang`가 원본 UI 자산을 `public/nyang/`에 준비하고, `build:nyang-embed`가 main의 화면·첨부 모듈을 `public/knowly/`에 빌드합니다. 생성물은 커밋하지 않습니다. 최종 `dist/`는 기존 Vercel 정적 배포 대상입니다. `/docs/*`, `/admin/*` 링크도 Knowly 화면으로 이어집니다.
+`prepare:nyang`(`scripts/prepare-nyang.mjs`)가 원본 UI 자산(`nyang-frontend/public/`)을 `public/nyang/`에 복사하고 그 복사본에만 내용 해시(`?v=`)를 붙인 뒤, 루트 `index.html`을 만듭니다(원본 파일의 import에는 해시를 적지 않습니다). `index.html`은 `app.js` 대신 `src/nyang/main.ts`를 넣고 `<meta name="nyang-app">`에 해시가 붙은 `app.js` 주소를 적으며, `cat/index.html`의 `app.js` 태그 모양이 바뀌어 찾지 못하면 빌드가 실패합니다. `build:nyang-embed`가 main의 화면·첨부 모듈을 `public/knowly/`에 빌드합니다. 생성물(`public/nyang/`, `public/knowly/`, 루트 `index.html`)은 커밋하지 않습니다. 화면 HTML을 고칠 때는 `nyang-frontend/public/cat/index.html`을 고치세요. 최종 `dist/`는 기존 Vercel 정적 배포 대상입니다. `/docs/*`, `/admin/*` 링크도 Knowly 화면으로 이어집니다.
 
 ### 운영 DB를 바꾸지 않는 방식 (2026-11-14)
 

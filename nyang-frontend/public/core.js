@@ -1,5 +1,5 @@
 // 질문 분야는 common.js 한 곳에 있다(label은 src/lib/constants.ts의 CATEGORIES와 같아야 한다). 기존 가져오기 경로를 위해 다시 내보낸다.
-export {categories,defaultCategory,categoryOf} from './common.js?v=b28f10812dc5';
+export {categories,defaultCategory,categoryOf} from './common.js';
 export const documents = [
   {id:'leave',category:'hr',title:'휴가·근태 가이드',version:'2026.10 · 샘플',sections:[
     {id:'annual',label:'제3조 · 연차 신청',text:'연차는 사용 3영업일 전까지 사내 인사 시스템에서 신청합니다. 신청 시 사용 날짜와 인수인계 내용을 입력하고 팀장의 승인을 받습니다. 신청 기한의 영업일은 토요일·일요일을 제외하며, 이 샘플 규정에서는 공휴일을 별도로 반영하지 않습니다.'},

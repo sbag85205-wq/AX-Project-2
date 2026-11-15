@@ -1,7 +1,7 @@
-import {makePlan,businessBefore,businessAfter,addDays,localDate,asDate} from './core.js?v=107007c04825';
+import {makePlan,businessBefore,businessAfter,addDays,localDate,asDate} from './core.js';
 
 // 보상 규칙은 reward-rules.js 한 곳에 있다. 기존 가져오기 경로를 위해 다시 내보낸다.
-export {QUESTION_POINTS,TREAT_COST,PET_LIKE_CHANCE,PET_BONUS_CHANCE,PET_BONUS_POINTS,PET_COOLDOWN_MS,petOutcome,wardrobe,initialRewards,normalizeRewards,rewardTransition} from './reward-rules.js?v=a99b0c80721c';
+export {QUESTION_POINTS,TREAT_COST,PET_LIKE_CHANCE,PET_BONUS_CHANCE,PET_BONUS_POINTS,PET_COOLDOWN_MS,petOutcome,wardrobe,initialRewards,normalizeRewards,rewardTransition} from './reward-rules.js';
 
 export const scheduleTypes={
  trip:{title:'국내 출장 준비',startLabel:'출발일',endLabel:'복귀일',refs:['approval','booking','receipt','settle']},

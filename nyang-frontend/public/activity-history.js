@@ -1,4 +1,4 @@
-import {KNOWN_CATEGORY_IDS} from './common.js?v=b28f10812dc5';
+import {KNOWN_CATEGORY_IDS} from './common.js';
 const kinds=new Set(['answer','plan','excerpt','unknown','scope','knowly']);
 const categories=new Set(KNOWN_CATEGORY_IDS);
 export const canSaveAnswer=result=>['answer','plan','excerpt','knowly'].includes(result?.kind);

@@ -1,7 +1,7 @@
 // Store complete exchanges only; opening a thread never resubmits a question.
 export const CHAT_LIMIT=100;
 const kinds=new Set(['answer','plan','excerpt','unknown','scope','knowly']);
-import {KNOWN_CATEGORY_IDS,defaultCategory} from './common.js?v=b28f10812dc5';
+import {KNOWN_CATEGORY_IDS,defaultCategory} from './common.js';
 const categories=new Set(KNOWN_CATEGORY_IDS);
 const label=(value,max)=>typeof value==='string'?value.trim().slice(0,max):'';
 export const chatFolders=chats=>[...new Set(chats.map(x=>x.folder).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));

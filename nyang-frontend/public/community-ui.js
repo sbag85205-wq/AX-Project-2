@@ -1,8 +1,8 @@
-import {fetch} from './transport.js?v=fd4b994ba12d';
-import {boardView} from './board-view.js?v=08ed8bb0e01b';
-import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=3839cedc6a34';
-import {categories,esc,isStaff} from './common.js?v=b28f10812dc5';
-import {rewardHelp} from './reward-rules.js?v=a99b0c80721c';
+import {fetch} from './transport.js';
+import {boardView} from './board-view.js';
+import {loginHTML as loginView,statisticsHTML} from './account-view.js';
+import {categories,esc,isStaff} from './common.js';
+import {rewardHelp} from './reward-rules.js';
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 let state={loading:true},hooks,filter='all',query='',connecting=null,authEpoch=0,loginRole='employee',stats=null;
 // 진행 중인 요청: 같은 동작(같은 글의 좋아요·답변 등)만 겹치지 않게 막고, 다른 동작은 함께 할 수 있다.
