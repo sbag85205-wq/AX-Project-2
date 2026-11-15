@@ -1,5 +1,6 @@
 body[data-authenticated="false"] .workspace-nav,body[data-authenticated="false"] .header-account,body[data-authenticated="false"] .account-menu-button,body[data-authenticated="false"] .workspace-utilities,body[data-authenticated="false"] .bottom-note{visibility:hidden}
-.header-brand .account-menu-button{flex-shrink:0}
+.header-brand .account-menu-button{flex-shrink:1;min-width:0}
+.header-brand .account-menu-button>span{overflow:hidden;text-overflow:ellipsis}
 body[data-authenticated="false"] .main-content{background:var(--ui-bg)!important;overflow:auto}
 .login-page{min-height:calc(100dvh - 145px);display:flex;align-items:center;justify-content:center;gap:100px;padding:48px 36px;color:var(--ui-ink)}
 .login-intro{width:380px;text-align:center}.login-cat{width:180px;height:180px;margin:0 auto 22px;background-size:100% 100%}.login-eyebrow{font-size:13px;color:var(--ui-sub);margin:0 0 14px}.login-intro h1{font-size:27px;letter-spacing:-1px;font-weight:650;margin:0 0 14px}.login-intro>p:last-child{font-size:14px;color:var(--ui-sub);line-height:1.7}
