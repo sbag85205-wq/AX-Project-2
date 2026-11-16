@@ -25,7 +25,7 @@ paths.shirt='m8 3-5 4 3 4 2-1v11h8V10l2 1 3-4-5-4a4 4 0 0 1-8 0Z';
 let activeAccount=null;
 let adminQuery='',adminCategory='all',documentQuery='',documentCategory='all';
 const personalKeys=new Set(['om-docs','om-tasks','om-question-history','om-seen-replies','om-chat-sessions','om-chat-active','om-personality']);
-const storageKey=key=>personalKeys.has(key)?'nyang-account:'+(activeAccount||'signed-out')+':'+key:key;
+const storageKey=key=>personalKeys.has(key)||key.startsWith('om-bg-')?'nyang-account:'+(activeAccount||'signed-out')+':'+key:key;
 function read(key,fallback){try{return JSON.parse(localStorage.getItem(storageKey(key)))??fallback;}catch{return fallback;}}
 function save(key,value){try{localStorage.setItem(storageKey(key),JSON.stringify(value));return true;}catch{toast('브라우저 저장 공간이 부족해 저장하지 못했어요.');return false;}}
 let uploads=read('om-docs',[]),tasks=read('om-tasks',[]),messages=[],category=isCat?null:defaultCategory,mood='',view='chat',filter='today',selectedDay=localDate(),plan=null,dialogOpener=null;
@@ -612,19 +612,24 @@ const backgroundPresets=[
  {id:'ocean',label:'잔잔한 바다',caption:'파도 곁에서 가볍게',file:'bg-ocean.png'},
  {id:'mountain',label:'고요한 산',caption:'맑은 공기와 느긋한 하루',file:'bg-mountain.png'}
 ];
+// 내가 올린 배경 이미지 목록(최근 순, 계정별·이 브라우저에 최대 8개). 선택값은 'upload:<id>'로 저장한다.
+const BG_UPLOAD_LIMIT=8,bgImagePattern=/^data:image\/(png|jpeg|webp|gif);base64,/;
+function backgroundUploads(){const list=read('om-bg-uploads-'+mode,[]);return Array.isArray(list)?list.filter(x=>x&&typeof x.id==='string'&&typeof x.url==='string'&&bgImagePattern.test(x.url)):[];}
 function backgroundState(){
  // 담당자의 '냥대리 테스트'는 배경 없이 쓴다 (담당자 화면에는 꾸미기 메뉴가 없다)
  if(communityState().me?.role==='staff')return {id:'white',label:'하얀 작업실',url:null};
- const uploaded=read('om-bg-'+mode,null);
- const saved=read('om-bg-theme-'+mode,null);
- const id=saved||(uploaded?'custom':isCat?'cafe':'white');
- if(id==='custom'&&typeof uploaded==='string'&&/^data:image\/(png|jpeg|webp|gif);base64,/.test(uploaded))return {id,label:'나만의 공간',url:uploaded};
- const preset=backgroundPresets.find(p=>p.id===id);
+ const fallback=isCat?'cafe':'white',saved=read('om-bg-theme-'+mode,null),id=typeof saved==='string'?saved:fallback;
+ if(id.startsWith('upload:')){const image=backgroundUploads().find(x=>'upload:'+x.id===id);if(image)return {id,label:'나만의 공간',url:image.url};}
+ const preset=backgroundPresets.find(p=>p.id===(id.startsWith('upload:')?fallback:id));
  return preset?{...preset,url:root+'assets/'+preset.file}:{id:'white',label:'하얀 작업실',url:null};
 }
 function showBackground(){
  const current=backgroundState();
- openModal(`<h2 id="modal-title">꾸미기</h2>${customizeTabs('background')}<p class="modal-sub">냥대리 뒤에 놓일 풍경을 선택하세요.</p><div class="background-presets">${backgroundPresets.map(p=>`<button class="background-option ${current.id===p.id?'chosen':''}" data-background="${p.id}" aria-pressed="${current.id===p.id}"><span class="background-thumb" style="background-image:url('${root}assets/${p.file}')">${current.id===p.id?`<span class="background-check">${icon('check')}</span>`:''}</span><span class="background-option-name">${p.label}${p.id==='cafe'&&isCat?'<em>기본</em>':''}</span><small>${p.caption}</small></button>`).join('')}</div><div class="background-other"><button class="white-background-option ${current.id==='white'?'chosen':''}" data-background="white" aria-pressed="${current.id==='white'}"><span></span>흰색 배경${current.id==='white'?icon('check'):''}</button><label class="secondary-button file-button">${icon('picture')} 내 이미지 올리기<input type="file" id="bg-upload" accept="image/png,image/jpeg,image/webp,image/gif"></label></div>${current.id==='custom'?'<p class="custom-background-status">현재 내가 올린 이미지를 사용 중이에요.</p>':''}<p class="caption">이미지 업로드: JPG, PNG, WebP, GIF · 최대 8MB<br>배경 선택은 이 브라우저에 저장돼요.</p>`,true);
+ openModal(`<h2 id="modal-title">꾸미기</h2>${customizeTabs('background')}<p class="modal-sub">냥대리 뒤에 놓일 풍경을 선택하세요.</p><div class="background-presets">${backgroundPresets.map(p=>`<button class="background-option ${current.id===p.id?'chosen':''}" data-background="${p.id}" aria-pressed="${current.id===p.id}"><span class="background-thumb" style="background-image:url('${root}assets/${p.file}')">${current.id===p.id?`<span class="background-check">${icon('check')}</span>`:''}</span><span class="background-option-name">${p.label}${p.id==='cafe'&&isCat?'<em>기본</em>':''}</span><small>${p.caption}</small></button>`).join('')}</div><div class="background-other"><button class="white-background-option ${current.id==='white'?'chosen':''}" data-background="white" aria-pressed="${current.id==='white'}"><span></span>흰색 배경${current.id==='white'?icon('check'):''}</button><label class="secondary-button file-button">${icon('picture')} 내 이미지 올리기<input type="file" id="bg-upload" accept="image/png,image/jpeg,image/webp,image/gif"></label></div>${current.id.startsWith('upload:')?'<p class="custom-background-status">현재 내가 올린 이미지를 사용 중이에요.</p>':''}${backgroundHistoryHTML(current)}<p class="caption">이미지 업로드: JPG, PNG, WebP, GIF · 최대 8MB<br>배경 선택과 올린 이미지는 계정별로 이 브라우저에 저장돼요(최근 ${BG_UPLOAD_LIMIT}개).</p>`,true);
+}
+function backgroundHistoryHTML(current){
+ const list=backgroundUploads();if(!list.length)return '';
+ return `<section class="background-history" aria-labelledby="bg-history-title"><h3 id="bg-history-title">내가 사용한 이미지 <span>${list.length}/${BG_UPLOAD_LIMIT}</span></h3><div class="background-history-list">${list.map((x,i)=>{const on=current.id==='upload:'+x.id;return `<div class="background-history-item ${on?'chosen':''}"><button class="background-history-pick" data-background="upload:${esc(x.id)}" aria-pressed="${on}" aria-label="내 이미지 ${i+1}${on?' (사용 중)':''} 배경으로 쓰기" style="background-image:url('${x.url}')">${on?'<span class="background-history-on">사용 중</span>':''}</button><button class="background-history-delete" data-bg-delete="${esc(x.id)}" aria-label="내 이미지 ${i+1} 삭제">${icon('close')}</button></div>`;}).join('')}</div></section>`;
 }
 function applyBackground(){
  const bg=backgroundState();
@@ -633,7 +638,7 @@ function applyBackground(){
  document.body.dataset.background=bg.id;
  const label=$('[data-room-label]');if(label)label.textContent=bg.label;
 }
-async function loadBackground(file){if(!file)return;if(!['image/png','image/jpeg','image/webp','image/gif'].includes(file.type)||file.size>8*1024*1024){toast('8MB 이하의 JPG, PNG, WebP, GIF 이미지를 골라주세요.');return;}try{const image=await createImageBitmap(file),canvas=document.createElement('canvas');const ratio=Math.min(1,1600/image.width,1200/image.height);canvas.width=Math.round(image.width*ratio);canvas.height=Math.round(image.height*ratio);canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);image.close();if(save('om-bg-'+mode,canvas.toDataURL('image/webp',.8))&&save('om-bg-theme-'+mode,'custom')){applyBackground();closeModal();toast('내 이미지로 배경을 바꿨어요.');}}catch{toast('이 이미지를 읽을 수 없어요. 다른 파일을 골라주세요.');}}
+async function loadBackground(file){if(!file)return;if(!['image/png','image/jpeg','image/webp','image/gif'].includes(file.type)||file.size>8*1024*1024){toast('8MB 이하의 JPG, PNG, WebP, GIF 이미지를 골라주세요.');return;}try{const image=await createImageBitmap(file),canvas=document.createElement('canvas');const ratio=Math.min(1,1600/image.width,1200/image.height);canvas.width=Math.round(image.width*ratio);canvas.height=Math.round(image.height*ratio);canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);image.close();const url=canvas.toDataURL('image/webp',.8),id=crypto.randomUUID(),next=[{id,url,at:Date.now()},...backgroundUploads().filter(x=>x.url!==url)].slice(0,BG_UPLOAD_LIMIT);if(save('om-bg-uploads-'+mode,next)&&save('om-bg-theme-'+mode,'upload:'+id)){applyBackground();closeModal();toast('내 이미지로 배경을 바꿨어요. 꾸미기 > 배경에서 다시 고를 수 있어요.');}}catch{toast('이 이미지를 읽을 수 없어요. 다른 파일을 골라주세요.');}}
 
 
 // Start on press, not release. A drag and its trailing click are one stroke.
@@ -674,6 +679,7 @@ document.addEventListener('click',async e=>{
  if(b.dataset.openPlan){calendarDay=b.dataset.openPlan;calendarMonth=calendarDay.slice(0,7);view='calendar';scheduleView='calendar';render();return;}
  if(b.dataset.month){const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=localDate(new Date(y,m-1+Number(b.dataset.month),1,12)).slice(0,7);render();return;}
  if(b.dataset.calendarDay){calendarDay=b.dataset.calendarDay;render();return;}
+ if(b.dataset.bgDelete){const id=b.dataset.bgDelete,inUse=backgroundState().id==='upload:'+id;if(save('om-bg-uploads-'+mode,backgroundUploads().filter(x=>x.id!==id))){if(inUse)save('om-bg-theme-'+mode,isCat?'cafe':'white');applyBackground();showBackground();toast(inUse?'사용 중이던 이미지를 지워 기본 배경으로 바꿨어요.':'이미지를 삭제했어요.');}return;}
  if(b.dataset.background){if(save('om-bg-theme-'+mode,b.dataset.background)){applyBackground();closeModal();toast(backgroundState().label+' 배경으로 바꿨어요.');}return;}
  if(b.dataset.source){openSource(b.dataset.source);return;}
  if(b.dataset.question){if($('#modal').open)closeModal();category=b.dataset.cat;ask(b.dataset.question);return;}
