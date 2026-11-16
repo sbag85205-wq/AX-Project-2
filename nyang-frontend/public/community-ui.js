@@ -59,7 +59,7 @@ function gate(){
  return '';
 }
 const hero=(kicker,title,desc)=>`<div class="community-heading"><div><h1>${title}</h1><p>${desc}</p></div><button class="secondary-button" data-community="refresh">새로고침 ↻</button></div>`;
-export function activityHTML(content=''){
+export function activityHTML(content='',rewards=true){ // rewards=false면 아래 '포인트와 보상' 칸을 그리지 않는다(내 레벨 탭에서만 보여줌)
  const intro='<header class="activity-heading"><h1>내 활동</h1><button class="activity-text-button" data-community="refresh">새로고침</button></header>';
  const blocked=gate();if(blocked)return `<section class="community-page activity-page">${intro}${content}${blocked}</section>`;
  const {wallet:w,today,streak,receivedLikes}=state; // 레벨은 '내 레벨' 탭에서 보여준다
@@ -67,7 +67,7 @@ export function activityHTML(content=''){
  return `<section class="community-page activity-page">
   ${intro}
   ${content}
-  <details class="activity-rewards"><summary>포인트와 보상 <span>${w.points.toLocaleString('ko-KR')} P · ♥ ${w.hearts}</span></summary><div class="activity-panel">
+  ${rewards?`  <details class="activity-rewards"><summary>포인트와 보상 <span>${w.points.toLocaleString('ko-KR')} P · ♥ ${w.hearts}</span></summary><div class="activity-panel">
    <dl class="activity-balances" aria-label="보유 보상">
     <div><dt>포인트</dt><dd>${w.points.toLocaleString('ko-KR')}<span>P</span></dd></div>
     <div><dt>츄르</dt><dd>${w.treatTokens.toLocaleString('ko-KR')}<span>개</span></dd></div>
@@ -86,7 +86,7 @@ export function activityHTML(content=''){
     <div><dt>츄르 · 레벨</dt><dd>출석으로 받은 츄르부터 쓰고, 다 쓰면 10 P로 줄 수 있어요.<br>레벨은 질문 활동을 나타내며 업무 능력 평가에는 쓰이지 않아요.</dd></div>
     <div><dt>활동 저장</dt><dd>포인트·레벨·출석·꾸미기는 계정별로 서버에 저장돼요.<br>다른 기기에서도 같은 아이디로 로그인하면 이어져요.</dd></div>
    </dl>
-  </details></details>
+  </details></details>`:''}
  </section>`;
 }
 export function showMyPost(id){filter='mine';query='';boardCategory='all';hooks.show('board');requestAnimationFrame(()=>document.getElementById('post-'+id)?.scrollIntoView({block:'center'}));}
