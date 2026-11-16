@@ -1,7 +1,7 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {categories as chatCategories} from './core.js?v=4dc923f4c7f7';
 import {boardView} from './board-view.js?v=bbcc15f70875';
-import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=ceebe3273083';
+import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=07668235f91f';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const labels={server:'서버 설치 · 설정',client:'클라이언트 접속',trouble:'장애 조치',etc:'기타'};
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
@@ -49,7 +49,9 @@ export async function communityAction(action,body={}){
   const response=action==='reward'&&body.type==='pet'?'wallet':undefined;
   const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...body,response})});
   const data=await res.json();if(epoch!==authEpoch)return null;if(res.status===401){authEpoch++;state={authenticated:false,member:false};hooks.update(state);throw Error('로그인이 만료됐어요. 다시 로그인해 주세요.');}if(!res.ok)throw Error(data.error);
-  state=data.partial==='wallet'?{...state,wallet:data.wallet,level:data.level}:data;
+  // 쓰다듬기 응답은 가볍게(지갑만) 온다. 쓰다듬기로 늘어나는 포인트는 보너스뿐이라, 늘어난 만큼 누적 포인트에도 더한다.
+  const gained=data.partial==='wallet'?Math.max(0,(data.wallet?.points??0)-(state.wallet?.points??0)):0;
+  state=data.partial==='wallet'?{...state,wallet:data.wallet,level:data.level,...(state.earned&&gained?{earned:{total:state.earned.total+gained,recent:state.earned.recent+gained}}:{})}:data;
   hooks.update(state);if(data.notice)hooks.toast(data.notice);return data;
  }catch(e){hooks.toast(e.message||'연결을 확인하고 다시 시도해 주세요.');return null;}
 }
@@ -71,6 +73,7 @@ export function activityHTML(content='',rewards=true){ // rewards=false면 아�
   ${rewards?`  <section class="activity-rewards" aria-labelledby="activity-rewards-title"><h2 id="activity-rewards-title" class="activity-rewards-title">포인트와 보상 <span>${w.points.toLocaleString('ko-KR')} P · ♥ ${w.hearts}</span></h2><div class="activity-panel">
    <dl class="activity-balances" aria-label="보유 보상">
     <div><dt>포인트</dt><dd>${w.points.toLocaleString('ko-KR')}<span>P</span></dd></div>
+    <div><dt>누적 포인트</dt><dd>${(state.earned?.total??w.points).toLocaleString('ko-KR')}<span>P</span></dd>${state.earned?`<small class="activity-balance-note">최근 3개월 ${state.earned.recent.toLocaleString('ko-KR')} P · 순위 기준</small>`:''}</div>
     <div><dt>츄르</dt><dd>${w.treatTokens.toLocaleString('ko-KR')}<span>개</span></dd></div>
     <div><dt>하트</dt><dd>${w.hearts.toLocaleString('ko-KR')}<span>개</span></dd></div>
    </dl>
@@ -85,6 +88,7 @@ export function activityHTML(content='',rewards=true){ // rewards=false면 아�
     <div><dt>질문 · 좋아요</dt><dd>새 질문 +10 P · 같은 질문은 한 번만, 하루 최대 20개.<br>내 게시글에 다른 직원이 좋아요를 누르면 +5 P.</dd></div>
     <div><dt>출석 선물</dt><dd>5 P 50% · 10 P 30% · 츄르 1개 15% · 츄르 3개 5%.<br>무료로 하루 한 번, 한국 시간 자정에 초기화돼요. 확률은 매일 같아요.</dd></div>
     <div><dt>츄르 · 레벨</dt><dd>출석으로 받은 츄르부터 쓰고, 다 쓰면 10 P로 줄 수 있어요.<br>레벨은 질문 활동을 나타내며 업무 능력 평가에는 쓰이지 않아요.</dd></div>
+    <div><dt>누적 포인트</dt><dd>지금까지 받은 포인트를 모두 더한 값이에요. 츄르·꾸미기에 써도 줄지 않아요.<br>포인트 순위는 최근 3개월 동안 받은 누적 포인트로 정해요.</dd></div>
     <div><dt>활동 저장</dt><dd>포인트·레벨·출석·꾸미기는 계정별로 서버에 저장돼요.<br>다른 기기에서도 같은 아이디로 로그인하면 이어져요.</dd></div>
    </dl>
   </details></section>`:''}

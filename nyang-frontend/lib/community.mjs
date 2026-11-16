@@ -1,4 +1,4 @@
-import {normalizeRewards,rewardTransition,petOutcome} from '../public/companion.js';
+import {normalizeRewards,rewardTransition,petOutcome,QUESTION_POINTS,PET_BONUS_POINTS} from '../public/companion.js';
 export class AppError extends Error {constructor(message,status=400){super(message);this.status=status;}}
 const fail=(message,status=400)=>{throw new AppError(message,status);};
 const one=(db,sql,...args)=>db.prepare(sql).bind(...args).first();
@@ -6,6 +6,21 @@ const run=(db,sql,...args)=>db.prepare(sql).bind(...args).run();
 const rows=async(db,sql,...args)=>(await db.prepare(sql).bind(...args).all()).results;
 const categories=['server','client','trouble','etc','hr','pay','trip','life'],roles=['employee','staff'];
 export const seoulDay=(date=new Date())=>new Date(date.getTime()+9*3600000).toISOString().slice(0,10);
+/** 포인트 순위 기간: 최근 3개월(그 시각 이후에 받은 포인트만 센다) */
+export function rankingSince(now=new Date()){const d=new Date(now);d.setMonth(d.getMonth()-3);return d.toISOString();}
+/**
+ * 받은(누적) 포인트: 질문 10P·출석 선물 P·내 글 좋아요 5P·쓰다듬기 보너스 5P의 합.
+ * 츄르·꾸미기로 쓴 포인트는 빼지 않는다. since가 있으면 그 시각 이후에 받은 것만 센다.
+ */
+export async function earnedPoints(db,uid,since=''){
+ const [q,a,l,b]=await Promise.all([
+  one(db,'SELECT COUNT(*) AS n FROM questions WHERE uid=? AND created>=?',uid,since),
+  one(db,'SELECT COALESCE(SUM(points),0) AS n FROM attendance WHERE uid=? AND created>=?',uid,since),
+  one(db,'SELECT COUNT(*) AS n FROM likes l JOIN posts p ON p.id=l.post WHERE p.author=? AND l.uid<>? AND l.created>=?',uid,uid,since),
+  one(db,"SELECT COUNT(*) AS n FROM operations WHERE uid=? AND kind='pet' AND json_extract(result,'$.kind')='bonus' AND created>=?",uid,since)]);
+ return q.n*QUESTION_POINTS+a.n+l.n*5+b.n*PET_BONUS_POINTS;
+}
+const earnedFor=async(db,uid)=>({total:await earnedPoints(db,uid),recent:await earnedPoints(db,uid,rankingSince())});
 export function drawReward(roll){
  if(!Number.isFinite(roll)||roll<0||roll>=1)throw new Error('Invalid random roll');
  return roll<.5?{points:5,tokens:0}:roll<.8?{points:10,tokens:0}:roll<.95?{points:0,tokens:1}:{points:0,tokens:3};
@@ -51,7 +66,7 @@ async function snapshot(db,user,m){
   WHERE post IN (SELECT id FROM posts ORDER BY created DESC LIMIT 200) ORDER BY created ASC`);
  const likeCount=await one(db,'SELECT COUNT(*) AS n FROM likes l JOIN posts p ON p.id=l.post WHERE p.author=?',user.userId);
  return {authenticated:true,member:true,me:{name:user.fullName||'직원',email:user.email,role:m.role,department:m.department},
-  wallet:w,level:levelFor(w.questions),today,day,streak,receivedLikes:likeCount.n,
+  wallet:w,level:levelFor(w.questions),earned:await earnedFor(db,user.userId),today,day,streak,receivedLikes:likeCount.n,
   posts:list.map(p=>({...p,mine:!!p.mine,liked:!!p.liked,replies:answers.filter(r=>r.post===p.id)})),
   members:m.role==='admin'?await rows(db,'SELECT email,role,department,name,active FROM members ORDER BY email'):undefined};
 }

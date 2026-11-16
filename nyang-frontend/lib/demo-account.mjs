@@ -1,4 +1,4 @@
-import {AppError,community,seoulDay,wallet} from './community.mjs';
+import {AppError,community,seoulDay,wallet,earnedPoints,rankingSince} from './community.mjs';
 const accounts={user01:{role:'employee',name:'직원',department:''},admin01:{role:'staff',name:'담당자',department:'운영 담당'}};
 export const accountRole=username=>accounts[username]?.role||null;
 const hex=a=>Array.from(new Uint8Array(a),x=>x.toString(16).padStart(2,'0')).join('');
@@ -76,7 +76,7 @@ export async function statistics(db,username){
  const account=typeof username==='object'&&username?username:accounts[username];
  if(!account)fail('로그인 후 이용해 주세요.',401);
  if(account.role!=='staff')fail('담당자만 통계를 볼 수 있어요.',403);
- const day=seoulDay(),start=new Date(new Date(day).getTime()-6*86400000).toISOString().slice(0,10);
+ const day=seoulDay(),start=new Date(new Date(day).getTime()-6*86400000).toISOString().slice(0,10),since=rankingSince(),scoped=accountDatabase(db);
  const count=async(q,...args)=>(await one(db,q,...args)).n;
  const [questions,posts,answered,attendance,likes,daily,categories,rank]=await Promise.all([
   count("SELECT COUNT(*) AS n FROM demo_questions q JOIN demo_members m ON m.uid=q.uid WHERE m.role='employee'"),count('SELECT COUNT(*) AS n FROM demo_posts WHERE id NOT IN (SELECT post FROM demo_deleted_posts)'),
@@ -84,12 +84,14 @@ export async function statistics(db,username){
   count("SELECT COUNT(*) AS n FROM demo_attendance a JOIN demo_members m ON m.uid=a.uid WHERE a.day=? AND m.role='employee'",day),count('SELECT COUNT(*) AS n FROM demo_likes WHERE post NOT IN (SELECT post FROM demo_deleted_posts)'),
   rows(db,"SELECT q.day,COUNT(*) AS n FROM demo_questions q JOIN demo_members m ON m.uid=q.uid WHERE q.day>=? AND m.role='employee' GROUP BY q.day",start),
   rows(db,'SELECT category,COUNT(*) AS n FROM demo_posts WHERE id NOT IN (SELECT post FROM demo_deleted_posts) GROUP BY category'),
-  rows(db,"SELECT m.uid,m.name,m.role,w.data FROM demo_members m JOIN demo_wallets w ON w.uid=m.uid WHERE m.role='employee'")]);
+  rows(db,"SELECT m.uid FROM demo_members m JOIN demo_wallets w ON w.uid=m.uid WHERE m.role='employee'")]);
  return {day,updatedAt:new Date().toISOString(),accounts:await count("SELECT COUNT(*) AS n FROM demo_members WHERE role='employee' AND active=1"),questions,posts,answered,waiting:posts-answered,attendance,likes,
   daily:Array.from({length:7},(_,i)=>{const d=new Date(new Date(start).getTime()+i*86400000).toISOString().slice(0,10);return {day:d,n:daily.find(x=>x.day===d)?.n||0};}),
   categories:[...['server','client','trouble','etc'].map(category=>({category,n:categories.find(x=>x.category===category)?.n||0})),...categories.filter(x=>!['server','client','trouble','etc'].includes(x.category)&&x.n).map(x=>({category:x.category,n:x.n}))],
-  // 포인트 순위: 익명성을 위해 이름은 넘기지 않는다. 아이디는 uid로 찾는다(데모 계정은 uid에서, Knowly 계정은 transport가 프로필 아이디로 채운다).
-  ranking:rank.map(r=>({uid:r.uid,username:r.uid.startsWith('demo-')?r.uid.slice(5):'',points:wallet(r.data).points})).sort((a,b)=>b.points-a.points||a.uid.localeCompare(b.uid)).slice(0,50)};
+  // 포인트 순위: 최근 3개월 동안 받은 누적 포인트 기준(츄르·꾸미기로 쓴 포인트는 빼지 않는다).
+  // 익명성을 위해 이름은 넘기지 않는다. 아이디는 uid로 찾는다(데모 계정은 uid에서, Knowly 계정은 transport가 프로필 아이디로 채운다).
+  rankingSince:since,
+  ranking:(await Promise.all(rank.map(async r=>({uid:r.uid,username:r.uid.startsWith('demo-')?r.uid.slice(5):'',points:await earnedPoints(scoped,r.uid,since)})))).sort((a,b)=>b.points-a.points||a.uid.localeCompare(b.uid)).slice(0,50)};
 }
 export async function accountRequest(db,env,request){
  let body,status=200,setCookie=null;

@@ -97,3 +97,14 @@ test('session cookie covers every /api route and clears the legacy /api/account 
  assert.ok(cookies.some(c=>/^nyang-account=[a-f0-9]{64};.*Path=\/api;/.test(c)));
  assert.ok(cookies.some(c=>/^nyang-account=;.*Path=\/api\/account; Max-Age=0/.test(c)));
 });
+test('누적 포인트는 츄르에 써도 줄지 않고, 포인트 순위는 최근 3개월 누적 포인트 기준이다',async()=>{
+ const {db,call,sign}=fixture(),user=await sign(),admin=await sign('admin01');
+ await call(user.cookie,{action:'question',question:'첫 번째 질문입니다'});await call(user.cookie,{action:'question',question:'두 번째 질문입니다'});
+ assert.equal((await call(user.cookie,{action:'reward',type:'feed',id:'feed-1'})).status,200); // 츄르에 10P 사용
+ const s=(await call(user.cookie)).data;assert.equal(s.wallet.points,10);assert.deepEqual(s.earned,{total:20,recent:20});
+ assert.equal((await call(admin.cookie,null,'?view=stats')).data.ranking[0].points,20); // 쓴 포인트도 순위에 포함
+ // 4개월 전에 받은 질문 포인트는 누적에는 남고, 3개월 순위에서는 빠진다
+ db.sql.prepare('UPDATE demo_questions SET created=? WHERE rowid=(SELECT MIN(rowid) FROM demo_questions)').run(new Date(Date.now()-120*86400000).toISOString());
+ assert.deepEqual((await call(user.cookie)).data.earned,{total:20,recent:10});
+ const stats=(await call(admin.cookie,null,'?view=stats')).data;assert.equal(stats.ranking[0].points,10);assert.ok(stats.rankingSince);
+});

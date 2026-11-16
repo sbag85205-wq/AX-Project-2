@@ -133,3 +133,6 @@
    츄르 뒤 하트가 떠 있는 동안만 하트(냥대리 크기의 약 18%만큼 오른쪽으로 튀어나옴) 바깥으로 비켜 선다. */
 .desktop-workspace .chat-home .home-cat-aside{margin-left:-48px;transition:margin-left .2s ease}
 .desktop-workspace .chat-home .cat-resident-stage:has(.collect-heart) .home-cat-aside{margin-left:calc(var(--resident-size)*.18 + 14px - 64px)}
+/* 포인트와 보상: 포인트 · 누적 포인트 · 츄르 · 하트 네 칸 */
+.activity-balances{grid-template-columns:repeat(4,minmax(0,1fr))}
+.activity-balance-note{display:block;margin-top:4px;font-size:12px;line-height:1.5;color:var(--ui-sub,var(--sub))}
