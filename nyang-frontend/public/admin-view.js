@@ -1,4 +1,4 @@
-import {faq,answers,reference,categories,documents} from './core.js?v=d96bd99594d7';
+import {faq,answers,reference,categories,documents} from './core.js?v=26f68832a3de';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const header=(title,description)=>`<header class="admin-heading"><p>관리자 워크스페이스</p><h1>${title}</h1><div>${description}</div></header>`;
 export function adminView(view,role,query='',category='all',docs=documents){

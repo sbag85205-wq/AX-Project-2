@@ -8,6 +8,20 @@ export const categories = [
   { id: 'etc', label: '기타', icon: 'spark', detail: '어느 분야인지 모를 때 · 전체 문서에서 찾아요', searchAll: true }
 ];
 export const defaultCategory = categories[0].id;
+const builtInCategories = [...categories];
+/**
+ * 분야 관리에서 정한 이름 목록으로 categories를 바꾼다(같은 배열을 고쳐 모든 화면이 함께 본다).
+ * 원래 분야와 이름이 같으면 그 분야(id·아이콘·설명·기타의 전체 검색)를 그대로 쓰고, 새 이름은 custom:<이름> 분야가 된다.
+ * 바뀌었으면 true.
+ */
+export function applyManagedCategories(labels) {
+  const names = (Array.isArray(labels) ? labels : []).filter(l => typeof l === 'string' && l.trim() && l.length <= 30);
+  if (!names.length) return false;
+  const next = names.map(l => builtInCategories.find(c => c.label === l) || { id: 'custom:' + l, label: l, icon: 'book', detail: '담당자가 추가한 분야 · 이 분야 문서에서 먼저 찾아요' });
+  if (next.length === categories.length && next.every((c, i) => c.id === categories[i].id && c.label === categories[i].label)) return false;
+  categories.splice(0, categories.length, ...next);
+  return true;
+}
 /** 저장된 기록에 예전 분야(hr·pay·trip·life)가 남아 있어도 화면이 깨지지 않게 현재 분야로 맞춘다. */
 export const categoryOf = id => categories.find(c => c.id === id) || categories[0];
 export const documents = [

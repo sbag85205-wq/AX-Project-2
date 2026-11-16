@@ -42,6 +42,8 @@ export async function request(path: string, init: RequestInit = {}): Promise<Res
     if (path === '/api/knowly-session') return Response.json({ connected: true });
     // 냥대리 테스트 화면의 검색·모델 설정 (관리자인지는 서버 함수가 확인한다)
     if (path === '/api/knowly-settings') return Response.json(await callFunction('admin-settings', input));
+    // 채팅의 '분야 변경' 목록 (분야 관리에서 정한 분야)
+    if (path === '/api/knowly-categories') return Response.json(await callFunction('chat', { action: 'categories' }));
     if (path === '/api/knowly') {
       if (input.action === 'feedback') return Response.json(await callFunction('chat', input));
       const data = await callFunction<AskResult>('chat', input);

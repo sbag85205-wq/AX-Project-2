@@ -1,7 +1,9 @@
 // Store complete exchanges only; opening a thread never resubmits a question.
 export const CHAT_LIMIT=100;
 const kinds=new Set(['answer','plan','excerpt','unknown','scope','knowly']);
-const categories=new Set(['server','client','trouble','etc','hr','pay','trip','life']);
+const fixedCategories=new Set(['server','client','trouble','etc','hr','pay','trip','life']);
+// 담당자가 추가한 분야(custom:<이름>)도 유효한 분야로 본다
+const categories={has:id=>fixedCategories.has(id)||(typeof id==='string'&&/^custom:.{1,30}$/.test(id))};
 const label=(value,max)=>typeof value==='string'?value.trim().slice(0,max):'';
 export const chatFolders=chats=>[...new Set(chats.map(x=>x.folder).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
 export function updateChatDetails(chats,id,{customTitle,folder}){

@@ -35,6 +35,7 @@ Deno.serve(async (req) => {
 
   try {
     if (body.action === 'feedback') return await feedback(db, caller, body);
+    if (body.action === 'categories') return await categories(db);
     return await ask(db, caller, body);
   } catch (e) {
     console.error('chat failed', (e as Error).message);
@@ -277,6 +278,16 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
   });
 
   return json({ conversation_id: conversationId, message_id: message.id, created_at: message.created_at, answer });
+}
+
+/** 분야 관리에서 정한 분야 목록 (채팅의 '분야 변경'에서 쓴다). 설정 표는 관리자만 읽을 수 있어 서버가 대신 읽어 준다. */
+async function categories(db: SupabaseClient): Promise<Response> {
+  const { data, error } = await db.from('app_settings').select('categories').eq('id', 1).maybeSingle();
+  if (error) console.error('categories load failed', error.message);
+  const list = Array.isArray(data?.categories)
+    ? (data.categories as unknown[]).filter((c): c is string => typeof c === 'string' && !!c.trim())
+    : [];
+  return json({ categories: list });
 }
 
 async function feedback(db: SupabaseClient, caller: Caller, body: Record<string, unknown>): Promise<Response> {
