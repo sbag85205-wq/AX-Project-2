@@ -1,13 +1,22 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {categories as chatCategories} from './core.js?v=4dc923f4c7f7';
 import {boardView,boardPostHTML} from './board-view.js?v=8760a87b1cb3';
-import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=d2b517cebcae';
+import {loginHTML as loginView,statisticsHTML,periodLabel,rankingCSV} from './account-view.js?v=8be004d90f5f';
 import {esc} from './shared.js?v=76a19ab6baf7';
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 let state={loading:true},hooks,filter='all',query='',boardCategory='all',boardSort='new',openPostId=null,busy=false,connecting=null,authEpoch=0,loginRole='employee',stats=null;
 export const communityState=()=>state;
 export const accountGateHTML=()=>loginView(loginRole,state);
-export const statsHTML=()=>statisticsHTML(stats);
+// 사용자 통계 화면에서 고른 순위 기간과, 포인트 순위를 모두 펼쳤는지
+let statsPeriod='quarter',statsExpanded=false;
+export const statsHTML=()=>statisticsHTML(stats,{period:statsPeriod,expanded:statsExpanded});
+// 지금 고른 기간의 포인트 순위(최대 50명)를 CSV 파일로 내려받는다
+function downloadRanking(){
+ const list=stats?.rankings?.[statsPeriod]||stats?.ranking;if(!list?.length){hooks.toast('내려받을 순위가 없어요.');return;}
+ const url=URL.createObjectURL(new Blob([rankingCSV(list,periodLabel(statsPeriod,stats.periods?.[statsPeriod]??stats.rankingSince))],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');
+ a.href=url;a.download=`냥대리-포인트순위-${{month:'이번달',quarter:'최근3개월',all:'전체'}[statsPeriod]}-${stats.day}.csv`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ hooks.toast(`포인트 순위 ${list.length}명을 내려받았어요.`);
+}
 export async function loadStatistics(){
  if(state.me?.role!=='staff')return;
  const epoch=authEpoch;stats={loading:true};hooks.render();
@@ -126,6 +135,13 @@ document.addEventListener('click',async e=>{
  }
  if(b.dataset.loginRole){loginRole=b.dataset.loginRole;hooks.render();return;}
  if(b.dataset.community==='statistics'){await loadStatistics();return;}
+ if(b.dataset.statsPeriod||'statsMore' in b.dataset||'statsCsv' in b.dataset){
+  if(state.me?.role!=='staff')return;
+  if('statsCsv' in b.dataset){downloadRanking();return;}
+  if(b.dataset.statsPeriod){statsPeriod=b.dataset.statsPeriod;statsExpanded=false;}else statsExpanded=!statsExpanded;
+  const again=b.dataset.statsPeriod?`[data-stats-period="${statsPeriod}"]`:'[data-stats-more]';
+  hooks.render();document.querySelector(again)?.focus({preventScroll:true});return; // 다시 그려도 누른 버튼에 포커스를 둔다
+ }
  if(b.dataset.boardFilter){filter=b.dataset.boardFilter;hooks.show('board');return;}
  if(b.dataset.boardCategory){boardCategory=b.dataset.boardCategory;hooks.show('board');return;}
  const action=b.dataset.community;

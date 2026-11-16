@@ -2,7 +2,7 @@
 // 담당자가 질문해 보면서 답변 모델과 검색 기준을 바로 바꿔 볼 수 있게 채팅 입력칸 아래에 둔다.
 // 값은 서버(admin-settings)에 저장되고 다음 질문부터 모든 사용자에게 적용된다.
 import {fetch} from './transport.js?v=fd4b994ba12d';
-import {communityState} from './community-ui.js?v=fabef7435637';
+import {communityState} from './community-ui.js?v=662ef985897b';
 import {esc} from './shared.js?v=76a19ab6baf7';
 // app.js가 넘겨주는 화면 도구(아이콘·알림)
 let icon,toast;

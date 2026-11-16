@@ -114,3 +114,12 @@ body[data-role=staff] .desktop-workspace .chat-home .resident-speech h1{font-siz
  body[data-role=staff] .desktop-workspace .chat-home-below>.chat-starters{--chip-h:32px}
  body[data-role=staff] .desktop-workspace .chat-home-below>.chat-starters>button{font-size:13.5px;padding:0 14px}
 }
+/* 사용자 통계(담당자): 요약 숫자 → 순위 기간 → 포인트 순위(왼쪽) · 유익해요/레벨/출석(오른쪽) */
+.userstats .stats-metrics small{font-size:14px;font-weight:400;color:var(--ui-sub);letter-spacing:0;margin-left:2px}.userstats-filter{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 28px}.userstats-filter>span:first-child{font-size:13px;font-weight:600}.userstats-filter .stats-note{margin:0}
+.userstats-grid{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:44px;align-items:start}.userstats .stats-panel h2{margin-bottom:16px}.userstats .stats-panel h2 small{font-size:12px;font-weight:400;color:var(--ui-sub);margin-left:6px}.userstats .stats-panel h3{font-size:13px;font-weight:600;margin:22px 0 4px}
+.userstats .stats-ranking>div{align-items:center;margin-bottom:6px}.userstats .stats-ranking h2{margin:0}.userstats .stats-ranking td{padding:11px 0}.userstats .stats-ranking th:first-child{width:64px}.userstats .stats-ranking td:last-child{font-variant-numeric:tabular-nums}.userstats-more{margin-top:10px}
+.rank-no{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:12px;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ui-sub)}.rank-no.top{background:var(--ui-accent-fill);color:var(--ui-ink);font-weight:600}
+.userstats-list{list-style:none;margin:0;padding:0}.userstats-list li{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;gap:8px;padding:8px 0;font-size:14px;border-bottom:1px solid var(--ui-line)}.userstats-list li:last-child{border:0}.userstats-list li>span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.userstats-list strong{font-weight:500;font-variant-numeric:tabular-nums}
+.userstats .stats-categories b{font-weight:600}.userstats .stats-categories small{color:var(--ui-sub);font-weight:400;margin-left:4px}.userstats .stats-track{height:8px;border-radius:4px}.userstats .stats-track i{background:var(--ui-accent);border-radius:4px}
+.userstats .stats-bars{height:150px;gap:10px}.userstats .stats-bar>div{height:96px}.userstats .stats-bar i{background:var(--ui-accent)}.userstats .stats-bar.today span{color:var(--ui-ink);font-weight:600}
+@media(max-width:900px){.userstats-grid{grid-template-columns:1fr;gap:0}}

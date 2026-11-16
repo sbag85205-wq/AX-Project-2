@@ -1,6 +1,6 @@
 // 꾸미기 > 배경: 기본 풍경 4가지와 내가 올린 이미지(계정별·이 브라우저에 최대 8개).
 // 고른 배경은 계정마다 따로 저장한다(om-bg-theme-<모드>, om-bg-uploads-<모드>). 배경 버튼 클릭은 app.js 클릭 표가 처리한다.
-import {communityState} from './community-ui.js?v=fabef7435637';
+import {communityState} from './community-ui.js?v=662ef985897b';
 import {esc} from './shared.js?v=76a19ab6baf7';
 const $=s=>document.querySelector(s);
 // app.js가 넘겨주는 것: 계정별 저장(read·save), 창(openModal·closeModal·customizeTabs), 알림·아이콘, 화면 모드

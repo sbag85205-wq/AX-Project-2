@@ -108,3 +108,36 @@ test('누적 포인트는 츄르에 써도 줄지 않고, 포인트 순위는 �
  assert.deepEqual((await call(user.cookie)).data.earned,{total:20,recent:10});
  const stats=(await call(admin.cookie,null,'?view=stats')).data;assert.equal(stats.ranking[0].points,10);assert.ok(stats.rankingSince);
 });
+test('사용자 통계: 기간별 순위·유익해요 순위·레벨 분포·출석 현황을 아이디만으로 돌려준다',async()=>{
+ const {db,call,sign}=fixture(),user=await sign(),admin=await sign('admin01'),day=n=>new Date(Date.now()+9*3600000-n*86400000).toISOString().slice(0,10);
+ await call(user.cookie,{action:'question',question:'첫 번째 질문입니다'});await call(user.cookie,{action:'question',question:'두 번째 질문입니다'});
+ await call(user.cookie,{action:'attendance'});
+ const id=(await call(user.cookie,{action:'post',category:'server',body:'서버 백업 주기는 어떻게 정하나요?'})).data.posts[0].id;
+ db.sql.prepare('INSERT INTO demo_likes(post,uid,created) VALUES(?,?,?)').run(id,'demo-other',new Date().toISOString()); // 다른 직원의 유익해요 1개(+10 P)
+ // 4개월 전에 받은 질문 포인트: 전체에는 남고 이번 달·최근 3개월 순위에서는 빠진다
+ db.sql.prepare('UPDATE demo_questions SET created=? WHERE rowid=(SELECT MIN(rowid) FROM demo_questions)').run(new Date(Date.now()-120*86400000).toISOString());
+ const gift=db.sql.prepare('SELECT points FROM demo_attendance').get().points;
+ let s=(await call(admin.cookie,null,'?view=stats')).data;
+ assert.deepEqual(Object.keys(s.periods),['month','quarter','all']);assert.equal(s.periods.all,'');assert.equal(s.periods.quarter,s.rankingSince);assert.ok(s.periods.month>s.periods.quarter);
+ assert.deepEqual(s.rankings.all.map(r=>[r.username,r.points]),[['user01',30+gift]]);
+ assert.deepEqual(s.rankings.quarter.map(r=>[r.username,r.points]),[['user01',20+gift]]);assert.deepEqual(s.rankings.month,s.rankings.quarter);
+ assert.deepEqual(s.ranking,s.rankings.quarter); // 기존 값은 그대로(최근 3개월)
+ for(const key of ['month','quarter','all'])assert.deepEqual(s.helpful[key].map(r=>[r.username,r.n]),[['user01',1]]);
+ assert.deepEqual(s.levels,[{level:1,n:1},{level:2,n:0},{level:3,n:0},{level:4,n:0},{level:5,n:0}]);
+ assert.deepEqual(s.attendanceDaily.map(d=>d.day),[6,5,4,3,2,1,0].map(day));assert.deepEqual(s.attendanceDaily.map(d=>d.n),[0,0,0,0,0,0,1]);
+ assert.deepEqual(s.streaks.map(r=>[r.username,r.days]),[['user01',1]]);
+ // 어제·그제도 출석했으면 연속 3일, 사흘 전이 비면 거기서 끊긴다. 오늘 출석이 없어도 어제까지 이어졌으면 센다.
+ const add=db.sql.prepare('INSERT INTO demo_attendance(uid,day,points,tokens,created) VALUES(?,?,5,0,?)');
+ for(const n of [1,2,4])add.run('demo-user01',day(n),new Date(Date.now()-n*86400000).toISOString());
+ s=(await call(admin.cookie,null,'?view=stats')).data;assert.equal(s.streaks[0].days,3);assert.deepEqual(s.attendanceDaily.map(d=>d.n),[0,0,1,0,1,1,1]);
+ db.sql.prepare('DELETE FROM demo_attendance WHERE day=?').run(day(0));
+ s=(await call(admin.cookie,null,'?view=stats')).data;assert.equal(s.streaks[0].days,2);
+ // 5번째 질문부터 Lv.2
+ for(const q of ['세 번째 질문입니다','네 번째 질문입니다','다섯 번째 질문입니다'])await call(user.cookie,{action:'question',question:q});
+ s=(await call(admin.cookie,null,'?view=stats')).data;assert.deepEqual(s.levels.map(l=>l.n),[0,1,0,0,0]);
+ // 익명성: 이름·질문 내용은 어디에도 없다
+ const text=JSON.stringify(s);assert.equal(text.includes('"name"'),false);assert.equal(text.includes('백업'),false);
+ // 삭제된 글이 받은 유익해요는 순위에서 빠진다
+ assert.equal((await call(user.cookie,{action:'delete-post',post:id})).status,200);
+ assert.deepEqual((await call(admin.cookie,null,'?view=stats')).data.helpful.all,[]);
+});

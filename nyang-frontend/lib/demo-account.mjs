@@ -1,4 +1,4 @@
-import {AppError,community,seoulDay,wallet,earnedPoints,rankingSince} from './community.mjs';
+import {AppError,community,seoulDay,wallet,earnedPoints,rankingSince,levelFor} from './community.mjs';
 import {CURRENT_CATEGORY_IDS} from '../public/shared.js';
 const accounts={user01:{role:'employee',name:'직원',department:''},admin01:{role:'staff',name:'담당자',department:'운영 담당'}};
 export const accountRole=username=>accounts[username]?.role||null;
@@ -85,14 +85,32 @@ export async function statistics(db,username){
   count("SELECT COUNT(*) AS n FROM demo_attendance a JOIN demo_members m ON m.uid=a.uid WHERE a.day=? AND m.role='employee'",day),count('SELECT COUNT(*) AS n FROM demo_likes WHERE post NOT IN (SELECT post FROM demo_deleted_posts)'),
   rows(db,"SELECT q.day,COUNT(*) AS n FROM demo_questions q JOIN demo_members m ON m.uid=q.uid WHERE q.day>=? AND m.role='employee' GROUP BY q.day",start),
   rows(db,'SELECT category,COUNT(*) AS n FROM demo_posts WHERE id NOT IN (SELECT post FROM demo_deleted_posts) GROUP BY category'),
-  rows(db,"SELECT m.uid FROM demo_members m JOIN demo_wallets w ON w.uid=m.uid WHERE m.role='employee'")]);
+  rows(db,"SELECT m.uid,w.data FROM demo_members m JOIN demo_wallets w ON w.uid=m.uid WHERE m.role='employee'")]);
+ // ── 사용자 통계(담당자): 기간별 순위·유익해요 순위·레벨 분포·출석 현황. 익명성을 위해 이름은 넘기지 않는다(아이디만).
+ const who=uid=>({uid,username:uid.startsWith('demo-')?uid.slice(5):''}),back=(d,n=1)=>new Date(new Date(d).getTime()-n*86400000).toISOString().slice(0,10);
+ // 순위 기간: 이번 달(한국 시간 1일 0시 이후) · 최근 3개월 · 전체. 받은 포인트 기준이라 츄르·꾸미기로 쓴 포인트는 빼지 않는다.
+ const periods={month:new Date(day.slice(0,7)+'-01T00:00:00+09:00').toISOString(),quarter:since,all:''};
+ const pointBoard=async from=>(await Promise.all(rank.map(async r=>({...who(r.uid),points:await earnedPoints(scoped,r.uid,from)})))).sort((a,b)=>b.points-a.points||a.uid.localeCompare(b.uid)).slice(0,50);
+ // 유익해요 많이 받은 순위: 직원이 올린 글(삭제된 글 제외)이 다른 사람에게 받은 유익해요 수, 상위 10명
+ const helpfulBoard=async from=>(await rows(scoped,"SELECT p.author AS uid,COUNT(*) AS n FROM likes l JOIN posts p ON p.id=l.post JOIN members m ON m.uid=p.author WHERE m.role='employee' AND l.uid<>p.author AND l.created>=? GROUP BY p.author ORDER BY n DESC,p.author LIMIT 10",from)).map(r=>({...who(r.uid),n:r.n}));
+ const rankings={},helpful={};
+ for(const [key,from] of Object.entries(periods)){rankings[key]=await pointBoard(from);helpful[key]=await helpfulBoard(from);}
+ // 레벨 분포: 직원 계정을 지금 레벨별로 센다(레벨 규칙은 levelFor 하나)
+ const levels=Array.from({length:levelFor(Number.MAX_SAFE_INTEGER).level},(_,i)=>({level:i+1,n:0}));
+ for(const r of rank)levels[levelFor(wallet(r.data).questions).level-1].n++;
+ // 출석: 최근 7일 날짜별 출석 직원 수와, 지금 이어지고 있는 연속 출석(오늘 또는 어제까지 이어진 날 수) 상위 5명
+ const attended=await rows(db,"SELECT a.uid,a.day FROM demo_attendance a JOIN demo_members m ON m.uid=a.uid WHERE m.role='employee' AND a.day>=? ORDER BY a.day DESC",back(day,400));
+ const daysBy=new Map();for(const r of attended)daysBy.set(r.uid,[...(daysBy.get(r.uid)||[]),r.day]);
+ const streaks=[...daysBy].map(([uid,days])=>{let n=0,expected=days[0]===day?day:back(day);for(const d of days){if(d!==expected)break;n++;expected=back(expected);}return {...who(uid),days:n};}).filter(x=>x.days>0).sort((a,b)=>b.days-a.days||a.uid.localeCompare(b.uid)).slice(0,5);
  return {day,updatedAt:new Date().toISOString(),accounts:await count("SELECT COUNT(*) AS n FROM demo_members WHERE role='employee' AND active=1"),questions,posts,answered,waiting:posts-answered,attendance,likes,
   daily:Array.from({length:7},(_,i)=>{const d=new Date(new Date(start).getTime()+i*86400000).toISOString().slice(0,10);return {day:d,n:daily.find(x=>x.day===d)?.n||0};}),
   categories:[...CURRENT_CATEGORY_IDS.map(category=>({category,n:categories.find(x=>x.category===category)?.n||0})),...categories.filter(x=>!CURRENT_CATEGORY_IDS.includes(x.category)&&x.n).map(x=>({category:x.category,n:x.n}))],
   // 포인트 순위: 최근 3개월 동안 받은 누적 포인트 기준(츄르·꾸미기로 쓴 포인트는 빼지 않는다).
   // 익명성을 위해 이름은 넘기지 않는다. 아이디는 uid로 찾는다(데모 계정은 uid에서, Knowly 계정은 transport가 프로필 아이디로 채운다).
   rankingSince:since,
-  ranking:(await Promise.all(rank.map(async r=>({uid:r.uid,username:r.uid.startsWith('demo-')?r.uid.slice(5):'',points:await earnedPoints(scoped,r.uid,since)})))).sort((a,b)=>b.points-a.points||a.uid.localeCompare(b.uid)).slice(0,50)};
+  ranking:rankings.quarter,
+  periods,rankings,helpful,levels,streaks,
+  attendanceDaily:Array.from({length:7},(_,i)=>{const d=back(day,6-i);return {day:d,n:attended.filter(x=>x.day===d).length};})};
 }
 export async function accountRequest(db,env,request){
  let body,status=200,setCookie=null;

@@ -15,15 +15,20 @@ async function currentAccount(userId: string): Promise<NyangAccount> {
   return cached;
 }
 
-// 사용자 통계의 포인트 순위: uid를 로그인 아이디로만 바꾼다(이름·부서는 보여 주지 않는다). 프로필은 담당자만 읽을 수 있다.
+// 사용자 통계의 순위 목록(포인트·유익해요·연속 출석): uid를 로그인 아이디로만 바꾼다(이름·부서는 보여 주지 않는다). 프로필은 담당자만 읽을 수 있다.
+type StatsRow = { uid: string; username: string } & Record<string, unknown>;
+type StatsLists = { ranking?: StatsRow[]; rankings?: Record<string, StatsRow[]>; helpful?: Record<string, StatsRow[]>; streaks?: StatsRow[] };
 async function withLoginIds(stats: unknown): Promise<unknown> {
-  const s = stats as { ranking?: { uid: string; username: string; points: number }[] } | null;
-  const ranking = s?.ranking;
-  if (!ranking?.length) return stats;
-  const ids = ranking.map((r) => r.uid).filter((id) => !id.startsWith('demo-'));
+  const s = stats as StatsLists | null;
+  if (!s || typeof s !== 'object') return stats;
+  const all = [s.ranking, ...Object.values(s.rankings ?? {}), ...Object.values(s.helpful ?? {}), s.streaks].filter(Array.isArray).flat() as StatsRow[];
+  if (!all.length) return stats;
+  const ids = [...new Set(all.map((r) => r.uid).filter((id) => !id.startsWith('demo-')))];
   const { data } = ids.length ? await supabase.from('profiles').select('id, login_id').in('id', ids) : { data: [] };
   const loginIds = new Map(((data ?? []) as { id: string; login_id: string }[]).map((p) => [p.id, p.login_id]));
-  return { ...s, ranking: ranking.map(({ uid, username, points }) => ({ username: username || loginIds.get(uid) || '(알 수 없는 계정)', points })) };
+  const named = (list?: StatsRow[]) => list?.map(({ uid, username, ...rest }) => ({ username: username || loginIds.get(uid) || '(알 수 없는 계정)', ...rest }));
+  const each = (group?: Record<string, StatsRow[]>) => group && Object.fromEntries(Object.entries(group).map(([k, list]) => [k, named(list)]));
+  return { ...s, ranking: named(s.ranking), rankings: each(s.rankings), helpful: each(s.helpful), streaks: named(s.streaks) };
 }
 
 // Explicit transport, shared by the original vanilla frontend modules. Never patch global fetch.
