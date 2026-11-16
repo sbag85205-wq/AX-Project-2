@@ -200,14 +200,14 @@ html[data-theme=dark] .helpful-button.on{color:#0b1526}
 .board-post .board-helpful{flex-direction:column;justify-content:center;align-items:center;gap:8px;margin:22px 0 4px;padding:18px 16px;text-align:center}
 .board-post .board-helpful-note{display:block;max-width:420px}
 /* 채팅 입력창이 배경에 묻히지 않게: 테두리·그림자·위 줄(질문 중) 구분을 또렷하게, 안내 글자 대비를 높인다 */
-html:not([data-theme=dark]) body .desktop-workspace .chat-composer{border:1.5px solid #a9b2bf;box-shadow:0 1px 3px #10204014,0 6px 22px #1020401f}
+html:not([data-theme=dark]) body .desktop-workspace .chat-composer{border:1.5px solid #7c8796;box-shadow:0 1px 3px #10204014,0 6px 22px #1020401f}
 html:not([data-theme=dark]) body .desktop-workspace .chat-composer:focus-within{border-color:var(--ui-accent,#0071e3);box-shadow:0 0 0 3px color-mix(in srgb,var(--ui-accent,#0071e3) 18%,transparent),0 6px 22px #1020401f}
-html:not([data-theme=dark]) body .desktop-workspace .chat-composer .composer-scope{background:#f5f7fa;border-bottom-color:#dfe4ea;border-top-left-radius:inherit;border-top-right-radius:inherit}
+html:not([data-theme=dark]) body .desktop-workspace .chat-composer .composer-scope{background:#f5f7fa;border-bottom-color:#cfd5de;border-top-left-radius:inherit;border-top-right-radius:inherit}
 html:not([data-theme=dark]) body .desktop-workspace .chat-composer .input-row textarea::placeholder{color:#6b7280}
 html:not([data-theme=dark]) body .desktop-workspace .chat-composer :is(.composer-meta small,.composer-meta,.composer-meta>span,.composer-foot,.composer-scope>span){color:#5f6670}
-html[data-theme=dark] body .desktop-workspace .chat-composer{background:#2b2f37;border:1.5px solid #5a6372;box-shadow:0 1px 0 #ffffff0d inset,0 8px 28px #00000080}
+html[data-theme=dark] body .desktop-workspace .chat-composer{background:#353a44;border:1.5px solid #6b7586;box-shadow:0 1px 0 #ffffff0d inset,0 8px 28px #00000080}
 html[data-theme=dark] body .desktop-workspace .chat-composer:focus-within{border-color:#6aa8ff;box-shadow:0 0 0 3px #6aa8ff33,0 8px 28px #00000080}
-html[data-theme=dark] body .desktop-workspace .chat-composer .composer-scope{background:#323741;border-bottom-color:#4a5260;border-top-left-radius:inherit;border-top-right-radius:inherit}
+html[data-theme=dark] body .desktop-workspace .chat-composer .composer-scope{background:#3d434e;border-bottom-color:#565e6c;border-top-left-radius:inherit;border-top-right-radius:inherit}
 html[data-theme=dark] body .desktop-workspace .chat-composer .input-row textarea{color:#f1f4f8}
-html[data-theme=dark] body .desktop-workspace .chat-composer .input-row textarea::placeholder{color:#b3bcc8}
-html[data-theme=dark] body .desktop-workspace .chat-composer :is(.composer-meta small,.composer-meta,.composer-meta>span,.composer-foot,.composer-scope>span){color:#bcc4cf}
+html[data-theme=dark] body .desktop-workspace .chat-composer .input-row textarea::placeholder{color:#bdc5d0}
+html[data-theme=dark] body .desktop-workspace .chat-composer :is(.composer-meta small,.composer-meta,.composer-meta>span,.composer-foot,.composer-scope>span){color:#c6cdd7}
