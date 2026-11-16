@@ -49,7 +49,6 @@
 .answer-citation .icon{width:16px;height:16px;flex:none}.answer-citation>button:hover strong{color:var(--ui-accent)}
 .desktop-workspace .chat-room .answer-tools{margin-top:10px;gap:6px 18px}
 .desktop-workspace .chat-room .answer-tools>button{font-size:12px;min-height:32px}
-.desktop-workspace .chat-room .answer-tools>[data-save-answer][aria-pressed=true]{color:var(--ui-accent)}
 .schedule-view-switch{display:flex;width:fit-content;margin:0 0 24px;gap:3px}
 .desktop-workspace .schedule-view-switch>button{display:flex;align-items:center;gap:8px;font-size:13px;padding:7px 18px}
 .schedule-view-switch .icon{width:16px;height:16px}
@@ -136,3 +135,13 @@
 /* 포인트와 보상: 포인트 · 누적 포인트 · 츄르 · 하트 네 칸 */
 .activity-balances{grid-template-columns:repeat(4,minmax(0,1fr))}
 .activity-balance-note{display:block;margin-top:4px;font-size:12px;line-height:1.5;color:var(--ui-sub,var(--sub))}
+/* 답변 저장: 다른 글자 버튼보다 눈에 띄게 — 오른쪽 끝, 파란 테두리 알약 버튼. 저장하면 파란 바탕으로 채운다. */
+html body .chat-room .answer-tools>button.answer-save-button{margin-left:auto;gap:6px;min-height:32px;padding:5px 14px;border:1px solid var(--ui-accent,#0071e3);border-radius:999px;background:color-mix(in srgb,var(--ui-accent,#0071e3) 9%,transparent);color:var(--ui-accent,#0071e3);font-size:13px;font-weight:600}
+html body .chat-room .answer-tools>button.answer-save-button:hover{background:color-mix(in srgb,var(--ui-accent,#0071e3) 17%,transparent);color:var(--ui-accent,#0071e3)}
+html body .chat-room .answer-tools>button.answer-save-button[aria-pressed=true]{background:var(--ui-accent,#0071e3);color:#fff}
+html body .chat-room .answer-tools>button.answer-save-button[aria-pressed=true]:hover{background:var(--ui-accent,#0071e3);color:#fff;filter:brightness(1.08)}
+html body .chat-room .answer-tools>button.answer-save-button .icon{width:15px;height:15px}
+/* 글자 대비: 밝은 화면은 조금 더 진한 파랑, 어두운 화면의 '저장됨'은 밝은 파랑 위에 어두운 글자 */
+html:not([data-theme=dark]) body .chat-room .answer-tools>button.answer-save-button{color:color-mix(in srgb,var(--ui-accent,#0071e3) 82%,#000);border-color:color-mix(in srgb,var(--ui-accent,#0071e3) 82%,#000)}
+html:not([data-theme=dark]) body .chat-room .answer-tools>button.answer-save-button[aria-pressed=true],html:not([data-theme=dark]) body .chat-room .answer-tools>button.answer-save-button[aria-pressed=true]:hover{background:color-mix(in srgb,var(--ui-accent,#0071e3) 82%,#000);color:#fff}
+html[data-theme=dark] body .chat-room .answer-tools>button.answer-save-button[aria-pressed=true],html[data-theme=dark] body .chat-room .answer-tools>button.answer-save-button[aria-pressed=true]:hover{color:#0b1526}
