@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
-import { CATEGORY_MAX_LENGTH, categoryNameProblem, loadCategories, saveCategories } from '../../lib/categories';
+import { CATEGORY_MAX_LENGTH, categoryNameProblem, loadCategories, renameCategory, saveCategories } from '../../lib/categories';
 import { supabase } from '../../lib/supabase';
 
-/** 분야 관리: 문서 관리에서 고르는 분야(카테고리)를 추가·삭제한다. 저장하면 문서 관리에 바로 쓰인다. */
+/** 분야 관리: 문서 관리에서 고르는 분야(카테고리)를 추가·이름 수정·삭제한다. 저장하면 문서 관리에 바로 쓰인다. */
 export default function Categories() {
   const toast = useToast();
   const [categories, setCategories] = useState<string[]>([]);
@@ -15,6 +15,7 @@ export default function Categories() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<{ from: string; name: string; error: string } | null>(null);
 
   const load = useCallback(async () => {
     const [{ categories, error }, { data }] = await Promise.all([
@@ -63,6 +64,28 @@ export default function Categories() {
     if (await save(categories.filter((c) => c !== target), `'${target}' 분야를 삭제했어요.`)) setRemoving(null);
   };
 
+  // 이름 수정: 목록의 같은 자리에서 이름만 바꾸고, 그 분야를 쓰던 문서도 새 이름으로 옮긴다.
+  const rename = async () => {
+    if (!renaming) return;
+    const { from } = renaming, to = renaming.name.trim();
+    if (to === from) return setRenaming(null);
+    const problem = categoryNameProblem(to, categories.filter((c) => c !== from));
+    if (problem) return setRenaming({ ...renaming, error: problem });
+    setSaving(true);
+    try {
+      const { categories: next, moved } = await renameCategory(categories, from, to);
+      setCategories(next);
+      setCounts((prev) => { const copy = { ...prev }; copy[to] = (copy[to] ?? 0) + (copy[from] ?? 0); delete copy[from]; return copy; });
+      setRenaming(null);
+      toast(`'${from}' 분야 이름을 '${to}'(으)로 바꿨어요.${moved ? ` 문서 ${moved}개의 분야도 함께 바꿨어요.` : ''}`);
+    } catch (e) {
+      toast((e as Error).message);
+      load();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const used = removing ? counts[removing] ?? 0 : 0;
 
   return (
@@ -70,7 +93,7 @@ export default function Categories() {
       <div className="page-head">
         <div>
           <h1>분야 관리</h1>
-          <p>문서 관리에서 문서에 붙이는 분야(카테고리)를 추가하거나 삭제해요. 바꾸면 문서 관리에 바로 적용돼요.</p>
+          <p>문서 관리에서 문서에 붙이는 분야(카테고리)를 추가하거나, 이름을 고치거나, 삭제해요. 바꾸면 문서 관리에 바로 적용돼요.</p>
         </div>
       </div>
 
@@ -97,12 +120,40 @@ export default function Categories() {
               <div className="list-title">{c}</div>
               <div className="list-meta">문서 {counts[c] ?? 0}개</div>
             </div>
+            <button type="button" className="btn btn-sm" disabled={saving}
+              onClick={() => setRenaming({ from: c, name: c, error: '' })} aria-label={`${c} 분야 이름 수정`}>이름 수정</button>
             <button type="button" className="btn btn-sm btn-danger" disabled={saving || categories.length <= 1}
               title={categories.length <= 1 ? '분야는 하나 이상 있어야 해요.' : undefined}
               onClick={() => setRemoving(c)} aria-label={`${c} 분야 삭제`}>삭제</button>
           </div>
         ))}
       </section>
+
+      {renaming && (
+        <Modal
+          title="분야 이름 수정"
+          onClose={() => setRenaming(null)}
+          actions={
+            <>
+              <button type="button" className="btn" onClick={() => setRenaming(null)}>취소</button>
+              <button type="button" className="btn btn-primary" disabled={saving || !renaming.name.trim()} onClick={rename}>{saving ? '저장 중…' : '저장'}</button>
+            </>
+          }
+        >
+          <div className="field">
+            <label htmlFor="category-rename">새 이름</label>
+            <input id="category-rename" className="input" value={renaming.name} maxLength={CATEGORY_MAX_LENGTH} autoFocus
+              onChange={(e) => setRenaming({ ...renaming, name: e.target.value, error: '' })}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); rename(); } }} />
+            <span className="hint">
+              {(counts[renaming.from] ?? 0) > 0
+                ? `이 분야를 쓰는 문서 ${counts[renaming.from]}개의 분야도 새 이름으로 함께 바뀌어요.`
+                : '이 분야를 쓰는 문서는 없어요.'}
+            </span>
+          </div>
+          {renaming.error && <div className="error-box" role="alert">{renaming.error}</div>}
+        </Modal>
+      )}
 
       {removing && (
         <Modal

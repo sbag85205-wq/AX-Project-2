@@ -25,6 +25,24 @@ export async function saveCategories(categories: string[]): Promise<void> {
   if (error) throw new Error('분야를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
 }
 
+/** 목록에서 분야 이름 하나를 같은 자리에서 바꾼다. */
+export function renamedList(list: string[], from: string, to: string): string[] {
+  return list.map((c) => (c === from ? to.trim() : c));
+}
+
+/**
+ * 분야 이름을 바꾼다: 분야 목록을 저장한 뒤, 그 분야를 쓰던 문서의 분야도 새 이름으로 바꾼다.
+ * 바뀐 문서 수를 돌려준다.
+ */
+export async function renameCategory(list: string[], from: string, to: string): Promise<{ categories: string[]; moved: number }> {
+  const categories = renamedList(list, from, to);
+  await saveCategories(categories);
+  const { data, error } = await supabase.from('documents')
+    .update({ category: to.trim(), updated_at: new Date().toISOString() }).eq('category', from).select('id');
+  if (error) throw new Error('분야 이름은 바꿨지만 문서의 분야를 바꾸지 못했어요. 문서 관리에서 직접 바꿔 주세요.');
+  return { categories, moved: data?.length ?? 0 };
+}
+
 /** 새 분야 이름을 검사한다. 문제가 없으면 빈 문자열을 돌려준다. */
 export function categoryNameProblem(name: string, current: string[]): string {
   const value = name.trim();
