@@ -78,3 +78,16 @@ test('board can be narrowed to one category, with counts, and keeps old-category
  assert.ok(boardView(state,'all','','trouble').includes('이 분야에 해당하는 질문이 없어요.'));
  assert.ok(!boardView({...state,posts:state.posts.slice(0,3)}).includes('data-board-category="old"'));
 });
+
+test('지갑만 바뀐 응답(쓰다듬기)은 화면 불러오기 때 받은 개인 기록 묶음을 다시 싣지 않는다',async t=>{
+ const originalDocument=globalThis.document;
+ globalThis.document={addEventListener(){}};
+ t.after(()=>{if(originalDocument===undefined)delete globalThis.document;else globalThis.document=originalDocument;});
+ const {initCommunity,refreshCommunity,communityAction}=await import('../public/community-ui.js?stale-personal');
+ const loaded={member:true,me:{id:'a',role:'employee'},wallet:{points:10},level:{level:1},posts:[],personalState:{'om-chat-active':'"old"'},personalLarge:{}};
+ t.mock.method(globalThis,'fetch',async(url,options)=>({ok:true,json:async()=>options?.method==='POST'?{partial:'wallet',wallet:{points:20},level:{level:1}}:loaded}));
+ const updates=[];initCommunity({update:state=>updates.push(state),toast:()=>{},show:()=>{}});
+ await refreshCommunity();assert.equal(updates.at(-1).personalState['om-chat-active'],'"old"');
+ await communityAction('reward',{type:'pet',id:'p1'});
+ const last=updates.at(-1);assert.equal('personalState' in last,false);assert.equal('personalLarge' in last,false);assert.equal(last.wallet.points,20);assert.equal(last.me.id,'a');
+});

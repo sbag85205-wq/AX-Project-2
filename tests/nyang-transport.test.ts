@@ -3,7 +3,7 @@ const mocks = vi.hoisted(() => ({ getSession: vi.fn(), signInWithPassword: vi.fn
 vi.mock('../src/lib/supabase', () => ({ supabaseConfigured: true, loginEmail: (id: string) => `${id}@knowly.local`, supabase: {
   auth: mocks, functions: { invoke: mocks.invoke }, from: () => ({ select: () => ({ eq: () => ({ single: mocks.single }) }) })
 } }));
-vi.mock('../src/lib/api', () => ({ callFunction: mocks.call }));
+vi.mock('../src/lib/api', () => ({ callFunction: mocks.call, SESSION_EXPIRED: 401 }));
 vi.mock('../src/nyang/local-store', () => ({ localExport: mocks.exportLocal }));
 import { request } from '../src/nyang/transport';
 const post = (body: unknown) => ({ method: 'POST', body: JSON.stringify(body) });
@@ -26,7 +26,7 @@ describe('main Knowly transport', () => {
     mocks.signInWithPassword.mockResolvedValue({ data: { user: { id: 'employee-a' } }, error: null });
     mocks.exportLocal.mockResolvedValue(null);answer(() => ({ member: true, me: { role: 'employee' } }));
     const r = await request('/api/account', post({ action: 'login', username: 'alice', password: 'fixture', role: 'staff' }));
-    expect(r.ok).toBe(false);expect((await r.json()).error).toMatch(/계정 유형/);expect(mocks.signOut).toHaveBeenCalled();
+    expect(r.ok).toBe(false);expect((await r.json()).error).toMatch(/계정 유형/);expect(mocks.signOut).toHaveBeenCalledWith({ scope: 'local' });
     mocks.signInWithPassword.mockResolvedValue({ data: {}, error: new Error('bad') });
     expect((await (await request('/api/account', post({ action: 'login', username: 'alice', password: 'x', role: 'employee' }))).json()).error).toMatch(/아이디 또는 비밀번호/);
   });
@@ -97,6 +97,14 @@ describe('main Knowly transport', () => {
     mocks.call.mockRejectedValue(new Error('검색 실패'));
     const r=await request('/api/knowly',post({question:'휴가 규정'}));
     expect(r.ok).toBe(false);expect(await r.json()).toEqual({error:'검색 실패'});
+  });
+  it('logs out only this device, and when the login ended elsewhere it signs this device out too', async () => {
+    await request('/api/account', post({ action: 'logout' }));
+    expect(mocks.signOut).toHaveBeenLastCalledWith({ scope: 'local' }); // 다른 기기는 로그인 상태 그대로
+    mocks.signOut.mockClear();mocks.call.mockRejectedValue(Object.assign(new Error('로그인이 만료됐어요. 다시 로그인해 주세요.'), { status: 401 }));
+    const r = await request('/api/knowly', post({ question: '휴가 규정' }));
+    expect(r.status).toBe(401);expect(await r.json()).toEqual({ error: '로그인이 만료됐어요. 다시 로그인해 주세요.' });
+    expect(mocks.signOut).toHaveBeenCalledWith({ scope: 'local' });
   });
   it('uses the same chat API for feedback and never serves data after logout', async () => {
     mocks.call.mockResolvedValue({ok:true});

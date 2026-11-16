@@ -1,5 +1,5 @@
 import { loginEmail, supabase, supabaseConfigured } from '../lib/supabase';
-import { callFunction, type AskResult } from '../lib/api';
+import { callFunction, SESSION_EXPIRED, type AskResult } from '../lib/api';
 import { localExport } from './local-store';
 
 // 냥대리 활동(포인트·출석·게시판)과 개인 기록은 서버 함수(nyang)가 저장한다. 어느 PC로 로그인해도 같은 기록이 보인다.
@@ -64,7 +64,7 @@ export async function request(path: string, init: RequestInit = {}): Promise<Res
     if (!supabaseConfigured) throw new Error('VITE_SUPABASE_URL과 VITE_SUPABASE_PUBLISHABLE_KEY를 설정해 주세요.');
     let input = typeof init.body === 'string' ? JSON.parse(init.body) : {};
     if (input.action === 'logout') {
-      const { error } = await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
       if (error) throw error;
       return Response.json({ authenticated: false, member: false });
     }
@@ -94,13 +94,15 @@ export async function request(path: string, init: RequestInit = {}): Promise<Res
     // 화면을 처음 불러올 때: 이 브라우저에만 있던 예전 기록이 있으면 먼저 서버로 올린다(그 응답이 곧 첫 화면)
     const result = (action === null ? await importLocalOnce(session.user.id) : null) ?? await callNyang({ ...input, action });
     if (expectedRole && (result as { me?: { role?: string } }).me?.role !== expectedRole) {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: 'local' });
       throw new Error('계정 유형을 확인하고 직원 또는 담당자 탭에서 로그인해 주세요.');
     }
     if (action === 'stats') return Response.json(await withLoginIds(result));
     return Response.json(result);
   } catch (e) {
     const status = (e as { status?: number }).status;
+    // 다시 시도해도 로그인을 받아들이지 않으면(다른 곳에서 로그아웃·만료) 이 기기도 로그아웃 상태로 맞춘다
+    if (status === SESSION_EXPIRED) { try { await supabase.auth.signOut({ scope: 'local' }); } catch { /* 로그아웃 표시는 다음 화면 불러오기에서 맞춘다 */ } }
     return Response.json({ error: e instanceof Error ? e.message : '요청을 처리하지 못했어요.' }, { status: status && status >= 400 && status < 500 ? status : 400 });
   }
 }

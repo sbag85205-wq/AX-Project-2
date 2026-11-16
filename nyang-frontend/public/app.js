@@ -5,7 +5,7 @@ import {createReactionPicker} from './reaction-variety.js?v=115ea2f34987';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=ef11f91be08e';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=07deb347a2ff';
-import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=e96f553d8ea3';
+import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=675fe8d6d6a0';
 import {categories,applyManagedCategories,defaultCategory,categoryOf,documents,faq,startersFor,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=4dc923f4c7f7';
 import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=93bd9a4c6e6f';
 import {createPetInteraction} from './pet-interaction.js?v=25ddd542a513';
@@ -13,9 +13,9 @@ import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} fro
 const $=s=>document.querySelector(s);
 import {createAccountSync} from './account-sync.js?v=566c60b20497';
 import {esc} from './shared.js?v=76a19ab6baf7';
-import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=751a765f8a44';
+import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=fc7d370f8218';
 import {orderNav,installNavLayout} from './nav-layout.js?v=34db55cc4081';
-import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=7a47a400bec1';
+import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=238d9c0e5b98';
 import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=d2afdbbf0a96';
 const mode=document.body.dataset.mode;
 const isCat=mode==='cat';
@@ -269,7 +269,10 @@ async function askKnowly(question,files=[]){
  try{
   const conversation_id=messages.findLast(m=>m.result?.knowly?.conversation_id)?.result.knowly.conversation_id||null;
   const res=await fetch('/api/knowly',{method:'POST',body:JSON.stringify({question,conversation_id,category:categoryOf(category).searchAll?null:categoryOf(category).label,attachments:files.map(a=>a.kind==='image'?{name:a.name,kind:'image',data_url:a.dataUrl}:{name:a.name,kind:'file',text:a.text})})});
-  const data=await res.json();if(!res.ok)throw Error(data.error||'문서 검색에 실패했어요.');return data.answer;
+  const data=await res.json();
+  // 로그인이 끝났으면(다른 곳에서 로그아웃·만료) 오류 카드 대신 로그인 화면으로 보낸다
+  if(res.status===401){refreshCommunity();toast(data.error||'로그인이 만료됐어요. 다시 로그인해 주세요.');}
+  if(!res.ok)throw Error(data.error||'문서 검색에 실패했어요.');return data.answer;
  }catch(e){return {error:true,answered:false,summary:[e.message||'연결을 확인한 뒤 다시 질문해 주세요.'],citations:[]};}
 }
 async function voteKnowly(messageId,vote){
@@ -684,14 +687,15 @@ function loadAccountRecords(next){
  tasks=read('om-tasks',[]);history=normalizeHistory(read('om-question-history',[]));seenReplies=read('om-seen-replies',{});if(!seenReplies||typeof seenReplies!=='object')seenReplies={};
  if(next){const stored=read('om-chat-sessions',null);chats=stored===null?importQuestionHistory(history):normalizeChats(stored);}
 }
+// 마지막으로 브라우저 저장소에 넣은 서버 기록 묶음(같은 묶음을 두 번 넣지 않는다)
+let lastPersonalState=null;
 // 계정에 저장된 화면 테마·움직임 설정을 이 화면에 적용한다
 function applyDeviceSettings(){applyColorTheme(preferredColorTheme());document.body.classList.toggle('motion-paused',!read('om-cat-motion',true));}
-// 서버에서 받은 기록으로 바뀐 뒤 다시 읽고 그린다. 지금 보고 있는 대화는 그대로 둔다(목록에 없으면 새 대화로).
+// 서버에서 받은 기록으로 바뀐 뒤 다시 읽고 그린다. 지금 보고 있는 화면·대화는 그대로 둔다(다른 기기에서 연 대화로 갑자기 넘어가지 않게).
 function reloadAccountRecords(){
  if(!activeAccount)return;
  uploads=read('om-docs',[]);loadAccountRecords(activeAccount);
  if(activeChatId&&!chats.some(x=>x.id===activeChatId)&&!messages.length)activeChatId=null;
- if(!activeChatId&&!messages.length&&!pendingReply){const id=read('om-chat-active',null),chat=chats.find(x=>x.id===id);if(chat){activeChatId=id;messages=structuredClone(chat.messages);category=chat.category;}}
  applyDeviceSettings();applyBackground();render();
 }
 // 창을 닫거나 다른 창으로 갈 때 아직 못 보낸 기록을 한 번 더 보낸다
@@ -707,7 +711,7 @@ initCommunity({
    clearTimeout(replyTimer);replyTimer=null;pendingReply=null;messages=[];chatDraft='';category=null;view='chat';activityTab='recent';activityQuery='';plan=null;petInteraction.reset();
    if($('#modal').open)closeModal();activeAccount=next;
    // 화면을 불러올 때 함께 받은 서버 기록(내 일정·대화 기록·테마 등)을 먼저 브라우저 저장소에 넣고 읽는다
-   const synced=accountSync.start(next,state.personalState,state.personalLarge);
+   lastPersonalState=state.personalState;const synced=accountSync.start(next,state.personalState,state.personalLarge);
    applyDeviceSettings();
    uploads=read('om-docs',[]);loadAccountRecords(next);
    if(next){
@@ -721,7 +725,9 @@ initCommunity({
   }
   if(!state.member){render();return;}
   // 같은 계정으로 다시 불러왔을 때(창으로 돌아옴 등): 다른 기기에서 바꾼 기록이 있으면 반영한다
-  if(state.personalState&&accountSync.refresh(state.personalState,state.personalLarge,reloadAccountRecords)){rewards=state.wallet||rewards;reloadAccountRecords();return;}
+  // 서버에서 새로 받은 기록 묶음일 때만(같은 묶음을 다시 넣으면 그 뒤에 바꾼 기록을 옛 기록으로 되돌린다)
+  const fresh=state.personalState&&state.personalState!==lastPersonalState;if(fresh)lastPersonalState=state.personalState;
+  if(fresh&&accountSync.refresh(state.personalState,state.personalLarge,reloadAccountRecords)){rewards=state.wallet||rewards;reloadAccountRecords();return;}
   rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};updateWallet();refreshPet();if(viewOf(view)?.community&&!$('#modal').open)render();}
 });
 

@@ -24,7 +24,7 @@ export async function signInAs(loginId: string, password: string, expectedRole?:
   const { data: row } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
   const role = (row as { role: Role } | null)?.role;
   if (role !== expectedRole) {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
     throw new Error(role === 'admin'
       ? '담당자 계정이에요. 담당자 탭에서 로그인해 주세요.'
       : '담당자 계정이 아니에요. 직원 탭에서 로그인해 주세요.');
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
   };
 
   return <AuthContext.Provider value={{ session, profile, loading, verifying, signIn, signOut }}>{children}</AuthContext.Provider>;

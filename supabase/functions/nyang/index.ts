@@ -22,6 +22,15 @@ Deno.serve(async (req) => {
   const { data: claims, error: authError } = await auth.auth.getClaims(token);
   const userId = typeof claims?.claims?.sub === 'string' ? claims.claims.sub : '';
   if (authError || !userId) return errorResponse(401, 'unauthorized', '로그인이 필요해요.');
+  // 서명만으로는 다른 곳에서 로그아웃된 세션을 알 수 없다. 채팅 함수(getUser)와 똑같이 판단하도록 세션이 살아 있는지 DB에서 확인한다.
+  // (확인 자체가 실패하면 서명 확인만으로 통과시킨다: 이 확인 때문에 냥대리 전체가 멈추지 않게)
+  const sessionId = typeof claims?.claims?.session_id === 'string' ? claims.claims.session_id : '';
+  if (sessionId) {
+    try {
+      const [alive] = await sql`SELECT 1 AS ok FROM auth.sessions WHERE id = ${sessionId}::uuid AND user_id = ${userId}::uuid`;
+      if (!alive) return errorResponse(401, 'unauthorized', '로그인이 필요해요.');
+    } catch (e) { console.error('nyang session check skipped', (e as Error).message); }
+  }
   try {
     const raw = await req.text();
     if (raw.length > BODY_MAX_LARGE) return errorResponse(413, 'too_large', '요청이 너무 커요.');

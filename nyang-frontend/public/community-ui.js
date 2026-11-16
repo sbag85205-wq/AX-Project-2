@@ -59,7 +59,9 @@ export async function communityAction(action,body={}){
   const data=await res.json();if(epoch!==authEpoch)return null;if(res.status===401){authEpoch++;state={authenticated:false,member:false};hooks.update(state);throw Error('로그인이 만료됐어요. 다시 로그인해 주세요.');}if(!res.ok)throw Error(data.error);
   // 쓰다듬기 응답은 가볍게(지갑만) 온다. 쓰다듬기로 늘어나는 포인트는 보너스뿐이라, 늘어난 만큼 누적 포인트에도 더한다.
   const gained=data.partial==='wallet'?Math.max(0,(data.wallet?.points??0)-(state.wallet?.points??0)):0;
-  state=data.partial==='wallet'?{...state,wallet:data.wallet,level:data.level,...(state.earned&&gained?{earned:{total:state.earned.total+gained,recent:state.earned.recent+gained}}:{})}:data;
+  // 지갑만 바뀐 응답(쓰다듬기)에는 화면 불러오기 때 받은 개인 기록 묶음을 다시 싣지 않는다(옛 기록으로 되돌리지 않게)
+  const {personalState:_ps,personalLarge:_pl,...kept}=state;
+  state=data.partial==='wallet'?{...kept,wallet:data.wallet,level:data.level,...(state.earned&&gained?{earned:{total:state.earned.total+gained,recent:state.earned.recent+gained}}:{})}:data;
   hooks.update(state);if(data.notice)hooks.toast(data.notice);return data;
  }catch(e){hooks.toast(e.message||'연결을 확인하고 다시 시도해 주세요.');return null;}
 }
