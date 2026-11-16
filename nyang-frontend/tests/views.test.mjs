@@ -9,8 +9,6 @@ const OLD={
  staffNavs:['statistics','userstats','faq','documents','categories','users'],
  staffOnly:['statistics','userstats','faq','documents','categories','users','model','unanswered'],
  navNames:['chat','schedule','activity','board','statistics','userstats','faq','documents','categories','users','model','unanswered','library'],
- localAdmin:['faq','documents','users','model'],
- knowlyNotice:['unanswered','library','categories'],
  openStaff:['faq','documents','categories','users','model'],
  openAny:['chat','todos','calendar','board','activity'],
  community:['activity','board'],
@@ -26,18 +24,16 @@ test('메뉴 버튼 목록이 예전과 같다(순서 포함)',()=>{
  assert.deepEqual(STAFF_NAVS,OLD.staffNavs);
  assert.deepEqual(NAV_NAMES,OLD.navNames);
 });
-test('화면마다 권한·열기·다시 그리기·Knowly 판단이 예전 목록과 같다',()=>{
+// (Knowly가 꺼졌을 때 쓰던 대체 화면·안내문은 실제로 쓰이지 않아 2단계 정리에서 지웠다)
+test('화면마다 권한·열기·다시 그리기·Knowly 주소가 예전 목록과 같다',()=>{
  for(const name of every){
   const v=viewOf(name);
   assert.equal(!!v?.staff,OLD.staffViews.includes(name),'staff '+name);
   assert.equal(!!v?.staffOnly,OLD.staffOnly.includes(name),'staffOnly '+name);
-  assert.equal(!!v?.localAdmin,OLD.localAdmin.includes(name),'localAdmin '+name);
   assert.equal(v?.open==='staff',OLD.openStaff.includes(name),'open staff '+name);
   assert.equal(v?.open==='any',OLD.openAny.includes(name),'open any '+name);
   assert.equal(!!v?.community,OLD.community.includes(name),'community '+name);
   assert.equal(v?.route,Object.hasOwn(OLD.routes,name)?OLD.routes[name]:undefined,'route '+name);
-  // Knowly가 꺼졌을 때 안내문을 보여 주던 화면 = 주소가 있고 자체 관리 화면이 없는 화면
-  assert.equal(!!(v?.route&&!v.localAdmin),OLD.knowlyNotice.includes(name),'notice '+name);
  }
 });
 test('제목이 예전과 같다',()=>{

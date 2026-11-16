@@ -9,7 +9,6 @@
 //  staffOnly   담당자 전용 화면(직원은 '물어보기'로 보낸다)
 //  staffNav    담당자에게만 보이는 메뉴 버튼(직원에게는 숨긴다)
 //  route       Knowly 화면 주소(iframe으로 띄운다)
-//  localAdmin  Knowly가 꺼졌을 때 냥대리 자체 관리 화면으로 대신 보여 준다
 //  community   게시판·포인트 정보가 바뀌면 다시 그린다
 export const VIEWS={
  chat:{title:'물어보기',pageTitle:'냥대리에게 물어보기',open:'any',staff:true},
@@ -19,11 +18,11 @@ export const VIEWS={
  board:{title:'질문 게시판',pageTitle:'익명 질문 게시판 · 이 브라우저에만 저장',open:'any',staff:true,community:true},
  statistics:{title:'이용 통계',staff:true,staffOnly:true,staffNav:true},
  userstats:{title:'사용자 통계',staff:true,staffOnly:true,staffNav:true},
- faq:{title:'FAQ 관리',open:'staff',staff:true,staffOnly:true,staffNav:true,route:'/admin/faqs',localAdmin:true},
- documents:{title:'문서 관리',open:'staff',staff:true,staffOnly:true,staffNav:true,route:'/admin/documents',localAdmin:true},
+ faq:{title:'FAQ 관리',open:'staff',staff:true,staffOnly:true,staffNav:true,route:'/admin/faqs'},
+ documents:{title:'문서 관리',open:'staff',staff:true,staffOnly:true,staffNav:true,route:'/admin/documents'},
  categories:{title:'분야 관리',open:'staff',staff:true,staffOnly:true,staffNav:true,route:'/admin/categories'},
- users:{title:'사용자 관리',open:'staff',staff:true,staffOnly:true,staffNav:true,route:'/admin/users',localAdmin:true},
- model:{title:'검색 모델 설정',open:'staff',staff:true,staffOnly:true,route:'/admin/settings',localAdmin:true},
+ users:{title:'사용자 관리',open:'staff',staff:true,staffOnly:true,staffNav:true,route:'/admin/users'},
+ model:{title:'검색 모델 설정',open:'staff',staff:true,staffOnly:true,route:'/admin/settings'},
  unanswered:{title:'챗봇 미답변',staff:true,staffOnly:true,route:'/admin/unanswered'},
  library:{title:'사내 문서',staff:true,route:'/docs'}
 };

@@ -3,7 +3,6 @@ import {categories as chatCategories} from './core.js?v=4dc923f4c7f7';
 import {boardView,boardPostHTML} from './board-view.js?v=711c26227c03';
 import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=172b84e7ad54';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const labels={server:'서버 설치 · 설정',client:'클라이언트 접속',trouble:'장애 조치',etc:'기타'};
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 let state={loading:true},hooks,filter='all',query='',boardCategory='all',boardSort='new',openPostId=null,busy=false,connecting=null,authEpoch=0,loginRole='employee',stats=null;
 export const communityState=()=>state;
@@ -61,7 +60,6 @@ function gate(){
  if(!state.member)return accountGateHTML();
  return '';
 }
-const hero=(kicker,title,desc)=>`<div class="community-heading"><div><h1>${title}</h1><p>${desc}</p></div><button class="secondary-button" data-community="refresh">새로고침 ↻</button></div>`;
 export function activityHTML(content='',rewards=true){ // rewards=false면 아래 '포인트와 보상' 칸을 그리지 않는다(내 레벨 탭에서만 보여줌). 접히지 않는 칸이라 출석 등으로 다시 그려도 닫히지 않는다.
  const intro='<header class="activity-heading"><h1>내 활동</h1><button class="activity-text-button" data-community="refresh">새로고침</button></header>';
  const blocked=gate();if(blocked)return `<section class="community-page activity-page">${intro}${content}${blocked}</section>`;
