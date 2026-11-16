@@ -1,6 +1,6 @@
 // 꾸미기 > 배경: 기본 풍경 4가지와 내가 올린 이미지(계정별·이 브라우저에 최대 8개).
-// 고른 배경은 계정마다 따로 저장한다(om-bg-theme-<모드>, om-bg-uploads-<모드>). 배경 버튼 클릭은 app.js 클릭 표가 처리한다.
-import {communityState} from './community-ui.js?v=662ef985897b';
+// 고른 배경은 계정마다 따로 저장하고 서버와 맞춘다(account-sync.js). 다른 PC에 없는 올린 이미지를 고른 상태면 기본 배경으로 보인다(om-bg-theme-<모드>, om-bg-uploads-<모드>). 배경 버튼 클릭은 app.js 클릭 표가 처리한다.
+import {communityState} from './community-ui.js?v=e96f553d8ea3';
 import {esc} from './shared.js?v=76a19ab6baf7';
 const $=s=>document.querySelector(s);
 // app.js가 넘겨주는 것: 계정별 저장(read·save), 창(openModal·closeModal·customizeTabs), 알림·아이콘, 화면 모드
@@ -26,7 +26,7 @@ export function backgroundState(){
 }
 export function showBackground(){
  const current=backgroundState();
- openModal(`<h2 id="modal-title">꾸미기</h2>${customizeTabs('background')}<p class="modal-sub">냥대리 뒤에 놓일 풍경을 선택하세요.</p><div class="background-presets">${backgroundPresets.map(p=>`<button class="background-option ${current.id===p.id?'chosen':''}" data-background="${p.id}" aria-pressed="${current.id===p.id}"><span class="background-thumb" style="background-image:url('${root}assets/${p.file}')">${current.id===p.id?`<span class="background-check">${icon('check')}</span>`:''}</span><span class="background-option-name">${p.label}${p.id==='cafe'&&isCat?'<em>기본</em>':''}</span><small>${p.caption}</small></button>`).join('')}</div><div class="background-other"><button class="white-background-option ${current.id==='white'?'chosen':''}" data-background="white" aria-pressed="${current.id==='white'}"><span></span>흰색 배경${current.id==='white'?icon('check'):''}</button><label class="secondary-button file-button">${icon('picture')} 내 이미지 올리기<input type="file" id="bg-upload" accept="image/png,image/jpeg,image/webp,image/gif"></label></div>${current.id.startsWith('upload:')?'<p class="custom-background-status">현재 내가 올린 이미지를 사용 중이에요.</p>':''}${backgroundHistoryHTML(current)}<p class="caption">이미지 업로드: JPG, PNG, WebP, GIF · 최대 8MB<br>배경 선택과 올린 이미지는 계정별로 이 브라우저에 저장돼요(최근 ${BG_UPLOAD_LIMIT}개).</p>`,true);
+ openModal(`<h2 id="modal-title">꾸미기</h2>${customizeTabs('background')}<p class="modal-sub">냥대리 뒤에 놓일 풍경을 선택하세요.</p><div class="background-presets">${backgroundPresets.map(p=>`<button class="background-option ${current.id===p.id?'chosen':''}" data-background="${p.id}" aria-pressed="${current.id===p.id}"><span class="background-thumb" style="background-image:url('${root}assets/${p.file}')">${current.id===p.id?`<span class="background-check">${icon('check')}</span>`:''}</span><span class="background-option-name">${p.label}${p.id==='cafe'&&isCat?'<em>기본</em>':''}</span><small>${p.caption}</small></button>`).join('')}</div><div class="background-other"><button class="white-background-option ${current.id==='white'?'chosen':''}" data-background="white" aria-pressed="${current.id==='white'}"><span></span>흰색 배경${current.id==='white'?icon('check'):''}</button><label class="secondary-button file-button">${icon('picture')} 내 이미지 올리기<input type="file" id="bg-upload" accept="image/png,image/jpeg,image/webp,image/gif"></label></div>${current.id.startsWith('upload:')?'<p class="custom-background-status">현재 내가 올린 이미지를 사용 중이에요.</p>':''}${backgroundHistoryHTML(current)}<p class="caption">이미지 업로드: JPG, PNG, WebP, GIF · 최대 8MB<br>고른 배경은 계정에 저장돼 다른 PC에서도 보여요. 직접 올린 이미지는 이 브라우저에만 저장돼요(최근 ${BG_UPLOAD_LIMIT}개).</p>`,true);
 }
 function backgroundHistoryHTML(current){
  const list=backgroundUploads();if(!list.length)return '';

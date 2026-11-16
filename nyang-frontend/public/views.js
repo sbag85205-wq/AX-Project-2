@@ -15,7 +15,7 @@ export const VIEWS={
  calendar:{title:'내 일정',pageTitle:'내 캘린더',nav:'schedule',open:'any'},
  todos:{title:'내 일정',pageTitle:'내가 해야 할 일',nav:'schedule',open:'any'},
  activity:{title:'내 활동',pageTitle:'나의 질문 활동',open:'any',community:true},
- board:{title:'질문 게시판',pageTitle:'익명 질문 게시판 · 이 브라우저에만 저장',open:'any',staff:true,community:true},
+ board:{title:'질문 게시판',pageTitle:'익명 질문 게시판',open:'any',staff:true,community:true},
  statistics:{title:'이용 통계',staff:true,staffOnly:true,staffNav:true},
  userstats:{title:'사용자 통계',staff:true,staffOnly:true,staffNav:true},
  faq:{title:'FAQ 관리',open:'staff',staff:true,staffOnly:true,staffNav:true,route:'/admin/faqs'},

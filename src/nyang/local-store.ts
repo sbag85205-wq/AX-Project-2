@@ -1,9 +1,10 @@
-// 냥대리 활동 데이터(포인트·출석·츄르·꾸미기·질문 게시판)를 이 브라우저에만 저장한다.
-// 운영 DB(Supabase)에는 새 테이블을 만들지 않는다. 다른 기기·브라우저와는 공유되지 않는다.
+// 예전에는 냥대리 활동 데이터(포인트·출석·츄르·꾸미기·질문 게시판)를 이 브라우저에만 저장했다.
+// 지금은 서버(supabase/functions/nyang)에 저장한다. 이 파일은 브라우저에 남아 있는 예전 기록을 읽어
+// 서버로 한 번 올릴 때만 쓴다(transport.ts). 브라우저에 있는 기록은 지우지 않고 그대로 둔다.
 import initSqlJs, { type SqlJsStatic } from 'sql.js';
 import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
-import { accountCommunity, statistics } from '../../nyang-frontend/lib/demo-account.mjs';
 import { runOnce } from './local-db.mjs';
+import { exportLocal } from './local-export.mjs';
 
 export interface NyangAccount { id: string; username: string; name: string; department: string; role: 'staff' | 'employee' }
 
@@ -33,40 +34,20 @@ async function load(): Promise<Uint8Array | null> {
       req.onerror = () => reject(req.error);
     });
   } catch {
-    return memory; // 개인정보 보호 모드 등 IndexedDB를 못 쓰면 이 탭에서만 기억한다.
+    return null; // 개인정보 보호 모드 등 IndexedDB를 못 쓰면 올릴 기록도 없다.
   }
 }
 
-async function save(bytes: Uint8Array) {
-  memory = bytes;
-  try {
-    const db = await idb();
-    await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put(bytes, KEY);
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
-  } catch {
-    /* 위 load와 같이 메모리에만 남긴다 */
-  }
-}
-
-let memory: Uint8Array | null = null;
 let engine: Promise<SqlJsStatic> | null = null;
-let queue: Promise<unknown> = Promise.resolve();
 
-/** 원래 nyang 서버 함수와 같은 요청을 브라우저 안에서 처리한다. 요청은 하나씩 차례로 처리한다. */
-export function localNyang(account: NyangAccount, action: string | null, input: Record<string, unknown>) {
-  const job = queue.then(async () => {
-    engine ??= initSqlJs({ locateFile: () => wasmUrl });
-    const SQL = await engine;
-    // 다른 탭에서 바뀐 내용을 반영하려고 요청마다 저장본을 다시 읽는다.
-    const { result, bytes } = await runOnce(SQL, await load(), files, (db: unknown) =>
-      action === 'stats' ? statistics(db, account) : accountCommunity(db, account, action, input));
-    await save(bytes);
-    return result;
-  });
-  queue = job.catch(() => undefined);
-  return job;
+/**
+ * 이 브라우저에 남아 있는 예전 활동 기록 중 이 계정이 한 일만 골라 돌려준다(없으면 null).
+ * 저장된 기록이 없으면 SQLite 엔진도 불러오지 않는다.
+ */
+export async function localExport(account: NyangAccount): Promise<Record<string, unknown> | null> {
+  const bytes = await load();
+  if (!bytes) return null;
+  engine ??= initSqlJs({ locateFile: () => wasmUrl });
+  const { result } = await runOnce(await engine, bytes, files, (db: unknown) => exportLocal(db, account.id, account.role));
+  return result as Record<string, unknown> | null;
 }

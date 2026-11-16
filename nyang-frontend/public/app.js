@@ -1,21 +1,22 @@
 import {parseEventRequest,timeLabel,eventTask} from './event-request.js?v=7dffe9d847bc';
-import {viewOf,pageTitleOf,NAV_NAMES,navViews,STAFF_NAVS,EMPLOYEE_NAVS} from './views.js?v=6b2d4c47bb05';
+import {viewOf,pageTitleOf,NAV_NAMES,navViews,STAFF_NAVS,EMPLOYEE_NAVS} from './views.js?v=8d20c79e9ab8';
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {createReactionPicker} from './reaction-variety.js?v=115ea2f34987';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=ef11f91be08e';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=07deb347a2ff';
-import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=662ef985897b';
+import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=e96f553d8ea3';
 import {categories,applyManagedCategories,defaultCategory,categoryOf,documents,faq,startersFor,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=4dc923f4c7f7';
 import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=93bd9a4c6e6f';
 import {createPetInteraction} from './pet-interaction.js?v=355c0da8eb14';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=7636a2959edf';
 const $=s=>document.querySelector(s);
+import {createAccountSync} from './account-sync.js?v=b20e0ff07483';
 import {esc} from './shared.js?v=76a19ab6baf7';
-import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=f66c4fab34ea';
+import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=751a765f8a44';
 import {orderNav,installNavLayout} from './nav-layout.js?v=34db55cc4081';
-import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=47cd1c974fdc';
-import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=6ffbdf3aa0c6';
+import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=7a47a400bec1';
+import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=d2afdbbf0a96';
 const mode=document.body.dataset.mode;
 const isCat=mode==='cat';
 const root='/nyang/';
@@ -32,7 +33,12 @@ let activeAccount=null;
 const personalKeys=new Set(['om-docs','om-tasks','om-question-history','om-seen-replies','om-chat-sessions','om-chat-active','om-personality']);
 const storageKey=key=>personalKeys.has(key)||key.startsWith('om-bg-')?'nyang-account:'+(activeAccount||'signed-out')+':'+key:key;
 function read(key,fallback){try{return JSON.parse(localStorage.getItem(storageKey(key)))??fallback;}catch{return fallback;}}
-function save(key,value){try{localStorage.setItem(storageKey(key),JSON.stringify(value));return true;}catch{toast('브라우저 저장 공간이 부족해 저장하지 못했어요.');return false;}}
+function save(key,value){try{localStorage.setItem(storageKey(key),JSON.stringify(value));accountSync.changed(key);return true;}catch{toast('브라우저 저장 공간이 부족해 저장하지 못했어요.');return false;}}
+// 계정별 기록(내 일정·대화 기록·내 활동 기록·배경/성격 설정)을 서버와 맞춰 다른 PC에서도 보이게 한다(account-sync.js)
+const accountSync=createAccountSync({
+ keyFor:(account,key)=>personalKeys.has(key)||key.startsWith('om-bg-')?'nyang-account:'+account+':'+key:key,
+ async send(body){const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),data=await res.json().catch(()=>null);if(!res.ok)throw Object.assign(Error(data?.error||'기록을 저장하지 못했어요.'),{status:res.status});return data;}
+});
 let uploads=read('om-docs',[]),tasks=read('om-tasks',[]),messages=[],category=isCat?null:defaultCategory,mood='',view='chat',filter='today',selectedDay=localDate(),plan=null,dialogOpener=null;
 let chats=[],activeChatId=null,chatHistoryCollapsed=false,chatHistoryCategory='all',chatHistoryFolder='all',historyMessageId=null;
 let chatDraft='',pendingReply=null,replyTimer=null,heroTransition=null;
@@ -344,7 +350,7 @@ function chatHistoryHTML(){
 function showChatSettings(id){
  if(!communityState().member)return;
  saveCurrentChat();const thread=chats.find(x=>x.id===id);if(!thread)return;
- openModal(`<h2 id="modal-title">대화 설정</h2><p class="modal-sub">기억하기 쉬운 제목과 나만의 폴더로 정리하세요.</p><form id="chat-settings-form" class="chat-settings-form" data-thread-id="${esc(id)}"><label for="chat-custom-title">대화 제목</label><input id="chat-custom-title" name="customTitle" maxlength="80" value="${esc(thread.customTitle)}" placeholder="${esc(thread.messages[0]?.text||'대화 제목')}"><small>비워두면 첫 질문을 제목으로 사용해요.</small><div class="chat-folder-label"><label for="chat-custom-folder">폴더 이름</label><button type="button" class="chat-folder-toggle" data-action="toggle-chat-folders" aria-expanded="false" aria-controls="chat-existing-folders">기존 폴더 <span aria-hidden="true">⌄</span></button></div><div id="chat-existing-folders" class="chat-folder-picker" role="group" aria-label="기존 폴더 선택" hidden>${chatFolders(chats).length?chatFolders(chats).map(name=>`<button type="button" data-chat-folder-choice="${esc(name)}">${esc(name)}</button>`).join(''):'<p>아직 만든 폴더가 없어요.<br>아래에 새 폴더 이름을 입력해 주세요.</p>'}</div><input id="chat-custom-folder" name="folder" maxlength="40" value="${esc(thread.folder)}" placeholder="예: 휴가 준비, 자주 찾는 규정" autocomplete="off"><small>기존 폴더명을 선택하거나 새로 입력하세요. 비워두면 폴더에서 꺼내요.</small><p class="modal-sub">제목과 폴더는 이 브라우저에 계정별로 저장돼요.</p><div class="chat-delete-actions"><button type="button" class="secondary-button" data-action="close-modal">취소</button><button class="primary-button" type="submit">저장</button></div></form>`);
+ openModal(`<h2 id="modal-title">대화 설정</h2><p class="modal-sub">기억하기 쉬운 제목과 나만의 폴더로 정리하세요.</p><form id="chat-settings-form" class="chat-settings-form" data-thread-id="${esc(id)}"><label for="chat-custom-title">대화 제목</label><input id="chat-custom-title" name="customTitle" maxlength="80" value="${esc(thread.customTitle)}" placeholder="${esc(thread.messages[0]?.text||'대화 제목')}"><small>비워두면 첫 질문을 제목으로 사용해요.</small><div class="chat-folder-label"><label for="chat-custom-folder">폴더 이름</label><button type="button" class="chat-folder-toggle" data-action="toggle-chat-folders" aria-expanded="false" aria-controls="chat-existing-folders">기존 폴더 <span aria-hidden="true">⌄</span></button></div><div id="chat-existing-folders" class="chat-folder-picker" role="group" aria-label="기존 폴더 선택" hidden>${chatFolders(chats).length?chatFolders(chats).map(name=>`<button type="button" data-chat-folder-choice="${esc(name)}">${esc(name)}</button>`).join(''):'<p>아직 만든 폴더가 없어요.<br>아래에 새 폴더 이름을 입력해 주세요.</p>'}</div><input id="chat-custom-folder" name="folder" maxlength="40" value="${esc(thread.folder)}" placeholder="예: 휴가 준비, 자주 찾는 규정" autocomplete="off"><small>기존 폴더명을 선택하거나 새로 입력하세요. 비워두면 폴더에서 꺼내요.</small><p class="modal-sub">제목과 폴더는 계정에 저장돼 다른 PC에서도 보여요.</p><div class="chat-delete-actions"><button type="button" class="secondary-button" data-action="close-modal">취소</button><button class="primary-button" type="submit">저장</button></div></form>`);
  $('#chat-custom-title')?.focus();
 }
 function showRenameFolder(){
@@ -357,7 +363,7 @@ function showDeleteChat(id){
  if(!communityState().member)return;
  if(pendingReply){toast('답변을 마친 뒤 대화를 삭제해 주세요.');return;}
  saveCurrentChat();const thread=chats.find(x=>x.id===id);if(!thread)return;
- openModal(`<h2 id="modal-title">이 대화를 삭제할까요?</h2><p class="chat-delete-title">${esc(thread.title)}</p><p class="modal-sub">대화에 포함된 모든 질문과 답변, 내 활동 기록과 저장한 답변이 이 브라우저에서 삭제돼요. 삭제한 대화는 복구할 수 없어요.</p><p class="modal-sub">게시판에 올린 질문과 등록한 일정, 포인트는 유지돼요.</p><div class="chat-delete-actions"><button class="secondary-button" data-action="close-modal">취소</button><button class="chat-delete-confirm" data-chat-delete-confirm="${esc(id)}">대화 삭제</button></div>`);
+ openModal(`<h2 id="modal-title">이 대화를 삭제할까요?</h2><p class="chat-delete-title">${esc(thread.title)}</p><p class="modal-sub">대화에 포함된 모든 질문과 답변, 내 활동 기록과 저장한 답변이 삭제돼요(다른 PC에서도 지워져요). 삭제한 대화는 복구할 수 없어요.</p><p class="modal-sub">게시판에 올린 질문과 등록한 일정, 포인트는 유지돼요.</p><div class="chat-delete-actions"><button class="secondary-button" data-action="close-modal">취소</button><button class="chat-delete-confirm" data-chat-delete-confirm="${esc(id)}">대화 삭제</button></div>`);
  $('.chat-delete-actions [data-action="close-modal"]')?.focus();
 }
 function deleteChat(id){
@@ -670,6 +676,18 @@ document.addEventListener('change',async e=>{
  if(e.target.id==='doc-upload'){const file=e.target.files[0];if(!file)return;if(!/\.(txt|md)$/i.test(file.name)||file.size>2*1024*1024){toast('2MB 이하 TXT 또는 Markdown 파일을 선택해 주세요.');return;}const contents=await file.text();const paragraphs=contents.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean);if(!paragraphs.length){toast('내용이 있는 문서를 선택해 주세요.');return;}const id=crypto.randomUUID();const doc={id,category:$('#upload-category').value,title:file.name,version:'내가 추가한 자료',sections:paragraphs.map((text,i)=>({id:`${id}-${i}`,label:`문단 ${i+1}`,text}))};if(save('om-docs',[...uploads,doc])){uploads.push(doc);showDocs();toast('샘플 자료를 추가했어요. 같은 분야에서 검색할 수 있어요.');}}
 });
 shell();
+// 계정별 기록을 브라우저 저장소에서 읽는다(내 일정·내 활동 기록·읽은 답변·대화 기록·성격)
+function loadAccountRecords(next){
+ personality=normalizePersonality(next?read('om-personality','cold'):'cold');
+ tasks=read('om-tasks',[]);history=normalizeHistory(read('om-question-history',[]));seenReplies=read('om-seen-replies',{});if(!seenReplies||typeof seenReplies!=='object')seenReplies={};
+ if(next){const stored=read('om-chat-sessions',null);chats=stored===null?importQuestionHistory(history):normalizeChats(stored);}
+}
+// 서버에서 받은 기록으로 바뀐 뒤 다시 읽고 그린다. 지금 보고 있는 대화는 그대로 둔다(목록에 없으면 새 대화로).
+function reloadAccountRecords(){
+ loadAccountRecords(activeAccount);
+ if(activeChatId&&!chats.some(x=>x.id===activeChatId)&&!messages.length)activeChatId=null;
+ applyBackground();render();
+}
 initCommunity({
  toast,modal:openModal,close:closeModal,render,
  show(next){view=next;render();$('#main').scrollTop=0;},
@@ -679,13 +697,15 @@ initCommunity({
    chats=[];activeChatId=null;chatHistoryCollapsed=false;chatHistoryCategory='all';chatHistoryFolder='all';historyMessageId=null;heroTransition=null;
    clearTimeout(replyTimer);replyTimer=null;pendingReply=null;messages=[];chatDraft='';category=null;view='chat';activityTab='recent';activityQuery='';plan=null;petInteraction.reset();
    if($('#modal').open)closeModal();activeAccount=next;personality=normalizePersonality(next?read('om-personality','cold'):'cold');
-   uploads=read('om-docs',[]);tasks=read('om-tasks',[]);history=normalizeHistory(read('om-question-history',[]));seenReplies=read('om-seen-replies',{});if(!seenReplies||typeof seenReplies!=='object')seenReplies={};
+   uploads=read('om-docs',[]);loadAccountRecords(next);
    if(next){
-    const stored=read('om-chat-sessions',null);chats=stored===null?importQuestionHistory(history):normalizeChats(stored);
     activeChatId=read('om-chat-active',null);const selected=chats.find(x=>x.id===activeChatId);
     if(selected){messages=structuredClone(selected.messages);category=selected.category;}else activeChatId=null;
    }
-   rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};applyBackground();render();if(next)refreshCategories().then(changed=>{if(changed)render();});if(next&&state.me.role!=='staff')companionBehavior.greet(personality);return;
+   rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};applyBackground();render();if(next)refreshCategories().then(changed=>{if(changed)render();});if(next&&state.me.role!=='staff')companionBehavior.greet(personality);
+   // 서버 기록을 받아 와서 다른 PC에서 쓰던 기록으로 바뀌었으면 다시 그린다
+   accountSync.start(next).then(changed=>{if(changed&&activeAccount===next)reloadAccountRecords();});
+   return;
   }
   if(!state.member){render();return;}
   rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};updateWallet();refreshPet();if(viewOf(view)?.community&&!$('#modal').open)render();}

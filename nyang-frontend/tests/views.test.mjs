@@ -14,7 +14,7 @@ const OLD={
  community:['activity','board'],
  routes:{faq:'/admin/faqs',documents:'/admin/documents',categories:'/admin/categories',users:'/admin/users',model:'/admin/settings',unanswered:'/admin/unanswered',library:'/docs'},
  workspaceTitles:{chat:'물어보기',calendar:'내 일정',todos:'내 일정',activity:'내 활동',board:'질문 게시판',statistics:'이용 통계',userstats:'사용자 통계',faq:'FAQ 관리',documents:'문서 관리',categories:'분야 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서'},
- pageTitles:{chat:'냥대리에게 물어보기',calendar:'내 캘린더',todos:'내가 해야 할 일',activity:'나의 질문 활동',board:'익명 질문 게시판 · 이 브라우저에만 저장',statistics:'이용 통계',userstats:'사용자 통계',faq:'FAQ 관리',documents:'문서 관리',categories:'분야 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서'}
+ pageTitles:{chat:'냥대리에게 물어보기',calendar:'내 캘린더',todos:'내가 해야 할 일',activity:'나의 질문 활동',board:'익명 질문 게시판',statistics:'이용 통계',userstats:'사용자 통계',faq:'FAQ 관리',documents:'문서 관리',categories:'분야 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서'}
 };
 // 화면 이름 + 표에 없는 이름(메뉴 이름·잘못된 값·객체 기본 속성 이름)까지 모두 검사한다
 const every=[...Object.keys(OLD.workspaceTitles),'schedule','reset','background','',undefined,null,'constructor','toString','__proto__','hasOwnProperty'];

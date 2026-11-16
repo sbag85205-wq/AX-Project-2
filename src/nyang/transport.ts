@@ -1,9 +1,10 @@
+import { FunctionsHttpError } from '@supabase/supabase-js';
 import { loginEmail, supabase, supabaseConfigured } from '../lib/supabase';
 import { callFunction, type AskResult } from '../lib/api';
-import { localNyang, type NyangAccount } from './local-store';
+import { localExport, type NyangAccount } from './local-store';
 
-// 냥대리 활동(포인트·출석·게시판)은 운영 DB 대신 이 브라우저에 저장한다(local-store.ts).
-// 계정·역할은 요청 본문이 아니라 로그인한 Knowly 프로필에서 가져온다(원래 nyang 서버 함수와 같은 규칙).
+// 냥대리 활동(포인트·출석·게시판)과 개인 기록은 서버 함수(nyang)가 저장한다. 어느 PC로 로그인해도 같은 기록이 보인다.
+// 계정·역할은 요청 본문이 아니라 서버가 로그인한 Knowly 프로필에서 가져온다.
 let cached: NyangAccount | null = null;
 async function currentAccount(userId: string): Promise<NyangAccount> {
   if (cached?.id === userId) return cached;
@@ -13,6 +14,43 @@ async function currentAccount(userId: string): Promise<NyangAccount> {
   if (p.department_id) department = (await supabase.from('departments').select('name').eq('id', p.department_id).single()).data?.name ?? '';
   cached = { id: userId, username: p.login_id, name: p.display_name, department, role: p.role === 'admin' ? 'staff' : 'employee' };
   return cached;
+}
+
+/** nyang 서버 함수를 호출한다. 실패하면 서버가 보낸 메시지와 상태 번호(status)를 가진 예외를 던진다. */
+async function callNyang<T = Record<string, unknown>>(body: Record<string, unknown>): Promise<T> {
+  const { data, error } = await supabase.functions.invoke('nyang', { body });
+  if (!error) return data as T;
+  if (error instanceof FunctionsHttpError) {
+    const payload = await error.context.json().catch(() => null);
+    throw Object.assign(new Error(payload?.error?.message ?? '요청을 처리하지 못했어요.'), { status: error.context.status });
+  }
+  throw new Error('서버에 연결하지 못했어요. 네트워크 상태를 확인해 주세요.');
+}
+
+// ── 이 브라우저에만 있던 예전 기록을 서버로 올리기 ─────────────────────
+// 계정마다 이 브라우저에서 한 번 올린다. 글쓴이가 아직 올리지 않아 미뤄진 것(유익해요·답변)이 있으면 다음 로그인 때 다시 올린다.
+const IMPORT_TRIES = 20;
+const stored = { get: (k: string) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* 저장을 못 하면 다음에 다시 시도한다 */ } } };
+function browserImportId(): string {
+  let id = stored.get('nyang-server-import-id');
+  if (!id) { id = crypto.randomUUID(); stored.set('nyang-server-import-id', id); }
+  return id;
+}
+/** 올릴 기록이 있으면 올리고 서버의 최신 상태를 돌려준다. 올릴 것이 없거나 이미 끝났으면 null. */
+async function importLocalOnce(account: NyangAccount): Promise<Record<string, unknown> | null> {
+  const flag = `nyang-server-import:${account.id}`, state = stored.get(flag);
+  if (state === 'done') return null;
+  const tries = Number(state) || 0;
+  try {
+    const data = await localExport(account);
+    if (!data) { stored.set(flag, 'done'); return null; }
+    const { imported, ...snapshot } = await callNyang<{ imported?: { pending: number } } & Record<string, unknown>>({ action: 'import', id: browserImportId(), data });
+    stored.set(flag, !imported?.pending || tries + 1 >= IMPORT_TRIES ? 'done' : String(tries + 1));
+    return snapshot;
+  } catch {
+    stored.set(flag, tries + 1 >= IMPORT_TRIES ? 'done' : String(tries + 1)); // 실패해도 로그인은 계속한다. 다음 로그인 때 다시 올린다.
+    return null;
+  }
 }
 
 // 사용자 통계의 순위 목록(포인트·유익해요·연속 출석): uid를 로그인 아이디로만 바꾼다(이름·부서는 보여 주지 않는다). 프로필은 담당자만 읽을 수 있다.
@@ -68,7 +106,12 @@ export async function request(path: string, init: RequestInit = {}): Promise<Res
         citations: a.citations.map(c => ({ ...c, title: c.document_title, pages: c.page_start ? `${c.page_start}–${c.page_end}쪽` : '' })) } });
     }
     const action = path.includes('view=stats') ? 'stats' : input.action ?? null;
-    const result = await localNyang(await currentAccount(session.user.id), action, input);
+    if (action === null) {
+      // 화면을 처음 불러올 때: 이 브라우저에만 있던 예전 기록이 있으면 먼저 서버로 올린다
+      const moved = await importLocalOnce(await currentAccount(session.user.id));
+      if (moved) return Response.json(moved);
+    }
+    const result = await callNyang({ ...input, action });
     if (action === 'stats') return Response.json(await withLoginIds(result));
     return Response.json(result);
   } catch (e) {

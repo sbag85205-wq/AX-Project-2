@@ -1,7 +1,7 @@
 // 냥대리 원본 JS 모듈(타입 없음)을 TypeScript에서 불러오기 위한 선언.
-declare module '*/nyang-frontend/lib/demo-account.mjs' {
-  export function accountCommunity(db: unknown, account: unknown, action?: string | null, input?: Record<string, unknown>): Promise<unknown>;
-  export function statistics(db: unknown, account: unknown): Promise<unknown>;
+declare module '*/local-export.mjs' {
+  /** 브라우저 저장소에서 이 계정이 한 일만 골라낸다(없으면 null) */
+  export function exportLocal(db: unknown, uid: string, role?: 'staff' | 'employee'): Promise<Record<string, unknown> | null>;
 }
 declare module '*/local-db.mjs' {
   import type { SqlJsStatic } from 'sql.js';
