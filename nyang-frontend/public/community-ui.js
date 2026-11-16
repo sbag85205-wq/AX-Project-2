@@ -62,18 +62,12 @@ const hero=(kicker,title,desc)=>`<div class="community-heading"><div><h1>${title
 export function activityHTML(content=''){
  const intro='<header class="activity-heading"><h1>내 활동</h1><button class="activity-text-button" data-community="refresh">새로고침</button></header>';
  const blocked=gate();if(blocked)return `<section class="community-page activity-page">${intro}${content}${blocked}</section>`;
- const {wallet:w,level:l,today,streak,receivedLikes}=state;
+ const {wallet:w,today,streak,receivedLikes}=state; // 레벨은 '내 레벨' 탭에서 보여준다
  const gift=today?(today.tokens?`츄르 ${today.tokens}개 받았어요`:`${today.points} P 받았어요`):'하루 한 번, 포인트 또는 츄르 선물';
  return `<section class="community-page activity-page">
   ${intro}
   ${content}
   <details class="activity-rewards"><summary>포인트와 보상 <span>${w.points.toLocaleString('ko-KR')} P · ♥ ${w.hearts}</span></summary><div class="activity-panel">
-   <section class="activity-level" aria-labelledby="activity-level-title">
-    <h2 id="activity-level-title">질문 레벨</h2>
-    <div class="activity-level-value"><strong>Lv. ${l.level}</strong><span>${esc(l.name)}</span></div>
-    <div class="activity-progress" role="progressbar" aria-label="다음 질문 레벨까지 진행률" aria-valuenow="${l.progress}" aria-valuemin="0" aria-valuemax="100"><i style="width:${l.progress}%"></i></div>
-    <div class="activity-level-meta"><span>새 질문 ${w.questions}개</span><span>${l.next?`다음 레벨까지 ${l.next-w.questions}개`:'최고 레벨 달성'}</span></div>
-   </section>
    <dl class="activity-balances" aria-label="보유 보상">
     <div><dt>포인트</dt><dd>${w.points.toLocaleString('ko-KR')}<span>P</span></dd></div>
     <div><dt>츄르</dt><dd>${w.treatTokens.toLocaleString('ko-KR')}<span>개</span></dd></div>

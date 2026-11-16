@@ -4,7 +4,7 @@ import {createCompanionBehavior,companionAppearance} from './companion-behavior.
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=9b753157ee28';
 import {adminView} from './admin-view.js?v=d084b0d0aae6';
-import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount} from './community-ui.js?v=6658bcdf0328';
+import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount} from './community-ui.js?v=887e686ee7b6';
 import {categories,defaultCategory,categoryOf,documents,faq,starters,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=d23baa70cc1c';
 import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=51cccf0d59f9';
 import {createPetInteraction} from './pet-interaction.js?v=355c0da8eb14';
