@@ -129,3 +129,43 @@ test('서버가 받지 않는 기록(4xx)은 계속 다시 보내지 않고, 로
  reply=Object.assign(Error('expired'),{status:401});sync.changed('om-tasks');await sync.flush();assert.deepEqual(sync.pending(),['om-tasks','om-personality']);
  reply=null;await sync.flush();assert.deepEqual(sync.pending(),['om-personality']); // 401이었던 일정은 다시 보내 성공, 400인 성격은 이번 화면에서 보류
 });
+
+test('예전 버전을 쓰던 기기: 이 기기에만 있는 대화 기록·올린 배경 이미지도 올리고, 서버에 있던 것과 합친다',async()=>{
+ // 예전 버전이 '처음 맞춤'을 끝냈다고 표시해 둔 기기. 대화 기록·배경 이미지는 이 기기에만 있다.
+ const f=fixture({a:{'om-chat-sessions':JSON.stringify([{id:'b1',messages:[{at:5}]}]),'om-tasks':'[{"id":"t1"}]'}});
+ f.map.set('nyang-sync-first:a','1');
+ f.put('a','om-chat-sessions',JSON.stringify([{id:'a1',messages:[{at:9}]}]));f.put('a','om-bg-uploads-cat','[{"id":"img"}]');f.put('a','om-bg-theme-cat','"upload:img"');
+ await f.start('a',{'om-chat-sessions':f.server.a['om-chat-sessions'],'om-tasks':'[{"id":"t1"}]'},{});
+ await f.sync.flush();
+ assert.deepEqual(JSON.parse(f.server.a['om-chat-sessions']).map(x=>x.id),['b1','a1']); // 다른 기기 대화 + 이 기기 대화
+ assert.equal(f.server.a['om-bg-uploads-cat'],'[{"id":"img"}]');assert.equal(f.server.a['om-bg-theme-cat'],'"upload:img"');
+ assert.equal(f.local('a','om-chat-sessions'),f.server.a['om-chat-sessions']);
+ // 한 번 합친 뒤에는 서버를 따른다(다른 기기에서 지운 대화가 되살아나지 않게)
+ f.server.a['om-chat-sessions']=JSON.stringify([{id:'a1',messages:[{at:9}]}]);
+ assert.equal(await f.start('a',{'om-chat-sessions':f.server.a['om-chat-sessions'],'om-tasks':'[{"id":"t1"}]','om-bg-uploads-cat':'[{"id":"img"}]','om-bg-theme-cat':'"upload:img"'},{}),false);
+ assert.equal(f.local('a','om-chat-sessions'),f.server.a['om-chat-sessions']);
+});
+
+test('같은 대화가 양쪽에 있으면 더 최근에 이어진 쪽을 남긴다',()=>{
+ const server=JSON.stringify([{id:'c',messages:[{at:1},{at:2}]},{id:'d',messages:[{at:7}]}]),local=JSON.stringify([{id:'c',messages:[{at:1},{at:2},{at:3},{at:4}]},{id:'d',messages:[{at:6}]}]);
+ assert.deepEqual(JSON.parse(mergeFirst('om-chat-sessions',server,local)).map(x=>[x.id,x.messages.length]),[['c',4],['d',1]]);
+ assert.equal(mergeFirst('om-question-history','[{"id":"q","at":5}]','[{"id":"q","at":3}]'),'[{"id":"q","at":5}]');
+});
+
+test('저장 공간이 부족해 합친 기록을 넣지 못하면, 서버 기록을 덮어쓰지 않고 다음에 다시 합친다',async()=>{
+ const f=fixture({a:{'om-chat-sessions':'[{"id":"server"}]'}});f.put('a','om-chat-sessions','[{"id":"local"}]');
+ const real=f.map.set.bind(f.map);let full=true;f.map.set=(k,v)=>{if(full&&k.endsWith(':om-chat-sessions'))throw Error('QuotaExceededError');return real(k,v);};
+ await f.start('a',{'om-chat-sessions':'[{"id":"server"}]'},{});await f.sync.flush();
+ assert.equal(f.server.a['om-chat-sessions'],'[{"id":"server"}]');assert.equal(f.local('a','om-chat-sessions'),'[{"id":"local"}]');
+ full=false;await f.start('a',{'om-chat-sessions':'[{"id":"server"}]'},{});await f.sync.flush();
+ assert.equal(f.server.a['om-chat-sessions'],'[{"id":"server"},{"id":"local"}]');
+});
+
+test('큰 기록을 보낸 기기는 자기가 보낸 것을 다시 받지 않는다',async()=>{
+ const big=JSON.stringify([{id:'img',url:'x'.repeat(250_000)}]);
+ const calls=[],map=new Map(),storage={getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,v),get length(){return map.size;},key:i=>[...map.keys()][i]??null};
+ const sync=createAccountSync({keyFor:(a,k)=>a+':'+k,storage,delay:1,later:()=>0,cancel:()=>{},send:async b=>{calls.push(b.action);return b.action==='state-set'?{saved:[b.key],updated:'T1'}:{state:{}};}});
+ await sync.start('a',{},{});map.set('a:om-bg-uploads-cat',big);sync.changed('om-bg-uploads-cat');await sync.flush();
+ assert.deepEqual(calls,['state-set']);
+ sync.refresh({},{'om-bg-uploads-cat':'T1'});await new Promise(r=>setTimeout(r,0));assert.deepEqual(calls,['state-set']); // 다시 받지 않는다
+});

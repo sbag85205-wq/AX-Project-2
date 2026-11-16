@@ -11,7 +11,7 @@ import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,w
 import {createPetInteraction} from './pet-interaction.js?v=25ddd542a513';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=7636a2959edf';
 const $=s=>document.querySelector(s);
-import {createAccountSync} from './account-sync.js?v=0814f3e9a4c8';
+import {createAccountSync} from './account-sync.js?v=566c60b20497';
 import {esc} from './shared.js?v=76a19ab6baf7';
 import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=751a765f8a44';
 import {orderNav,installNavLayout} from './nav-layout.js?v=34db55cc4081';

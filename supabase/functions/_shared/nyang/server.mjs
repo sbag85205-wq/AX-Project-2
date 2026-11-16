@@ -20,12 +20,12 @@ const rows = async (db, sql, ...args) => (await db.prepare(sql).bind(...args).al
  * 고른 배경·직접 올린 배경 이미지(om-bg-theme-<화면>, om-bg-uploads-<화면>)
  */
 export const STATE_KEY = /^(om-tasks|om-question-history|om-seen-replies|om-chat-sessions|om-chat-active|om-docs|om-personality|om-cat-motion|nyang-color-theme|om-bg-(theme|uploads)-[a-z]{1,12})$/;
-/** 기록 하나의 최대 크기(JSON 글자 수). 배경 이미지 8장까지 들어가게 넉넉히 둔다. */
-export const STATE_MAX = 3_500_000;
+/** 기록 하나의 최대 크기(JSON 글자 수). 오래 쓴 대화 기록·배경 이미지 8장까지 들어가게 넉넉히 둔다. */
+export const STATE_MAX = 8_000_000;
 /** 화면 불러오기 응답에 바로 넣는 기록 크기. 이보다 큰 기록(이미지 등)은 이름만 알려 주고 따로 받는다. */
 export const STATE_INLINE_MAX = 200_000;
 /** 요청 본문 최대 크기: 보통 요청 / 개인 기록 저장·기존 기록 올리기 */
-export const BODY_MAX = 16_000, BODY_MAX_LARGE = 4_000_000;
+export const BODY_MAX = 16_000, BODY_MAX_LARGE = 9_000_000;
 export const isLargeAction = (action) => action === 'state-set' || action === 'import';
 /** 같은 사람의 요청을 차례로 처리해야 하는 요청인지(읽기만 하는 통계·개인 기록 읽기는 잠그지 않는다) */
 export const needsLock = (action) => action !== 'stats' && action !== 'state';
@@ -54,7 +54,8 @@ async function writeState(db, uid, input) {
     try { JSON.parse(item.value); } catch { fail('기록 형식을 확인해 주세요.'); }
     await run(db, 'INSERT INTO demo_user_state(uid,key,value,updated) VALUES(?,?,?,?) ON CONFLICT(uid,key) DO UPDATE SET value=excluded.value,updated=excluded.updated', uid, item.key, item.value, now);
   }
-  return { saved: items.map((item) => item.key) };
+  // 저장 시각: 큰 기록을 보낸 기기가 자기가 보낸 것을 다시 받지 않게 알려 준다
+  return { saved: items.map((item) => item.key), updated: now };
 }
 
 // ── 기존 기록 올리기 ───────────────────────────────────────────────
