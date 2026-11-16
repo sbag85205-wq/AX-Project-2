@@ -22,3 +22,6 @@ verify_jwt = false
 
 [functions.admin-settings]
 verify_jwt = false
+
+[functions.nyang]
+verify_jwt = false
