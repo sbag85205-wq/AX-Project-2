@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { PGlite } from '@electric-sql/pglite';
 import initSqlJs from 'sql.js';
 import { postgresDatabase, translate } from '../supabase/functions/_shared/nyang/postgres.mjs';
-import { handleNyang, STATE_MAX } from '../supabase/functions/_shared/nyang/server.mjs';
+import { handleNyang, needsLock, STATE_MAX } from '../supabase/functions/_shared/nyang/server.mjs';
 import { runOnce } from '../src/nyang/local-db.mjs';
 import { exportLocal } from '../src/nyang/local-export.mjs';
 import { accountCommunity } from '../nyang-frontend/lib/demo-account.mjs';
@@ -86,10 +86,13 @@ test('서버 저장: 개인 기록(내 일정·대화 기록 등)은 계정별�
   const { pg, call } = await server();
   try {
     assert.deepEqual(await call(a, 'state'), { state: {} });
+    assert.deepEqual((await call(a)).personalState, {}); // 화면 불러오기에도 개인 기록이 함께 온다
     const tasks = JSON.stringify([{ id: 't1', title: '회의', date: '2026-11-17' }]);
     assert.deepEqual(await call(a, 'state-set', { items: [{ key: 'om-tasks', value: tasks }, { key: 'om-personality', value: '"warm"' }, { key: 'om-bg-theme-cat', value: '"ocean"' }] }), { saved: ['om-tasks', 'om-personality', 'om-bg-theme-cat'] });
     assert.deepEqual((await call(a, 'state')).state, { 'om-tasks': tasks, 'om-personality': '"warm"', 'om-bg-theme-cat': '"ocean"' });
     assert.deepEqual((await call(b, 'state')).state, {}); // 다른 계정에는 보이지 않는다
+    assert.deepEqual((await call(a)).personalState, { 'om-tasks': tasks, 'om-personality': '"warm"', 'om-bg-theme-cat': '"ocean"' }); assert.deepEqual((await call(b)).personalState, {});
+    assert.equal('personalState' in (await call(a, 'attendance')), false); // 다른 요청 응답에는 넣지 않는다
     await call(a, 'state-set', { key: 'om-tasks', value: '[]' }); await call(a, 'state-set', { key: 'om-personality', value: null });
     assert.deepEqual((await call(a, 'state')).state, { 'om-tasks': '[]', 'om-bg-theme-cat': '"ocean"' });
     await assert.rejects(call(a, 'state-set', { key: 'om-bg-uploads-cat', value: '[]' }), /저장할 수 없는/); // 올린 배경 이미지는 서버에 두지 않는다
@@ -202,4 +205,9 @@ test('SQL 바꾸기: SQLite 문법을 Postgres 문법으로', () => {
 test('서버 함수용 규칙 복사본은 원본과 같다 (다르면 npm run sync:nyang-server)', async () => {
   const { execFileSync } = await import('node:child_process');
   execFileSync(process.execPath, [new URL('../scripts/sync-nyang-server.mjs', import.meta.url).pathname, '--check'], { stdio: 'pipe' });
+});
+
+test('잠금: 읽기만 하는 통계·개인 기록 읽기는 기다리지 않고, 나머지는 같은 사람끼리 차례로', () => {
+  for (const action of ['stats', 'state']) assert.equal(needsLock(action), false);
+  for (const action of [null, undefined, 'question', 'attendance', 'like', 'reward', 'post', 'reply', 'delete-post', 'restore-post', 'state-set', 'import']) assert.equal(needsLock(action), true, String(action));
 });

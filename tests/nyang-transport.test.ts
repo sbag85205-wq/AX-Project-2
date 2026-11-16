@@ -18,6 +18,8 @@ describe('main Knowly transport', () => {
     expect(r.ok).toBe(true);expect(mocks.signInWithPassword).toHaveBeenCalledWith({ email: 'alice@knowly.local', password: 'fixture' });
     expect(mocks.invoke).toHaveBeenCalledWith('nyang', { body: { action: null } });
     expect(mocks.call).not.toHaveBeenCalled();
+    expect(mocks.single).toHaveBeenCalledTimes(1); // 프로필은 로그인 확인 때 한 번만 읽는다
+    expect(mocks.exportLocal).toHaveBeenCalledWith({ id: 'employee-a', username: 'alice', name: '직원 A', department: '', role: 'employee' });
   });
   it('rejects a role mismatch and signs out before loading community data', async () => {
     mocks.signInWithPassword.mockResolvedValue({ data: { user: { id: 'employee-a' } } });
@@ -52,13 +54,20 @@ describe('main Knowly transport', () => {
     expect(mocks.exportLocal).toHaveBeenCalledWith({ id: 'employee-b', username: 'bob', name: '직원 B', department: '', role: 'employee' });
     const id = store.get('nyang-server-import-id');expect(id).toMatch(/^[0-9a-f-]{36}$/);
     expect(mocks.invoke).toHaveBeenCalledWith('nyang', { body: { action: 'import', id, data } });expect(mocks.invoke).toHaveBeenCalledTimes(1);
-    expect(store.get('nyang-server-import:employee-b')).toBe('1');
-    mocks.invoke.mockResolvedValue({ data: { member: true, imported: { first: false, pending: 0 } }, error: null });
+    expect(store.get('nyang-server-import:employee-b')).toBe('pending:1');
+    // 같은 페이지에서는 다시 올리지 않는다(창을 다시 볼 때마다 올리지 않게)
+    mocks.invoke.mockResolvedValue({ data: { member: true }, error: null });
     await request('/api/account', { method: 'GET' });
-    expect(mocks.invoke).toHaveBeenLastCalledWith('nyang', { body: { action: 'import', id, data } });expect(store.get('nyang-server-import:employee-b')).toBe('done');
+    expect(mocks.invoke).toHaveBeenLastCalledWith('nyang', { body: { action: null } });expect(mocks.exportLocal).toHaveBeenCalledTimes(1);
+    // 페이지를 새로 열면(모듈을 다시 불러오면) 미뤄진 것(유익해요·답변·삭제 표시)만 다시 올린다
+    vi.resetModules();const fresh = (await import('../src/nyang/transport')).request;
+    mocks.invoke.mockResolvedValue({ data: { member: true, imported: { first: false, pending: 0 } }, error: null });
+    await fresh('/api/account', { method: 'GET' });
+    expect(mocks.invoke).toHaveBeenLastCalledWith('nyang', { body: { action: 'import', id, data: { likes: data.likes, replies: undefined, deleted: undefined } } });
+    expect(store.get('nyang-server-import:employee-b')).toBe('done');
     // 끝난 뒤에는 브라우저 기록을 다시 읽지 않고 서버에서만 불러온다
     mocks.exportLocal.mockClear();mocks.invoke.mockResolvedValue({ data: { member: true }, error: null });
-    await request('/api/account', { method: 'GET' });
+    await fresh('/api/account', { method: 'GET' });
     expect(mocks.exportLocal).not.toHaveBeenCalled();expect(mocks.invoke).toHaveBeenLastCalledWith('nyang', { body: { action: null } });
     vi.unstubAllGlobals();
   });
@@ -70,7 +79,7 @@ describe('main Knowly transport', () => {
     mocks.exportLocal.mockResolvedValue({ wallet: '{}' });
     mocks.invoke.mockImplementation(async (_name: string, { body }: { body: { action: string | null } }) => body.action === 'import' ? { data: null, error: new Error('network') } : { data: { member: true, from: 'server' }, error: null });
     expect(await (await request('/api/account', { method: 'GET' })).json()).toEqual({ member: true, from: 'server' });
-    expect(store.get('nyang-server-import:employee-c')).toBe('1'); // 다음 로그인 때 다시 올린다
+    expect(store.get('nyang-server-import:employee-c')).toBe('failed:1'); // 다음에 페이지를 열 때 다시 올린다(전부)
     mocks.getSession.mockResolvedValue({ data: { session: { user: { id: 'employee-d' } } } });
     mocks.single.mockResolvedValue({ data: { role: 'employee', login_id: 'dave', display_name: '직원 D', department_id: null } });
     mocks.exportLocal.mockResolvedValue(null);

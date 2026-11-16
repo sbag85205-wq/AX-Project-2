@@ -74,14 +74,16 @@ export function createAccountSync({keyFor,send,storage=globalThis.localStorage,d
   /**
    * 계정이 바뀔 때 부른다(로그아웃이면 null). 서버 기록을 받아 브라우저 저장소에 넣고,
    * 화면이 다시 읽어야 할 만큼 바뀌었으면 true를 돌려준다. 서버에 닿지 못하면 false(브라우저 기록 그대로 쓴다).
+   * given: 이미 받은 서버 기록({이름: JSON 글자}). 있으면 서버에 다시 묻지 않고, 돌려주기 전에 저장소에 넣어 둔다.
    */
-  async start(next){
+  async start(next,given){
    cancel(timer);account=next||null;dirty=new Set();tooBig.clear();
    if(!account)return false;
    const mine=account,saved=parse(get(dirtyName(mine)));
    if(Array.isArray(saved))for(const k of saved)if(isSyncKey(k))dirty.add(k);
-   let remote;
-   try{remote=(await send({action:'state'}))?.state;}catch{schedule();return false;}
+   // 화면을 불러올 때 받은 서버 기록(given)이 있으면 바로 쓴다. 이때는 기다리는 일 없이 곧바로 브라우저 저장소에 넣는다.
+   let remote=given&&typeof given==='object'?given:undefined;
+   if(remote===undefined){try{remote=(await send({action:'state'}))?.state;}catch{schedule();return false;}}
    if(account!==mine||!remote||typeof remote!=='object')return false;
    const first=get(firstName(mine))===null;let changed=false;
    for(const key of new Set([...localKeys(mine),...Object.keys(remote).filter(isSyncKey)])){

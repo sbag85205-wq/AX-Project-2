@@ -11,7 +11,7 @@ import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,w
 import {createPetInteraction} from './pet-interaction.js?v=355c0da8eb14';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=7636a2959edf';
 const $=s=>document.querySelector(s);
-import {createAccountSync} from './account-sync.js?v=b20e0ff07483';
+import {createAccountSync} from './account-sync.js?v=f6921562d78b';
 import {esc} from './shared.js?v=76a19ab6baf7';
 import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=751a765f8a44';
 import {orderNav,installNavLayout} from './nav-layout.js?v=34db55cc4081';
@@ -696,15 +696,17 @@ initCommunity({
   if(next!==activeAccount){
    chats=[];activeChatId=null;chatHistoryCollapsed=false;chatHistoryCategory='all';chatHistoryFolder='all';historyMessageId=null;heroTransition=null;
    clearTimeout(replyTimer);replyTimer=null;pendingReply=null;messages=[];chatDraft='';category=null;view='chat';activityTab='recent';activityQuery='';plan=null;petInteraction.reset();
-   if($('#modal').open)closeModal();activeAccount=next;personality=normalizePersonality(next?read('om-personality','cold'):'cold');
+   if($('#modal').open)closeModal();activeAccount=next;
+   // 화면을 불러올 때 함께 받은 서버 기록(내 일정·대화 기록 등)을 먼저 브라우저 저장소에 넣고 읽는다
+   const synced=accountSync.start(next,state.personalState);
    uploads=read('om-docs',[]);loadAccountRecords(next);
    if(next){
     activeChatId=read('om-chat-active',null);const selected=chats.find(x=>x.id===activeChatId);
     if(selected){messages=structuredClone(selected.messages);category=selected.category;}else activeChatId=null;
    }
    rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};applyBackground();render();if(next)refreshCategories().then(changed=>{if(changed)render();});if(next&&state.me.role!=='staff')companionBehavior.greet(personality);
-   // 서버 기록을 받아 와서 다른 PC에서 쓰던 기록으로 바뀌었으면 다시 그린다
-   accountSync.start(next).then(changed=>{if(changed&&activeAccount===next)reloadAccountRecords();});
+   // 서버 기록을 따로 받아 와야 했던 경우(예전 서버 응답)에만, 바뀌었으면 다시 그린다
+   if(!state.personalState)synced.then(changed=>{if(changed&&activeAccount===next)reloadAccountRecords();});
    return;
   }
   if(!state.member){render();return;}

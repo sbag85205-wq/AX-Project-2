@@ -5,14 +5,14 @@ import { localExport, type NyangAccount } from './local-store';
 
 // 냥대리 활동(포인트·출석·게시판)과 개인 기록은 서버 함수(nyang)가 저장한다. 어느 PC로 로그인해도 같은 기록이 보인다.
 // 계정·역할은 요청 본문이 아니라 서버가 로그인한 Knowly 프로필에서 가져온다.
+// 기록 올리기(importLocalOnce)에만 쓰는 계정 정보(id·역할). 역할은 로그인할 때 읽은 프로필을 그대로 쓰고,
+// 없으면(새로고침) 한 번만 읽는다. 서버 함수는 이 값을 믿지 않고 직접 프로필을 확인한다.
 let cached: NyangAccount | null = null;
 async function currentAccount(userId: string): Promise<NyangAccount> {
   if (cached?.id === userId) return cached;
-  const { data: p } = await supabase.from('profiles').select('id, login_id, display_name, role, department_id').eq('id', userId).single();
+  const { data: p } = await supabase.from('profiles').select('id, login_id, display_name, role').eq('id', userId).single();
   if (!p) throw new Error('계정 정보를 찾을 수 없어요. 관리자에게 문의해 주세요.');
-  let department = '';
-  if (p.department_id) department = (await supabase.from('departments').select('name').eq('id', p.department_id).single()).data?.name ?? '';
-  cached = { id: userId, username: p.login_id, name: p.display_name, department, role: p.role === 'admin' ? 'staff' : 'employee' };
+  cached = { id: userId, username: p.login_id, name: p.display_name, department: '', role: p.role === 'admin' ? 'staff' : 'employee' };
   return cached;
 }
 
@@ -28,27 +28,36 @@ async function callNyang<T = Record<string, unknown>>(body: Record<string, unkno
 }
 
 // ── 이 브라우저에만 있던 예전 기록을 서버로 올리기 ─────────────────────
-// 계정마다 이 브라우저에서 한 번 올린다. 글쓴이가 아직 올리지 않아 미뤄진 것(유익해요·답변)이 있으면 다음 로그인 때 다시 올린다.
+// 계정마다 이 브라우저에서 한 번 올린다. 글쓴이가 아직 올리지 않아 미뤄진 것(유익해요·답변·삭제 표시)이 있으면
+// 다음에 페이지를 열 때 그것만 다시 올린다. 한 페이지에서는 한 번만 시도한다(창을 다시 볼 때마다 올리지 않는다).
 const IMPORT_TRIES = 20;
+const tried = new Set<string>();
 const stored = { get: (k: string) => { try { return localStorage.getItem(k); } catch { return null; } }, set: (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* 저장을 못 하면 다음에 다시 시도한다 */ } } };
+const importFlag = (userId: string) => `nyang-server-import:${userId}`;
 function browserImportId(): string {
   let id = stored.get('nyang-server-import-id');
   if (!id) { id = crypto.randomUUID(); stored.set('nyang-server-import-id', id); }
   return id;
 }
 /** 올릴 기록이 있으면 올리고 서버의 최신 상태를 돌려준다. 올릴 것이 없거나 이미 끝났으면 null. */
-async function importLocalOnce(account: NyangAccount): Promise<Record<string, unknown> | null> {
-  const flag = `nyang-server-import:${account.id}`, state = stored.get(flag);
-  if (state === 'done') return null;
-  const tries = Number(state) || 0;
+async function importLocalOnce(userId: string): Promise<Record<string, unknown> | null> {
+  const flag = importFlag(userId), state = stored.get(flag) ?? '';
+  if (state === 'done' || tried.has(userId)) return null;
+  tried.add(userId);
+  // 'pending:N' = 한 번 올렸고 미뤄진 것만 남음, 'failed:N'(또는 예전 형식 숫자) = 아직 한 번도 못 올림
+  const [kind, count] = state.includes(':') ? state.split(':') : ['failed', state];
+  const tries = Number(count) || 0;
   try {
-    const data = await localExport(account);
+    const data = await localExport(await currentAccount(userId));
     if (!data) { stored.set(flag, 'done'); return null; }
-    const { imported, ...snapshot } = await callNyang<{ imported?: { pending: number } } & Record<string, unknown>>({ action: 'import', id: browserImportId(), data });
-    stored.set(flag, !imported?.pending || tries + 1 >= IMPORT_TRIES ? 'done' : String(tries + 1));
+    // 미뤄진 것만 남았으면 그 부분만 보낸다(지갑·질문·출석은 이미 올라갔다)
+    const body = kind === 'pending' ? { likes: data.likes, replies: data.replies, deleted: data.deleted } : data;
+    const { imported, ...snapshot } = await callNyang<{ imported?: { pending: number } } & Record<string, unknown>>({ action: 'import', id: browserImportId(), data: body });
+    stored.set(flag, !imported?.pending || tries + 1 >= IMPORT_TRIES ? 'done' : `pending:${tries + 1}`);
     return snapshot;
   } catch {
-    stored.set(flag, tries + 1 >= IMPORT_TRIES ? 'done' : String(tries + 1)); // 실패해도 로그인은 계속한다. 다음 로그인 때 다시 올린다.
+    // 실패해도 로그인은 계속한다. 다음에 페이지를 열 때 다시 올린다.
+    stored.set(flag, tries + 1 >= IMPORT_TRIES ? 'done' : `${kind === 'pending' ? 'pending' : 'failed'}:${tries + 1}`);
     return null;
   }
 }
@@ -84,11 +93,13 @@ export async function request(path: string, init: RequestInit = {}): Promise<Res
       cached = null;
       const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail(input.username), password: input.password });
       if (error) throw new Error('아이디 또는 비밀번호를 확인해 주세요.');
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
+      const { data: profile } = await supabase.from('profiles').select('id, login_id, display_name, role').eq('id', data.user.id).single();
       if (!profile || (profile.role === 'admin' ? 'staff' : 'employee') !== input.role) {
         await supabase.auth.signOut();
         throw new Error('계정 유형을 확인하고 직원 또는 담당자 탭에서 로그인해 주세요.');
       }
+      // 기록 올리기에 쓸 계정 정보를 남겨 둔다(프로필을 한 번 더 읽지 않는다)
+      cached = { id: data.user.id, username: profile.login_id, name: profile.display_name, department: '', role: profile.role === 'admin' ? 'staff' : 'employee' };
       input = { action: null };
     }
     const { data: { session } } = await supabase.auth.getSession();
@@ -108,7 +119,7 @@ export async function request(path: string, init: RequestInit = {}): Promise<Res
     const action = path.includes('view=stats') ? 'stats' : input.action ?? null;
     if (action === null) {
       // 화면을 처음 불러올 때: 이 브라우저에만 있던 예전 기록이 있으면 먼저 서버로 올린다
-      const moved = await importLocalOnce(await currentAccount(session.user.id));
+      const moved = await importLocalOnce(session.user.id);
       if (moved) return Response.json(moved);
     }
     const result = await callNyang({ ...input, action });

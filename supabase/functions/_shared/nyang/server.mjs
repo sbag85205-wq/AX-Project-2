@@ -1,6 +1,7 @@
 // 냥대리 서버 함수의 요청 처리(실행 환경과 무관한 부분). supabase/functions/nyang/index.ts가 로그인 확인과 DB 연결을 맡고,
 // 여기서는 확인된 계정(account)과 요청(input)으로 규칙 코드를 실행한다. 테스트(tests/nyang-server.test.mjs)도 이 함수를 그대로 쓴다.
-//   (action 없음)·question·attendance·post·like·reply·reward·delete-post·restore-post → 기존 규칙(demo-account.mjs)
+//   (action 없음)          화면 불러오기: 활동 기록 + 개인 기록(personalState)
+//   question·attendance·post·like·reply·reward·delete-post·restore-post → 기존 규칙(demo-account.mjs)
 //   stats        담당자 통계
 //   state        내 개인 기록(내 일정·대화 기록 등) 모두 읽기
 //   state-set    개인 기록 저장(items: [{key,value}], value가 null이면 지운다)
@@ -21,6 +22,8 @@ export const STATE_MAX = 1_000_000;
 /** 요청 본문 최대 크기: 보통 요청 / 개인 기록 저장·기존 기록 올리기 */
 export const BODY_MAX = 16_000, BODY_MAX_LARGE = 4_000_000;
 export const isLargeAction = (action) => action === 'state-set' || action === 'import';
+/** 같은 사람의 요청을 차례로 처리해야 하는 요청인지(읽기만 하는 통계·개인 기록 읽기는 잠그지 않는다) */
+export const needsLock = (action) => action !== 'stats' && action !== 'state';
 
 async function readState(db, uid) {
   const list = await rows(db, 'SELECT key,value FROM demo_user_state WHERE uid=?', uid);
@@ -134,6 +137,8 @@ export async function handleNyang(db, account, input) {
   if (action === 'stats') return statistics(db, account);
   if (action === 'state') return { state: await readState(db, account.id) };
   if (action === 'state-set') return writeState(db, account.id, input);
-  if (action === 'import') return importLocal(db, account, input);
+  // 화면을 처음 불러올 때는 개인 기록(내 일정·대화 기록 등)도 함께 돌려준다(요청을 한 번 줄인다)
+  if (action === 'import') return { ...(await importLocal(db, account, input)), personalState: await readState(db, account.id) };
+  if (action === null) return { ...(await accountCommunity(db, account)), personalState: await readState(db, account.id) };
   return accountCommunity(db, account, action, input);
 }

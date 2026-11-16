@@ -82,3 +82,15 @@ test('합치기 규칙',()=>{
  assert.equal(mergeFirst('om-chat-sessions','[{"id":"a"}]','[{"id":"b"},{"no":"id"},null]'),'[{"id":"a"},{"id":"b"}]');
  assert.equal(mergeFirst('om-cat-motion','false','true'),'false');
 });
+
+test('화면을 불러올 때 함께 받은 서버 기록이 있으면 다시 묻지 않고, 기다리지 않고 바로 저장소에 넣는다',async()=>{
+ const f=fixture({a:{'om-tasks':'[{"id":"never-asked"}]'}});
+ const done=f.start('a');f.sync; // start(a)는 서버에 묻는 경로
+ await done;
+ const g=fixture();g.put('a','om-tasks','[{"id":"local"}]');
+ const promise=g.sync.start('a',{'om-tasks':'[{"id":"given"}]','om-personality':'"warm"'});
+ // 기다리기 전에 이미 들어가 있다(첫 화면부터 서버 기록으로 그린다)
+ assert.equal(g.local('a','om-tasks'),'[{"id":"given"},{"id":"local"}]');assert.equal(g.local('a','om-personality'),'"warm"');
+ assert.equal(await promise,true);assert.equal(g.calls.filter(c=>c.action==='state').length,0);
+ await g.sync.flush();assert.deepEqual(g.calls.map(c=>c.key),['om-tasks']); // 합친 일정만 올린다
+});
