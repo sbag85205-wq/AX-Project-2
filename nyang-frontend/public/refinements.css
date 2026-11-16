@@ -101,3 +101,14 @@
 #modal:has(.treat-confirm) .modal-close{width:22px;height:22px;top:14px;right:14px;background:transparent}
 #modal:has(.treat-confirm) .modal-button-row{gap:8px;margin-top:0}
 #modal:has(.treat-confirm) .modal-button-row>button{flex:1;padding:7px 12px;font-size:13px}
+/* 내 활동 > 내 레벨 탭 */
+.desktop-workspace .activity-level.my-level,.activity-level.my-level{padding:26px 0 24px}
+.level-ladder{list-style:none;margin:0;padding:0;border-top:1px solid var(--ui-line)}
+.level-ladder>li{display:grid;grid-template-columns:56px 1fr auto;align-items:center;column-gap:16px;row-gap:2px;padding:13px 12px;border-bottom:1px solid var(--ui-line)}
+.level-ladder b{grid-row:1/span 2;font-size:13px;font-weight:600;color:var(--ui-sub)}
+.level-ladder strong{font-size:14px;font-weight:600;color:var(--ui-ink)}
+.level-ladder small{grid-column:2;font-size:12px;color:var(--ui-sub)}
+.level-ladder em{grid-column:3;grid-row:1/span 2;font-style:normal;font-size:12px;color:var(--ui-sub);white-space:nowrap}
+.level-ladder>li.current{background:var(--ui-fill);border-radius:10px;border-bottom-color:transparent}
+.level-ladder>li.current b,.level-ladder>li.current em{color:var(--ui-accent);font-weight:600}
+.level-ladder>li.locked strong{color:var(--ui-sub);font-weight:500}

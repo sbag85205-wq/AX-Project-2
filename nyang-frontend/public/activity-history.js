@@ -23,3 +23,9 @@ export function toggleSaved(history,id){
 export function unseenReplies(posts,seen={}){
  return (posts||[]).filter(p=>p.mine&&p.replies?.length>(Number(seen[p.id])||0));
 }
+// 질문 레벨 단계. 서버 lib/community.mjs의 levelFor와 같아야 한다(tests/activity-history.test.mjs에서 비교).
+export const questionLevels=[{at:0,name:'호기심 새싹'},{at:5,name:'질문 탐험가'},{at:15,name:'업무 탐정'},{at:30,name:'지식 연결자'},{at:50,name:'질문 마스터'}];
+export function levelLadder(questions){
+ const count=Math.max(0,Number(questions)||0),current=questionLevels.findLastIndex(l=>count>=l.at);
+ return questionLevels.map((l,i)=>({level:i+1,name:l.name,at:l.at,state:i<current?'done':i===current?'current':'locked',left:Math.max(0,l.at-count)}));
+}
