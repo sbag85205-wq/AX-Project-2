@@ -112,3 +112,7 @@
 .level-ladder>li.current{background:var(--ui-fill);border-radius:10px;border-bottom-color:transparent}
 .level-ladder>li.current b,.level-ladder>li.current em{color:var(--ui-accent);font-weight:600}
 .level-ladder>li.locked strong{color:var(--ui-sub);font-weight:500}
+/* 포인트와 보상: 접기 없이 항상 펼친 칸(내 레벨 탭) */
+.activity-rewards>.activity-rewards-title{margin:0;font-size:14px;line-height:1.5;letter-spacing:0;font-weight:500;color:var(--ui-ink);padding:8px 0 18px}
+.activity-rewards>.activity-rewards-title>span{float:right;font-size:13px;font-weight:400;color:var(--ui-sub)}
+.activity-rewards>.activity-panel{padding-top:18px}
