@@ -1,3 +1,4 @@
+import {viewOf,pageTitleOf,NAV_NAMES,navViews,STAFF_NAVS,EMPLOYEE_NAVS} from './views.js?v=c20c1ebda7b5';
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {createReactionPicker} from './reaction-variety.js?v=115ea2f34987';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=ef11f91be08e';
@@ -214,28 +215,28 @@ function render(){
  const personalityButton=$('#personality-button');if(personalityButton)personalityButton.innerHTML=icon(personality==='warm'?'sun':'moon')+'<span>'+voice().label+'</span>';
  document.body.dataset.view=view;
  const session=communityState(),staff=session.me?.role==='staff';document.body.dataset.authenticated=String(!!session.member);document.body.dataset.role=staff?'staff':'employee';
- for(const name of ['schedule','activity'])$('#nav-'+name).hidden=staff;
+ for(const name of EMPLOYEE_NAVS)$('#nav-'+name).hidden=staff;
  $('#nav-chat span').textContent=staff?'냥대리 테스트':'물어보기';
  orderNav(staff);
- if(staff&&!['chat','board','statistics','userstats','faq','documents','categories','users','model','unanswered','library'].includes(view))view='unanswered';
+ if(staff&&!viewOf(view)?.staff)view='unanswered';
  document.body.dataset.view=view;
- for(const name of ['statistics','userstats','faq','documents','categories','users'])$('#nav-'+name).hidden=!staff;
+ for(const name of STAFF_NAVS)$('#nav-'+name).hidden=!staff;
  $('#nav-model').hidden=true; // 검색·모델 설정은 '냥대리 테스트' 화면 아래로 옮겼다
  $('#nav-unanswered').hidden=!staff||knowlyOff.staff;$('#nav-library').hidden=staff||knowlyOff.employee;
  if(!session.member){$('#wallet').innerHTML='';$('#account-button').textContent='';$('#workspace-title').textContent='로그인';$('#main').classList.add('work-view');$('#main').innerHTML=accountGateHTML();return;}
- if(['statistics','userstats','faq','documents','categories','users','model','unanswered'].includes(view)&&!staff)view='chat';
+ if(viewOf(view)?.staffOnly&&!staff)view='chat';
  probeKnowly(staff?'staff':'employee');
  $('#account-button').innerHTML='<span>'+esc(session.me.username)+'</span><small>'+(session.me.role==='staff'?'담당자':'직원')+'</small>';
  $('#account-button').setAttribute('aria-label',session.me.username+' 내 계정');
- $('#workspace-title').textContent={chat:'물어보기',calendar:'내 일정',todos:'내 일정',activity:'내 활동',board:'질문 게시판',statistics:'이용 통계',userstats:'사용자 통계',faq:'FAQ 관리',documents:'문서 관리',categories:'분야 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서'}[view];
+ $('#workspace-title').textContent=viewOf(view)?.title;
 
  const docCount=$('.side-nav [data-action="docs"] .count');if(docCount)docCount.textContent=allDocs().length;
- for(const name of ['chat','schedule','activity','board','statistics','userstats','faq','documents','categories','users','model','unanswered','library']){const nav=$('#nav-'+name),active=name==='schedule'?['calendar','todos'].includes(view):view===name;nav?.classList.toggle('active',active);if(active)nav?.setAttribute('aria-current','page');else nav?.removeAttribute('aria-current');}
+ for(const name of NAV_NAMES){const nav=$('#nav-'+name),active=navViews(name).includes(view);nav?.classList.toggle('active',active);if(active)nav?.setAttribute('aria-current','page');else nav?.removeAttribute('aria-current');}
  document.querySelectorAll('.nav-group').forEach(g=>g.querySelector('.nav-group-toggle').classList.toggle('active',!!g.querySelector('.nav-submenu .active')));
- $('#page-title').textContent={chat:'냥대리에게 물어보기',calendar:'내 캘린더',todos:'내가 해야 할 일',activity:'나의 질문 활동',board:'익명 질문 게시판 · 이 브라우저에만 저장',statistics:'이용 통계',userstats:'사용자 통계',faq:'FAQ 관리',documents:'문서 관리',categories:'분야 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서'}[view];
+ $('#page-title').textContent=pageTitleOf(view);
  if(staff&&view==='chat')$('#workspace-title').textContent='냥대리 테스트';
  $('#main').classList.toggle('work-view',view!=='chat');updateWallet();
- if(KNOWLY_ROUTES[view]&&!knowlyOff[staff?'staff':'employee']){mountKnowly(view);}else if(view==='unanswered'||view==='library'||view==='categories'){$('#main').innerHTML=`<section class="admin-page"><p class="admin-notice">${esc(knowlyOffMessage||'사내 문서 검색(Knowly)이 아직 연결되지 않았어요.')}</p></section>`;}else if(['faq','documents','users','model'].includes(view))$('#main').innerHTML=adminView(view,session.me.role,view==='documents'?documentQuery:adminQuery,view==='documents'?documentCategory:adminCategory,allDocs());else if(view==='statistics')$('#main').innerHTML=knowlyStatsHTML();else if(view==='userstats')$('#main').innerHTML=statsHTML();else if(view==='activity')$('#main').innerHTML=activityHTML(activityContent(),activityTab==='level');else if(view==='board')$('#main').innerHTML=boardHTML();else if(view==='calendar')renderCalendar();else if(view==='todos')renderTodos();else renderCat();
+ if(viewOf(view)?.route&&!knowlyOff[staff?'staff':'employee']){mountKnowly(view);}else if(viewOf(view)?.route&&!viewOf(view).localAdmin){$('#main').innerHTML=`<section class="admin-page"><p class="admin-notice">${esc(knowlyOffMessage||'사내 문서 검색(Knowly)이 아직 연결되지 않았어요.')}</p></section>`;}else if(viewOf(view)?.localAdmin)$('#main').innerHTML=adminView(view,session.me.role,view==='documents'?documentQuery:adminQuery,view==='documents'?documentCategory:adminCategory,allDocs());else if(view==='statistics')$('#main').innerHTML=knowlyStatsHTML();else if(view==='userstats')$('#main').innerHTML=statsHTML();else if(view==='activity')$('#main').innerHTML=activityHTML(activityContent(),activityTab==='level');else if(view==='board')$('#main').innerHTML=boardHTML();else if(view==='calendar')renderCalendar();else if(view==='todos')renderTodos();else renderCat();
 }
 async function commitReward(event){
  if(communityState().me?.role==='staff')return null;
@@ -341,12 +342,11 @@ function knowlyHTML(r){
 // ── Knowly(main 백엔드) 연결 ─────────────────────────────────────────
 // 통합 앱은 항상 실제 Knowly 기능을 사용한다. 연결 오류를 샘플로 대체하지 않는다.
 const knowlyOff={employee:false,staff:false};let knowlyOffMessage='';
-const KNOWLY_ROUTES={faq:'/admin/faqs',documents:'/admin/documents',categories:'/admin/categories',users:'/admin/users',model:'/admin/settings',unanswered:'/admin/unanswered',library:'/docs'};
 let libraryRoute='/docs',attachments=[],attachBusy=false;
 function knowlyFrameHTML(key,route){return `<div class="knowly-frame-wrap" data-knowly-key="${esc(key)}"><iframe class="knowly-frame" title="Knowly ${esc(key)}" src="/knowly/index.html#${esc(route)}"></iframe></div>`;}
 // 같은 화면을 다시 그릴 때 iframe을 새로 불러오지 않도록, 이미 떠 있으면 그대로 둔다.
 function mountKnowly(name){
- const key=name==='library'?'library:'+libraryRoute:name,route=name==='library'?libraryRoute:KNOWLY_ROUTES[name];
+ const key=name==='library'?'library:'+libraryRoute:name,route=name==='library'?libraryRoute:viewOf(name)?.route;
  const current=$('#main > .knowly-frame-wrap');
  if(current?.dataset.knowlyKey===key)return;
  $('#main').innerHTML=knowlyFrameHTML(key,route);
@@ -728,7 +728,7 @@ document.addEventListener('click',async e=>{
  if(a==='logout'){await logoutAccount();return;}
  if(a==='account'){const me=communityState().me;openModal('<div class="account-menu"><h2 id="modal-title">내 계정</h2><strong>'+esc(me.username)+' · '+(me.role==='staff'?'담당자':'직원')+'</strong><p>'+ (me.role==='staff'?'질문 게시판 관리와 통계에 접근할 수 있어요.':'포인트와 보상은 같은 계정으로 로그인한<br>모든 기기에서 이어져요.') +'</p><p>Knowly 개인 계정으로 연결되어 있어요.<br>대화와 보상은 계정별로 구분됩니다.</p><button class="primary-button" data-action="logout">로그아웃</button></div>');return;}
  if(a==='unanswered'||a==='library'){if(a==='library')openLibrary();else if(communityState().me?.role==='staff'){view=a;petInteraction.reset();render();$('#main').scrollTop=0;}return;}
- if(['faq','documents','categories','users','model'].includes(a)){if(communityState().me?.role==='staff'){view=a;petInteraction.reset();render();$('#main').scrollTop=0;}return;}
+ if(viewOf(a)?.open==='staff'){if(communityState().me?.role==='staff'){view=a;petInteraction.reset();render();$('#main').scrollTop=0;}return;}
  // 사용자 통계(포인트 순위 등): 담당자만, 열 때마다 새로 집계한다
  if(a==='userstats'){if(communityState().me?.role==='staff'){view='userstats';petInteraction.reset();render();$('#main').scrollTop=0;loadStatistics();}return;}
  if(a==='statistics'){if(communityState().me?.role==='staff'){view='statistics';petInteraction.reset();render();$('#main').scrollTop=0;}return;}
@@ -743,7 +743,7 @@ document.addEventListener('click',async e=>{
  if(a==='activity'&&b.classList.contains('wallet-level')&&communityState().member)activityTab='level'; // 상단 Lv. 버튼은 내 레벨 탭으로 바로 연다
  if(a==='activity')refreshCommunity();
  if(a==='board')refreshCategories().then(changed=>{if(changed&&view==='board')render();}); // 분야 관리에서 바뀐 분야를 게시판에도 반영
- if(['chat','todos','calendar','board','activity'].includes(a)){if(a==='chat')ss.open=true; // 냥대리 테스트를 열 때마다 설정 칸은 펼친 상태로 보여 준다
+ if(viewOf(a)?.open==='any'){if(a==='chat')ss.open=true; // 냥대리 테스트를 열 때마다 설정 칸은 펼친 상태로 보여 준다
  if(view!==a)petInteraction.reset();view=a;render();$('#main').scrollTop=0;}
  if(a==='calendar-today'){calendarMonth=localDate().slice(0,7);calendarDay=localDate();render();}
 
@@ -814,7 +814,7 @@ initCommunity({
    rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};applyBackground();render();if(next)refreshCategories().then(changed=>{if(changed)render();});if(next&&state.me.role!=='staff')companionBehavior.greet(personality);return;
   }
   if(!state.member){render();return;}
-  rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};updateWallet();refreshPet();if(['activity','board'].includes(view)&&!$('#modal').open)render();}
+  rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};updateWallet();refreshPet();if(viewOf(view)?.community&&!$('#modal').open)render();}
 });
 
 document.addEventListener('submit',e=>{if(e.target.id!=='admin-faq-search'||communityState().me?.role!=='staff')return;e.preventDefault();const data=new FormData(e.target);adminQuery=String(data.get('query')||'').trim();adminCategory=String(data.get('category')||'all');render();});
