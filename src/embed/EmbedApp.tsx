@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from '../lib/auth';
 import Chat from '../pages/Chat';
 import DocumentList from '../pages/DocumentList';
 import DocumentView from '../pages/DocumentView';
+import Categories from '../pages/admin/Categories';
 import Documents from '../pages/admin/Documents';
 import Faqs from '../pages/admin/Faqs';
 import Settings from '../pages/admin/Settings';
@@ -34,6 +35,7 @@ function Routed() {
         {admin && <Route path="/admin/unanswered" element={<Unanswered />} />}
         {admin && <Route path="/admin/stats" element={<Stats />} />}
         {admin && <Route path="/admin/documents" element={<Documents />} />}
+        {admin && <Route path="/admin/categories" element={<Categories />} />}
         {admin && <Route path="/admin/faqs" element={<Faqs />} />}
         {admin && <Route path="/admin/users" element={<Users />} />}
         {admin && <Route path="/admin/settings" element={<Settings />} />}

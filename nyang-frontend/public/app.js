@@ -75,6 +75,7 @@ function shell(){
     <button data-action="statistics" id="nav-statistics" hidden>${icon('activity')}<span>이용통계</span></button>
     <button data-action="faq" id="nav-faq" hidden>FAQ 관리</button>
     <button data-action="documents" id="nav-documents" hidden>문서 관리</button>
+    <button data-action="categories" id="nav-categories" hidden>분야 관리</button>
     <button data-action="users" id="nav-users" hidden>사용자 관리</button>
     <button data-action="model" id="nav-model" hidden>검색 모델 설정</button>
     ${['chat:채팅 관리','admin:관리'].map(g=>{const [id,label]=g.split(':');return `<div class="nav-group" id="nav-group-${id}" hidden><button type="button" class="nav-group-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="nav-submenu-${id}">${label}${icon('down')}</button><div class="nav-submenu" id="nav-submenu-${id}"></div></div>`;}).join('')}
@@ -184,8 +185,8 @@ document.addEventListener('click',async e=>{
 // 주 메뉴 배치. 직원은 한 줄로, 담당자는 '채팅 관리'·'관리' 묶음 아래로 펼쳐지는 메뉴를 쓴다.
 // 버튼 자체(id·동작)는 그대로 두고 자리만 옮긴다. 배치가 다를 때만 옮긴다(옮기면 버튼의 포커스가 풀리므로).
 const NAV_LAYOUT={
- employee:{top:['nav-chat','nav-schedule','nav-board','nav-activity','nav-library','nav-unanswered','nav-statistics','nav-faq','nav-documents','nav-users','nav-model','nav-group-chat','nav-group-admin'],groups:{chat:[],admin:[]}},
- staff:{top:['nav-chat','nav-statistics','nav-group-chat','nav-group-admin','nav-schedule','nav-activity','nav-library','nav-model'],groups:{chat:['nav-unanswered','nav-faq','nav-board'],admin:['nav-documents','nav-users']}}
+ employee:{top:['nav-chat','nav-schedule','nav-board','nav-activity','nav-library','nav-unanswered','nav-statistics','nav-faq','nav-documents','nav-categories','nav-users','nav-model','nav-group-chat','nav-group-admin'],groups:{chat:[],admin:[]}},
+ staff:{top:['nav-chat','nav-statistics','nav-group-chat','nav-group-admin','nav-schedule','nav-activity','nav-library','nav-model'],groups:{chat:['nav-unanswered','nav-faq','nav-board'],admin:['nav-documents','nav-categories','nav-users']}}
 };
 function orderNav(staff){
  const layout=NAV_LAYOUT[staff?'staff':'employee'],by=id=>document.getElementById(id);
@@ -214,25 +215,25 @@ function render(){
  for(const name of ['schedule','activity'])$('#nav-'+name).hidden=staff;
  $('#nav-chat span').textContent=staff?'냥대리 테스트':'물어보기';
  orderNav(staff);
- if(staff&&!['chat','board','statistics','faq','documents','users','model','unanswered','library'].includes(view))view='unanswered';
+ if(staff&&!['chat','board','statistics','faq','documents','categories','users','model','unanswered','library'].includes(view))view='unanswered';
  document.body.dataset.view=view;
- for(const name of ['statistics','faq','documents','users'])$('#nav-'+name).hidden=!staff;
+ for(const name of ['statistics','faq','documents','categories','users'])$('#nav-'+name).hidden=!staff;
  $('#nav-model').hidden=true; // 검색·모델 설정은 '냥대리 테스트' 화면 아래로 옮겼다
  $('#nav-unanswered').hidden=!staff||knowlyOff.staff;$('#nav-library').hidden=staff||knowlyOff.employee;
  if(!session.member){$('#wallet').innerHTML='';$('#account-button').textContent='';$('#workspace-title').textContent='로그인';$('#main').classList.add('work-view');$('#main').innerHTML=accountGateHTML();return;}
- if(['statistics','faq','documents','users','model','unanswered'].includes(view)&&!staff)view='chat';
+ if(['statistics','faq','documents','categories','users','model','unanswered'].includes(view)&&!staff)view='chat';
  probeKnowly(staff?'staff':'employee');
  $('#account-button').innerHTML='<span>'+esc(session.me.username)+'</span><small>'+(session.me.role==='staff'?'담당자':'직원')+'</small>';
  $('#account-button').setAttribute('aria-label',session.me.username+' 내 계정');
- $('#workspace-title').textContent={chat:'물어보기',calendar:'내 일정',todos:'내 일정',activity:'내 활동',board:'질문 게시판',statistics:'이용통계',faq:'FAQ 관리',documents:'문서 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서'}[view];
+ $('#workspace-title').textContent={chat:'물어보기',calendar:'내 일정',todos:'내 일정',activity:'내 활동',board:'질문 게시판',statistics:'이용통계',faq:'FAQ 관리',documents:'문서 관리',categories:'분야 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서'}[view];
 
  const docCount=$('.side-nav [data-action="docs"] .count');if(docCount)docCount.textContent=allDocs().length;
- for(const name of ['chat','schedule','activity','board','statistics','faq','documents','users','model','unanswered','library']){const nav=$('#nav-'+name),active=name==='schedule'?['calendar','todos'].includes(view):view===name;nav?.classList.toggle('active',active);if(active)nav?.setAttribute('aria-current','page');else nav?.removeAttribute('aria-current');}
+ for(const name of ['chat','schedule','activity','board','statistics','faq','documents','categories','users','model','unanswered','library']){const nav=$('#nav-'+name),active=name==='schedule'?['calendar','todos'].includes(view):view===name;nav?.classList.toggle('active',active);if(active)nav?.setAttribute('aria-current','page');else nav?.removeAttribute('aria-current');}
  document.querySelectorAll('.nav-group').forEach(g=>g.querySelector('.nav-group-toggle').classList.toggle('active',!!g.querySelector('.nav-submenu .active')));
- $('#page-title').textContent={chat:'냥대리에게 물어보기',calendar:'내 캘린더',todos:'내가 해야 할 일',activity:'나의 질문 활동',board:'익명 질문 게시판 · 이 브라우저에만 저장',statistics:'이용통계',faq:'FAQ 관리',documents:'문서 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서'}[view];
+ $('#page-title').textContent={chat:'냥대리에게 물어보기',calendar:'내 캘린더',todos:'내가 해야 할 일',activity:'나의 질문 활동',board:'익명 질문 게시판 · 이 브라우저에만 저장',statistics:'이용통계',faq:'FAQ 관리',documents:'문서 관리',categories:'분야 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서'}[view];
  if(staff&&view==='chat')$('#workspace-title').textContent='냥대리 테스트';
  $('#main').classList.toggle('work-view',view!=='chat');updateWallet();
- if(KNOWLY_ROUTES[view]&&!knowlyOff[staff?'staff':'employee']){mountKnowly(view);}else if(view==='unanswered'||view==='library'){$('#main').innerHTML=`<section class="admin-page"><p class="admin-notice">${esc(knowlyOffMessage||'사내 문서 검색(Knowly)이 아직 연결되지 않았어요.')}</p></section>`;}else if(['faq','documents','users','model'].includes(view))$('#main').innerHTML=adminView(view,session.me.role,view==='documents'?documentQuery:adminQuery,view==='documents'?documentCategory:adminCategory,allDocs());else if(view==='statistics')$('#main').innerHTML=knowlyStatsHTML();else if(view==='activity')$('#main').innerHTML=activityHTML(activityContent(),activityTab==='level');else if(view==='board')$('#main').innerHTML=boardHTML();else if(view==='calendar')renderCalendar();else if(view==='todos')renderTodos();else renderCat();
+ if(KNOWLY_ROUTES[view]&&!knowlyOff[staff?'staff':'employee']){mountKnowly(view);}else if(view==='unanswered'||view==='library'||view==='categories'){$('#main').innerHTML=`<section class="admin-page"><p class="admin-notice">${esc(knowlyOffMessage||'사내 문서 검색(Knowly)이 아직 연결되지 않았어요.')}</p></section>`;}else if(['faq','documents','users','model'].includes(view))$('#main').innerHTML=adminView(view,session.me.role,view==='documents'?documentQuery:adminQuery,view==='documents'?documentCategory:adminCategory,allDocs());else if(view==='statistics')$('#main').innerHTML=knowlyStatsHTML();else if(view==='activity')$('#main').innerHTML=activityHTML(activityContent(),activityTab==='level');else if(view==='board')$('#main').innerHTML=boardHTML();else if(view==='calendar')renderCalendar();else if(view==='todos')renderTodos();else renderCat();
 }
 async function commitReward(event){
  if(communityState().me?.role==='staff')return null;
@@ -335,7 +336,7 @@ function knowlyHTML(r){
 // ── Knowly(main 백엔드) 연결 ─────────────────────────────────────────
 // 통합 앱은 항상 실제 Knowly 기능을 사용한다. 연결 오류를 샘플로 대체하지 않는다.
 const knowlyOff={employee:false,staff:false};let knowlyOffMessage='';
-const KNOWLY_ROUTES={faq:'/admin/faqs',documents:'/admin/documents',users:'/admin/users',model:'/admin/settings',unanswered:'/admin/unanswered',library:'/docs'};
+const KNOWLY_ROUTES={faq:'/admin/faqs',documents:'/admin/documents',categories:'/admin/categories',users:'/admin/users',model:'/admin/settings',unanswered:'/admin/unanswered',library:'/docs'};
 let libraryRoute='/docs',attachments=[],attachBusy=false;
 function knowlyFrameHTML(key,route){return `<div class="knowly-frame-wrap" data-knowly-key="${esc(key)}"><iframe class="knowly-frame" title="Knowly ${esc(key)}" src="/knowly/index.html#${esc(route)}"></iframe></div>`;}
 // 같은 화면을 다시 그릴 때 iframe을 새로 불러오지 않도록, 이미 떠 있으면 그대로 둔다.
@@ -717,7 +718,7 @@ document.addEventListener('click',async e=>{
  if(a==='logout'){await logoutAccount();return;}
  if(a==='account'){const me=communityState().me;openModal('<div class="account-menu"><h2 id="modal-title">내 계정</h2><strong>'+esc(me.username)+' · '+(me.role==='staff'?'담당자':'직원')+'</strong><p>'+ (me.role==='staff'?'질문 게시판 관리와 통계에 접근할 수 있어요.':'포인트와 보상은 같은 계정으로 로그인한<br>모든 기기에서 이어져요.') +'</p><p>Knowly 개인 계정으로 연결되어 있어요.<br>대화와 보상은 계정별로 구분됩니다.</p><button class="primary-button" data-action="logout">로그아웃</button></div>');return;}
  if(a==='unanswered'||a==='library'){if(a==='library')openLibrary();else if(communityState().me?.role==='staff'){view=a;petInteraction.reset();render();$('#main').scrollTop=0;}return;}
- if(['faq','documents','users','model'].includes(a)){if(communityState().me?.role==='staff'){view=a;petInteraction.reset();render();$('#main').scrollTop=0;}return;}
+ if(['faq','documents','categories','users','model'].includes(a)){if(communityState().me?.role==='staff'){view=a;petInteraction.reset();render();$('#main').scrollTop=0;}return;}
  if(a==='statistics'){if(communityState().me?.role==='staff'){view='statistics';petInteraction.reset();render();$('#main').scrollTop=0;}return;}
  if(a==='toggle-theme'){
   const next=document.documentElement.dataset.theme==='dark'?'light':'dark';

@@ -5,6 +5,7 @@ import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { callFunction, errorMessage } from '../../lib/api';
 import { CATEGORIES } from '../../lib/constants';
+import { loadCategories } from '../../lib/categories';
 import { DOC_ACCEPT, extractPages, sha256 } from '../../lib/extract';
 import { pageCountLabel } from '../../lib/sheet';
 import { supabase } from '../../lib/supabase';
@@ -31,6 +32,8 @@ export default function Documents() {
   const [dragging, setDragging] = useState(false);
   const [editing, setEditing] = useState<{ doc: DocumentRow; title: string; category: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  // 분야 관리에서 정한 분야 목록. 불러오기 전에는 기본 분야를 보여준다.
+  const [categories, setCategories] = useState<string[]>([...CATEGORIES]);
 
   const load = useCallback(async () => {
     const { data } = await supabase.from('documents').select('*').order('created_at', { ascending: false });
@@ -39,6 +42,11 @@ export default function Documents() {
 
   useEffect(() => {
     load();
+    loadCategories().then(({ categories: list }) => {
+      setCategories(list);
+      // 고른 분야가 삭제됐으면 첫 분야로 맞춘다
+      setCategory((current) => (list.includes(current) ? current : list[0]));
+    });
   }, [load]);
 
   // 톱니바퀴: 문서명과 카테고리만 바꾼다. 내용(조각)은 그대로라 다시 올릴 필요가 없다.
@@ -149,7 +157,7 @@ export default function Documents() {
           <div className="field">
             <label htmlFor="doc-cat">카테고리</label>
             <select id="doc-cat" className="select" value={category} onChange={(e) => setCategory(e.target.value)}>
-              {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+              {categories.map((c) => <option key={c}>{c}</option>)}
             </select>
           </div>
           <div className="field">
@@ -208,8 +216,8 @@ export default function Documents() {
           <div className="field">
             <label htmlFor="edit-cat">카테고리</label>
             <select id="edit-cat" className="select" value={editing.category} onChange={(e) => setEditing({ ...editing, category: e.target.value })}>
-              {!(CATEGORIES as readonly string[]).includes(editing.doc.category) && <option value={editing.doc.category}>{editing.doc.category} (이전 분류)</option>}
-              {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+              {!categories.includes(editing.doc.category) && <option value={editing.doc.category}>{editing.doc.category} (이전 분류)</option>}
+              {categories.map((c) => <option key={c}>{c}</option>)}
             </select>
             <span className="hint">채팅에서 고른 분야와 카테고리가 같은 문서를 먼저 찾아요. 파일 내용은 그대로라 다시 올릴 필요가 없어요.</span>
           </div>
