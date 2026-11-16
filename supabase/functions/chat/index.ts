@@ -254,7 +254,11 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
 
   if (outsideCategory) answer = { ...answer, outside_category: true };
 
-  if (answer.status === 'insufficient_evidence') {
+  // 담당자(관리자)가 냥대리 테스트·관리 화면에서 한 질문은 이용 통계와 미등록 질문에 넣지 않는다.
+  // 대화 기록(messages)은 그대로 남겨 담당자 화면의 대화 이어 보기에는 영향이 없다.
+  const countable = countsInStats(caller);
+
+  if (countable && answer.status === 'insufficient_evidence') {
     await recordUnanswered(db, question, category ?? selectedCategory ?? '기타', 'no_answer');
   }
 
@@ -264,7 +268,7 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
   }).select('id, created_at').single();
   if (msgError) throw msgError;
 
-  await db.from('usage_events').insert({
+  if (countable) await db.from('usage_events').insert({
     message_id: message.id,
     user_id: caller.user.id,
     department_id: caller.profile.department_id,
@@ -306,7 +310,7 @@ async function feedback(db: SupabaseClient, caller: Caller, body: Record<string,
   await db.from('usage_events').update({ feedback: vote }).eq('message_id', msg.id);
 
   // '도움 안 됨'이 처음 눌렸을 때 질문을 익명으로 미등록 질문에 모은다
-  if (vote === 'down' && msg.vote !== 'down') {
+  if (vote === 'down' && msg.vote !== 'down' && countsInStats(caller)) {
     const { data: q } = await db.from('messages').select('content')
       .eq('conversation_id', msg.conversation_id).eq('role', 'user').lte('created_at', msg.created_at)
       .order('created_at', { ascending: false }).limit(1).maybeSingle();
@@ -314,6 +318,11 @@ async function feedback(db: SupabaseClient, caller: Caller, body: Record<string,
     if (q) await recordUnanswered(db, q.content, ev?.category ?? '기타', 'not_helpful');
   }
   return json({ ok: true, vote });
+}
+
+/** 통계(이용 통계·미등록 질문)에 넣을 질문인지: 담당자(관리자)의 질문은 넣지 않는다. */
+function countsInStats(caller: Caller): boolean {
+  return caller.profile.role !== 'admin';
 }
 
 /** 비슷한 질문 묶음이 있으면 표현을 추가하고, 없으면 새 묶음을 만든다. 직원 정보는 저장하지 않는다. */
