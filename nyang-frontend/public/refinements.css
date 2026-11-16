@@ -94,6 +94,7 @@
 @media(max-height:620px){body:not([data-role=staff]) .desktop-workspace .chat-home{--resident-size:110px}}
 /* 츄르 주기 확인 창: 다른 창보다 작고, 뒤가 비치는 반투명 카드로 보여준다. */
 #modal:has(.treat-confirm){width:auto;max-width:min(300px,calc(100vw - 32px));padding:22px 20px 18px;border-radius:16px;background:color-mix(in srgb,var(--ui-panel,#fff) 72%,transparent);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);border-color:color-mix(in srgb,var(--ui-line,#ddd) 60%,transparent);box-shadow:0 12px 40px #0000001f}
+#modal:has(.treat-confirm){inset:auto;margin:0;width:min(300px,calc(100vw - 32px));left:var(--treat-x,50%);top:var(--treat-y,50%);transform:translate(-50%,-50%)} /* 냥대리 캐릭터 가운데에 맞춤(위치는 app.js의 placeTreatConfirm) */
 #modal:has(.treat-confirm)::backdrop{background:#00000014;-webkit-backdrop-filter:none;backdrop-filter:none}
 #modal:has(.treat-confirm) h2{font-size:16px;line-height:1.4;letter-spacing:-.3px;padding-right:24px}
 #modal:has(.treat-confirm) .modal-sub{font-size:13px;line-height:1.6;margin:8px 0 16px}
