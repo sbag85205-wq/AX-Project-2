@@ -92,3 +92,11 @@
 @media(max-height:760px){body:not([data-role=staff]) .desktop-workspace .chat-home{--resident-size:168px}body:not([data-role=staff]) .desktop-workspace .chat-home .cat-resident-stage:has(>.home-cat-rewards){row-gap:12px;padding-top:max(10px,calc(var(--room-center) - var(--resident-size)/2 - 124px))}body:not([data-role=staff]) .desktop-workspace .chat-home .cat-resident-stage>.home-cat-rewards{margin-top:11px}}
 @media(max-height:690px){body:not([data-role=staff]) .desktop-workspace .chat-home{--resident-size:132px}}
 @media(max-height:620px){body:not([data-role=staff]) .desktop-workspace .chat-home{--resident-size:110px}}
+/* 츄르 주기 확인 창: 다른 창보다 작고, 뒤가 비치는 반투명 카드로 보여준다. */
+#modal:has(.treat-confirm){width:auto;max-width:min(300px,calc(100vw - 32px));padding:22px 20px 18px;border-radius:16px;background:color-mix(in srgb,var(--ui-panel,#fff) 72%,transparent);-webkit-backdrop-filter:blur(14px) saturate(1.4);backdrop-filter:blur(14px) saturate(1.4);border-color:color-mix(in srgb,var(--ui-line,#ddd) 60%,transparent);box-shadow:0 12px 40px #0000001f}
+#modal:has(.treat-confirm)::backdrop{background:#00000014;-webkit-backdrop-filter:none;backdrop-filter:none}
+#modal:has(.treat-confirm) h2{font-size:16px;line-height:1.4;letter-spacing:-.3px;padding-right:24px}
+#modal:has(.treat-confirm) .modal-sub{font-size:13px;line-height:1.6;margin:8px 0 16px}
+#modal:has(.treat-confirm) .modal-close{width:22px;height:22px;top:14px;right:14px;background:transparent}
+#modal:has(.treat-confirm) .modal-button-row{gap:8px;margin-top:0}
+#modal:has(.treat-confirm) .modal-button-row>button{flex:1;padding:7px 12px;font-size:13px}
