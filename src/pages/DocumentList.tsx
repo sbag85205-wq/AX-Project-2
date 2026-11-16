@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SearchIcon } from '../components/Icons';
+import { loadCategoryNames, withDocumentCategories } from '../lib/categories';
 import { CATEGORIES } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import type { DocumentRow } from '../lib/types';
@@ -10,6 +11,8 @@ export default function DocumentList() {
   const [docs, setDocs] = useState<DocumentRow[] | null>(null);
   const [cat, setCat] = useState('전체');
   const [q, setQ] = useState('');
+  // 분야 관리에서 정한 분야(순서 포함). 불러오기 전에는 기본 분야를 보여 준다.
+  const [names, setNames] = useState<string[]>([...CATEGORIES]);
 
   useEffect(() => {
     // 직원에게는 RLS로 검색 가능한(ready) 문서만 보인다
@@ -20,11 +23,16 @@ export default function DocumentList() {
       .order('category')
       .order('title')
       .then(({ data }) => setDocs((data as DocumentRow[]) ?? []));
+    loadCategoryNames().then(setNames);
   }, []);
+
+  const cats = withDocumentCategories(names, (docs ?? []).map((d) => d.category));
+  const rank = (c: string) => cats.indexOf(c);
 
   const shown = (docs ?? [])
     .filter((d) => cat === '전체' || d.category === cat)
-    .filter((d) => !q.trim() || d.title.toLowerCase().includes(q.trim().toLowerCase()));
+    .filter((d) => !q.trim() || d.title.toLowerCase().includes(q.trim().toLowerCase()))
+    .sort((a, b) => rank(a.category) - rank(b.category)); // 분야 순서대로 (같은 분야 안에서는 문서명 순서 유지)
 
   return (
     <main className="admin-main">
@@ -41,7 +49,7 @@ export default function DocumentList() {
       </div>
 
       <div className="chips" role="group" aria-label="카테고리">
-        {['전체', ...CATEGORIES].map((c) => (
+        {['전체', ...cats].map((c) => (
           <button key={c} type="button" className="chip" aria-pressed={cat === c} onClick={() => setCat(c)}>{c}</button>
         ))}
       </div>

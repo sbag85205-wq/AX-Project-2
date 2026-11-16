@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CATEGORY_MAX_COUNT, EXAMPLE_MAX_COUNT, categoryNameProblem, cleanExamples, defaultExamples, exampleProblem, examplesFor, examplesOf, movedList, renamedList
+  CATEGORY_MAX_COUNT, EXAMPLE_MAX_COUNT, categoryNameProblem, cleanExamples, defaultExamples, exampleProblem, examplesFor, examplesOf, movedList, renamedList, withDocumentCategories
 } from '../src/lib/categories';
 import { CATEGORIES } from '../src/lib/constants';
 import sql from '../supabase/migrations/20261116000000_categories.sql?raw';
@@ -43,6 +43,10 @@ describe('분야 관리', () => {
     expect(exampleProblem('새 질문', Array.from({ length: EXAMPLE_MAX_COUNT }, (_, i) => `질문${i}`))).toContain('최대');
     expect(cleanExamples([' a ', '', 'a', 'b', 'x'.repeat(201)])).toEqual(['a', 'b']);
     expect(examplesFor(['서버'], { 서버: ['q'], 삭제됨: ['r'] })).toEqual({ 서버: ['q'] });
+  });
+
+  it('직원 문서 목록: 지워진 분야를 쓰는 문서가 있으면 그 분야를 뒤에 붙인다', () => {
+    expect(withDocumentCategories(['서버', '인사'], ['인사', '옛 분야', '서버', '옛 분야', ''])).toEqual(['서버', '인사', '옛 분야']);
   });
 
   it('DB 기본 분야는 지금 쓰던 분야(CATEGORIES)와 같다', () => {

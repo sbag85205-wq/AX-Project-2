@@ -1,4 +1,5 @@
 import { categories as nyangCategories, faq as nyangFaq } from '../../nyang-frontend/public/core.js';
+import { callFunction } from './api';
 import { CATEGORIES } from './constants';
 import { supabase } from './supabase';
 
@@ -34,6 +35,26 @@ export async function loadCategories(): Promise<{ categories: string[]; examples
     return { categories: [...CATEGORIES], examples: {}, error: error ? '분야 목록을 불러오지 못해 기본 분야를 보여 드려요.' : '' };
   }
   return { categories: list, examples: examplesFrom(row?.category_examples), error: '' };
+}
+
+/**
+ * 직원 화면용 분야 목록(분야 관리의 순서대로). 설정 표는 관리자만 읽을 수 있어 chat 서버 함수가 대신 읽어 준다.
+ * 받지 못하면 기본 분야(CATEGORIES)를 쓴다.
+ */
+export async function loadCategoryNames(): Promise<string[]> {
+  try {
+    const list = textList((await callFunction<{ categories?: unknown }>('chat', { action: 'categories' }))?.categories);
+    if (list.length) return list;
+  } catch {
+    // 연결이 안 되면 기본 분야로 보여 준다
+  }
+  return [...CATEGORIES];
+}
+
+/** 분야 목록 뒤에, 목록에는 없지만 문서가 쓰고 있는 분야(지워진 분야 등)를 붙인다. */
+export function withDocumentCategories(names: string[], used: string[]): string[] {
+  const extra = [...new Set(used.filter((c) => c && !names.includes(c)))].sort((a, b) => a.localeCompare(b, 'ko'));
+  return [...names, ...extra];
 }
 
 /** 목록에 있는 분야의 예시만 남긴다 (지워진 분야의 예시는 버린다). */
