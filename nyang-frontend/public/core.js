@@ -68,15 +68,51 @@ export const faq = {
 };
 // 첫 화면 입력칸 위에 보이는 추천 질문: 등록된 매뉴얼에서 맞는 문단이 찾아지는 것만, 주제가 겹치지 않게 고른다.
 // label은 화면에 보이는 짧은 글, q는 실제로 보내는 질문.
-export const starters = [
-  { label: 'Linker Client 설치', q: '사용자 PC에 Linker Client를 설치하는 방법을 알려주세요', category: 'client' },
-  { label: '설치 요구사항', q: 'Linker Client 설치 요구사항을 알려주세요', category: 'client' },
-  { label: '인증서버 등록', q: '관리서버 인증을 받으려면 인증서버를 어떻게 등록하나요?', category: 'client' },
-  { label: 'VD 전원·재시작', q: 'VD 전원 켜기·끄기·재시작은 어떻게 하나요?', category: 'client' },
-  { label: '웹서버 접속이 안 돼요', q: '웹서버에 접속이 안 될 때 어떻게 하나요?', category: 'trouble' },
-  { label: 'VM이 느려요', q: 'VM이 느릴 경우 무엇을 확인하나요?', category: 'trouble' },
-  { label: '데이터 백업·복구', q: '데이터 백업 및 복구 절차를 알려주세요', category: 'trouble' }
-];
+/** 채팅창 위 추천 질문 버튼 수 (분야를 바꾸면 그 분야의 예시 질문을 이만큼 짧게 보여 준다) */
+export const STARTER_COUNT = 7;
+/** 기본 예시 질문의 짧은 이름 (버튼에 보이는 글). 누르면 원래 질문 전체로 물어본다. */
+export const shortLabels = {
+  '서버 OS 설치 및 기본설정은 어떻게 하나요?': '서버 OS 기본설정', '도메인 환경구성은 어떻게 하나요?': '도메인 환경구성',
+  'Dstation 필요기능 설치 방법을 알려주세요': '필요기능 설치', 'Dstation Package 설치 방법을 알려주세요': 'Package 설치',
+  'Dcenter 설치 방법을 알려주세요': 'Dcenter 설치', 'Host agent 설치 방법을 알려주세요': 'Host agent 설치',
+  'CenterPost 설치 방법을 알려주세요': 'CenterPost 설치', '관리 서버 구성은 어떻게 하나요?': '관리 서버 구성',
+  'Dstation VDAgent 설치 방법을 알려주세요': 'VDAgent 설치', 'Dstation 기본 설정은 어떻게 하나요?': 'Dstation 기본 설정',
+  '사용자 PC에 Linker Client를 설치하는 방법을 알려주세요': 'Linker Client 설치', 'Linker Client 설치 요구사항을 알려주세요': '설치 요구사항',
+  '관리서버 인증을 받으려면 인증서버를 어떻게 등록하나요?': '인증서버 등록', 'VD 접속 전 준비 절차를 알려주세요': 'VD 접속 준비',
+  'VD 전원 켜기·끄기·재시작은 어떻게 하나요?': 'VD 전원·재시작', 'VD 화면 위 툴바는 어떤 기능인가요?': 'VD 툴바 기능',
+  'Linker Client는 제어판에서 어떻게 삭제하나요?': 'Linker Client 삭제', 'Linker Client 아이콘을 실행하는 방법을 알려주세요': 'Linker Client 실행',
+  '인증 서버가 설정되어 있지 않다고 나오면 어떻게 하나요?': '인증 서버 미설정 오류', '할당 받은 VD의 이름과 상태는 어디서 확인하나요?': 'VD 이름·상태 확인',
+  'VD 연결끊기를 누르면 어떻게 되나요?': 'VD 연결끊기', 'VD에서 Dstation 설치 폴더에 접근이 제한되는 이유가 뭔가요?': '설치 폴더 접근 제한',
+  'VM 접속이 실패할 때 무엇을 확인하나요?': 'VM 접속 실패', '웹서버에 접속이 안 될 때 어떻게 하나요?': '웹서버 접속이 안 돼요',
+  '로그인했는데 VD가 보이지 않아요': 'VD가 안 보여요', 'VM이 느릴 경우 무엇을 확인하나요?': 'VM이 느려요',
+  'Hyper-V에서 VM이 보이지 않을 때 어떻게 하나요?': 'Hyper-V에 VM이 없어요', 'VM에 명령이 먹히지 않을 때 어떻게 하나요?': 'VM 명령이 안 먹혀요',
+  'VDAgent 재설치 전에 무엇을 백업해야 하나요?': 'VDAgent 재설치 전 백업', '프로비전이 실패하면 무엇을 확인하나요?': '프로비전 실패',
+  '클러스터 스토리지 볼륨이 느릴 때 무엇을 확인하나요?': '스토리지 볼륨이 느려요', '데이터 백업 및 복구 절차를 알려주세요': '데이터 백업·복구',
+  '웹서버 접근은 되는데 로그인이 안 될 때 무엇을 확인하나요?': '웹 로그인이 안 돼요', 'Master VD 파일 복제가 실패하면 무엇을 확인하나요?': 'Master VD 복제 실패',
+  'VDAgent 서비스가 실행 중인지 어떻게 확인하나요?': 'VDAgent 실행 확인',
+  'Dstation 제품 소개를 알려주세요': 'Dstation 제품 소개', 'Dstation의 가상화 기능을 알려주세요': '가상화 기능', 'Dstation의 보안 특성을 알려주세요': '보안 특성',
+  '문제가 해결되지 않으면 기술지원센터에 어떻게 연락하나요?': '기술지원센터 연락', 'Dstation 무상 유지보수 기간은 얼마나 되나요?': '무상 유지보수 기간'
+};
+/**
+ * 질문을 버튼에 넣을 짧은 이름으로 줄인다. 기본 예시는 정해 둔 이름을 쓰고,
+ * 담당자가 넣은 질문은 '~방법을 알려주세요', '~은 어떻게 하나요?' 같은 끝말을 덜어 내고 16자로 자른다.
+ */
+export function shortQuestion(question) {
+  const q = String(question ?? '').trim();
+  if (shortLabels[q]) return shortLabels[q];
+  let t = q.replace(/[?？!.~]+$/, '').trim(), m;
+  if ((m = /^(.*?)(?:은|는|이|가|을|를)?\s*어떻게\s*(\S*?)(?:해야 하나요|하면 되나요|하나요|하죠|할까요|해요|되나요|돼요)$/.exec(t))) t = [m[1], m[2]].filter(Boolean).join(' ');
+  else if ((m = /^(.*?)\s*(?:방법|절차)?(?:을|를)?\s*(?:알려\s*주세요|알려줘|알고 싶어요|궁금해요)$/.exec(t))) t = m[1];
+  else if ((m = /^(.*?)(?:은|는|이|가)?\s*(?:무엇을|뭘|어디서|언제|왜)\s*\S*(?:해야 하나요|하나요|되나요)$/.exec(t))) t = m[1];
+  else if ((m = /^(.*?)(?:은|는|이|가)?\s*(?:얼마나 되나요|무엇인가요|뭔가요|어떤 기능인가요|있나요)$/.exec(t))) t = m[1];
+  t = t.trim() || q;
+  return t.length > 16 ? t.slice(0, 15) + '…' : t;
+}
+/** 분야의 추천 질문 버튼: 그 분야 예시 질문(분야 관리에서 고친 것 또는 기본 예시) 앞에서부터 STARTER_COUNT개. */
+export function startersFor(category, count = STARTER_COUNT) {
+  const list = category?.examples || faq[category?.id] || [];
+  return list.slice(0, count).map(q => ({ label: shortQuestion(q), q, category: category.id }));
+}
 export const answers = {
   annual:{title:'사용일 3영업일 전까지 연차를 신청해.',text:'인사 시스템에 날짜와 인수인계 내용을 입력하고, 팀장 승인을 받으면 돼.',steps:['사용 날짜와 인수인계 내용을 준비해.','인사 시스템에서 사용일 3영업일 전까지 신청해. 이 샘플 규정의 영업일은 주말만 제외해.','팀장 승인이 완료됐는지 확인해.'],refs:['annual']},
   half:{title:'반차는 사용 전일까지 신청하세요.',text:'오전 또는 오후 4시간 단위로 사용할 수 있어요. 인사 시스템에서 신청 후 팀장 승인을 받아야 합니다.',refs:['half']},
