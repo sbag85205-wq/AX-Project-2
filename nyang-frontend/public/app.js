@@ -3,10 +3,10 @@ import {createReactionPicker} from './reaction-variety.js?v=115ea2f34987';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=ef11f91be08e';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=eec4409c5d41';
-import {adminView} from './admin-view.js?v=a1003f371261';
+import {adminView} from './admin-view.js?v=0a725da88bc2';
 import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount} from './community-ui.js?v=0c74cfccfcb8';
-import {categories,applyManagedCategories,defaultCategory,categoryOf,documents,faq,starters,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=26f68832a3de';
-import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=2978451484b6';
+import {categories,applyManagedCategories,defaultCategory,categoryOf,documents,faq,starters,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=2d2b0d6222ce';
+import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=ac3afadc90b7';
 import {createPetInteraction} from './pet-interaction.js?v=355c0da8eb14';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=1abf27b4ca67';
 const $=s=>document.querySelector(s);
@@ -515,10 +515,11 @@ function composer(home=false){const current=categoryOf(category);return `<form c
 // 분야 변경: 지금 목록으로 바로 열고, 분야 관리에서 바뀐 목록을 받아 오면 다시 그린다.
 function showCategories(refresh=true){openModal(`<h2 id="modal-title">어떤 분야가 궁금하세요?</h2><p class="modal-sub">고른 분야의 문서에서 먼저 찾고, 없으면 전체 자료에서 찾아요.${categories.some(c=>c.searchAll)?' 어느 분야인지 모르면 기타를 고르세요.':''} 작성 중인 질문은 유지됩니다.</p><div class="category-options">${categories.map(c=>`<button data-select-category="${esc(c.id)}" aria-pressed="${c.id===categoryOf(category).id}">${icon(c.icon)}<span><strong>${esc(c.label)}</strong><small>${esc(c.detail)}</small></span>${icon(c.id===categoryOf(category).id?'check':'chevron')}</button>`).join('')}</div>`);if(refresh)refreshCategories().then(changed=>{if(changed&&$('#modal').open&&$('#modal .category-options'))showCategories(false);});}
 // 분야 관리에서 정한 분야 목록을 받아 채팅 분야에 반영한다. 못 받으면 지금 목록을 그대로 쓴다.
-async function refreshCategories(){try{const res=await fetch('/api/knowly-categories',{method:'POST',body:'{}'});const data=await res.json();return res.ok&&applyManagedCategories(data.categories);}catch{return false;}}
+async function refreshCategories(){try{const res=await fetch('/api/knowly-categories',{method:'POST',body:'{}'});const data=await res.json();return res.ok&&applyManagedCategories(data.categories,data.examples);}catch{return false;}}
 function resizeComposer(){const field=$('#question-form textarea');if(!field)return;field.style.height='auto';field.style.height=Math.min(140,Math.max(30,field.scrollHeight))+'px';}
 function scrollConversation(){const pane=$('.chat-transcript'),last=pane?.querySelector('.assistant-message:last-child');if(!pane)return;requestAnimationFrame(()=>{if(!pane.isConnected)return;if(last)pane.scrollTop+=last.getBoundingClientRect().top-pane.getBoundingClientRect().top-24;else pane.scrollTop=pane.scrollHeight;});}
-function showChatExamples(){const c=categoryOf(category);openModal(`<h2 id="modal-title">질문 예시</h2><p class="modal-sub">${esc(c.label)} 분야에서 물어볼 수 있는 질문이에요.</p><div class="chat-example-list">${(faq[c.id]||[]).map(q=>`<button class="secondary-button" data-question="${esc(q)}" data-cat="${esc(c.id)}">${esc(q)} ${icon('arrow')}</button>`).join('')||'<p class="caption">이 분야는 아직 질문 예시가 없어요. 궁금한 점을 바로 물어보세요.</p>'}</div>`);}
+// 질문 예시: 지금 목록으로 바로 열고, 분야 관리에서 바뀐 예시를 받아 오면 다시 그린다.
+function showChatExamples(refresh=true){const c=categoryOf(category);openModal(`<h2 id="modal-title">질문 예시</h2><p class="modal-sub">${esc(c.label)} 분야에서 물어볼 수 있는 질문이에요.</p><div class="chat-example-list">${(c.examples||faq[c.id]||[]).map(q=>`<button class="secondary-button" data-question="${esc(q)}" data-cat="${esc(c.id)}">${esc(q)} ${icon('arrow')}</button>`).join('')||'<p class="caption">이 분야는 아직 질문 예시가 없어요. 궁금한 점을 바로 물어보세요.</p>'}</div>`);if(refresh)refreshCategories().then(changed=>{if(changed&&$('#modal').open&&$('#modal .chat-example-list'))showChatExamples(false);});}
 function resetChat(){saveCurrentChat();activeChatId=null;if(activeAccount)save('om-chat-active',null);clearTimeout(replyTimer);replyTimer=null;pendingReply=null;heroTransition=null;messages=[];chatDraft='';plan=null;view='chat';mood='';category=null;petInteraction.reset();render();}
 function ask(q,id,reward=true){
  if(!communityState().member){render();return;}

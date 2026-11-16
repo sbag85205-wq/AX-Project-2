@@ -1,4 +1,4 @@
-import {makePlan,businessBefore,businessAfter,addDays,localDate,asDate} from './core.js?v=26f68832a3de';
+import {makePlan,businessBefore,businessAfter,addDays,localDate,asDate} from './core.js?v=2d2b0d6222ce';
 
 export const QUESTION_POINTS=10;
 export const TREAT_COST=10;

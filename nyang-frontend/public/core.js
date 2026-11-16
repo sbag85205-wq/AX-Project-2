@@ -14,11 +14,14 @@ const builtInCategories = [...categories];
  * 원래 분야와 이름이 같으면 그 분야(id·아이콘·설명·기타의 전체 검색)를 그대로 쓰고, 새 이름은 custom:<이름> 분야가 된다.
  * 바뀌었으면 true.
  */
-export function applyManagedCategories(labels) {
+export function applyManagedCategories(labels, examples = {}) {
   const names = (Array.isArray(labels) ? labels : []).filter(l => typeof l === 'string' && l.trim() && l.length <= 30);
   if (!names.length) return false;
-  const next = names.map(l => builtInCategories.find(c => c.label === l) || { id: 'custom:' + l, label: l, icon: 'book', detail: '담당자가 추가한 분야 · 이 분야 문서에서 먼저 찾아요' });
-  if (next.length === categories.length && next.every((c, i) => c.id === categories[i].id && c.label === categories[i].label)) return false;
+  // 분야별 예시 질문(분야 관리 > 설정). 없으면 기본 예시(faq)를 쓴다.
+  const listOf = l => Array.isArray(examples?.[l]) ? examples[l].filter(q => typeof q === 'string' && q.trim()).slice(0, 20) : null;
+  const next = names.map(l => ({ ...(builtInCategories.find(c => c.label === l) || { id: 'custom:' + l, label: l, icon: 'book', detail: '담당자가 추가한 분야 · 이 분야 문서에서 먼저 찾아요' }), examples: listOf(l) }));
+  const same = (a, b) => a.id === b.id && a.label === b.label && JSON.stringify(a.examples ?? null) === JSON.stringify(b.examples ?? null);
+  if (next.length === categories.length && next.every((c, i) => same(c, categories[i]))) return false;
   categories.splice(0, categories.length, ...next);
   return true;
 }

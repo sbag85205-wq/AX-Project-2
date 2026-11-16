@@ -21,3 +21,11 @@ test('새 분야로 나눈 대화와 질문 기록도 저장된다',()=>{
  const history=normalizeHistory([{id:'m1',q:'연차',at:2,result}]);
  assert.equal(history.length,1);
 });
+test('분야별 예시 질문을 반영하고, 없으면 기본 예시를 쓴다',()=>{
+ assert.equal(applyManagedCategories(['서버 설치 · 설정','인사·휴가'],{'인사·휴가':['연차는 어떻게 쓰나요?',' ',3]}),true);
+ assert.deepEqual(categoryOf('custom:인사·휴가').examples,['연차는 어떻게 쓰나요?']);
+ assert.equal(categoryOf('server').examples,null); // 저장된 예시가 없으면 기본 faq
+ assert.equal(applyManagedCategories(['서버 설치 · 설정','인사·휴가'],{'인사·휴가':['바뀐 질문']}),true); // 예시만 바뀌어도 다시 그린다
+ applyManagedCategories(original);
+ assert.equal(categories.every(c=>!c.examples),true);
+});
