@@ -8,10 +8,10 @@ import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsBy
 import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=e96f553d8ea3';
 import {categories,applyManagedCategories,defaultCategory,categoryOf,documents,faq,startersFor,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=4dc923f4c7f7';
 import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=93bd9a4c6e6f';
-import {createPetInteraction} from './pet-interaction.js?v=355c0da8eb14';
+import {createPetInteraction} from './pet-interaction.js?v=25ddd542a513';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=7636a2959edf';
 const $=s=>document.querySelector(s);
-import {createAccountSync} from './account-sync.js?v=f6921562d78b';
+import {createAccountSync} from './account-sync.js?v=0814f3e9a4c8';
 import {esc} from './shared.js?v=76a19ab6baf7';
 import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=751a765f8a44';
 import {orderNav,installNavLayout} from './nav-layout.js?v=34db55cc4081';
@@ -190,6 +190,8 @@ function refreshPet(){
 }
 const petInteraction=createPetInteraction({
  commit:()=>commitReward({type:'pet'}),cooldown:PET_COOLDOWN_MS,
+ // 표정은 서버를 기다리지 않고 바로(같은 확률), 보너스 포인트만 서버가 정한다
+ guess:()=>petOutcome(Math.random(),1-Number.EPSILON),
  indicate(pending){
   petPending=pending;$('.pet-touch')?.setAttribute('aria-busy',String(pending));
   if(!pending&&!petReaction){petMoving=false;clearTimeout(petMotionTimer);refreshPet();}
@@ -682,12 +684,19 @@ function loadAccountRecords(next){
  tasks=read('om-tasks',[]);history=normalizeHistory(read('om-question-history',[]));seenReplies=read('om-seen-replies',{});if(!seenReplies||typeof seenReplies!=='object')seenReplies={};
  if(next){const stored=read('om-chat-sessions',null);chats=stored===null?importQuestionHistory(history):normalizeChats(stored);}
 }
+// 계정에 저장된 화면 테마·움직임 설정을 이 화면에 적용한다
+function applyDeviceSettings(){applyColorTheme(preferredColorTheme());document.body.classList.toggle('motion-paused',!read('om-cat-motion',true));}
 // 서버에서 받은 기록으로 바뀐 뒤 다시 읽고 그린다. 지금 보고 있는 대화는 그대로 둔다(목록에 없으면 새 대화로).
 function reloadAccountRecords(){
- loadAccountRecords(activeAccount);
+ if(!activeAccount)return;
+ uploads=read('om-docs',[]);loadAccountRecords(activeAccount);
  if(activeChatId&&!chats.some(x=>x.id===activeChatId)&&!messages.length)activeChatId=null;
- applyBackground();render();
+ if(!activeChatId&&!messages.length&&!pendingReply){const id=read('om-chat-active',null),chat=chats.find(x=>x.id===id);if(chat){activeChatId=id;messages=structuredClone(chat.messages);category=chat.category;}}
+ applyDeviceSettings();applyBackground();render();
 }
+// 창을 닫거나 다른 창으로 갈 때 아직 못 보낸 기록을 한 번 더 보낸다
+addEventListener('pagehide',()=>{accountSync.flush();});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')accountSync.flush();});
 initCommunity({
  toast,modal:openModal,close:closeModal,render,
  show(next){view=next;render();$('#main').scrollTop=0;},
@@ -697,19 +706,22 @@ initCommunity({
    chats=[];activeChatId=null;chatHistoryCollapsed=false;chatHistoryCategory='all';chatHistoryFolder='all';historyMessageId=null;heroTransition=null;
    clearTimeout(replyTimer);replyTimer=null;pendingReply=null;messages=[];chatDraft='';category=null;view='chat';activityTab='recent';activityQuery='';plan=null;petInteraction.reset();
    if($('#modal').open)closeModal();activeAccount=next;
-   // 화면을 불러올 때 함께 받은 서버 기록(내 일정·대화 기록 등)을 먼저 브라우저 저장소에 넣고 읽는다
-   const synced=accountSync.start(next,state.personalState);
+   // 화면을 불러올 때 함께 받은 서버 기록(내 일정·대화 기록·테마 등)을 먼저 브라우저 저장소에 넣고 읽는다
+   const synced=accountSync.start(next,state.personalState,state.personalLarge);
+   applyDeviceSettings();
    uploads=read('om-docs',[]);loadAccountRecords(next);
    if(next){
     activeChatId=read('om-chat-active',null);const selected=chats.find(x=>x.id===activeChatId);
     if(selected){messages=structuredClone(selected.messages);category=selected.category;}else activeChatId=null;
    }
    rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};applyBackground();render();if(next)refreshCategories().then(changed=>{if(changed)render();});if(next&&state.me.role!=='staff')companionBehavior.greet(personality);
-   // 서버 기록을 따로 받아 와야 했던 경우(예전 서버 응답)에만, 바뀌었으면 다시 그린다
-   if(!state.personalState)synced.then(changed=>{if(changed&&activeAccount===next)reloadAccountRecords();});
+   // 나중에 받은 기록(큰 배경 이미지·예전 서버 응답)으로 바뀌었으면 다시 그린다
+   synced.then(changed=>{if(changed&&activeAccount===next)reloadAccountRecords();});
    return;
   }
   if(!state.member){render();return;}
+  // 같은 계정으로 다시 불러왔을 때(창으로 돌아옴 등): 다른 기기에서 바꾼 기록이 있으면 반영한다
+  if(state.personalState&&accountSync.refresh(state.personalState,state.personalLarge,reloadAccountRecords)){rewards=state.wallet||rewards;reloadAccountRecords();return;}
   rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};updateWallet();refreshPet();if(viewOf(view)?.community&&!$('#modal').open)render();}
 });
 

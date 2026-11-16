@@ -1,31 +1,11 @@
-import { FunctionsHttpError } from '@supabase/supabase-js';
 import { loginEmail, supabase, supabaseConfigured } from '../lib/supabase';
 import { callFunction, type AskResult } from '../lib/api';
-import { localExport, type NyangAccount } from './local-store';
+import { localExport } from './local-store';
 
 // 냥대리 활동(포인트·출석·게시판)과 개인 기록은 서버 함수(nyang)가 저장한다. 어느 PC로 로그인해도 같은 기록이 보인다.
 // 계정·역할은 요청 본문이 아니라 서버가 로그인한 Knowly 프로필에서 가져온다.
-// 기록 올리기(importLocalOnce)에만 쓰는 계정 정보(id·역할). 역할은 로그인할 때 읽은 프로필을 그대로 쓰고,
-// 없으면(새로고침) 한 번만 읽는다. 서버 함수는 이 값을 믿지 않고 직접 프로필을 확인한다.
-let cached: NyangAccount | null = null;
-async function currentAccount(userId: string): Promise<NyangAccount> {
-  if (cached?.id === userId) return cached;
-  const { data: p } = await supabase.from('profiles').select('id, login_id, display_name, role').eq('id', userId).single();
-  if (!p) throw new Error('계정 정보를 찾을 수 없어요. 관리자에게 문의해 주세요.');
-  cached = { id: userId, username: p.login_id, name: p.display_name, department: '', role: p.role === 'admin' ? 'staff' : 'employee' };
-  return cached;
-}
-
-/** nyang 서버 함수를 호출한다. 실패하면 서버가 보낸 메시지와 상태 번호(status)를 가진 예외를 던진다. */
-async function callNyang<T = Record<string, unknown>>(body: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.functions.invoke('nyang', { body });
-  if (!error) return data as T;
-  if (error instanceof FunctionsHttpError) {
-    const payload = await error.context.json().catch(() => null);
-    throw Object.assign(new Error(payload?.error?.message ?? '요청을 처리하지 못했어요.'), { status: error.context.status });
-  }
-  throw new Error('서버에 연결하지 못했어요. 네트워크 상태를 확인해 주세요.');
-}
+/** nyang 서버 함수를 호출한다(DB와 같은 지역에서). 실패하면 서버가 보낸 메시지와 상태 번호(status)를 가진 예외를 던진다. */
+const callNyang = <T = Record<string, unknown>>(body: Record<string, unknown>) => callFunction<T>('nyang', body);
 
 // ── 이 브라우저에만 있던 예전 기록을 서버로 올리기 ─────────────────────
 // 계정마다 이 브라우저에서 한 번 올린다. 글쓴이가 아직 올리지 않아 미뤄진 것(유익해요·답변·삭제 표시)이 있으면
@@ -48,7 +28,7 @@ async function importLocalOnce(userId: string): Promise<Record<string, unknown> 
   const [kind, count] = state.includes(':') ? state.split(':') : ['failed', state];
   const tries = Number(count) || 0;
   try {
-    const data = await localExport(await currentAccount(userId));
+    const data = await localExport(userId);
     if (!data) { stored.set(flag, 'done'); return null; }
     // 미뤄진 것만 남았으면 그 부분만 보낸다(지갑·질문·출석은 이미 올라갔다)
     const body = kind === 'pending' ? { likes: data.likes, replies: data.replies, deleted: data.deleted } : data;
@@ -84,22 +64,16 @@ export async function request(path: string, init: RequestInit = {}): Promise<Res
     if (!supabaseConfigured) throw new Error('VITE_SUPABASE_URL과 VITE_SUPABASE_PUBLISHABLE_KEY를 설정해 주세요.');
     let input = typeof init.body === 'string' ? JSON.parse(init.body) : {};
     if (input.action === 'logout') {
-      cached = null;
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       return Response.json({ authenticated: false, member: false });
     }
+    // 로그인: 직원/담당자 탭이 계정과 맞는지는 첫 화면 응답(me.role)으로 확인한다(프로필을 따로 읽지 않아 한 번 덜 오간다)
+    let expectedRole: string | null = null;
     if (input.action === 'login') {
-      cached = null;
-      const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail(input.username), password: input.password });
+      const { error } = await supabase.auth.signInWithPassword({ email: loginEmail(input.username), password: input.password });
       if (error) throw new Error('아이디 또는 비밀번호를 확인해 주세요.');
-      const { data: profile } = await supabase.from('profiles').select('id, login_id, display_name, role').eq('id', data.user.id).single();
-      if (!profile || (profile.role === 'admin' ? 'staff' : 'employee') !== input.role) {
-        await supabase.auth.signOut();
-        throw new Error('계정 유형을 확인하고 직원 또는 담당자 탭에서 로그인해 주세요.');
-      }
-      // 기록 올리기에 쓸 계정 정보를 남겨 둔다(프로필을 한 번 더 읽지 않는다)
-      cached = { id: data.user.id, username: profile.login_id, name: profile.display_name, department: '', role: profile.role === 'admin' ? 'staff' : 'employee' };
+      expectedRole = input.role === 'staff' ? 'staff' : 'employee';
       input = { action: null };
     }
     const { data: { session } } = await supabase.auth.getSession();
@@ -117,12 +91,12 @@ export async function request(path: string, init: RequestInit = {}): Promise<Res
         citations: a.citations.map(c => ({ ...c, title: c.document_title, pages: c.page_start ? `${c.page_start}–${c.page_end}쪽` : '' })) } });
     }
     const action = path.includes('view=stats') ? 'stats' : input.action ?? null;
-    if (action === null) {
-      // 화면을 처음 불러올 때: 이 브라우저에만 있던 예전 기록이 있으면 먼저 서버로 올린다
-      const moved = await importLocalOnce(session.user.id);
-      if (moved) return Response.json(moved);
+    // 화면을 처음 불러올 때: 이 브라우저에만 있던 예전 기록이 있으면 먼저 서버로 올린다(그 응답이 곧 첫 화면)
+    const result = (action === null ? await importLocalOnce(session.user.id) : null) ?? await callNyang({ ...input, action });
+    if (expectedRole && (result as { me?: { role?: string } }).me?.role !== expectedRole) {
+      await supabase.auth.signOut();
+      throw new Error('계정 유형을 확인하고 직원 또는 담당자 탭에서 로그인해 주세요.');
     }
-    const result = await callNyang({ ...input, action });
     if (action === 'stats') return Response.json(await withLoginIds(result));
     return Response.json(result);
   } catch (e) {

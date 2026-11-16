@@ -6,8 +6,6 @@ import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 import { runOnce } from './local-db.mjs';
 import { exportLocal } from './local-export.mjs';
 
-export interface NyangAccount { id: string; username: string; name: string; department: string; role: 'staff' | 'employee' }
-
 // 원래 냥대리 서버와 같은 SQLite 스키마
 const files = Object.entries(import.meta.glob('../../nyang-frontend/drizzle/*.sql', { query: '?raw', import: 'default', eager: true }) as Record<string, string>)
   .map(([path, text]) => [path.split('/').pop()!, text] as [string, string]);
@@ -44,10 +42,10 @@ let engine: Promise<SqlJsStatic> | null = null;
  * 이 브라우저에 남아 있는 예전 활동 기록 중 이 계정이 한 일만 골라 돌려준다(없으면 null).
  * 저장된 기록이 없으면 SQLite 엔진도 불러오지 않는다.
  */
-export async function localExport(account: NyangAccount): Promise<Record<string, unknown> | null> {
+export async function localExport(userId: string): Promise<Record<string, unknown> | null> {
   const bytes = await load();
   if (!bytes) return null;
   engine ??= initSqlJs({ locateFile: () => wasmUrl });
-  const { result } = await runOnce(await engine, bytes, files, (db: unknown) => exportLocal(db, account.id, account.role));
+  const { result } = await runOnce(await engine, bytes, files, (db: unknown) => exportLocal(db, userId));
   return result as Record<string, unknown> | null;
 }

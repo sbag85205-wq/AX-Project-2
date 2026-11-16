@@ -86,7 +86,7 @@ test('서버 저장: 개인 기록(내 일정·대화 기록 등)은 계정별�
   const { pg, call } = await server();
   try {
     assert.deepEqual(await call(a, 'state'), { state: {} });
-    assert.deepEqual((await call(a)).personalState, {}); // 화면 불러오기에도 개인 기록이 함께 온다
+    assert.deepEqual((await call(a)).personalState, {}); assert.deepEqual((await call(a)).personalLarge, {}); // 화면 불러오기에도 개인 기록이 함께 온다
     const tasks = JSON.stringify([{ id: 't1', title: '회의', date: '2026-11-17' }]);
     assert.deepEqual(await call(a, 'state-set', { items: [{ key: 'om-tasks', value: tasks }, { key: 'om-personality', value: '"warm"' }, { key: 'om-bg-theme-cat', value: '"ocean"' }] }), { saved: ['om-tasks', 'om-personality', 'om-bg-theme-cat'] });
     assert.deepEqual((await call(a, 'state')).state, { 'om-tasks': tasks, 'om-personality': '"warm"', 'om-bg-theme-cat': '"ocean"' });
@@ -95,12 +95,20 @@ test('서버 저장: 개인 기록(내 일정·대화 기록 등)은 계정별�
     assert.equal('personalState' in (await call(a, 'attendance')), false); // 다른 요청 응답에는 넣지 않는다
     await call(a, 'state-set', { key: 'om-tasks', value: '[]' }); await call(a, 'state-set', { key: 'om-personality', value: null });
     assert.deepEqual((await call(a, 'state')).state, { 'om-tasks': '[]', 'om-bg-theme-cat': '"ocean"' });
-    await assert.rejects(call(a, 'state-set', { key: 'om-bg-uploads-cat', value: '[]' }), /저장할 수 없는/); // 올린 배경 이미지는 서버에 두지 않는다
-    await assert.rejects(call(a, 'state-set', { key: 'nyang-color-theme', value: '"dark"' }), /저장할 수 없는/);
+    await assert.rejects(call(a, 'state-set', { key: 'om-bg-uploads-', value: '[]' }), /저장할 수 없는/);
+    await assert.rejects(call(a, 'state-set', { key: 'sb-localhost-auth-token', value: '{}' }), /저장할 수 없는/); // 로그인 토큰 같은 것은 받지 않는다
     await assert.rejects(call(a, 'state-set', { key: 'om-tasks', value: '{잘못된 JSON' }), /형식/);
     await assert.rejects(call(a, 'state-set', { key: 'om-tasks', value: JSON.stringify('x'.repeat(STATE_MAX)) }), /너무 커서/);
     await assert.rejects(call(a, 'state-set', { items: [] }), /확인/);
     assert.deepEqual((await call(a, 'state')).state, { 'om-tasks': '[]', 'om-bg-theme-cat': '"ocean"' });
+    // 화면 테마·보던 대화·추가 자료·직접 올린 배경 이미지도 저장한다. 큰 기록은 화면 응답에 이름·시각만 오고 따로 받는다.
+    const image = JSON.stringify([{ id: 'img1', url: 'data:image/webp;base64,' + 'A'.repeat(300_000) }]);
+    await call(a, 'state-set', { items: [{ key: 'nyang-color-theme', value: '"dark"' }, { key: 'om-chat-active', value: '"c1"' }, { key: 'om-docs', value: '[]' }, { key: 'om-bg-uploads-cat', value: image }] });
+    const load = await call(a);
+    assert.deepEqual(Object.keys(load.personalState).sort(), ['nyang-color-theme', 'om-bg-theme-cat', 'om-chat-active', 'om-docs', 'om-tasks']);
+    assert.deepEqual(Object.keys(load.personalLarge), ['om-bg-uploads-cat']); assert.match(load.personalLarge['om-bg-uploads-cat'], /^\d{4}-\d{2}-\d{2}T/);
+    assert.deepEqual(await call(a, 'state', { keys: ['om-bg-uploads-cat', 'nope'] }), { state: { 'om-bg-uploads-cat': image } });
+    assert.deepEqual(await call(a, 'state', { keys: [] }), { state: {} });
   } finally { await pg.close(); }
 });
 

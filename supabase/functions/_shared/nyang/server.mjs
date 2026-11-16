@@ -15,19 +15,32 @@ const one = (db, sql, ...args) => db.prepare(sql).bind(...args).first();
 const run = (db, sql, ...args) => db.prepare(sql).bind(...args).run();
 const rows = async (db, sql, ...args) => (await db.prepare(sql).bind(...args).all()).results;
 
-/** 서버에 맞추는 개인 기록 이름: 내 일정, 내 활동 기록, 읽은 답변 표시, 대화 기록, 성격, 움직임, 고른 배경(om-bg-theme-<화면>) */
-export const STATE_KEY = /^(om-tasks|om-question-history|om-seen-replies|om-chat-sessions|om-personality|om-cat-motion|om-bg-theme-[a-z]{1,12})$/;
-/** 기록 하나의 최대 크기(JSON 글자 수) */
-export const STATE_MAX = 1_000_000;
+/**
+ * 서버에 맞추는 개인 기록 이름: 내 일정, 내 활동 기록, 읽은 답변 표시, 대화 기록, 보던 대화, 추가 자료, 성격, 움직임, 화면 테마,
+ * 고른 배경·직접 올린 배경 이미지(om-bg-theme-<화면>, om-bg-uploads-<화면>)
+ */
+export const STATE_KEY = /^(om-tasks|om-question-history|om-seen-replies|om-chat-sessions|om-chat-active|om-docs|om-personality|om-cat-motion|nyang-color-theme|om-bg-(theme|uploads)-[a-z]{1,12})$/;
+/** 기록 하나의 최대 크기(JSON 글자 수). 배경 이미지 8장까지 들어가게 넉넉히 둔다. */
+export const STATE_MAX = 3_500_000;
+/** 화면 불러오기 응답에 바로 넣는 기록 크기. 이보다 큰 기록(이미지 등)은 이름만 알려 주고 따로 받는다. */
+export const STATE_INLINE_MAX = 200_000;
 /** 요청 본문 최대 크기: 보통 요청 / 개인 기록 저장·기존 기록 올리기 */
 export const BODY_MAX = 16_000, BODY_MAX_LARGE = 4_000_000;
 export const isLargeAction = (action) => action === 'state-set' || action === 'import';
 /** 같은 사람의 요청을 차례로 처리해야 하는 요청인지(읽기만 하는 통계·개인 기록 읽기는 잠그지 않는다) */
 export const needsLock = (action) => action !== 'stats' && action !== 'state';
 
-async function readState(db, uid) {
-  const list = await rows(db, 'SELECT key,value FROM demo_user_state WHERE uid=?', uid);
-  return Object.fromEntries(list.map((r) => [r.key, r.value]));
+/** 개인 기록 읽기. keys가 있으면 그 기록만. inline이면 큰 기록은 내용 대신 이름과 마지막 저장 시각(large: {이름: 시각})만 돌려준다. */
+async function readState(db, uid, { keys = null, inline = false } = {}) {
+  const wanted = Array.isArray(keys) ? keys.filter((k) => typeof k === 'string' && STATE_KEY.test(k)).slice(0, 20) : null;
+  if (wanted && !wanted.length) return { state: {}, large: {} };
+  const list = await rows(db, 'SELECT key,value,updated FROM demo_user_state WHERE uid=?', uid);
+  const state = {}, large = {};
+  for (const r of list) {
+    if (wanted && !wanted.includes(r.key)) continue;
+    if (inline && r.value.length > STATE_INLINE_MAX) large[r.key] = r.updated; else state[r.key] = r.value;
+  }
+  return { state, large };
 }
 
 async function writeState(db, uid, input) {
@@ -135,10 +148,11 @@ export async function handleNyang(db, account, input) {
   if (!account?.id) fail('로그인 후 이용해 주세요.', 401);
   const action = input?.action ?? null;
   if (action === 'stats') return statistics(db, account);
-  if (action === 'state') return { state: await readState(db, account.id) };
+  if (action === 'state') return { state: (await readState(db, account.id, { keys: input.keys ?? null })).state };
   if (action === 'state-set') return writeState(db, account.id, input);
-  // 화면을 처음 불러올 때는 개인 기록(내 일정·대화 기록 등)도 함께 돌려준다(요청을 한 번 줄인다)
-  if (action === 'import') return { ...(await importLocal(db, account, input)), personalState: await readState(db, account.id) };
-  if (action === null) return { ...(await accountCommunity(db, account)), personalState: await readState(db, account.id) };
+  // 화면을 불러올 때는 개인 기록(내 일정·대화 기록 등)도 함께 돌려준다(요청을 한 번 줄인다). 큰 기록은 이름과 저장 시각만(personalLarge: {이름: 시각}).
+  const personal = async () => { const { state, large } = await readState(db, account.id, { inline: true }); return { personalState: state, personalLarge: large }; };
+  if (action === 'import') return { ...(await importLocal(db, account, input)), ...(await personal()) };
+  if (action === null) return { ...(await accountCommunity(db, account)), ...(await personal()) };
   return accountCommunity(db, account, action, input);
 }

@@ -7,20 +7,20 @@ import {STATE_KEY} from '../../supabase/functions/_shared/nyang/server.mjs';
 function fixture(server={}){
  const map=new Map(),storage={getItem:k=>map.has(k)?map.get(k):null,setItem:(k,v)=>{map.set(k,String(v));},get length(){return map.size;},key:i=>[...map.keys()][i]??null};
  const timers=[],calls=[];let offline=false;
- const keyFor=(account,key)=>key==='om-cat-motion'?key:`nyang-account:${account}:${key}`;
+ const keyFor=(account,key)=>key==='om-cat-motion'||key==='nyang-color-theme'?key:`nyang-account:${account}:${key}`;
  const sync=createAccountSync({keyFor,storage,delay:10,retryDelay:20,later:(fn)=>{timers.push(fn);return timers.length;},cancel:()=>{},
   send:async body=>{calls.push(body);if(offline)throw Error('offline');
-   if(body.action==='state')return {state:{...(server[body.account??current]||{})}};
+   if(body.action==='state'){const all={...(server[current]||{})};return {state:body.keys?Object.fromEntries(Object.entries(all).filter(([k])=>body.keys.includes(k))):all};}
    if(body.value&&body.value.length>200)throw Object.assign(Error('big'),{status:413});
    server[current]??={};if(body.value===null)delete server[current][body.key];else server[current][body.key]=body.value;return {saved:[body.key]};}});
  let current=null;
- return {map,server,calls,sync,keyFor,start:a=>{current=a;return sync.start(a);},offline:v=>{offline=v;},local:(a,k)=>map.get(keyFor(a,k))??null,put:(a,k,v)=>map.set(keyFor(a,k),v)};
+ return {map,server,calls,sync,keyFor,start:(a,...rest)=>{current=a;return sync.start(a,...rest);},offline:v=>{offline=v;},local:(a,k)=>map.get(keyFor(a,k))??null,put:(a,k,v)=>map.set(keyFor(a,k),v)};
 }
 
 test('서버와 맞추는 기록 이름은 서버 함수와 같다',()=>{
- for(const k of ['om-tasks','om-question-history','om-seen-replies','om-chat-sessions','om-personality','om-cat-motion','om-bg-theme-cat','om-bg-theme-work','om-bg-uploads-cat','om-docs','om-chat-active','nyang-color-theme','om-bg-theme-','om-bg-theme-CAT','x'])
+ for(const k of ['om-tasks','om-question-history','om-seen-replies','om-chat-sessions','om-personality','om-cat-motion','om-bg-theme-cat','om-bg-theme-work','om-bg-uploads-cat','om-docs','om-chat-active','nyang-color-theme','om-bg-theme-','om-bg-theme-CAT','om-bg-uploads-','sb-localhost-auth-token','nyang-sync-dirty:a','x'])
   assert.equal(isSyncKey(k),STATE_KEY.test(k),k);
- assert.equal(isSyncKey('om-tasks'),true);assert.equal(isSyncKey('om-bg-uploads-cat'),false);assert.equal(isSyncKey('om-docs'),false);
+ assert.equal(isSyncKey('om-tasks'),true);assert.equal(isSyncKey('om-bg-uploads-cat'),true);assert.equal(isSyncKey('nyang-color-theme'),true);assert.equal(isSyncKey('sb-localhost-auth-token'),false);
 });
 
 test('다른 PC: 로그인하면 서버 기록이 브라우저에 들어와 화면이 다시 읽는다',async()=>{
@@ -34,7 +34,7 @@ test('다른 PC: 로그인하면 서버 기록이 브라우저에 들어와 화�
 
 test('저장하면 서버로 보내고, 다른 계정 기록과 섞이지 않는다',async()=>{
  const f=fixture();
- await f.start('a');f.put('a','om-tasks','[1]');f.sync.changed('om-tasks');f.sync.changed('om-docs');f.sync.changed('om-chat-active');
+ await f.start('a');f.put('a','om-tasks','[1]');f.sync.changed('om-tasks');f.sync.changed('sb-localhost-auth-token');f.sync.changed('nyang-sync-dirty:a');
  assert.deepEqual(f.sync.pending(),['om-tasks']);await f.sync.flush();
  assert.deepEqual(f.server.a,{'om-tasks':'[1]'});assert.deepEqual(f.sync.pending(),[]);
  await f.start('b');assert.equal(f.local('b','om-tasks'),null);assert.deepEqual(f.server.b??{},{});
@@ -52,7 +52,7 @@ test('처음 맞출 때: 이 브라우저에만 있던 기록을 올리고, 서�
  assert.equal(f.local('a','om-seen-replies'),'{"p1":2,"p3":4,"p2":1}');assert.equal(f.local('a','om-personality'),'"warm"'); // 설정은 서버 값
  await f.sync.flush();
  assert.equal(f.server.a['om-tasks'],f.local('a','om-tasks'));assert.equal(f.server.a['om-chat-sessions'],'[{"id":"c1"}]');assert.equal(f.server.a['om-bg-theme-cat'],'"nature"');
- assert.equal('om-bg-uploads-cat' in f.server.a,false); // 올린 배경 이미지는 서버로 보내지 않는다
+ assert.equal(f.server.a['om-bg-uploads-cat'],'[{"id":"img"}]'); // 직접 올린 배경 이미지도 올린다
  // 두 번째부터는 합치지 않고 서버 기록을 그대로 따른다(다른 PC에서 지운 항목이 되살아나지 않게)
  f.server.a['om-tasks']='[{"id":"s1"}]';assert.equal(await f.start('a'),true);assert.equal(f.local('a','om-tasks'),'[{"id":"s1"}]');
 });
@@ -84,13 +84,48 @@ test('합치기 규칙',()=>{
 });
 
 test('화면을 불러올 때 함께 받은 서버 기록이 있으면 다시 묻지 않고, 기다리지 않고 바로 저장소에 넣는다',async()=>{
- const f=fixture({a:{'om-tasks':'[{"id":"never-asked"}]'}});
- const done=f.start('a');f.sync; // start(a)는 서버에 묻는 경로
- await done;
  const g=fixture();g.put('a','om-tasks','[{"id":"local"}]');
- const promise=g.sync.start('a',{'om-tasks':'[{"id":"given"}]','om-personality':'"warm"'});
+ const promise=g.sync.start('a',{'om-tasks':'[{"id":"given"}]','om-personality':'"warm"','nyang-color-theme':'"dark"'},{});
  // 기다리기 전에 이미 들어가 있다(첫 화면부터 서버 기록으로 그린다)
- assert.equal(g.local('a','om-tasks'),'[{"id":"given"},{"id":"local"}]');assert.equal(g.local('a','om-personality'),'"warm"');
- assert.equal(await promise,true);assert.equal(g.calls.filter(c=>c.action==='state').length,0);
+ assert.equal(g.local('a','om-tasks'),'[{"id":"given"},{"id":"local"}]');assert.equal(g.local('a','om-personality'),'"warm"');assert.equal(g.map.get('nyang-color-theme'),'"dark"');
+ assert.equal(await promise,false);assert.equal(g.calls.filter(c=>c.action==='state').length,0); // 나중에 더 바뀐 것은 없다
  await g.sync.flush();assert.deepEqual(g.calls.map(c=>c.key),['om-tasks']); // 합친 일정만 올린다
+});
+
+test('큰 기록(배경 이미지)은 이름·시각만 받고, 없거나 다른 기기에서 바뀌었을 때만 따로 받는다',async()=>{
+ const f=fixture({a:{'om-bg-uploads-cat':'[{"id":"img1"}]'}});
+ assert.equal(await f.start('a',{},{'om-bg-uploads-cat':'t1'}),true);assert.equal(f.local('a','om-bg-uploads-cat'),'[{"id":"img1"}]');
+ assert.deepEqual(f.calls.map(c=>c.action+':'+(c.keys||[]).join()),['state:om-bg-uploads-cat']);
+ // 같은 시각이면 다시 받지 않는다
+ assert.equal(f.sync.refresh({},{'om-bg-uploads-cat':'t1'}),false);await new Promise(r=>setTimeout(r,0));assert.equal(f.calls.length,1);
+ // 다른 기기에서 바뀌면(시각이 다르면) 받아서 알려 준다
+ f.server.a['om-bg-uploads-cat']='[{"id":"img1"},{"id":"img2"}]';let told=0;
+ f.sync.refresh({},{'om-bg-uploads-cat':'t2'},()=>told++);await new Promise(r=>setTimeout(r,0));await new Promise(r=>setTimeout(r,0));
+ assert.equal(told,1);assert.equal(f.local('a','om-bg-uploads-cat'),'[{"id":"img1"},{"id":"img2"}]');
+ // 처음 맞출 때 큰 기록을 '서버에 없는 기록'으로 잘못 올리지 않는다
+ const g=fixture({b:{'om-bg-uploads-cat':'[{"id":"server"}]'}});g.put('b','om-bg-uploads-cat','[{"id":"local"}]');
+ await g.start('b',{},{'om-bg-uploads-cat':'t1'});
+ assert.equal(g.local('b','om-bg-uploads-cat'),'[{"id":"server"},{"id":"local"}]'); // 합친다
+});
+
+test('창으로 돌아오면 다른 기기에서 바꾼 기록을 넣고, 이 브라우저에서 아직 못 보낸 기록은 지킨다',async()=>{
+ const f=fixture({a:{'om-tasks':'[1]','om-personality':'"cold"'}});
+ await f.start('a',{'om-tasks':'[1]','om-personality':'"cold"'},{});
+ assert.equal(f.sync.refresh({'om-tasks':'[1]','om-personality':'"cold"'},{}),false); // 그대로면 다시 그리지 않는다
+ f.offline(true);f.put('a','om-tasks','[1,2]');f.sync.changed('om-tasks');await f.sync.flush(); // 이 기기에서 바꿨지만 아직 못 보냄
+ assert.equal(f.sync.refresh({'om-tasks':'[9]','om-personality':'"warm"'},{}),true); // 다른 기기에서 바꾼 성격은 들어온다
+ assert.equal(f.local('a','om-personality'),'"warm"');assert.equal(f.local('a','om-tasks'),'[1,2]'); // 못 보낸 일정은 지킨다
+ f.offline(false);await f.sync.flush();assert.equal(f.server.a['om-tasks'],'[1,2]');
+ assert.equal(f.sync.refresh(null,{}),false);
+});
+
+test('서버가 받지 않는 기록(4xx)은 계속 다시 보내지 않고, 로그인 만료(401)는 다시 보낸다',async()=>{
+ const calls=[];let reply=null;
+ const map=new Map(),storage={getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,v),length:0,key:()=>null};
+ const sync=createAccountSync({keyFor:(a,k)=>a+':'+k,storage,delay:1,retryDelay:1,later:()=>0,cancel:()=>{},send:async b=>{calls.push(b);if(b.action==='state')return {state:{}};if(reply)throw reply;return {};}});
+ await sync.start('a',{},{});map.set('a:om-tasks','[1]');map.set('a:om-personality','"warm"');
+ reply=Object.assign(Error('bad'),{status:400});sync.changed('om-tasks');sync.changed('om-personality');await sync.flush();
+ assert.equal(calls.length,2);await sync.flush();assert.equal(calls.length,2); // 다음 기록까지 막지 않고, 다시 보내지도 않는다
+ reply=Object.assign(Error('expired'),{status:401});sync.changed('om-tasks');await sync.flush();assert.deepEqual(sync.pending(),['om-tasks','om-personality']);
+ reply=null;await sync.flush();assert.deepEqual(sync.pending(),['om-personality']); // 401이었던 일정은 다시 보내 성공, 400인 성격은 이번 화면에서 보류
 });

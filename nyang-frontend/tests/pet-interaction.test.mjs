@@ -65,3 +65,13 @@ test('an empty server response ends waiting without inventing an expression or a
  s.resolve(undefined);await pending;
  assert.equal(s.strokes,1);assert.deepEqual(s.reactions,[null]);assert.equal(s.indicators.at(-1),false);assert.equal(s.bonuses,0);
 });
+
+test('guess가 있으면 서버를 기다리지 않고 바로 표정을 보여 주고, 서버가 보너스면 그때 바꾼다',async()=>{
+ let finish,now=1000;const reactions=[],indicators=[];let bonuses=0;
+ const make=guess=>createPetInteraction({commit:()=>new Promise(r=>{finish=r;}),react:k=>reactions.push(k),indicate:a=>indicators.push(a),onBonus:()=>bonuses++,now:()=>now,cooldown:4200,guess});
+ const pet=make(()=>'dislike'),pending=pet.pet();
+ assert.deepEqual(reactions,['dislike']);assert.deepEqual(indicators,[]); // 기다리는 표시 없이 바로
+ finish({eventResult:{kind:'like'}});await pending;assert.deepEqual(reactions,['dislike']); // 표정이 뒤늦게 바뀌지 않는다
+ now+=10000;const second=pet.pet();finish({eventResult:{kind:'bonus'}});await second;
+ assert.deepEqual(reactions,['dislike','dislike','bonus']);assert.equal(bonuses,1); // 보너스는 서버가 정한 대로
+});
