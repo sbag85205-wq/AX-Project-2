@@ -219,3 +219,13 @@ html[data-theme=dark] body .desktop-workspace .chat-composer .attach-button{bord
 html[data-theme=dark] body .desktop-workspace .chat-composer .attach-button:hover:not(:disabled){background:#ffffff21;color:#fff}
 html[data-theme=dark] body .desktop-workspace .chat-composer .send-button{background:#0a84ff}
 html[data-theme=dark] body .desktop-workspace .chat-composer :is(.composer-meta small,.composer-meta,.composer-meta>span,.composer-foot){color:#a1a1aa}
+/* 채팅의 '내 일정에 추가' 카드 */
+.event-form{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1.2fr) minmax(0,1fr);gap:10px 12px;margin-top:14px}
+.event-form label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:600;color:var(--ui-sub,#6e6e73)}
+.event-form input{width:100%;box-sizing:border-box;min-height:38px;padding:8px 10px;border:1px solid var(--ui-line,#d8dbe1);border-radius:10px;background:var(--ui-panel,#fff);color:var(--ui-ink,#1d1d1f);font:inherit;font-size:14px;font-weight:400}
+.event-form input:focus{outline:2px solid color-mix(in srgb,var(--ui-accent,#0071e3) 45%,transparent);outline-offset:0;border-color:var(--ui-accent,#0071e3)}
+.event-form-actions{grid-column:1/-1;display:flex;align-items:center;gap:12px}
+.event-form-actions .primary-button{display:inline-flex;align-items:center;gap:6px}
+.calendar-event>b{font-weight:600;margin-right:2px}
+html[data-theme=dark] .event-form input{color-scheme:dark}
+@media(max-width:700px){.event-form{grid-template-columns:1fr}}

@@ -1,4 +1,4 @@
-const kinds=new Set(['answer','plan','excerpt','unknown','scope','knowly']);
+const kinds=new Set(['answer','plan','excerpt','unknown','scope','knowly','event']);
 const fixedCategories=new Set(['server','client','trouble','etc','hr','pay','trip','life']);
 // 담당자가 추가한 분야(custom:<이름>)도 유효한 분야로 본다
 const categories={has:id=>fixedCategories.has(id)||(typeof id==='string'&&/^custom:.{1,30}$/.test(id))};
@@ -12,8 +12,8 @@ export function normalizeHistory(value){
  return [...new Map([...recent,...saved].map(x=>[x.id,x])).values()].sort((a,b)=>b.at-a.at);
 }
 export function recordAnswer(history,result,at=Date.now()){
- const {kind,id,q,category,messageId,personal,target,title,text,ref,scheduleType,start,end,knowly}=result;
- const record={id:messageId,q,at,saved:history.find(x=>x.id===messageId)?.saved===true,result:{kind,id,q,category,messageId,personal,target,title,text,ref,scheduleType,start,end,...(kind==='knowly'?{knowly}:{})}};
+ const {kind,id,q,category,messageId,personal,target,title,text,ref,scheduleType,start,end,knowly,event}=result;
+ const record={id:messageId,q,at,saved:history.find(x=>x.id===messageId)?.saved===true,result:{kind,id,q,category,messageId,personal,target,title,text,ref,scheduleType,start,end,...(kind==='knowly'?{knowly}:{}),...(kind==='event'?{event}:{})}};
  return normalizeHistory([record,...history.filter(x=>x.id!==messageId)]);
 }
 export function toggleSaved(history,id){
