@@ -14,6 +14,9 @@ interface Editing {
   name: string;
   examples: string[];
   draft: string;
+  /** 수정 중인 예시 질문 자리와 고치는 글 */
+  editIndex: number | null;
+  editText: string;
   error: string;
 }
 
@@ -87,7 +90,7 @@ export default function Categories() {
   };
 
   const openSettings = (c: string) =>
-    setEditing({ from: c, tab: 'name', name: c, examples: [...examplesOf(c, examples)], draft: '', error: '' });
+    setEditing({ from: c, tab: 'name', name: c, examples: [...examplesOf(c, examples)], draft: '', editIndex: null, editText: '', error: '' });
 
   // 예시 질문 칸: 새 질문 추가
   const addExample = () => {
@@ -97,9 +100,23 @@ export default function Categories() {
     setEditing({ ...editing, examples: [...editing.examples, editing.draft.trim()], draft: '', error: '' });
   };
 
-  // 설정 저장: 이름(같은 자리에서 바뀜)과 예시 질문을 함께 저장한다
+  // 예시 질문 '수정' → 확인: 같은 자리의 질문을 고친다 (다른 질문과 같으면 막는다)
+  const applyExampleEdit = (state: Editing): Editing | null => {
+    if (state.editIndex === null) return state;
+    const others = state.examples.filter((_, j) => j !== state.editIndex).map((q) => q.trim());
+    const problem = exampleProblem(state.editText, others);
+    if (problem) { setEditing({ ...state, tab: 'examples', error: problem }); return null; }
+    return { ...state, examples: state.examples.map((q, j) => (j === state.editIndex ? state.editText.trim() : q)), editIndex: null, editText: '', error: '' };
+  };
+  const confirmExampleEdit = () => { if (editing) { const next = applyExampleEdit(editing); if (next) setEditing(next); } };
+
+  // 설정 저장: 이름(같은 자리에서 바뀜)과 예시 질문을 함께 저장한다. 수정 중인 예시 질문이 있으면 먼저 반영한다.
   const saveSettings = async () => {
     if (!editing) return;
+    const applied = applyExampleEdit(editing);
+    if (applied) await saveWith(applied);
+  };
+  const saveWith = async (editing: Editing) => {
     const { from } = editing, to = editing.name.trim();
     if (to !== from) {
       const problem = categoryNameProblem(to, categories.filter((c) => c !== from));
@@ -212,11 +229,24 @@ export default function Categories() {
               <span className="hint">채팅에서 이 분야를 고르고 '질문 예시'를 누르면 이 순서대로 보여요. 최대 {EXAMPLE_MAX_COUNT}개, {EXAMPLE_MAX_LENGTH}자 이내.</span>
               {editing.examples.length === 0 && <div className="hint">아직 예시 질문이 없어요. 아래에서 추가해 주세요.</div>}
               <ol className="category-examples" style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: 0, paddingLeft: 0, listStyle: 'none' }}>
-                {editing.examples.map((q, i) => (
-                  <li key={i} style={{ display: 'flex', gap: 8 }}>
-                    <input className="input" value={q} maxLength={EXAMPLE_MAX_LENGTH} aria-label={`예시 질문 ${i + 1}`} style={{ flex: 1 }}
-                      onChange={(e) => setEditing({ ...editing, examples: editing.examples.map((x, j) => (j === i ? e.target.value : x)), error: '' })} />
-                    <button type="button" className="btn btn-sm btn-danger" aria-label={`예시 질문 ${i + 1} 삭제`}
+                {editing.examples.map((q, i) => editing.editIndex === i ? (
+                  <li key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input className="input" value={editing.editText} maxLength={EXAMPLE_MAX_LENGTH} aria-label={`예시 질문 ${i + 1} 고치기`} autoFocus style={{ flex: 1 }}
+                      onChange={(e) => setEditing({ ...editing, editText: e.target.value, error: '' })}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); confirmExampleEdit(); }
+                        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setEditing({ ...editing, editIndex: null, editText: '', error: '' }); }
+                      }} />
+                    <button type="button" className="btn btn-sm btn-primary" aria-label={`예시 질문 ${i + 1} 수정 확인`} disabled={!editing.editText.trim()} onClick={confirmExampleEdit}>확인</button>
+                    <button type="button" className="btn btn-sm" aria-label={`예시 질문 ${i + 1} 수정 취소`}
+                      onClick={() => setEditing({ ...editing, editIndex: null, editText: '', error: '' })}>취소</button>
+                  </li>
+                ) : (
+                  <li key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--line)' }}>
+                    <span style={{ flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}><span className="hint" style={{ marginRight: 8 }}>{i + 1}</span>{q}</span>
+                    <button type="button" className="btn btn-sm" aria-label={`예시 질문 ${i + 1} 수정`} disabled={editing.editIndex !== null}
+                      onClick={() => setEditing({ ...editing, editIndex: i, editText: q, error: '' })}>수정</button>
+                    <button type="button" className="btn btn-sm btn-danger" aria-label={`예시 질문 ${i + 1} 삭제`} disabled={editing.editIndex !== null}
                       onClick={() => setEditing({ ...editing, examples: editing.examples.filter((_, j) => j !== i), error: '' })}>삭제</button>
                   </li>
                 ))}
