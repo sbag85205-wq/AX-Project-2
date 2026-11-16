@@ -3,10 +3,10 @@ import {createReactionPicker} from './reaction-variety.js?v=115ea2f34987';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=ef11f91be08e';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=eec4409c5d41';
-import {adminView} from './admin-view.js?v=0a725da88bc2';
-import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount} from './community-ui.js?v=0c74cfccfcb8';
-import {categories,applyManagedCategories,defaultCategory,categoryOf,documents,faq,starters,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=2d2b0d6222ce';
-import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=ac3afadc90b7';
+import {adminView} from './admin-view.js?v=2103f9d4783c';
+import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount} from './community-ui.js?v=c96be61a5e8c';
+import {categories,applyManagedCategories,defaultCategory,categoryOf,documents,faq,starters,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=169586fd419a';
+import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=2c516b08cfb7';
 import {createPetInteraction} from './pet-interaction.js?v=355c0da8eb14';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=1abf27b4ca67';
 const $=s=>document.querySelector(s);
@@ -737,6 +737,7 @@ document.addEventListener('click',async e=>{
  if(a==='schedule'){petInteraction.reset();view=scheduleView;render();$('#main').scrollTop=0;}
  if(a==='activity'&&b.classList.contains('wallet-level')&&communityState().member)activityTab='level'; // 상단 Lv. 버튼은 내 레벨 탭으로 바로 연다
  if(a==='activity')refreshCommunity();
+ if(a==='board')refreshCategories().then(changed=>{if(changed&&view==='board')render();}); // 분야 관리에서 바뀐 분야를 게시판에도 반영
  if(['chat','todos','calendar','board','activity'].includes(a)){if(a==='chat')ss.open=true; // 냥대리 테스트를 열 때마다 설정 칸은 펼친 상태로 보여 준다
  if(view!==a)petInteraction.reset();view=a;render();$('#main').scrollTop=0;}
  if(a==='calendar-today'){calendarMonth=localDate().slice(0,7);calendarDay=localDate();render();}

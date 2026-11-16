@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SearchIcon } from '../../components/Icons';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
-import { CATEGORIES } from '../../lib/constants';
+import { useManagedCategories, withDocumentCategories } from '../../lib/categories';
 import { daysAgo, fmt, relativeDay, shortDate } from '../../lib/format';
 import { supabase } from '../../lib/supabase';
 import type { GroupStatus, QuestionGroup } from '../../lib/types';
@@ -16,6 +16,8 @@ type Group = QuestionGroup & { faqs: { answer: string; created_at: string } | nu
 export default function Unanswered() {
   const toast = useToast();
   const [groups, setGroups] = useState<Group[]>([]);
+  // 분야 관리에서 정한 분야(순서 포함)
+  const managed = useManagedCategories();
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<(typeof STATUSES)[number]>('전체');
   const [cat, setCat] = useState('전체');
@@ -75,7 +77,9 @@ export default function Unanswered() {
   });
   const wmax = Math.max(1, ...weeks.map((w) => w.n));
 
-  const catTotals = CATEGORIES.map((c) => ({ c, n: items.filter((i) => i.category === c).reduce((a, i) => a + i.count, 0) }))
+  // 분야 관리 목록 + 목록에 없지만 질문에 남아 있는 분야(지워진 분야 등)
+  const cats = withDocumentCategories(managed, items.map((i) => i.category));
+  const catTotals = cats.map((c) => ({ c, n: items.filter((i) => i.category === c).reduce((a, i) => a + i.count, 0) }))
     .filter((x) => x.n > 0)
     .sort((a, b) => b.n - a.n);
   const cmax = Math.max(1, ...catTotals.map((x) => x.n));
@@ -160,7 +164,7 @@ export default function Unanswered() {
               ))}
             </div>
             <div role="group" aria-label="카테고리" className="chips">
-              {['전체', ...CATEGORIES].map((c) => (
+              {['전체', ...cats].map((c) => (
                 <button key={c} type="button" className="chip" aria-pressed={cat === c} onClick={() => setCat(c)}>{c}</button>
               ))}
             </div>
@@ -229,7 +233,7 @@ export default function Unanswered() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <button type="button" className="btn btn-primary" style={{ minHeight: 40, fontSize: 14 }}
-                    onClick={() => setDraft({ question: selected.question, answer: '', category: CATEGORIES.includes(selected.category as never) ? selected.category : '기타' })}>
+                    onClick={() => setDraft({ question: selected.question, answer: '', category: managed.includes(selected.category) ? selected.category : managed.includes('기타') ? '기타' : managed[0] })}>
                     FAQ로 등록하기
                   </button>
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -295,7 +299,8 @@ export default function Unanswered() {
           <div className="field">
             <label htmlFor="dlg-cat">카테고리</label>
             <select id="dlg-cat" className="select" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })}>
-              {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+              {!managed.includes(draft.category) && <option value={draft.category}>{draft.category} (이전 분류)</option>}
+              {managed.map((c) => <option key={c}>{c}</option>)}
             </select>
           </div>
           <div className="field">

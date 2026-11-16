@@ -1,4 +1,5 @@
 import { categories as nyangCategories, faq as nyangFaq } from '../../nyang-frontend/public/core.js';
+import { useEffect, useState } from 'react';
 import { callFunction } from './api';
 import { CATEGORIES } from './constants';
 import { supabase } from './supabase';
@@ -49,6 +50,17 @@ export async function loadCategoryNames(): Promise<string[]> {
     // 연결이 안 되면 기본 분야로 보여 준다
   }
   return [...CATEGORIES];
+}
+
+/** 관리자 화면용: 분야 관리에서 정한 분야(순서 포함). 불러오기 전·실패 시에는 기본 분야. */
+export function useManagedCategories(): string[] {
+  const [list, setList] = useState<string[]>([...CATEGORIES]);
+  useEffect(() => {
+    let alive = true;
+    loadCategories().then(({ categories }) => { if (alive) setList(categories); });
+    return () => { alive = false; };
+  }, []);
+  return list;
 }
 
 /** 분야 목록 뒤에, 목록에는 없지만 문서가 쓰고 있는 분야(지워진 분야 등)를 붙인다. */

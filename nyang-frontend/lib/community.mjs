@@ -95,7 +95,7 @@ export async function community(db,user,adminEmail,action=null,input={}){
   eventResult=await one(db,'SELECT day,points,tokens FROM attendance WHERE uid=? AND day=?',uid,day);
   notice=eventResult.tokens?`오늘의 선물, 츄르 ${eventResult.tokens}개!`:`오늘의 선물, ${eventResult.points} P!`;
  }else if(action==='post'){
-  if(!categories.includes(input.category))fail('분야를 선택해 주세요.');
+  if(!categories.includes(input.category)&&!/^custom:.{1,30}$/.test(String(input.category)))fail('분야를 선택해 주세요.');
   const body=text(input.body,5,2000,'질문'),h=await hash(body);
   const cutoff=new Date(new Date(day+'T00:00:00+09:00')).toISOString();
   const result=await run(db,`INSERT OR IGNORE INTO posts(id,author,hash,category,body,created)

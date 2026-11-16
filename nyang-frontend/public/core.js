@@ -27,6 +27,8 @@ export function applyManagedCategories(labels, examples = {}) {
 }
 /** 저장된 기록에 예전 분야(hr·pay·trip·life)가 남아 있어도 화면이 깨지지 않게 현재 분야로 맞춘다. */
 export const categoryOf = id => categories.find(c => c.id === id) || categories[0];
+/** 분야 id의 이름. 지금 목록에 없으면 담당자가 만든 분야(custom:이름)는 이름을, 아니면 null. */
+export const categoryLabel = id => categories.find(c => c.id === id)?.label ?? (typeof id === 'string' && id.startsWith('custom:') ? id.slice(7) : null);
 export const documents = [
   {id:'leave',category:'hr',title:'휴가·근태 가이드',version:'2026.10 · 샘플',sections:[
     {id:'annual',label:'제3조 · 연차 신청',text:'연차는 사용 3영업일 전까지 사내 인사 시스템에서 신청합니다. 신청 시 사용 날짜와 인수인계 내용을 입력하고 팀장의 승인을 받습니다. 신청 기한의 영업일은 토요일·일요일을 제외하며, 이 샘플 규정에서는 공휴일을 별도로 반영하지 않습니다.'},

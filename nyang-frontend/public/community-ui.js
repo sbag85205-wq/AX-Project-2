@@ -1,6 +1,7 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
-import {boardView} from './board-view.js?v=8d0c3f4884c1';
-import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=6baa3024bd67';
+import {categories as chatCategories} from './core.js?v=169586fd419a';
+import {boardView} from './board-view.js?v=3f943e043bdc';
+import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=96e7b1bb3f60';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const labels={server:'서버 설치 · 설정',client:'클라이언트 접속',trouble:'장애 조치',etc:'기타'};
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
@@ -104,7 +105,7 @@ export function unknownOffer(r){
 }
 export function showPostDialog(r){
  if(!state.member){hooks.show('activity');hooks.toast('체험 연결을 준비하고 있어요. 잠시 후 다시 시도해 주세요.');return;}
- hooks.modal(`<h2 id="modal-title">익명 질문 작성</h2><p class="modal-sub">게시할 내용을 확인해 주세요. 이름·급여·개인 계정 정보 등은 적지 마세요.</p>${r.personal?'<p class="privacy-note">개인별 정보는 공개 게시판에서 확인할 수 없어요. 일반적인 절차에 대한 질문으로 바꿔 주세요.</p>':''}<form id="anonymous-post"><fieldset class="post-category"><legend>어느 분야에 올릴까요?</legend><div>${Object.entries(labels).map(([v,t])=>`<label><input type="radio" name="category" value="${v}" required><span>${t}</span></label>`).join('')}</div><p>게시판에서 분야별로 모아 볼 수 있어요.</p></fieldset><label>게시할 질문<textarea name="body" rows="5" minlength="5" maxlength="2000" required>${r.personal?'':esc(r.q)}</textarea></label><p class="community-caption">게시판에는 ‘익명의 직원’으로 보여요. 지금은 이 브라우저에만 저장돼서, 같은 브라우저로 로그인한 직원·담당자만 볼 수 있어요.</p><label class="consent-check"><input type="checkbox" required> 이 내용을 직원 질문 게시판에 공유할게요.</label><div class="modal-button-row"><button class="primary-button">확인하고 익명으로 게시</button><button type="button" class="text-button" data-action="close-modal">취소</button></div></form>`);
+ hooks.modal(`<h2 id="modal-title">익명 질문 작성</h2><p class="modal-sub">게시할 내용을 확인해 주세요. 이름·급여·개인 계정 정보 등은 적지 마세요.</p>${r.personal?'<p class="privacy-note">개인별 정보는 공개 게시판에서 확인할 수 없어요. 일반적인 절차에 대한 질문으로 바꿔 주세요.</p>':''}<form id="anonymous-post"><fieldset class="post-category"><legend>어느 분야에 올릴까요?</legend><div>${chatCategories.map(c=>`<label><input type="radio" name="category" value="${esc(c.id)}" required><span>${esc(c.label)}</span></label>`).join('')}</div><p>게시판에서 분야별로 모아 볼 수 있어요.</p></fieldset><label>게시할 질문<textarea name="body" rows="5" minlength="5" maxlength="2000" required>${r.personal?'':esc(r.q)}</textarea></label><p class="community-caption">게시판에는 ‘익명의 직원’으로 보여요. 지금은 이 브라우저에만 저장돼서, 같은 브라우저로 로그인한 직원·담당자만 볼 수 있어요.</p><label class="consent-check"><input type="checkbox" required> 이 내용을 직원 질문 게시판에 공유할게요.</label><div class="modal-button-row"><button class="primary-button">확인하고 익명으로 게시</button><button type="button" class="text-button" data-action="close-modal">취소</button></div></form>`);
 }
 document.addEventListener('click',async e=>{
  const b=e.target.closest('button');if(!b||b.disabled)return;
