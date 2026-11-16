@@ -527,7 +527,8 @@ function ask(q,id,reward=true){
  category=categoryOf(category).id;mood='';petInteraction.reset();
  let r=id?{kind:id==='plan'?'plan':'answer',id}:resolveQuestion(q,category,uploads);
  if(r.kind==='unknown'&&!r.personal&&/연차|휴가/.test(q)&&/일정|계획/.test(q)&&!/취소|육아|출산/.test(q))r=resolveQuestion('연차 신청 '+q,category,uploads);
- r.q=q;r.category=category;r.messageId=crypto.randomUUID();r.scheduleType=communityState().me?.role==='staff'?null:scheduleTypeFor(r);r.start=addDays(localDate(),14);r.end=r.start;
+ // 질문 분야(서버·클라이언트·장애·기타)와 일정 규정 분야(휴가·출장 등)가 달라도 '일정 잡기'는 질문 내용으로 판단한다
+ r.q=q;r.category=category;r.messageId=crypto.randomUUID();r.scheduleType=communityState().me?.role==='staff'?null:scheduleTypeFor(r.kind==='scope'?resolveQuestion(q,r.target,uploads):r);r.start=addDays(localDate(),14);r.end=r.start;
  const files=attachments;attachments=[];
  messages.push({role:'user',text:q,at:Date.now(),...(files.length?{files:files.map(a=>a.name)}:{})});pendingReply=r;chatDraft='';view='chat';
  render();refreshPet();scrollConversation();$('#question-form textarea')?.focus({preventScroll:true});
