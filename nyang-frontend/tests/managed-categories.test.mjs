@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {categories,applyManagedCategories,categoryOf,categoryLabel} from '../public/core.js';
+import {categories,applyManagedCategories,categoryOf} from '../public/core.js';
 import {normalizeChats} from '../public/chat-history.js';
 import {normalizeHistory} from '../public/activity-history.js';
 const original=categories.map(c=>c.label);
@@ -28,11 +28,4 @@ test('분야별 예시 질문을 반영하고, 없으면 기본 예시를 쓴다
  assert.equal(applyManagedCategories(['서버 설치 · 설정','인사·휴가'],{'인사·휴가':['바뀐 질문']}),true); // 예시만 바뀌어도 다시 그린다
  applyManagedCategories(original);
  assert.equal(categories.every(c=>!c.examples),true);
-});
-test('분야 이름: 목록에 있으면 그 이름, 지워진 담당자 분야는 id에서 이름, 모르면 null',()=>{
- applyManagedCategories(['서버 설치 · 설정','인사']);
- assert.equal(categoryLabel('custom:인사'),'인사');
- assert.equal(categoryLabel('custom:옛 분야'),'옛 분야');
- assert.equal(categoryLabel('hr'),null);
- applyManagedCategories(original);
 });

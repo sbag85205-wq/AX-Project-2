@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { groupByManaged, useManagedCategories } from '../../lib/categories';
 import { fmt } from '../../lib/format';
 import { supabase } from '../../lib/supabase';
 
@@ -47,6 +48,9 @@ function csvCell(v: string | number): string {
 export default function Stats() {
   const [days, setDays] = useState(30);
   const [stats, setStats] = useState<UsageStats | null>(null);
+  // 카테고리별은 분야 관리에 있는 분야만 따로 보여 주고, 나머지는 '이전 분야'로 묶는다
+  const managed = useManagedCategories();
+  const byCategory = stats ? groupByManaged(stats.by_category, managed) : [];
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -70,7 +74,7 @@ export default function Stats() {
       ['요약', '도움 안 됨', stats.feedback_down],
       ...stats.daily.map((d) => ['일별', d.date, d.count]),
       ...stats.by_department.map((d) => ['부서별', d.name, d.count]),
-      ...stats.by_category.map((d) => ['카테고리별', d.name, d.count]),
+      ...byCategory.map((d) => ['카테고리별', d.name, d.count]),
       ...stats.by_model.map((d) => ['모델별', d.model, d.count])
     ];
     const blob = new Blob(['﻿' + rows.map((r) => r.map(csvCell).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' });
@@ -153,7 +157,7 @@ export default function Stats() {
             <section className="card panel" style={{ flex: '1 1 380px', minWidth: 0 }}>
               <h2>질문 유형</h2>
               <p className="panel-sub">답변 근거 문서의 카테고리 기준</p>
-              <HBars rows={stats.by_category.map((d) => ({ label: d.name, n: d.count }))} />
+              <HBars rows={byCategory.map((d) => ({ label: d.name, n: d.count }))} />
             </section>
           </div>
 

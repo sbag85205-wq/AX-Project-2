@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
-import { useManagedCategories, withDocumentCategories } from '../../lib/categories';
+import { useManagedCategories } from '../../lib/categories';
 import { supabase } from '../../lib/supabase';
 import type { Faq } from '../../lib/types';
 
@@ -54,7 +54,7 @@ export default function Faqs() {
         <button type="button" className="btn btn-primary" onClick={() => setDraft({ question: '', answer: '', category: managed[0], active: true })}>FAQ 추가</button>
       </div>
       <div className="chips" role="group" aria-label="카테고리">
-        {['전체', ...withDocumentCategories(managed, faqs.map((f) => f.category))].map((c) => <button key={c} type="button" className="chip" aria-pressed={cat === c} onClick={() => setCat(c)}>{c}</button>)}
+        {['전체', ...managed].map((c) => <button key={c} type="button" className="chip" aria-pressed={cat === c} onClick={() => setCat(c)}>{c}</button>)}
       </div>
       <section className="card" style={{ overflow: 'hidden' }}>
         {shown.length === 0 && <div className="empty">FAQ가 없어요.</div>}

@@ -1,9 +1,8 @@
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-import {categories as chatCategories,categoryLabel} from './core.js?v=169586fd419a';
-const labels={server:'서버 설치 · 설정',client:'클라이언트 접속',trouble:'장애 조치',etc:'기타',hr:'휴가 · 근태',pay:'급여 · 복지',trip:'출장 · 정산',life:'사내 생활'};
+import {categories as chatCategories} from './core.js?v=2d2b0d6222ce';
 // 지금 고를 수 있는 분야(분야 관리 목록 = 채팅 분야). 목록에 없는 분야(예전 분야·지워진 분야)로 올라온 글은 '이전 분야'로 묶어 보여 준다.
 const current=()=>chatCategories.map(c=>c.id);
-const label=id=>categoryLabel(id)||labels[id]||'이전 분야';
+const label=id=>chatCategories.find(c=>c.id===id)?.label||'이전 분야';
 const inCategory=(p,category)=>category==='all'||(category==='old'?!current().includes(p.category):p.category===category);
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 export function boardView(state,filter='all',query='',category='all'){

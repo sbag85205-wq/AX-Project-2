@@ -63,10 +63,16 @@ export function useManagedCategories(): string[] {
   return list;
 }
 
-/** 분야 목록 뒤에, 목록에는 없지만 문서가 쓰고 있는 분야(지워진 분야 등)를 붙인다. */
-export function withDocumentCategories(names: string[], used: string[]): string[] {
-  const extra = [...new Set(used.filter((c) => c && !names.includes(c)))].sort((a, b) => a.localeCompare(b, 'ko'));
-  return [...names, ...extra];
+/**
+ * 통계용: 분야 관리에 없는 분야(예전 분야·지워진 분야)는 '이전 분야' 하나로 묶는다. 많은 순서, 0건은 뺀다.
+ */
+export function groupByManaged(rows: { name: string; count: number }[], managed: string[]): { name: string; count: number }[] {
+  const sums = new Map<string, number>();
+  for (const r of rows) {
+    const name = managed.includes(r.name) ? r.name : '이전 분야';
+    sums.set(name, (sums.get(name) ?? 0) + (Number(r.count) || 0));
+  }
+  return [...sums].map(([name, count]) => ({ name, count })).filter((r) => r.count > 0).sort((a, b) => b.count - a.count);
 }
 
 /** 목록에 있는 분야의 예시만 남긴다 (지워진 분야의 예시는 버린다). */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CATEGORY_MAX_COUNT, EXAMPLE_MAX_COUNT, categoryNameProblem, cleanExamples, defaultExamples, exampleProblem, examplesFor, examplesOf, movedList, renamedList, withDocumentCategories
+  CATEGORY_MAX_COUNT, EXAMPLE_MAX_COUNT, categoryNameProblem, cleanExamples, defaultExamples, exampleProblem, examplesFor, examplesOf, groupByManaged, movedList, renamedList
 } from '../src/lib/categories';
 import { CATEGORIES } from '../src/lib/constants';
 import sql from '../supabase/migrations/20261116000000_categories.sql?raw';
@@ -45,8 +45,9 @@ describe('분야 관리', () => {
     expect(examplesFor(['서버'], { 서버: ['q'], 삭제됨: ['r'] })).toEqual({ 서버: ['q'] });
   });
 
-  it('직원 문서 목록: 지워진 분야를 쓰는 문서가 있으면 그 분야를 뒤에 붙인다', () => {
-    expect(withDocumentCategories(['서버', '인사'], ['인사', '옛 분야', '서버', '옛 분야', ''])).toEqual(['서버', '인사', '옛 분야']);
+  it('통계: 분야 관리에 없는 분야는 이전 분야로 묶는다', () => {
+    expect(groupByManaged([{ name: '서버', count: 3 }, { name: '휴가', count: 2 }, { name: '급여', count: 4 }, { name: '인사', count: 0 }], ['서버', '인사']))
+      .toEqual([{ name: '이전 분야', count: 6 }, { name: '서버', count: 3 }]);
   });
 
   it('DB 기본 분야는 지금 쓰던 분야(CATEGORIES)와 같다', () => {

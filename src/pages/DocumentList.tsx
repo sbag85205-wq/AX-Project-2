@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SearchIcon } from '../components/Icons';
-import { loadCategoryNames, withDocumentCategories } from '../lib/categories';
+import { loadCategoryNames } from '../lib/categories';
 import { CATEGORIES } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import type { DocumentRow } from '../lib/types';
@@ -26,8 +26,9 @@ export default function DocumentList() {
     loadCategoryNames().then(setNames);
   }, []);
 
-  const cats = withDocumentCategories(names, (docs ?? []).map((d) => d.category));
-  const rank = (c: string) => cats.indexOf(c);
+  // 분야 칩은 분야 관리에 있는 분야만 보여 준다. 다른 분야(예전 분야 등)의 문서는 '전체'에서 맨 뒤에 보인다.
+  const cats = names;
+  const rank = (c: string) => { const i = cats.indexOf(c); return i < 0 ? cats.length : i; };
 
   const shown = (docs ?? [])
     .filter((d) => cat === '전체' || d.category === cat)

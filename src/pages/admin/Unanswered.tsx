@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { SearchIcon } from '../../components/Icons';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
-import { useManagedCategories, withDocumentCategories } from '../../lib/categories';
+import { useManagedCategories } from '../../lib/categories';
 import { daysAgo, fmt, relativeDay, shortDate } from '../../lib/format';
 import { supabase } from '../../lib/supabase';
 import type { GroupStatus, QuestionGroup } from '../../lib/types';
@@ -77,8 +77,8 @@ export default function Unanswered() {
   });
   const wmax = Math.max(1, ...weeks.map((w) => w.n));
 
-  // 분야 관리 목록 + 목록에 없지만 질문에 남아 있는 분야(지워진 분야 등)
-  const cats = withDocumentCategories(managed, items.map((i) => i.category));
+  // 분야 칩·집계는 분야 관리에 있는 분야만 보여 준다(다른 분야의 질문은 '전체'에서 보인다)
+  const cats = managed;
   const catTotals = cats.map((c) => ({ c, n: items.filter((i) => i.category === c).reduce((a, i) => a + i.count, 0) }))
     .filter((x) => x.n > 0)
     .sort((a, b) => b.n - a.n);
