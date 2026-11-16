@@ -50,7 +50,7 @@ export default function Stats() {
   const [stats, setStats] = useState<UsageStats | null>(null);
   // 카테고리별은 분야 관리에 있는 분야만 따로 보여 주고, 나머지는 '이전 분야'로 묶는다
   const managed = useManagedCategories();
-  const byCategory = stats ? groupByManaged(stats.by_category, managed) : [];
+  const byCategory = stats ? groupByManaged(stats.by_category ?? [], managed) : [];
   const [error, setError] = useState('');
 
   useEffect(() => {

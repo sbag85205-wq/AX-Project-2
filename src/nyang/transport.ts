@@ -15,6 +15,17 @@ async function currentAccount(userId: string): Promise<NyangAccount> {
   return cached;
 }
 
+// 사용자 통계의 포인트 순위: uid를 로그인 아이디로만 바꾼다(이름·부서는 보여 주지 않는다). 프로필은 담당자만 읽을 수 있다.
+async function withLoginIds(stats: unknown): Promise<unknown> {
+  const s = stats as { ranking?: { uid: string; username: string; points: number }[] } | null;
+  const ranking = s?.ranking;
+  if (!ranking?.length) return stats;
+  const ids = ranking.map((r) => r.uid).filter((id) => !id.startsWith('demo-'));
+  const { data } = ids.length ? await supabase.from('profiles').select('id, login_id').in('id', ids) : { data: [] };
+  const loginIds = new Map(((data ?? []) as { id: string; login_id: string }[]).map((p) => [p.id, p.login_id]));
+  return { ...s, ranking: ranking.map(({ uid, username, points }) => ({ username: username || loginIds.get(uid) || '(알 수 없는 계정)', points })) };
+}
+
 // Explicit transport, shared by the original vanilla frontend modules. Never patch global fetch.
 export async function request(path: string, init: RequestInit = {}): Promise<Response> {
   try {
@@ -52,7 +63,9 @@ export async function request(path: string, init: RequestInit = {}): Promise<Res
         citations: a.citations.map(c => ({ ...c, title: c.document_title, pages: c.page_start ? `${c.page_start}–${c.page_end}쪽` : '' })) } });
     }
     const action = path.includes('view=stats') ? 'stats' : input.action ?? null;
-    return Response.json(await localNyang(await currentAccount(session.user.id), action, input));
+    const result = await localNyang(await currentAccount(session.user.id), action, input);
+    if (action === 'stats') return Response.json(await withLoginIds(result));
+    return Response.json(result);
   } catch (e) {
     const status = (e as { status?: number }).status;
     return Response.json({ error: e instanceof Error ? e.message : '요청을 처리하지 못했어요.' }, { status: status && status >= 400 && status < 500 ? status : 400 });

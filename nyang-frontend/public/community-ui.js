@@ -1,7 +1,7 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {categories as chatCategories} from './core.js?v=4dc923f4c7f7';
 import {boardView} from './board-view.js?v=bbcc15f70875';
-import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=15f41af2e130';
+import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=ceebe3273083';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const labels={server:'서버 설치 · 설정',client:'클라이언트 접속',trouble:'장애 조치',etc:'기타'};
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});

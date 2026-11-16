@@ -31,7 +31,7 @@ test('staff-only stats and replies enforce roles on the server; account switchin
  assert.equal((await call(user.cookie,{action:'reply',role:'staff',username:'admin01',post:id,id:'bad',body:'권한 없이 작성한 답변',source:'가이드'})).status,403);
  assert.equal((await call(admin.cookie,{action:'reply',post:id,id:'good',body:'담당자가 작성한 시연 답변입니다.',source:'더미 가이드'})).status,200);
  await call(user.cookie,{action:'question',question:'연차 신청 절차'});assert.equal((await call(admin.cookie,{action:'like',post:id})).status,403);
- const s=await call(admin.cookie,null,'?view=stats');assert.equal(s.status,200);assert.equal(s.data.questions,1);assert.equal(s.data.posts,1);assert.equal(s.data.answered,1);assert.equal(s.data.waiting,0);assert.equal(s.data.ranking[0].points,10);assert.equal(s.data.ranking.length,1);assert.equal(s.data.accounts,1);assert.equal(s.data.daily.reduce((n,d)=>n+d.n,0),1);assert.equal(s.data.categories[0].n,1);
+ const s=await call(admin.cookie,null,'?view=stats');assert.equal(s.status,200);assert.equal(s.data.questions,1);assert.equal(s.data.posts,1);assert.equal(s.data.answered,1);assert.equal(s.data.waiting,0);assert.equal(s.data.ranking[0].points,10);assert.equal(s.data.ranking.length,1);assert.equal(s.data.ranking[0].username,'user01');assert.equal('name' in s.data.ranking[0],false); /* 포인트 순위는 아이디만(이름 없음) */assert.equal(s.data.accounts,1);assert.equal(s.data.daily.reduce((n,d)=>n+d.n,0),1);assert.equal(s.data.categories[0].n,1);
  assert.equal((await call(admin.cookie,{action:'member',email:'hack@example.test',role:'admin'})).status,403);
  assert.equal(JSON.stringify(s.data).includes('재택근무'),false);
 });
