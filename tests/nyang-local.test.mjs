@@ -32,7 +32,7 @@ test('브라우저 저장소: Knowly 계정별 보상이 분리되고 게시판�
     const post=(await call(a,'post',{category:'hr',body:'휴가 승인 절차가 궁금해요.'})).posts[0];
     await assert.rejects(call(a,'like',{post:post.id}),/내 질문/);
     await call(b,'like',{post:post.id});await call(b,'like',{post:post.id});
-    assert.equal((await call(a)).wallet.points,attendance.wallet.points+5);
+    assert.equal((await call(a)).wallet.points,attendance.wallet.points+10); // 유익해요 +10 P
     await assert.rejects(call(b,'reply',{post:post.id,id:'bad',body:'위조한 관리자 답변',source:'가짜 규정',role:'staff'}),/담당자/);
     await call(staff,'reply',{post:post.id,id:'reply1',body:'담당자가 확인한 답변입니다.',source:'휴가 규정'});
     const view=await call(b);assert.equal(view.posts[0].replies.length,1);

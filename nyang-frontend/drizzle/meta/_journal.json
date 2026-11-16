@@ -43,6 +43,13 @@
       "when": 1793706218002,
       "tag": "0005_dazzling_professor_monster",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1794812757906,
+      "tag": "0006_helpful_reward",
+      "breakpoints": true
     }
   ]
 }

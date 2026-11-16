@@ -6,19 +6,21 @@ const run=(db,sql,...args)=>db.prepare(sql).bind(...args).run();
 const rows=async(db,sql,...args)=>(await db.prepare(sql).bind(...args).all()).results;
 const categories=['server','client','trouble','etc','hr','pay','trip','life'],roles=['employee','staff'];
 export const seoulDay=(date=new Date())=>new Date(date.getTime()+9*3600000).toISOString().slice(0,10);
+/** 질문 게시판 '유익해요' 한 번에 글쓴이가 받는 포인트(drizzle 0006). 이 시각 전의 좋아요는 5 P였다. */
+export const HELPFUL_POINTS=10,HELPFUL_SINCE='2026-11-16T07:06:17.000Z';
 /** 포인트 순위 기간: 최근 3개월(그 시각 이후에 받은 포인트만 센다) */
 export function rankingSince(now=new Date()){const d=new Date(now);d.setMonth(d.getMonth()-3);return d.toISOString();}
 /**
- * 받은(누적) 포인트: 질문 10P·출석 선물 P·내 글 좋아요 5P·쓰다듬기 보너스 5P의 합.
+ * 받은(누적) 포인트: 질문 10P·출석 선물 P·내 글이 받은 유익해요 10P(바뀌기 전 좋아요는 5P)·쓰다듬기 보너스 5P의 합.
  * 츄르·꾸미기로 쓴 포인트는 빼지 않는다. since가 있으면 그 시각 이후에 받은 것만 센다.
  */
 export async function earnedPoints(db,uid,since=''){
  const [q,a,l,b]=await Promise.all([
   one(db,'SELECT COUNT(*) AS n FROM questions WHERE uid=? AND created>=?',uid,since),
   one(db,'SELECT COALESCE(SUM(points),0) AS n FROM attendance WHERE uid=? AND created>=?',uid,since),
-  one(db,'SELECT COUNT(*) AS n FROM likes l JOIN posts p ON p.id=l.post WHERE p.author=? AND l.uid<>? AND l.created>=?',uid,uid,since),
+  one(db,'SELECT COALESCE(SUM(CASE WHEN l.created<? THEN 5 ELSE '+HELPFUL_POINTS+' END),0) AS n FROM likes l JOIN posts p ON p.id=l.post WHERE p.author=? AND l.uid<>? AND l.created>=?',HELPFUL_SINCE,uid,uid,since),
   one(db,"SELECT COUNT(*) AS n FROM operations WHERE uid=? AND kind='pet' AND json_extract(result,'$.kind')='bonus' AND created>=?",uid,since)]);
- return q.n*QUESTION_POINTS+a.n+l.n*5+b.n*PET_BONUS_POINTS;
+ return q.n*QUESTION_POINTS+a.n+l.n+b.n*PET_BONUS_POINTS;
 }
 const earnedFor=async(db,uid)=>({total:await earnedPoints(db,uid),recent:await earnedPoints(db,uid,rankingSince())});
 export function drawReward(roll){
@@ -119,9 +121,9 @@ export async function community(db,user,adminEmail,action=null,input={}){
  }else if(action==='like'){
   const post=await one(db,'SELECT author FROM posts WHERE id=?',id(input.post));
   if(!post)fail('질문을 찾을 수 없어요.',404);
-  if(post.author===uid)fail('내 질문에는 좋아요를 누를 수 없어요.');
+  if(post.author===uid)fail('내 질문에는 유익해요를 누를 수 없어요.');
   const result=await run(db,'INSERT OR IGNORE INTO likes(post,uid,created) VALUES(?,?,?)',input.post,uid,now);
-  notice=result.meta.changes?'질문 작성자에게 5 P를 보냈어요.':'이미 좋아요를 보낸 질문이에요.';
+  notice=result.meta.changes?`유익해요! 글쓴이에게 ${HELPFUL_POINTS} P를 보냈어요.`:'이미 유익해요를 누른 질문이에요.';
  }else if(action==='reply'){
   if(!['staff','admin'].includes(m.role))fail('등록된 담당자만 답변할 수 있어요.',403);
   const post=id(input.post),body=text(input.body,5,4000,'답변'),source=text(input.source,2,500,'근거 문서·규정'),replyId=id(input.id);

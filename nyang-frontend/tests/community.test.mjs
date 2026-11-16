@@ -48,7 +48,7 @@ test('visitors can post, reply, like and earn rewards without leaking the employ
  state=await visitorCommunity(db,a,'post',{category:'hr',body:'방문자도 연차 절차를 물어볼 수 있나요?'});
  const post=state.posts[0].id;
  await visitorCommunity(db,b,'like',{post});await visitorCommunity(db,b,'like',{post});
- assert.equal((await visitorCommunity(db,a)).wallet.points,5);
+ assert.equal((await visitorCommunity(db,a)).wallet.points,10); // 유익해요 +10 P
  await assert.rejects(visitorCommunity(db,a,'like',{post}),/내 질문/);
  state=await visitorCommunity(db,b,'reply',{id:'visitor-reply',post,body:'절차는 샘플 문서에서 확인할 수 있어요.',source:'휴가 가이드 제3조'});
  assert.equal(state.posts[0].replies[0].name,'방문자');assert.equal(state.posts[0].replies[0].department,'공개 체험');
@@ -107,7 +107,7 @@ test('anonymous posts redact identity; likes reward author once, never liker or 
  result=await call(peer,'like',{post:id});
  assert.equal(result.wallet.points,0);assert.equal(result.posts[0].likes,1);
  await call(peer,'like',{post:id});
- result=await call(author);assert.equal(result.wallet.points,5);assert.equal(result.receivedLikes,1);
+ result=await call(author);assert.equal(result.wallet.points,10);assert.equal(result.receivedLikes,1); // 유익해요 +10 P
  await call(author,'post',{body:'  재택근무 절차가 궁금해요  ',category:'hr'});
  assert.equal((await call(author)).posts.length,1);
 });

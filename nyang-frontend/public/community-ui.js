@@ -1,11 +1,11 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {categories as chatCategories} from './core.js?v=4dc923f4c7f7';
-import {boardView} from './board-view.js?v=bbcc15f70875';
-import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=07668235f91f';
+import {boardView,boardPostHTML} from './board-view.js?v=a86234fcc311';
+import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=172b84e7ad54';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const labels={server:'서버 설치 · 설정',client:'클라이언트 접속',trouble:'장애 조치',etc:'기타'};
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
-let state={loading:true},hooks,filter='all',query='',boardCategory='all',busy=false,connecting=null,authEpoch=0,loginRole='employee',stats=null;
+let state={loading:true},hooks,filter='all',query='',boardCategory='all',boardSort='new',openPostId=null,busy=false,connecting=null,authEpoch=0,loginRole='employee',stats=null;
 export const communityState=()=>state;
 export const accountGateHTML=()=>loginView(loginRole,state);
 export const statsHTML=()=>statisticsHTML(stats);
@@ -81,11 +81,11 @@ export function activityHTML(content='',rewards=true){ // rewards=false면 아�
     <div><h2 id="activity-attendance-title">오늘 출석 <span>연속 ${streak}일</span></h2><p>${gift}</p></div>
     <button class="primary-button" data-community="attendance" ${today?'disabled':''}>${today?'출석 완료':'출석 선물 받기'}</button>
    </section>
-   <div class="activity-board-link"><span>받은 좋아요 <strong>${receivedLikes}</strong></span><button class="activity-text-button" data-action="board">질문 게시판 →</button></div>
+   <div class="activity-board-link"><span>내 질문이 받은 유익해요 <strong>${receivedLikes}</strong></span><button class="activity-text-button" data-action="board">질문 게시판 →</button></div>
   </div>
   <details class="activity-help"><summary>보상 안내</summary>
    <dl>
-    <div><dt>질문 · 좋아요</dt><dd>새 질문 +10 P · 같은 질문은 한 번만, 하루 최대 20개.<br>내 게시글에 다른 직원이 좋아요를 누르면 +5 P.</dd></div>
+    <div><dt>질문 · 유익해요</dt><dd>새 질문 +10 P · 같은 질문은 한 번만, 하루 최대 20개.<br>질문 게시판의 내 글에 다른 직원이 '유익해요'를 누르면 +10 P.</dd></div>
     <div><dt>출석 선물</dt><dd>5 P 50% · 10 P 30% · 츄르 1개 15% · 츄르 3개 5%.<br>무료로 하루 한 번, 한국 시간 자정에 초기화돼요. 확률은 매일 같아요.</dd></div>
     <div><dt>츄르 · 레벨</dt><dd>출석으로 받은 츄르부터 쓰고, 다 쓰면 10 P로 줄 수 있어요.<br>레벨은 질문 활동을 나타내며 업무 능력 평가에는 쓰이지 않아요.</dd></div>
     <div><dt>누적 포인트</dt><dd>지금까지 받은 포인트를 모두 더한 값이에요. 츄르·꾸미기에 써도 줄지 않아요.<br>포인트 순위는 최근 3개월 동안 받은 누적 포인트로 정해요.</dd></div>
@@ -94,10 +94,14 @@ export function activityHTML(content='',rewards=true){ // rewards=false면 아�
   </details></section>`:''}
  </section>`;
 }
-export function showMyPost(id){filter='mine';query='';boardCategory='all';hooks.show('board');requestAnimationFrame(()=>document.getElementById('post-'+id)?.scrollIntoView({block:'center'}));}
+export function showMyPost(id){filter='mine';query='';boardCategory='all';hooks.show('board');requestAnimationFrame(()=>{document.getElementById('post-'+id)?.scrollIntoView({block:'center'});showBoardPost(id);});}
+/** 게시판 질문 상세 창을 연다(질문·답변·유익해요). */
+export function showBoardPost(id){const html=boardPostHTML(state,id);if(!html)return;openPostId=id;hooks.modal(html,true);}
+// 유익해요·답변 등록 뒤 열려 있는 상세 창을 새 내용으로 다시 그린다
+const refreshOpenPost=()=>{if(openPostId&&document.querySelector('#modal[open] [data-board-post]'))showBoardPost(openPostId);};
 export function boardHTML(){
  const blocked=gate();if(blocked)return '<section class="community-page">'+blocked+'</section>';
- return boardView(state,filter,query,boardCategory);
+ return boardView(state,filter,query,boardCategory,boardSort);
 }
 function showDeleteDialog(id){
  const post=state.posts.find(p=>p.id===id);if(!post||(state.me?.role!=='staff'&&!post.mine))return;
@@ -113,6 +117,7 @@ export function showPostDialog(r){
 }
 document.addEventListener('click',async e=>{
  const b=e.target.closest('button');if(!b||b.disabled)return;
+ if(b.dataset.openPost){showBoardPost(b.dataset.openPost);return;}
  if(b.dataset.deletePost){showDeleteDialog(b.dataset.deletePost);return;}
  if(b.dataset.confirmDelete||b.dataset.restorePost){
   if(busy||!state.member)return;
@@ -134,9 +139,11 @@ document.addEventListener('click',async e=>{
    b.textContent='오늘의 선물을 여는 중…';
    const result=await communityAction('attendance');if(result){hooks.render();hooks.toast(result.notice);}
   }
-  if(b.dataset.like){if(await communityAction('like',{post:b.dataset.like}))hooks.render();}
+  if(b.dataset.like){if(await communityAction('like',{post:b.dataset.like})){hooks.render();refreshOpenPost();}}
  }finally{busy=false;b.disabled=false;}
 });
+// 게시판 정렬(최신순 / 유익해요 많은 순)
+document.addEventListener('change',e=>{if(e.target.id==='board-sort'){boardSort=e.target.value;hooks.show('board');}});
 document.addEventListener('submit',async e=>{
  const f=e.target;
  if(f.id==='account-login'){
@@ -154,6 +161,6 @@ document.addEventListener('submit',async e=>{
  try{
   const data=Object.fromEntries(new FormData(f));let result;
   if(f.id==='anonymous-post'){result=await communityAction('post',data);if(result){hooks.close();filter='mine';query='';boardCategory='all';hooks.show('board');}}
-  else{f.dataset.requestId??=crypto.randomUUID();result=await communityAction('reply',{...data,post:f.dataset.staffReply,id:f.dataset.requestId});if(result)hooks.render();}
+  else{f.dataset.requestId??=crypto.randomUUID();result=await communityAction('reply',{...data,post:f.dataset.staffReply,id:f.dataset.requestId});if(result){hooks.render();refreshOpenPost();}}
  }finally{busy=false;submit.disabled=false;}
 });

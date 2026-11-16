@@ -38,15 +38,28 @@ test('an in-flight reward response cannot restore an account after logout',async
  assert.equal(await pending,null);assert.equal(communityState().member,false);
 });
 
-test('board exposes delete only for own questions or staff, including the mine filter',async()=>{
- const {boardView}=await import('../public/board-view.js');
+test('board rows open a question detail; delete is offered there only for own questions or staff',async()=>{
+ const {boardView,boardPostHTML}=await import('../public/board-view.js');
  const post=(id,mine)=>({id,mine,category:'hr',body:id,created:'2026-11-12',likes:0,replies:[]});
  const state={me:{role:'employee'},posts:[post('own',true),post('other',false)]};
  const employee=boardView(state);
- assert.ok(employee.includes('data-delete-post="own"'));assert.ok(!employee.includes('data-delete-post="other"'));
- assert.ok(boardView(state,'mine').includes('data-delete-post="own"'));
- const staff=boardView({...state,me:{role:'staff'}});
- assert.ok(staff.includes('data-delete-post="own"'));assert.ok(staff.includes('data-delete-post="other"'));
+ assert.ok(employee.includes('data-open-post="own"')&&employee.includes('data-open-post="other"'));assert.ok(!employee.includes('data-delete-post'));
+ assert.ok(boardPostHTML(state,'own').includes('data-delete-post="own"'));assert.ok(!boardPostHTML(state,'other').includes('data-delete-post'));
+ assert.ok(boardView(state,'mine').includes('data-open-post="own"')&&!boardView(state,'mine').includes('data-open-post="other"'));
+ const staff={...state,me:{role:'staff',username:'admin'}};
+ assert.ok(boardPostHTML(staff,'own').includes('data-delete-post="own"'));assert.ok(boardPostHTML(staff,'other').includes('data-delete-post="other"'));
+ assert.equal(boardPostHTML(state,'missing'),'');
+});
+test('question detail offers 유익해요 (+10 P to the author) to other employees only, and the list can sort by it',async()=>{
+ const {boardView,boardPostHTML}=await import('../public/board-view.js');
+ const post=(id,o={})=>({id,mine:false,liked:false,category:'server',body:'질문 '+id,created:'2026-11-1'+id.length,likes:0,replies:[],...o});
+ const state={me:{role:'employee'},posts:[post('a',{likes:1}),post('bb',{likes:5}),post('own',{mine:true}),post('done',{liked:true,likes:2})]};
+ const other=boardPostHTML(state,'a');assert.match(other,/data-like="a"(?![^>]*disabled)/);assert.ok(other.includes('글쓴이에게 +10 P'));
+ assert.match(boardPostHTML(state,'own'),/data-like="own"[^>]*disabled/);assert.ok(boardPostHTML(state,'own').includes('내게 +10 P'));
+ assert.match(boardPostHTML(state,'done'),/data-like="done"[^>]*disabled/);
+ assert.ok(!boardPostHTML({...state,me:{role:'staff',username:'admin'}},'a').includes('data-like'));
+ const order=html=>[...html.matchAll(/data-open-post="([^"]+)"/g)].map(m=>m[1]);
+ assert.deepEqual(order(boardView(state,'all','','all','helpful')),['bb','done','a','own']);
 });
 test('board can be narrowed to one category, with counts, and keeps old-category posts reachable',async()=>{
  const {boardView}=await import('../public/board-view.js');
