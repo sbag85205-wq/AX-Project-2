@@ -29,3 +29,11 @@ test('분야별 예시 질문을 반영하고, 없으면 기본 예시를 쓴다
  applyManagedCategories(original);
  assert.equal(categories.every(c=>!c.examples),true);
 });
+test('분야 설명을 반영하고, 없으면 기본 설명을 쓴다',()=>{
+ assert.equal(applyManagedCategories(['서버 설치 · 설정','인사'],{},{'인사':'연차·근태 신청','서버 설치 · 설정':''}),true);
+ assert.equal(categoryOf('custom:인사').detail,'연차·근태 신청');
+ assert.equal(categoryOf('server').detail,''); // 비운 설명은 비운 채로
+ assert.equal(applyManagedCategories(['서버 설치 · 설정','인사'],{},{'인사':'바뀐 설명'}),true); // 설명만 바뀌어도 다시 그린다
+ assert.equal(categoryOf('server').detail,'OS·도메인부터 서버 설치, 기본 설정까지'); // 저장된 설명이 없어지면 기본 설명
+ applyManagedCategories(original);
+});

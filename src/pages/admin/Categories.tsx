@@ -3,8 +3,8 @@ import { GearIcon } from '../../components/Icons';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import {
-  CATEGORY_MAX_LENGTH, EXAMPLE_MAX_COUNT, EXAMPLE_MAX_LENGTH, categoryNameProblem, cleanExamples, exampleProblem, examplesOf,
-  loadCategories, movedList, saveCategories, saveCategorySettings, type CategoryExamples
+  CATEGORY_MAX_LENGTH, DETAIL_MAX_LENGTH, EXAMPLE_MAX_COUNT, EXAMPLE_MAX_LENGTH, categoryNameProblem, cleanExamples, detailOf, detailsFor,
+  exampleProblem, examplesOf, loadCategories, movedList, saveCategories, saveCategorySettings, type CategoryDetails, type CategoryExamples
 } from '../../lib/categories';
 import { supabase } from '../../lib/supabase';
 
@@ -12,6 +12,8 @@ interface Editing {
   from: string;
   tab: 'name' | 'examples';
   name: string;
+  /** '분야 변경' 창에서 이름 아래 보이는 설명 */
+  detail: string;
   examples: string[];
   draft: string;
   /** 수정 중인 예시 질문 자리와 고치는 글 */
@@ -28,6 +30,7 @@ export default function Categories() {
   const toast = useToast();
   const [categories, setCategories] = useState<string[]>([]);
   const [examples, setExamples] = useState<CategoryExamples>({});
+  const [details, setDetails] = useState<CategoryDetails>({});
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState('');
@@ -38,7 +41,7 @@ export default function Categories() {
   const [editing, setEditing] = useState<Editing | null>(null);
 
   const load = useCallback(async () => {
-    const [{ categories, examples, error }, { data }] = await Promise.all([
+    const [{ categories, examples, details, error }, { data }] = await Promise.all([
       loadCategories(),
       supabase.from('documents').select('category')
     ]);
@@ -46,6 +49,7 @@ export default function Categories() {
     for (const d of (data as { category: string }[] | null) ?? []) next[d.category] = (next[d.category] ?? 0) + 1;
     setCategories(categories);
     setExamples(examples);
+    setDetails(details);
     setCounts(next);
     setLoadError(error);
     setLoaded(true);
@@ -59,9 +63,10 @@ export default function Categories() {
   const save = async (next: string[], message: string, nextExamples = examples) => {
     setSaving(true);
     try {
-      await saveCategories(next, nextExamples);
+      await saveCategories(next, nextExamples, details);
       setCategories(next);
       setExamples(nextExamples);
+      setDetails(detailsFor(next, details));
       if (message) toast(message);
       return true;
     } catch (e) {
@@ -90,7 +95,7 @@ export default function Categories() {
   };
 
   const openSettings = (c: string) =>
-    setEditing({ from: c, tab: 'name', name: c, examples: [...examplesOf(c, examples)], draft: '', editIndex: null, editText: '', error: '' });
+    setEditing({ from: c, tab: 'name', name: c, detail: detailOf(c, details), examples: [...examplesOf(c, examples)], draft: '', editIndex: null, editText: '', error: '' });
 
   // 예시 질문 칸: 새 질문 추가
   const addExample = () => {
@@ -127,9 +132,10 @@ export default function Categories() {
     }
     setSaving(true);
     try {
-      const result = await saveCategorySettings(categories, examples, from, to, cleanExamples(editing.examples));
+      const result = await saveCategorySettings(categories, examples, details, from, to, cleanExamples(editing.examples), editing.detail);
       setCategories(result.categories);
       setExamples(result.examples);
+      setDetails(result.details);
       if (to !== from) setCounts((prev) => { const copy = { ...prev }; copy[to] = (copy[to] ?? 0) + (copy[from] ?? 0); delete copy[from]; return copy; });
       setEditing(null);
       toast(to !== from
@@ -181,6 +187,7 @@ export default function Categories() {
             </div>
             <div className="list-main">
               <div className="list-title">{c}</div>
+              <div className="list-meta">{detailOf(c, details) || '설명 없음'}</div>
               <div className="list-meta">문서 {counts[c] ?? 0}개 · 예시 질문 {examplesOf(c, examples).length}개</div>
             </div>
             <button type="button" className="btn btn-sm" disabled={saving} onClick={() => openSettings(c)}
@@ -204,14 +211,15 @@ export default function Categories() {
           }
         >
           <div role="tablist" aria-label="분야 설정" style={{ display: 'flex', gap: 8 }}>
-            {([['name', '이름 수정'], ['examples', `예시 질문 ${editing.examples.length}`]] as const).map(([id, label]) => (
+            {([['name', '이름·설명'], ['examples', `예시 질문 ${editing.examples.length}`]] as const).map(([id, label]) => (
               <button key={id} type="button" role="tab" className="chip" aria-selected={editing.tab === id} aria-pressed={editing.tab === id}
                 onClick={() => setEditing({ ...editing, tab: id, error: '' })}>{label}</button>
             ))}
           </div>
 
           {editing.tab === 'name' && (
-            <div className="field" role="tabpanel">
+            <div role="tabpanel" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div className="field">
               <label htmlFor="category-rename">분야 이름</label>
               <input id="category-rename" className="input" value={editing.name} maxLength={CATEGORY_MAX_LENGTH} autoFocus
                 onChange={(e) => setEditing({ ...editing, name: e.target.value, error: '' })}
@@ -221,6 +229,14 @@ export default function Categories() {
                   ? `이름을 바꾸면 이 분야를 쓰는 문서 ${counts[editing.from]}개의 분야도 새 이름으로 함께 바뀌어요.`
                   : '이 분야를 쓰는 문서는 없어요.'}
               </span>
+            </div>
+            <div className="field">
+              <label htmlFor="category-detail">설명</label>
+              <input id="category-detail" className="input" value={editing.detail} maxLength={DETAIL_MAX_LENGTH} placeholder="예: 연차·휴가·근태 신청 방법"
+                onChange={(e) => setEditing({ ...editing, detail: e.target.value, error: '' })}
+                onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); saveSettings(); } }} />
+              <span className="hint">채팅의 '분야 변경' 창에서 분야 이름 아래에 보여요. {DETAIL_MAX_LENGTH}자 이내 · 비우면 설명 없이 보여요.</span>
+            </div>
             </div>
           )}
 

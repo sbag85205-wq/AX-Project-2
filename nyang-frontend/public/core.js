@@ -9,18 +9,22 @@ export const categories = [
 ];
 export const defaultCategory = categories[0].id;
 const builtInCategories = [...categories];
+/** 담당자가 추가한 분야의 기본 설명 (분야 관리 > 설정에서 바꿀 수 있다) */
+export const customCategoryDetail = '담당자가 추가한 분야 · 이 분야 문서에서 먼저 찾아요';
 /**
  * 분야 관리에서 정한 이름 목록으로 categories를 바꾼다(같은 배열을 고쳐 모든 화면이 함께 본다).
  * 원래 분야와 이름이 같으면 그 분야(id·아이콘·설명·기타의 전체 검색)를 그대로 쓰고, 새 이름은 custom:<이름> 분야가 된다.
  * 바뀌었으면 true.
  */
-export function applyManagedCategories(labels, examples = {}) {
+export function applyManagedCategories(labels, examples = {}, details = {}) {
   const names = (Array.isArray(labels) ? labels : []).filter(l => typeof l === 'string' && l.trim() && l.length <= 30);
   if (!names.length) return false;
   // 분야별 예시 질문(분야 관리 > 설정). 없으면 기본 예시(faq)를 쓴다.
   const listOf = l => Array.isArray(examples?.[l]) ? examples[l].filter(q => typeof q === 'string' && q.trim()).slice(0, 20) : null;
-  const next = names.map(l => ({ ...(builtInCategories.find(c => c.label === l) || { id: 'custom:' + l, label: l, icon: 'book', detail: '담당자가 추가한 분야 · 이 분야 문서에서 먼저 찾아요' }), examples: listOf(l) }));
-  const same = (a, b) => a.id === b.id && a.label === b.label && JSON.stringify(a.examples ?? null) === JSON.stringify(b.examples ?? null);
+  // 분야별 설명(분야 관리 > 설정). 저장된 글이 있으면(빈 글 포함) 그것, 없으면 기본 설명.
+  const detailOf = l => typeof details?.[l] === 'string' ? details[l].slice(0, 60) : null;
+  const next = names.map(l => { const base = builtInCategories.find(c => c.label === l) || { id: 'custom:' + l, label: l, icon: 'book', detail: customCategoryDetail }; const detail = detailOf(l); return { ...base, ...(detail === null ? {} : { detail }), examples: listOf(l) }; });
+  const same = (a, b) => a.id === b.id && a.label === b.label && a.detail === b.detail && JSON.stringify(a.examples ?? null) === JSON.stringify(b.examples ?? null);
   if (next.length === categories.length && next.every((c, i) => same(c, categories[i]))) return false;
   categories.splice(0, categories.length, ...next);
   return true;

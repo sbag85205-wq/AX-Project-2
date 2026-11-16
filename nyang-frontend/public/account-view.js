@@ -1,5 +1,5 @@
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-import {categories as chatCategories} from './core.js?v=2d2b0d6222ce';
+import {categories as chatCategories} from './core.js?v=d8dde8ab7467';
 // 게시판 질문 분야 통계: 분야 관리 목록 순서대로, 목록에 없는 분야(예전 분야 등)는 '이전 분야' 하나로 묶는다
 const boardCategoryRows=list=>{const ids=chatCategories.map(c=>c.id),old=list.filter(c=>!ids.includes(c.category)).reduce((n,c)=>n+c.n,0);return [...chatCategories.map(c=>({label:c.label,n:list.find(x=>x.category===c.id)?.n||0})),...(old?[{label:'이전 분야',n:old}]:[])];};
 export function loginHTML(role='employee',state={}){

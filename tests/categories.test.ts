@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CATEGORY_MAX_COUNT, EXAMPLE_MAX_COUNT, categoryNameProblem, cleanExamples, defaultExamples, exampleProblem, examplesFor, examplesOf, groupByManaged, movedList, renamedList
+  CATEGORY_MAX_COUNT, EXAMPLE_MAX_COUNT, categoryNameProblem, cleanExamples, defaultDetail, defaultExamples, detailOf, detailsFor, exampleProblem, examplesFor, examplesOf, groupByManaged, movedList, renamedList
 } from '../src/lib/categories';
 import { CATEGORIES } from '../src/lib/constants';
 import sql from '../supabase/migrations/20261116000000_categories.sql?raw';
@@ -48,6 +48,14 @@ describe('분야 관리', () => {
   it('통계: 분야 관리에 없는 분야는 이전 분야로 묶는다', () => {
     expect(groupByManaged([{ name: '서버', count: 3 }, { name: '휴가', count: 2 }, { name: '급여', count: 4 }, { name: '인사', count: 0 }], ['서버', '인사']))
       .toEqual([{ name: '이전 분야', count: 6 }, { name: '서버', count: 3 }]);
+  });
+
+  it('분야 설명: 저장된 것이 없으면 기본 설명, 비운 설명은 비운 채로, 지워진 분야 설명은 버린다', () => {
+    expect(defaultDetail('클라이언트 접속')).toContain('Linker Client');
+    expect(defaultDetail('인사')).toContain('담당자가 추가한 분야');
+    expect(detailOf('인사', { 인사: '연차·근태 신청' })).toBe('연차·근태 신청');
+    expect(detailOf('기타', { 기타: '' })).toBe('');
+    expect(detailsFor(['인사'], { 인사: 'a', 삭제됨: 'b' })).toEqual({ 인사: 'a' });
   });
 
   it('DB 기본 분야는 지금 쓰던 분야(CATEGORIES)와 같다', () => {

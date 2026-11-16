@@ -285,17 +285,19 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
 }
 
 /**
- * 분야 관리에서 정한 분야 목록(순서대로)과 분야별 예시 질문 (채팅의 '분야 변경'·'질문 예시'에서 쓴다).
+ * 분야 관리에서 정한 분야 목록(순서대로)과 분야별 예시 질문·설명 (채팅의 '분야 변경'·'질문 예시'에서 쓴다).
  * 설정 표는 관리자만 읽을 수 있어 서버가 대신 읽어 준다.
  */
 async function categories(db: SupabaseClient): Promise<Response> {
-  const { data, error } = await db.from('app_settings').select('categories, category_examples').eq('id', 1).maybeSingle();
+  const { data, error } = await db.from('app_settings').select('categories, category_examples, category_details').eq('id', 1).maybeSingle();
   if (error) console.error('categories load failed', error.message);
   const texts = (v: unknown) => (Array.isArray(v) ? v.filter((c): c is string => typeof c === 'string' && !!c.trim()) : []);
   const list = texts(data?.categories);
   const raw = data?.category_examples && typeof data.category_examples === 'object' ? data.category_examples as Record<string, unknown> : {};
   const examples = Object.fromEntries(list.filter((c) => Array.isArray(raw[c])).map((c) => [c, texts(raw[c])]));
-  return json({ categories: list, examples });
+  const rawDetails = data?.category_details && typeof data.category_details === 'object' ? data.category_details as Record<string, unknown> : {};
+  const details = Object.fromEntries(list.filter((c) => typeof rawDetails[c] === 'string').map((c) => [c, (rawDetails[c] as string).slice(0, 60)]));
+  return json({ categories: list, examples, details });
 }
 
 async function feedback(db: SupabaseClient, caller: Caller, body: Record<string, unknown>): Promise<Response> {

@@ -1,4 +1,4 @@
-import { categories as nyangCategories, faq as nyangFaq } from '../../nyang-frontend/public/core.js';
+import { categories as nyangCategories, customCategoryDetail, faq as nyangFaq } from '../../nyang-frontend/public/core.js';
 import { useEffect, useState } from 'react';
 import { callFunction } from './api';
 import { CATEGORIES } from './constants';
@@ -10,9 +10,13 @@ export const CATEGORY_MAX_COUNT = 30;
 /** 분야마다 예시 질문 개수와 길이 한도 */
 export const EXAMPLE_MAX_COUNT = 20;
 export const EXAMPLE_MAX_LENGTH = 200;
+/** 분야 설명 길이 한도 ('분야 변경' 창에서 이름 아래 한 줄) */
+export const DETAIL_MAX_LENGTH = 60;
 
 /** 분야 이름 → 예시 질문. 키가 없는 분야는 냥대리 기본 예시를 쓴다. */
 export type CategoryExamples = Record<string, string[]>;
+/** 분야 이름 → 설명. 키가 없는 분야는 냥대리 기본 설명을 쓴다. */
+export type CategoryDetails = Record<string, string>;
 
 const textList = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((c): c is string => typeof c === 'string' && !!c.trim()) : [];
@@ -22,20 +26,25 @@ function examplesFrom(value: unknown): CategoryExamples {
   return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, textList(v)]));
 }
 
+function detailsFrom(value: unknown): CategoryDetails {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>).filter(([, v]) => typeof v === 'string') as [string, string][]);
+}
+
 /**
- * 관리자가 '분야 관리'에서 정한 분야 목록(순서 포함)과 분야별 예시 질문을 읽는다.
+ * 관리자가 '분야 관리'에서 정한 분야 목록(순서 포함)과 분야별 예시 질문·설명을 읽는다.
  * 아직 저장된 목록이 없거나 읽지 못하면 기본 분야(CATEGORIES)를 쓴다.
  */
-export async function loadCategories(): Promise<{ categories: string[]; examples: CategoryExamples; error: string }> {
-  let { data, error } = await supabase.from('app_settings').select('categories, category_examples').eq('id', 1).maybeSingle();
-  // 예시 질문 칸이 아직 DB에 없으면 분야 목록만이라도 읽는다
+export async function loadCategories(): Promise<{ categories: string[]; examples: CategoryExamples; details: CategoryDetails; error: string }> {
+  let { data, error } = await supabase.from('app_settings').select('categories, category_examples, category_details').eq('id', 1).maybeSingle();
+  // 예시·설명 칸이 아직 DB에 없으면 분야 목록만이라도 읽는다
   if (error) ({ data, error } = await supabase.from('app_settings').select('categories').eq('id', 1).maybeSingle());
-  const row = data as { categories?: unknown; category_examples?: unknown } | null;
+  const row = data as { categories?: unknown; category_examples?: unknown; category_details?: unknown } | null;
   const list = textList(row?.categories);
   if (error || !list.length) {
-    return { categories: [...CATEGORIES], examples: {}, error: error ? '분야 목록을 불러오지 못해 기본 분야를 보여 드려요.' : '' };
+    return { categories: [...CATEGORIES], examples: {}, details: {}, error: error ? '분야 목록을 불러오지 못해 기본 분야를 보여 드려요.' : '' };
   }
-  return { categories: list, examples: examplesFrom(row?.category_examples), error: '' };
+  return { categories: list, examples: examplesFrom(row?.category_examples), details: detailsFrom(row?.category_details), error: '' };
 }
 
 /**
@@ -80,10 +89,21 @@ export function examplesFor(categories: string[], examples: CategoryExamples): C
   return Object.fromEntries(categories.filter((c) => Array.isArray(examples[c])).map((c) => [c, examples[c]]));
 }
 
-/** 분야 목록(순서 포함)과 예시 질문을 한 번에 저장한다 (관리자만 가능: app_settings 수정 권한). */
-export async function saveCategories(categories: string[], examples: CategoryExamples = {}): Promise<void> {
+/** 목록에 있는 분야의 설명만 남긴다 (지워진 분야의 설명은 버린다). */
+export function detailsFor(categories: string[], details: CategoryDetails): CategoryDetails {
+  return Object.fromEntries(categories.filter((c) => typeof details[c] === 'string').map((c) => [c, details[c]]));
+}
+
+/**
+ * 분야 목록(순서 포함)과 예시 질문·설명을 한 번에 저장한다 (관리자만 가능: app_settings 수정 권한).
+ * 예시·설명을 빠뜨리면 지워지므로 늘 현재 값을 함께 넘긴다.
+ */
+export async function saveCategories(categories: string[], examples: CategoryExamples, details: CategoryDetails): Promise<void> {
   const { error } = await supabase.from('app_settings')
-    .update({ categories, category_examples: examplesFor(categories, examples), updated_at: new Date().toISOString() }).eq('id', 1);
+    .update({
+      categories, category_examples: examplesFor(categories, examples), category_details: detailsFor(categories, details),
+      updated_at: new Date().toISOString()
+    }).eq('id', 1);
   if (error) throw new Error('분야를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.');
 }
 
@@ -91,6 +111,16 @@ export async function saveCategories(categories: string[], examples: CategoryExa
 export function defaultExamples(name: string): string[] {
   const id = nyangCategories.find((c) => c.label === name)?.id;
   return id ? [...(nyangFaq[id] ?? [])] : [];
+}
+
+/** 분야의 기본 설명: 냥대리 채팅에 원래 있던 분야면 그 설명, 아니면 새 분야 기본 설명. */
+export function defaultDetail(name: string): string {
+  return nyangCategories.find((c) => c.label === name)?.detail ?? customCategoryDetail;
+}
+
+/** 분야의 현재 설명: 저장된 것이 있으면(빈 글 포함) 그것, 없으면 기본 설명. */
+export function detailOf(name: string, details: CategoryDetails): string {
+  return typeof details[name] === 'string' ? details[name] : defaultDetail(name);
 }
 
 /** 분야의 현재 예시 질문: 저장된 것이 있으면 그것, 없으면 기본 예시. */
@@ -113,23 +143,26 @@ export function movedList(list: string[], index: number, delta: -1 | 1): string[
 }
 
 /**
- * 분야 설정 저장: 이름이 바뀌었으면 같은 자리에서 바꾸고, 예시 질문도 새 이름으로 저장한다.
+ * 분야 설정 저장: 이름이 바뀌었으면 같은 자리에서 바꾸고, 예시 질문·설명도 새 이름으로 저장한다.
  * 이름이 바뀌면 그 분야를 쓰던 문서의 분야도 새 이름으로 바꾸고, 바뀐 문서 수를 돌려준다.
  */
 export async function saveCategorySettings(
-  list: string[], examples: CategoryExamples, from: string, to: string, nextExamples: string[]
-): Promise<{ categories: string[]; examples: CategoryExamples; moved: number }> {
+  list: string[], examples: CategoryExamples, details: CategoryDetails, from: string, to: string, nextExamples: string[], nextDetail: string
+): Promise<{ categories: string[]; examples: CategoryExamples; details: CategoryDetails; moved: number }> {
   const name = to.trim();
   const categories = renamedList(list, from, name);
-  const rest = { ...examples };
-  delete rest[from];
-  const merged = { ...rest, [name]: nextExamples };
-  await saveCategories(categories, merged);
-  if (name === from) return { categories, examples: examplesFor(categories, merged), moved: 0 };
+  const restExamples = { ...examples }, restDetails = { ...details };
+  delete restExamples[from];
+  delete restDetails[from];
+  const mergedExamples = { ...restExamples, [name]: nextExamples };
+  const mergedDetails = { ...restDetails, [name]: nextDetail.trim().slice(0, DETAIL_MAX_LENGTH) };
+  await saveCategories(categories, mergedExamples, mergedDetails);
+  const saved = { categories, examples: examplesFor(categories, mergedExamples), details: detailsFor(categories, mergedDetails) };
+  if (name === from) return { ...saved, moved: 0 };
   const { data, error } = await supabase.from('documents')
     .update({ category: name, updated_at: new Date().toISOString() }).eq('category', from).select('id');
   if (error) throw new Error('분야 이름은 바꿨지만 문서의 분야를 바꾸지 못했어요. 문서 관리에서 직접 바꿔 주세요.');
-  return { categories, examples: examplesFor(categories, merged), moved: data?.length ?? 0 };
+  return { ...saved, moved: data?.length ?? 0 };
 }
 
 /** 새 분야 이름을 검사한다. 문제가 없으면 빈 문자열을 돌려준다. */

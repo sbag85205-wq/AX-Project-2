@@ -11,5 +11,7 @@ declare module '*/nyang-frontend/public/core.js' {
   /** 냥대리 채팅의 기본 질문 예시 (분야 id → 질문) */
   export const faq: Record<string, string[]>;
   /** 냥대리 채팅의 기본 분야 */
-  export const categories: { id: string; label: string }[];
+  export const categories: { id: string; label: string; detail: string }[];
+  /** 담당자가 추가한 분야의 기본 설명 */
+  export const customCategoryDetail: string;
 }
