@@ -1,12 +1,10 @@
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+import {esc,HELPFUL_POINTS} from './shared.js?v=76a19ab6baf7';
 import {categories as chatCategories} from './core.js?v=4dc923f4c7f7';
 // 지금 고를 수 있는 분야(분야 관리 목록 = 채팅 분야). 목록에 없는 분야(예전 분야·지워진 분야)로 올라온 글은 '이전 분야'로 묶어 보여 준다.
 const current=()=>chatCategories.map(c=>c.id);
 const label=id=>chatCategories.find(c=>c.id===id)?.label||'이전 분야';
 const inCategory=(p,category)=>category==='all'||(category==='old'?!current().includes(p.category):p.category===category);
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
-/** '유익해요' 한 번에 글쓴이가 받는 포인트 (lib/community.mjs HELPFUL_POINTS와 같다) */
-const HELPFUL_POINTS=10;
 const thumb='<svg class="helpful-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 10v10H4V10h3Zm3 10h7.4a2 2 0 0 0 2-1.6l1.3-6.4A2 2 0 0 0 18.7 9.6H14V5.8A1.8 1.8 0 0 0 12.2 4L10 10v10Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>';
 const chevron='<svg class="board-row-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const status=p=>`<span class="question-status ${p.replies.length?'resolved':''}">${p.replies.length?'답변 완료':'답변 대기'}</span>`;

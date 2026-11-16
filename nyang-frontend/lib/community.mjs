@@ -1,13 +1,15 @@
 import {normalizeRewards,rewardTransition,petOutcome,QUESTION_POINTS,PET_BONUS_POINTS} from '../public/companion.js';
+import {FIXED_CATEGORY_IDS,isCustomCategoryId,HELPFUL_POINTS} from '../public/shared.js';
+export {HELPFUL_POINTS};
 export class AppError extends Error {constructor(message,status=400){super(message);this.status=status;}}
 const fail=(message,status=400)=>{throw new AppError(message,status);};
 const one=(db,sql,...args)=>db.prepare(sql).bind(...args).first();
 const run=(db,sql,...args)=>db.prepare(sql).bind(...args).run();
 const rows=async(db,sql,...args)=>(await db.prepare(sql).bind(...args).all()).results;
-const categories=['server','client','trouble','etc','hr','pay','trip','life'],roles=['employee','staff'];
+const categories=FIXED_CATEGORY_IDS,roles=['employee','staff'];
 export const seoulDay=(date=new Date())=>new Date(date.getTime()+9*3600000).toISOString().slice(0,10);
-/** 질문 게시판 '유익해요' 한 번에 글쓴이가 받는 포인트(drizzle 0006). 이 시각 전의 좋아요는 5 P였다. */
-export const HELPFUL_POINTS=10,HELPFUL_SINCE='2026-11-16T07:06:17.000Z';
+/** 질문 게시판 '유익해요'(HELPFUL_POINTS, shared.js)로 바뀐 시각. 이 시각 전의 좋아요는 5 P였다. */
+export const HELPFUL_SINCE='2026-11-16T07:06:17.000Z';
 /** 포인트 순위 기간: 최근 3개월(그 시각 이후에 받은 포인트만 센다) */
 export function rankingSince(now=new Date()){const d=new Date(now);d.setMonth(d.getMonth()-3);return d.toISOString();}
 /**
@@ -112,7 +114,7 @@ export async function community(db,user,adminEmail,action=null,input={}){
   eventResult=await one(db,'SELECT day,points,tokens FROM attendance WHERE uid=? AND day=?',uid,day);
   notice=eventResult.tokens?`오늘의 선물, 츄르 ${eventResult.tokens}개!`:`오늘의 선물, ${eventResult.points} P!`;
  }else if(action==='post'){
-  if(!categories.includes(input.category)&&!/^custom:.{1,30}$/.test(String(input.category)))fail('분야를 선택해 주세요.');
+  if(!categories.includes(input.category)&&!isCustomCategoryId(String(input.category)))fail('분야를 선택해 주세요.');
   const body=text(input.body,5,2000,'질문'),h=await hash(body);
   const cutoff=new Date(new Date(day+'T00:00:00+09:00')).toISOString();
   const result=await run(db,`INSERT OR IGNORE INTO posts(id,author,hash,category,body,created)

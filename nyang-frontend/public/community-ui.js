@@ -1,8 +1,8 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {categories as chatCategories} from './core.js?v=4dc923f4c7f7';
-import {boardView,boardPostHTML} from './board-view.js?v=711c26227c03';
-import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=172b84e7ad54';
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+import {boardView,boardPostHTML} from './board-view.js?v=8760a87b1cb3';
+import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=297e497c6ee6';
+import {esc} from './shared.js?v=76a19ab6baf7';
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 let state={loading:true},hooks,filter='all',query='',boardCategory='all',boardSort='new',openPostId=null,busy=false,connecting=null,authEpoch=0,loginRole='employee',stats=null;
 export const communityState=()=>state;

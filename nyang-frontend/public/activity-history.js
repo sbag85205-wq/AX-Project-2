@@ -1,7 +1,7 @@
 const kinds=new Set(['answer','plan','excerpt','unknown','scope','knowly','event']);
-const fixedCategories=new Set(['server','client','trouble','etc','hr','pay','trip','life']);
-// 담당자가 추가한 분야(custom:<이름>)도 유효한 분야로 본다
-const categories={has:id=>fixedCategories.has(id)||(typeof id==='string'&&/^custom:.{1,30}$/.test(id))};
+import {isCategoryId} from './shared.js?v=76a19ab6baf7';
+// 고정 분야와 담당자가 추가한 분야(custom:<이름>)를 유효한 분야로 본다(shared.js)
+const categories={has:isCategoryId};
 export const canSaveAnswer=result=>['answer','plan','excerpt','knowly'].includes(result?.kind);
 export function normalizeHistory(value){
  const seen=new Set();
