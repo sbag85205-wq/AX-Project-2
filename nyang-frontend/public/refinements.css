@@ -196,3 +196,6 @@ html[data-theme=dark] body .chat-room .answer-tools>button.answer-save-button[ar
 .board-post-footer{display:flex;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid var(--ui-line,var(--border))}
 html[data-theme=dark] .helpful-button.on{color:#0b1526}
 @media(max-width:860px){.board-layout{grid-template-columns:1fr}.board-side{position:static;flex-direction:row;flex-wrap:wrap}.board-side-title{display:none}.board-side-item{width:auto}}
+/* 유익해요: 답변 아래 가운데, 설명은 버튼 아래 가운데 */
+.board-post .board-helpful{flex-direction:column;justify-content:center;align-items:center;gap:8px;margin:22px 0 4px;padding:18px 16px;text-align:center}
+.board-post .board-helpful-note{display:block;max-width:420px}

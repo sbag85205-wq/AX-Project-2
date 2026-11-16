@@ -1,6 +1,6 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {categories as chatCategories} from './core.js?v=4dc923f4c7f7';
-import {boardView,boardPostHTML} from './board-view.js?v=a86234fcc311';
+import {boardView,boardPostHTML} from './board-view.js?v=711c26227c03';
 import {loginHTML as loginView,statisticsHTML} from './account-view.js?v=172b84e7ad54';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const labels={server:'서버 설치 · 설정',client:'클라이언트 접속',trouble:'장애 조치',etc:'기타'};
