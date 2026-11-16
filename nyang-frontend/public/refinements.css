@@ -129,3 +129,7 @@
 .background-history-delete{position:absolute;top:5px;right:5px;width:22px;height:22px;padding:0;border:0;border-radius:50%;display:grid;place-items:center;color:#fff;background:#000000a0;cursor:pointer}
 .background-history-delete:hover{background:#d93025}
 .background-history-delete .icon{width:12px;height:12px}
+/* 물어보기 첫 화면: 냥대리 반응 글씨(오른쪽 칸)를 냥대리에서 16px까지 붙인다(칸 사이 64px → 16px).
+   츄르 뒤 하트가 떠 있는 동안만 하트(냥대리 크기의 약 18%만큼 오른쪽으로 튀어나옴) 바깥으로 비켜 선다. */
+.desktop-workspace .chat-home .home-cat-aside{margin-left:-48px;transition:margin-left .2s ease}
+.desktop-workspace .chat-home .cat-resident-stage:has(.collect-heart) .home-cat-aside{margin-left:calc(var(--resident-size)*.18 + 14px - 64px)}
