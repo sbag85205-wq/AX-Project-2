@@ -3,6 +3,8 @@
    대각선 두 쌍(뒤로 뻗은 뒷다리+가슴 아래 앞다리 / 가운데 뒷다리+앞으로 뻗은 앞다리)이 관절을 축으로 번갈아 앞뒤로,
    몸은 걸음마다 살짝 들썩이고, 전체가 왼쪽→오른쪽으로 걸어간다(nyang-walk). 다리는 몸 뒤에 두어 이음매가 가려진다. */
 .nyang-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 16px;color:var(--ui-sub,#6e6e73);font-size:13px;text-align:center}
+/* 로딩 문구는 어디서 불러오든 항상 화면(브라우저 창) 한가운데에 보인다. 아래 화면을 누르는 데는 방해하지 않는다. */
+.nyang-loading{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9000;pointer-events:none;width:max-content;max-width:90vw}
 .nyang-loading p{margin:0;font-weight:500;letter-spacing:-.1px}
 .nyang-loading-track{position:relative;width:250px;height:104px;overflow:hidden}
 .nyang-loading-walker{position:absolute;left:50%;bottom:6px;width:100px;height:92px;margin-left:-50px;animation:nyang-walk 4.2s linear infinite}
@@ -25,10 +27,10 @@
 .nyang-loading-text{margin:0;padding:10px 0;color:var(--ui-sub,#6e6e73);font-size:13px}
 /* 화면 전체를 잠깐 덮는 표시(로그인 중 등) */
 .nyang-loading-overlay{position:fixed;inset:0;z-index:9998;display:grid;place-items:center;background:color-mix(in srgb,var(--ui-bg,#fff) 72%,transparent);backdrop-filter:blur(2px);animation:nyang-fade .18s ease-out}
-.nyang-loading-overlay .nyang-loading{background:var(--ui-panel,#fff);border:1px solid var(--ui-line,#e5e5e8);border-radius:16px;padding:22px 36px 20px;box-shadow:0 12px 40px #0000001a;color:var(--ui-ink,#1d1d1f)}
+.nyang-loading-overlay .nyang-loading{position:static;transform:none;pointer-events:auto;background:var(--ui-panel,#fff);border:1px solid var(--ui-line,#e5e5e8);border-radius:16px;padding:22px 36px 20px;box-shadow:0 12px 40px #0000001a;color:var(--ui-ink,#1d1d1f)}
 @keyframes nyang-fade{from{opacity:0}to{opacity:1}}
 /* Knowly 화면(안에 끼운 화면)이 뜰 때까지 */
-.knowly-frame-wrap{position:relative}.knowly-frame-wrap>.nyang-loading{position:absolute;inset:0;justify-content:flex-start;padding-top:min(22vh,160px);background:var(--ui-bg,#fff);z-index:1;transition:opacity .2s}
+.knowly-frame-wrap{position:relative}.knowly-frame-wrap>.nyang-loading{transition:opacity .2s}
 .knowly-frame-wrap.ready:not(.busy)>.nyang-loading{opacity:0;pointer-events:none}
 /* 안에 끼운 Knowly 화면 안쪽의 불러오는 중 자리: 바깥 표시 하나만 보이게 비워 둔다 */
 .nyang-loading-slot{min-height:120px}
