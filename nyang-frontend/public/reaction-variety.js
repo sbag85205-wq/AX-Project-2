@@ -1,19 +1,20 @@
 // Cosmetic choices only. The server owns reaction outcomes and all rewards.
-const pose=(motion,line,mark,eyes='',wag=false)=>({motion,line,mark,eyes,wag});
+const pose=(motion,line,mark,eyes='',wag=false,art='')=>({motion,line,mark,eyes,wag,art});
 export const reactionPoses={
+ // 따뜻한 모드는 반응마다 전용 그림(art)을 쓴다: pet=눈 감고 골골, wink=윙크, shy=수줍게 쉬고 싶음, joy=두 손 모아 신남.
  warm:{
   like:[
-   pose('purr','골골… 손길이 딱 좋다냥!','골골골…','closed'),
-   pose('bounce','좋아서 가만히 못 있겠다냥!','신난다냥 ♥','happy',true),
-   pose('nod','여기 조금만 더 쓰다듬어달라냥.','한 번 더냥!','happy'),
-   pose('stretch','쭈욱~ 기분까지 풀렸다냥!','쭈우욱','closed')
+   pose('purr','골골… 손길이 딱 좋다냥!','골골골 ♥','closed',false,'pet'),
+   pose('nod','쓰다듬어 주니 마음까지 포근하다냥.','한 번 더냥 ♥','closed',false,'pet'),
+   pose('stretch','눈이 스르르 감길 만큼 좋다냥!','스르르…','closed',false,'pet'),
+   pose('bounce','기분 좋아서 윙크 한 번 날린다냥!','찡긋 ☆','happy',false,'wink')
   ],
   dislike:[
-   pose('tuck','잠깐 충전하고 다시 놀자냥.','잠깐만냥…','closed'),
-   pose('backstep','살살 해주면 더 좋겠다냥.','살살 부탁한다냥'),
-   pose('nod','지금은 눈만 감고 쉬겠다냥.','쉬는 중이다냥','closed')
+   pose('tuck','잠깐 충전하고 다시 놀자냥.','잠깐만냥…','closed',false,'shy'),
+   pose('backstep','살살 해주면 더 좋겠다냥.','살살 부탁한다냥','',false,'shy'),
+   pose('nod','조금 쑥스러워서 숨 고르는 중이다냥.','쉬는 중이다냥','closed',false,'shy')
   ],
-  bonus:[pose('bounce','너무 행복해서 선물도 주겠다냥!','마음 받으라냥 ♥','happy',true),pose('purr','우리 제법 친해졌다냥! 작은 선물이다냥.','골골골 ♥','happy',true)]
+  bonus:[pose('bounce','너무 행복해서 선물도 주겠다냥!','마음 받으라냥 ♥','happy',false,'joy'),pose('purr','우리 제법 친해졌다냥! 작은 선물이다냥.','신난다냥 ♥','happy',false,'joy')]
  },
  cold:{
   like:[

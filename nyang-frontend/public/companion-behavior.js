@@ -21,8 +21,11 @@ export function createCompanionBehavior({change,schedule=setTimeout,cancel=clear
  return {clear,greet:mode=>play(mode,'greet'),feed:mode=>play(mode,'feed')};
 }
 
+// 따뜻한 모드의 인사·츄르 장면에 쓰는 전용 그림(reaction-variety.js의 art와 같은 이름)
+const WARM_PHASE_ART={welcome:'wink',stretch:'wink',cozy:'pet',snack:'joy',savor:'pet',tasty:'joy'};
 export function companionAppearance(mode,{phase='idle',reaction=null,affection=false}={}){
  const warm=mode==='warm';
+ if(!reaction&&warm&&WARM_PHASE_ART[phase])return {sleepy:false,soft:false,art:WARM_PHASE_ART[phase],mark:{welcome:'반갑다냥!',stretch:'찡긋, 반갑다냥 ☆',cozy:'네 옆이 좋다냥 ♥',snack:'맛있다냥 ♥',savor:'천천히 음미한다냥 ♥',tasty:'한 입 더 먹고 싶다냥!'}[phase]};
  if(reaction)return {sleepy:!warm&&reaction==='like'&&affection,soft:reaction==='dislike',mark:reaction==='like'?(warm?'골골… 좋다냥':affection?'…더 해달라냥.':''):''};
- return {sleepy:['sleepy','cozy','savor'].includes(phase),soft:false,mark:phase==='welcome'?'반갑다냥!':phase==='stretch'?(warm?'쭈욱~ 반갑다냥!':'기지개 켜는 중이다냥.'):phase==='cozy'?'네 옆이 좋다냥.':phase==='savor'?(warm?'천천히 음미한다냥 ♥':'…이 맛은 인정이다냥.'):phase==='tasty'?(warm?'한 입 더 먹고 싶다냥!':'남은 건 없냐옹?'):phase==='sleepy'?'zzz':phase==='peek'?'…왔냐옹?':phase==='hesitate'?'…나 주는 거냥?':phase==='snack'?(warm?'맛있다냥 ♥':'…맛있다냥.') :''};
+ return {sleepy:['sleepy','cozy','savor'].includes(phase),soft:false,mark:phase==='welcome'?'반갑다냥!':phase==='stretch'?'기지개 켜는 중이다냥.':phase==='cozy'?'네 옆이 좋다냥.':phase==='savor'?'…이 맛은 인정이다냥.':phase==='tasty'?'남은 건 없냐옹?':phase==='sleepy'?'zzz':phase==='peek'?'…왔냐옹?':phase==='hesitate'?'…나 주는 거냥?':phase==='snack'?'…맛있다냥.':''};
 }

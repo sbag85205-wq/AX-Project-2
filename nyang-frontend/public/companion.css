@@ -44,3 +44,11 @@ body[data-mode=cat] .main-content.work-view{overflow:auto;background:#fbfcfe!imp
 @keyframes cat-reading{0%,100%{transform:translateY(0) rotate(0)}30%{transform:translateY(-2px) rotate(-1.6deg)}60%{transform:translateY(0) rotate(1.1deg)}80%{transform:translateY(-1px) rotate(0)}}
 .motion-paused .cat-art.resident.searching{animation-play-state:paused!important}
 @media(prefers-reduced-motion:reduce){.cat-art.resident.searching{animation:none!important}}
+/* 따뜻한 모드 전용 반응 그림(cat-warm-reactions.webp, 2x2: 기쁨·윙크 / 수줍음·골골).
+   칸마다 냥대리 상자 밖 여백(12.5%)이 있어 하트·별이 잘리지 않게 상자보다 크게 그린다. 눈 깜빡임 층은 끈다. */
+.cat-art[class*=warm-]{background-image:none!important;clip-path:none!important}
+.pet-body .pet-resolution .cat-art[class*=warm-]::after,.cat-art[class*=warm-]::after{display:none!important}
+.pet-body .pet-resolution .cat-art[class*=warm-]::before,.cat-art[class*=warm-]::before{content:'';position:absolute;inset:-12.5%;background:url('./assets/cat-warm-reactions.webp') 0 0/200% 200% no-repeat!important;animation:none!important;opacity:1!important;clip-path:none;pointer-events:none}
+.pet-body .pet-resolution .cat-art.warm-wink::before,.cat-art.warm-wink::before{background-position:100% 0!important}
+.pet-body .pet-resolution .cat-art.warm-shy::before,.cat-art.warm-shy::before{background-position:0 100%!important}
+.pet-body .pet-resolution .cat-art.warm-pet::before,.cat-art.warm-pet::before{background-position:100% 100%!important}

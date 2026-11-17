@@ -45,3 +45,20 @@ test('warm and cold reactions have distinct expressions without changing the res
  assert.equal(petAppearance('cold',{happy:true}).wag,false);
  assert.equal(petAppearance('warm').expression,'');
 });
+
+test('only warm mode uses the dedicated reaction pictures',async()=>{
+ const {companionAppearance}=await import('../public/companion-behavior.js');
+ const arts=new Set(['pet','wink','shy','joy']);
+ for(const kind of ['like','dislike','bonus']){
+  for(const pose of reactionPoses.warm[kind]){assert.ok(arts.has(pose.art),kind+': '+pose.line);assert.equal(pose.wag,false);}
+  for(const pose of reactionPoses.cold[kind])assert.equal(pose.art,'');
+ }
+ assert.ok(reactionPoses.warm.dislike.every(p=>p.art==='shy'));
+ assert.ok(reactionPoses.warm.bonus.every(p=>p.art==='joy'));
+ // 4장 모두 어딘가에서 쓰인다
+ const used=new Set([...Object.values(reactionPoses.warm).flat().map(p=>p.art),...['welcome','stretch','cozy','snack','savor','tasty'].map(phase=>companionAppearance('warm',{phase}).art)]);
+ assert.deepEqual([...used].sort(),[...arts].sort());
+ for(const phase of ['welcome','stretch','cozy','snack','savor','tasty','sleepy','peek','hesitate'])assert.equal(companionAppearance('cold',{phase}).art,undefined);
+ assert.equal(companionAppearance('warm',{phase:'idle'}).art,undefined);
+ assert.equal(companionAppearance('warm',{phase:'welcome',reaction:'like'}).art,undefined);
+});
