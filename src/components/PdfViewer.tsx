@@ -32,7 +32,7 @@ export function PdfViewer({ url, page = 1, title }: { url: string; page?: number
   }, [url]);
 
   if (error) return <div className="card empty">{error}</div>;
-  if (!doc) return <div className="card"><Loading text="원본 PDF를 불러오는 중" /></div>;
+  if (!doc) return <div className="card"><Loading text="원본 PDF를 불러오는 중" compact /></div>;
   return (
     <div className="card pdf-view" aria-label={`${title} 원본`}>
       {Array.from({ length: doc.numPages }, (_, i) => (

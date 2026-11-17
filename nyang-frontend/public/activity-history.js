@@ -1,5 +1,5 @@
 const kinds=new Set(['answer','plan','excerpt','unknown','scope','knowly','event']);
-import {isCategoryId} from './shared.js?v=32d8c9fbd3c9';
+import {isCategoryId} from './shared.js?v=0fcb6a1b22de';
 // 고정 분야와 담당자가 추가한 분야(custom:<이름>)를 유효한 분야로 본다(shared.js)
 const categories={has:isCategoryId};
 export const canSaveAnswer=result=>['answer','plan','excerpt','knowly'].includes(result?.kind);

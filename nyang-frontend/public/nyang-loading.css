@@ -1,26 +1,28 @@
-/* 불러오는 중 표시: 네 발로 걷는 옆모습 냥대리 + "불러오는 중..." (냥대리 화면과 Knowly 화면이 같이 쓴다)
-   걷기: 대각선 다리 두 쌍이 번갈아 앞뒤로(wc-leg), 몸과 머리가 걸음마다 살짝 들썩이고(wc-bob·wc-head), 꼬리가 흔들리며,
-   몸 전체는 왼쪽→오른쪽으로 걸어간다(nyang-walk). 그림은 shared.js WALKING_CAT_SVG. */
+/* 불러오는 중 표시: 네 발로 걷는 냥대리 + "불러오는 중..." (냥대리 화면과 Knowly 화면이 같이 쓴다)
+   그림: 받은 걷는 옆모습(assets/nyang-walk.webp)을 몸(머리·꼬리·사원증)과 네 다리로 잘라 같은 그림을 겹쳐 쓴다.
+   대각선 두 쌍(뒤로 뻗은 뒷다리+가슴 아래 앞다리 / 가운데 뒷다리+앞으로 뻗은 앞다리)이 관절을 축으로 번갈아 앞뒤로,
+   몸은 걸음마다 살짝 들썩이고, 전체가 왼쪽→오른쪽으로 걸어간다(nyang-walk). 다리는 몸 뒤에 두어 이음매가 가려진다. */
 .nyang-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 16px;color:var(--ui-sub,#6e6e73);font-size:13px;text-align:center}
 .nyang-loading p{margin:0;font-weight:500;letter-spacing:-.1px}
-.nyang-loading-track{position:relative;width:220px;height:80px;overflow:hidden}
-.nyang-loading-walker{position:absolute;left:50%;bottom:8px;width:96px;height:68px;margin-left:-48px;animation:nyang-walk 3.6s linear infinite}
-.nyang-loading-walker>svg{display:block;width:100%;height:100%}
-.nyang-loading-shadow{position:absolute;left:50%;bottom:-3px;width:70px;height:7px;margin-left:-35px;z-index:-1;border-radius:50%;background:currentColor;opacity:.14;animation:nyang-shadow .42s ease-in-out infinite alternate}
+.nyang-loading-track{position:relative;width:230px;height:104px;overflow:hidden}
+.nyang-loading-walker{position:absolute;left:50%;bottom:6px;width:80px;height:92px;margin-left:-40px;animation:nyang-walk 4.2s linear infinite}
+.nyang-loading-shadow{position:absolute;left:50%;bottom:-2px;width:66px;height:7px;margin-left:-33px;z-index:-1;border-radius:50%;background:currentColor;opacity:.14;animation:nyang-shadow .42s ease-in-out infinite alternate}
 .nyang-loading-dots::after{content:"";display:inline-block;width:1.2em;text-align:left;animation:nyang-dots 1.2s steps(4,end) infinite}
-@keyframes nyang-walk{0%{transform:translateX(-90px);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateX(90px);opacity:0}}
-.walking-cat{overflow:visible}.walking-cat .wc-leg{transform-box:fill-box;transform-origin:50% 8%;animation:wc-leg .56s ease-in-out infinite alternate}
-.walking-cat .wc-b{animation-delay:-.56s}
-.walking-cat .wc-body,.walking-cat .wc-badge{animation:wc-bob .28s ease-in-out infinite alternate}
-.walking-cat .wc-head{transform-box:fill-box;transform-origin:30% 90%;animation:wc-head .56s ease-in-out infinite alternate}
-.walking-cat .wc-tail{transform-box:fill-box;transform-origin:100% 90%;animation:wc-tail 1.12s ease-in-out infinite alternate}
-@keyframes wc-leg{from{transform:rotate(24deg)}to{transform:rotate(-24deg)}}
-@keyframes wc-bob{from{transform:translateY(0)}to{transform:translateY(-1.6px)}}
-@keyframes wc-head{from{transform:translateY(0) rotate(-1.5deg)}to{transform:translateY(-1.4px) rotate(1.5deg)}}
-@keyframes wc-tail{from{transform:rotate(-9deg)}to{transform:rotate(9deg)}}
+@keyframes nyang-walk{0%{transform:translateX(-95px);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateX(95px);opacity:0}}
+.cat-rig{position:relative;display:block;width:100%;height:100%}
+.cat-rig>i{position:absolute;inset:0;background:url(assets/nyang-walk.webp) 0 0/100% 100% no-repeat}
+.cat-rig>.cr-body{clip-path:polygon(0.00% 0.00%,99.90% 0.00%,99.90% 80.76%,47.77% 80.76%,47.77% 82.52%,28.54% 82.52%,28.54% 79.70%,21.46% 79.70%,21.46% 75.73%,0.00% 75.73%);z-index:2;animation:cr-bob .32s ease-in-out infinite alternate}
+.cr-l1{clip-path:polygon(3.24% 73.52%,22.47% 73.52%,23.68% 81.91%,20.24% 99.91%,0.00% 99.91%,0.00% 87.64%);transform-origin:17.61% 75.73%}.cr-l2{clip-path:polygon(24.49% 77.93%,42.71% 77.93%,46.26% 84.11%,46.26% 99.91%,20.24% 99.91%,23.68% 81.91%);transform-origin:33.81% 80.58%}.cr-l3{clip-path:polygon(47.77% 77.93%,63.77% 77.93%,63.77% 99.91%,46.26% 99.91%,46.26% 84.11%);transform-origin:55.06% 79.70%}.cr-l4{clip-path:polygon(63.77% 78.38%,69.03% 78.38%,99.90% 87.64%,99.90% 99.91%,63.77% 99.91%);transform-origin:66.50% 81.02%}
+.cat-rig>.cr-l1,.cat-rig>.cr-l3{animation:cr-fwd .64s ease-in-out infinite alternate}
+.cat-rig>.cr-l2,.cat-rig>.cr-l4{animation:cr-back .64s ease-in-out infinite alternate}
+@keyframes cr-fwd{from{transform:rotate(0deg)}to{transform:rotate(-17deg)}}
+@keyframes cr-back{from{transform:rotate(0deg)}to{transform:rotate(15deg)}}
+@keyframes cr-bob{from{transform:translateY(0)}to{transform:translateY(-1.4%)}}
+
 @keyframes nyang-shadow{0%{transform:scaleX(1);opacity:.16}50%{transform:scaleX(.78);opacity:.09}100%{transform:scaleX(1);opacity:.16}}
 @keyframes nyang-dots{0%{content:""}25%{content:"."}50%{content:".."}75%,100%{content:"..."}}
-.nyang-loading.compact{flex-direction:row;padding:6px 0;gap:8px;font-size:12px}.nyang-loading.compact .nyang-loading-track{width:96px;height:36px}.nyang-loading.compact .nyang-loading-walker{width:42px;height:30px;margin-left:-21px;bottom:5px}.nyang-loading.compact .nyang-loading-shadow{width:30px;margin-left:-15px;height:4px}
+/* 작은 곳(원문 한 조각·PDF·표·설정 칸)은 냥대리 없이 글만 */
+.nyang-loading-text{margin:0;padding:10px 0;color:var(--ui-sub,#6e6e73);font-size:13px}
 /* 화면 전체를 잠깐 덮는 표시(로그인 중 등) */
 .nyang-loading-overlay{position:fixed;inset:0;z-index:9998;display:grid;place-items:center;background:color-mix(in srgb,var(--ui-bg,#fff) 72%,transparent);backdrop-filter:blur(2px);animation:nyang-fade .18s ease-out}
 .nyang-loading-overlay .nyang-loading{background:var(--ui-panel,#fff);border:1px solid var(--ui-line,#e5e5e8);border-radius:16px;padding:22px 36px 20px;box-shadow:0 12px 40px #0000001a;color:var(--ui-ink,#1d1d1f)}
@@ -30,5 +32,5 @@
 .knowly-frame-wrap.ready:not(.busy)>.nyang-loading{opacity:0;pointer-events:none}
 /* 안에 끼운 Knowly 화면 안쪽의 불러오는 중 자리: 바깥 표시 하나만 보이게 비워 둔다 */
 .nyang-loading-slot{min-height:120px}
-html[data-theme=dark] .walking-cat{filter:drop-shadow(0 0 1px #ffffff59)}
-@media (prefers-reduced-motion:reduce){.nyang-loading-walker,.nyang-loading-shadow,.walking-cat *{animation:none!important}}
+html[data-theme=dark] .cat-rig{filter:drop-shadow(0 0 1px #ffffff40)}
+@media (prefers-reduced-motion:reduce){.nyang-loading-walker,.nyang-loading-shadow,.cat-rig>i{animation:none!important}}

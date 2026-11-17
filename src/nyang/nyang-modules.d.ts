@@ -16,6 +16,6 @@ declare module '*/nyang-frontend/public/core.js' {
   export const customCategoryDetail: string;
 }
 declare module '*/nyang-frontend/public/shared.js' {
-  /** 네 발로 걷는 옆모습 냥대리 그림(SVG 글자) */
-  export const WALKING_CAT_SVG: string;
+  /** 네 발로 걷는 냥대리(받은 걷는 옆모습 그림을 몸·네 다리로 잘라 움직인다, HTML 글자) */
+  export const WALKING_CAT_HTML: string;
 }
