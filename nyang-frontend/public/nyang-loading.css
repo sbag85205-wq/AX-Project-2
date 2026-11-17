@@ -1,0 +1,25 @@
+/* 불러오는 중 표시: 옆모습 냥대리가 걸어가는 애니메이션 + "불러오는 중..." (냥대리 화면과 Knowly 화면이 같이 쓴다)
+   걷기: 몸 전체가 왼쪽→오른쪽으로 걸어가고(nyang-walk), 걸음마다 살짝 튀어 오르며 기울고(nyang-step), 발자국이 뒤에 찍힌다. */
+.nyang-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 16px;color:var(--ui-sub,#6e6e73);font-size:13px;text-align:center}
+.nyang-loading p{margin:0;font-weight:500;letter-spacing:-.1px}
+.nyang-loading-track{position:relative;width:150px;height:76px;overflow:hidden}
+.nyang-loading-walker{position:absolute;left:50%;bottom:6px;width:46px;height:66px;margin-left:-23px;animation:nyang-walk 3.2s linear infinite}
+.nyang-loading-cat{display:block;width:100%;height:100%;background:url(assets/cat-walk.webp) center bottom/contain no-repeat;transform-origin:50% 100%;animation:nyang-step .42s ease-in-out infinite alternate}
+.nyang-loading-shadow{position:absolute;left:50%;bottom:-5px;width:34px;height:6px;margin-left:-17px;z-index:-1;border-radius:50%;background:currentColor;opacity:.14;animation:nyang-shadow .42s ease-in-out infinite alternate}
+.nyang-loading-walker::before,.nyang-loading-walker::after{content:"";position:absolute;bottom:-2px;width:5px;height:4px;border-radius:50%;background:currentColor;opacity:0;animation:nyang-paw .84s linear infinite}
+.nyang-loading-walker::before{left:-10px}.nyang-loading-walker::after{left:-22px;animation-delay:.42s}
+.nyang-loading-dots::after{content:"";display:inline-block;width:1.2em;text-align:left;animation:nyang-dots 1.2s steps(4,end) infinite}
+@keyframes nyang-walk{0%{transform:translateX(-62px);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateX(62px);opacity:0}}
+@keyframes nyang-step{0%{transform:translateY(0) rotate(-3deg) scaleY(1)}50%{transform:translateY(-5px) rotate(1deg) scaleY(1.02)}100%{transform:translateY(0) rotate(3deg) scaleY(.97)}}
+@keyframes nyang-shadow{0%{transform:scaleX(1);opacity:.16}50%{transform:scaleX(.78);opacity:.09}100%{transform:scaleX(1);opacity:.16}}
+@keyframes nyang-paw{0%{opacity:.35}70%{opacity:0}100%{opacity:0}}
+@keyframes nyang-dots{0%{content:""}25%{content:"."}50%{content:".."}75%,100%{content:"..."}}
+.nyang-loading.compact{flex-direction:row;padding:6px 0;gap:8px;font-size:12px}.nyang-loading.compact .nyang-loading-track{width:84px;height:44px}.nyang-loading.compact .nyang-loading-walker{width:27px;height:39px;margin-left:-14px}.nyang-loading.compact .nyang-loading-shadow{width:20px;margin-left:-10px;height:4px}
+/* 화면 전체를 잠깐 덮는 표시(로그인 중 등) */
+.nyang-loading-overlay{position:fixed;inset:0;z-index:9998;display:grid;place-items:center;background:color-mix(in srgb,var(--ui-bg,#fff) 72%,transparent);backdrop-filter:blur(2px);animation:nyang-fade .18s ease-out}
+.nyang-loading-overlay .nyang-loading{background:var(--ui-panel,#fff);border:1px solid var(--ui-line,#e5e5e8);border-radius:16px;padding:22px 36px 20px;box-shadow:0 12px 40px #0000001a;color:var(--ui-ink,#1d1d1f)}
+@keyframes nyang-fade{from{opacity:0}to{opacity:1}}
+/* Knowly 화면(안에 끼운 화면)이 뜰 때까지 */
+.knowly-frame-wrap{position:relative}.knowly-frame-wrap>.nyang-loading{position:absolute;inset:0;background:var(--ui-bg,#fff);z-index:1;transition:opacity .2s}.knowly-frame-wrap.loaded>.nyang-loading{opacity:0;pointer-events:none}
+html[data-theme=dark] .nyang-loading-cat{filter:drop-shadow(0 0 1px #ffffff40)}
+@media (prefers-reduced-motion:reduce){.nyang-loading-walker,.nyang-loading-cat,.nyang-loading-shadow,.nyang-loading-walker::before,.nyang-loading-walker::after{animation:none}.nyang-loading-walker::before,.nyang-loading-walker::after{opacity:0}}

@@ -13,6 +13,7 @@ import Stats from '../pages/admin/Stats';
 import Unanswered from '../pages/admin/Unanswered';
 import Users from '../pages/admin/Users';
 import { notifyParent } from './bridge';
+import Loading from '../components/Loading';
 
 function RouteReporter() {
   const location = useLocation();
@@ -22,7 +23,7 @@ function RouteReporter() {
 
 function Routed() {
   const { session, profile, loading } = useAuth();
-  if (loading) return <div className="empty">불러오는 중…</div>;
+  if (loading) return <Loading />;
   if (!session || !profile) return <div className="empty">연결된 Knowly 계정 정보를 찾을 수 없어요. 관리자에게 연결 계정을 확인해 달라고 알려 주세요.</div>;
   const admin = profile.role === 'admin';
   return (

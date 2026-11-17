@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { openPdf, type PdfDocument } from '../lib/pdf';
+import Loading from './Loading';
 
 /**
  * 원본 PDF를 pdf.js로 직접 그린다. 브라우저 내장 뷰어(iframe)는 휴대폰에서 열리지 않거나
@@ -31,7 +32,7 @@ export function PdfViewer({ url, page = 1, title }: { url: string; page?: number
   }, [url]);
 
   if (error) return <div className="card empty">{error}</div>;
-  if (!doc) return <div className="card empty">원본 PDF를 불러오는 중…</div>;
+  if (!doc) return <div className="card"><Loading text="원본 PDF를 불러오는 중" /></div>;
   return (
     <div className="card pdf-view" aria-label={`${title} 원본`}>
       {Array.from({ length: doc.numPages }, (_, i) => (

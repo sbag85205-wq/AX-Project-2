@@ -7,6 +7,7 @@ import { stripOverlap } from '../lib/docText';
 import { docFileType, pageCountLabel, pageLabel } from '../lib/sheet';
 import { supabase } from '../lib/supabase';
 import type { DocumentRow } from '../lib/types';
+import Loading from '../components/Loading';
 
 interface ChunkRow {
   id: string;
@@ -77,7 +78,7 @@ export default function DocumentView() {
       </main>
     );
   }
-  if (!doc) return <div className="empty">불러오는 중…</div>;
+  if (!doc) return <Loading text="문서를 불러오는 중" />;
 
   return (
     <main className="admin-main">

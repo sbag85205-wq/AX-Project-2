@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fileKind, readSpreadsheet } from '../lib/extract';
 import type { Sheet } from '../lib/sheet';
+import Loading from './Loading';
 
 const MAX_ROWS = 500;
 
@@ -30,7 +31,7 @@ export function SheetViewer({ url, path, sheet = 1, title }: { url: string; path
   useEffect(() => setActive(Math.max(0, sheet - 1)), [sheet]);
 
   if (error) return <div className="card empty">{error}</div>;
-  if (!sheets) return <div className="card empty">원본 표를 불러오는 중…</div>;
+  if (!sheets) return <div className="card"><Loading text="원본 표를 불러오는 중" /></div>;
   const current = sheets[active] ?? sheets[0];
   if (!current) return <div className="card empty">표시할 시트가 없어요.</div>;
   const width = Math.max(1, ...current.rows.slice(0, MAX_ROWS).map((r) => r.length));

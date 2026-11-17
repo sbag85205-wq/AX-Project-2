@@ -7,6 +7,7 @@ import Chat from './pages/Chat';
 import DocumentList from './pages/DocumentList';
 import DocumentView from './pages/DocumentView';
 import Login from './pages/Login';
+import Loading from './components/Loading';
 
 const Admin = lazy(() => import('./pages/admin/AdminLayout'));
 
@@ -22,7 +23,7 @@ function Shell({ children }: { children: ReactNode }) {
 function Routed() {
   const { session, profile, loading, verifying } = useAuth();
   if (verifying) return <Login />;
-  if (loading) return <div className="empty">불러오는 중…</div>;
+  if (loading) return <Loading />;
   if (!session) return <Login />;
   if (!profile) return <div className="empty">계정 정보를 찾을 수 없어요. 관리자에게 문의해 주세요.</div>;
   return (
@@ -33,7 +34,7 @@ function Routed() {
       <Route
         path="/admin/*"
         element={profile.role === 'admin'
-          ? <Shell><Suspense fallback={<div className="empty">불러오는 중…</div>}><Admin /></Suspense></Shell>
+          ? <Shell><Suspense fallback={<Loading />}><Admin /></Suspense></Shell>
           : <Navigate to="/" replace />}
       />
       <Route path="*" element={<Navigate to="/" replace />} />

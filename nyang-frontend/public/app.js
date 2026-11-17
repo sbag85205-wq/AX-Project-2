@@ -4,20 +4,20 @@ import {fetch} from './transport.js?v=fd4b994ba12d';
 import {createReactionPicker} from './reaction-variety.js?v=115ea2f34987';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=ef11f91be08e';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
-import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=07deb347a2ff';
-import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=5e7f1906131e';
+import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=da548f29e908';
+import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=12818a8a970a';
 import {categories,applyManagedCategories,defaultCategory,categoryOf,documents,faq,startersFor,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=4dc923f4c7f7';
 import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=93bd9a4c6e6f';
 import {createPetInteraction} from './pet-interaction.js?v=25ddd542a513';
-import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=7636a2959edf';
+import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=ffd1d56e2a93';
 const $=s=>document.querySelector(s);
-import {passwordProblem} from './account-view.js?v=6b2071e7801a';
+import {passwordProblem,passwordInputHTML,passwordEye} from './account-view.js?v=8c8a11c7f8cf';
 import {createAccountSync} from './account-sync.js?v=7c9808eca089';
-import {esc} from './shared.js?v=76a19ab6baf7';
-import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=2b8781e39084';
+import {esc,loadingHTML} from './shared.js?v=5683e41533cc';
+import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=7b6bca956cad';
 import {orderNav,installNavLayout} from './nav-layout.js?v=34db55cc4081';
-import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=2715720c7a99';
-import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=d2afdbbf0a96';
+import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=1b18017ae82a';
+import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=f10de9f5775a';
 const mode=document.body.dataset.mode;
 const isCat=mode==='cat';
 const root='/nyang/';
@@ -30,6 +30,7 @@ paths.moon='M20.9 13.1A9 9 0 0 1 10.9 3a9 9 0 1 0 10 10.1Z';
 paths.cat='M5 9 4 3l6 4h4l6-4-1 6a8 8 0 1 1-14 0ZM8 12h.01M16 12h.01m-6 4 2 1 2-1';
 paths.activity='M4 20h16M7 16V9m5 7V4m5 12v-5';
 paths.shirt='m8 3-5 4 3 4 2-1v11h8V10l2 1 3-4-5-4a4 4 0 0 1-8 0Z';
+paths.copy='M9 8h11v13H9zM5 16V3h11';
 let activeAccount=null;
 const personalKeys=new Set(['om-docs','om-tasks','om-question-history','om-seen-replies','om-chat-sessions','om-chat-active','om-personality']);
 const storageKey=key=>personalKeys.has(key)||key.startsWith('om-bg-')?'nyang-account:'+(activeAccount||'signed-out')+':'+key:key;
@@ -47,7 +48,27 @@ let history=normalizeHistory(read('om-question-history',[])),activityTab='recent
 if(!seenReplies||typeof seenReplies!=='object')seenReplies={};
 const allDocs=()=>[...documents,...uploads];
 const badge=(text,cls='')=>`<span class="badge ${cls}">${text}</span>`;
-function toast(text){let el=$('#toast');if(!el){el=document.createElement('div');el.id='toast';el.setAttribute('role','status');document.body.append(el);}el.textContent=text;el.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>el.classList.remove('show'),3500);}
+// 알림: 새 알림이 앞의 알림을 지우지 않고 아래에 쌓였다가 각자 3.5초 뒤 사라진다(최대 3개, 같은 글은 하나로)
+const TOAST_LIMIT=3,TOAST_MS=3500;
+function toast(text){
+ let stack=$('#toast-stack');
+ if(!stack){stack=document.createElement('div');stack.id='toast-stack';stack.setAttribute('role','status');stack.setAttribute('aria-live','polite');document.body.append(stack);}
+ const message=String(text??'');if(!message)return;
+ const leave=item=>{clearTimeout(item._timer);item.classList.remove('show');setTimeout(()=>item.remove(),220);};
+ const same=[...stack.children].find(x=>x.textContent===message&&x.classList.contains('show'));
+ if(same){clearTimeout(same._timer);same._timer=setTimeout(()=>leave(same),TOAST_MS);return;}
+ const item=document.createElement('div');item.className='toast-item';item.textContent=message;stack.append(item);
+ requestAnimationFrame(()=>item.classList.add('show'));item._timer=setTimeout(()=>leave(item),TOAST_MS);
+ const live=[...stack.children].filter(x=>x.classList.contains('show')||x===item);
+ for(const old of live.slice(0,Math.max(0,live.length-TOAST_LIMIT)))leave(old);
+}
+// 불러오는 중: 화면 전체를 잠깐 덮고 걷는 냥대리를 보여 준다(로그인 중 등). text가 없으면 닫는다.
+function showLoading(text){
+ let el=$('#nyang-loading-overlay');
+ if(!text){el?.remove();return;}
+ if(!el){el=document.createElement('div');el.id='nyang-loading-overlay';el.className='nyang-loading-overlay';document.body.append(el);}
+ el.innerHTML=loadingHTML(text);
+}
 const systemColorTheme=matchMedia('(prefers-color-scheme: dark)');
 function applyColorTheme(theme){
  const dark=theme==='dark';
@@ -107,7 +128,10 @@ function updateWallet(){
  $('#wallet').hidden=communityState().me?.role==='staff';
  // 첫 화면 출석체크: 오늘 이미 했으면 '출석 완료'로 막아 둔다
  const attendance=$('#attendance-button'),attended=!!communityState().today;
- if(attendance){attendance.disabled=attended;attendance.classList.toggle('done',attended);attendance.innerHTML=icon(attended?'check':'calendar')+`<span>${attended?'출석 완료':'출석체크'}</span>`;attendance.title=attended?'오늘 출석했어요. 내일 또 만나요!':'하루 한 번, 포인트 또는 츄르 선물';}
+ if(attendance){attendance.disabled=attended;attendance.classList.toggle('done',attended);const streak=Number(communityState().streak)||0;
+  attendance.innerHTML=icon(attended?'check':'calendar')+`<span>${attended?'출석 완료':'출석체크'}</span>`+(streak?`<b class="attendance-streak">${streak}일째</b>`:'');
+  attendance.title=attended?`오늘 출석했어요. ${streak}일 연속 출석 중! 내일 또 만나요.`:streak?`어제까지 ${streak}일 연속 출석했어요. 오늘도 출석하면 ${streak+1}일째!`:'하루 한 번, 포인트 또는 츄르 선물';
+  attendance.setAttribute('aria-label',attendance.title);}
  $('#wallet').innerHTML=`<button class="wallet-level" data-action="activity">${communityState().member?'Lv. '+communityState().level.level:'내 활동'}</button><span title="새 질문 +10 P · 하루 최대 20개"><i>P</i><strong id="points-balance">${rewards.points}</strong></span><span title="츄르를 주고 하트를 눌러 모아요"><i class="heart-mark">♥</i><strong id="hearts-balance">${rewards.hearts}</strong></span>`;
  const count=tasks.filter(t=>!t.done).length;$('#task-count').textContent=count||'';
  const unread=unseenReplies(communityState().posts,seenReplies).length,indicator=$('#activity-unread');
@@ -237,7 +261,7 @@ function answerTools(r,refs,detail='',detailLabel='자세한 절차'){
  const panel=r.expandedPanel,detailId=`detail-${r.messageId}`,sourceId=`sources-${r.messageId}`;
  const first=reference(refs[0],allDocs()),saved=history.some(x=>x.id===r.messageId&&x.saved);
  const citation=first?`<div class="answer-citation"><button data-source="${esc(refs[0])}">${icon('book')}<span><strong>${esc(first.doc.title)}</strong><small>${esc(first.section.label)} · ${esc(first.doc.version)}</small></span>${icon('chevron')}</button></div>`:'';
- return `${citation}<div class="answer-tools" role="group" aria-label="답변 더 알아보기">${detail?`<button data-answer-panel="detail" data-message="${r.messageId}" aria-expanded="${panel==='detail'}" aria-controls="${detailId}">${detailLabel} ${icon('down')}</button>`:''}${refs.length>1?`<button data-answer-panel="sources" data-message="${r.messageId}" aria-expanded="${panel==='sources'}" aria-controls="${sourceId}">${icon('book')} 전체 출처 <span class="source-count">${refs.length}</span></button>`:''}${r.scheduleType?`<button class="answer-schedule-button" ${r.decision==='added'?`data-open-plan="${r.start}"`:`data-consent="${r.decision==='yes'?'no':'yes'}" data-message="${r.messageId}" aria-expanded="${r.decision==='yes'}" aria-controls="schedule-${r.messageId}"`}>${icon(r.decision==='added'?'check':'calendar')}${r.decision==='added'?'내 일정 보기':r.decision==='yes'?'일정 접기':['annual','half'].includes(r.scheduleType)?'신청 일정 잡기':'일정 잡기'}</button>`:''}<button class="answer-save-button" data-save-answer="${r.messageId}" aria-pressed="${saved}" title="${saved?'다시 누르면 저장을 해제해요':'내 활동 > 저장한 답변에서 다시 볼 수 있어요'}">${icon(saved?'check':'bookmark')}${saved?'저장됨':'답변 저장하기'}</button></div>${detail?`<div class="answer-detail" id="${detailId}" ${panel==='detail'?'':'hidden'}>${detail}</div>`:''}<div class="answer-source-panel" id="${sourceId}" ${panel==='sources'?'':'hidden'}><p>답변의 근거 · 눌러서 원문 확인</p>${sourceButtons(refs)}</div>`;
+ return `${citation}<div class="answer-tools" role="group" aria-label="답변 더 알아보기">${detail?`<button data-answer-panel="detail" data-message="${r.messageId}" aria-expanded="${panel==='detail'}" aria-controls="${detailId}">${detailLabel} ${icon('down')}</button>`:''}${refs.length>1?`<button data-answer-panel="sources" data-message="${r.messageId}" aria-expanded="${panel==='sources'}" aria-controls="${sourceId}">${icon('book')} 전체 출처 <span class="source-count">${refs.length}</span></button>`:''}${r.scheduleType?`<button class="answer-schedule-button" ${r.decision==='added'?`data-open-plan="${r.start}"`:`data-consent="${r.decision==='yes'?'no':'yes'}" data-message="${r.messageId}" aria-expanded="${r.decision==='yes'}" aria-controls="schedule-${r.messageId}"`}>${icon(r.decision==='added'?'check':'calendar')}${r.decision==='added'?'내 일정 보기':r.decision==='yes'?'일정 접기':['annual','half'].includes(r.scheduleType)?'신청 일정 잡기':'일정 잡기'}</button>`:''}<button class="answer-copy-button" data-copy-answer="${r.messageId}" title="답변을 복사해 메일·메신저에 붙여 넣을 수 있어요">${icon('copy')}답변 복사</button><button class="answer-save-button" data-save-answer="${r.messageId}" aria-pressed="${saved}" title="${saved?'다시 누르면 저장을 해제해요':'내 활동 > 저장한 답변에서 다시 볼 수 있어요'}">${icon(saved?'check':'bookmark')}${saved?'저장됨':'답변 저장하기'}</button></div>${detail?`<div class="answer-detail" id="${detailId}" ${panel==='detail'?'':'hidden'}>${detail}</div>`:''}<div class="answer-source-panel" id="${sourceId}" ${panel==='sources'?'':'hidden'}><p>답변의 근거 · 눌러서 원문 확인</p>${sourceButtons(refs)}</div>`;
 }
 // main 백엔드(사내 문서 검색) 답변: 기존 답변 카드·도구 모양을 그대로 쓴다.
 function knowlyHTML(r){
@@ -251,7 +275,7 @@ function knowlyHTML(r){
 // ── Knowly(main 백엔드) 연결 ─────────────────────────────────────────
 // 통합 앱은 항상 실제 Knowly 기능을 사용한다. 연결 오류를 샘플로 대체하지 않는다.
 let libraryRoute='/docs',attachments=[],attachBusy=false;
-function knowlyFrameHTML(key,route){return `<div class="knowly-frame-wrap" data-knowly-key="${esc(key)}"><iframe class="knowly-frame" title="Knowly ${esc(key)}" src="/knowly/index.html#${esc(route)}"></iframe></div>`;}
+function knowlyFrameHTML(key,route){return `<div class="knowly-frame-wrap" data-knowly-key="${esc(key)}">${loadingHTML('화면을 불러오는 중')}<iframe class="knowly-frame" title="Knowly ${esc(key)}" src="/knowly/index.html#${esc(route)}"></iframe></div>`;}
 // 같은 화면을 다시 그릴 때 iframe을 새로 불러오지 않도록, 이미 떠 있으면 그대로 둔다.
 function mountKnowly(name){
  const key=name==='library'?'library:'+libraryRoute:name,route=name==='library'?libraryRoute:viewOf(name)?.route;
@@ -556,6 +580,7 @@ document.addEventListener('lostpointercapture',e=>endPetGesture(e,true));
 const is=(...names)=>a=>names.includes(a);
 // ① data-* 속성으로 구분하는 버튼 [맞는지, 처리]
 const clickByData=[
+ [b=>b.dataset.copyAnswer,async (b,e)=>{const r=messages.find(m=>m.result?.messageId===b.dataset.copyAnswer)?.result,text=answerText(r);if(!text){toast('복사할 답변을 찾지 못했어요.');return;}toast(await copyText(text)?'답변을 복사했어요.':'복사하지 못했어요. 답변을 직접 선택해 복사해 주세요.');}],
  [b=>b.dataset.knowlyDoc,(b,e)=>{openLibrary(`/docs/${encodeURIComponent(b.dataset.knowlyDoc)}${b.dataset.chunk?`?chunk=${encodeURIComponent(b.dataset.chunk)}`:''}`);return;}],
  [b=>b.dataset.knowlyVote,(b,e)=>{voteKnowly(b.dataset.message,b.dataset.knowlyVote);return;}],
  [b=>b.dataset.removeAttach,(b,e)=>{chatDraft=$('#question-form textarea')?.value??chatDraft;attachments=attachments.filter(a=>a.id!==b.dataset.removeAttach);render();return;}],
@@ -694,7 +719,7 @@ function loadAccountRecords(next){
 }
 // 비밀번호 변경: 지금 비밀번호를 확인한 뒤 새 비밀번호(8자 이상)로 바꾼다. 다른 기기의 로그인은 그대로 둔다.
 function showPasswordForm(message=''){
- openModal(`<h2 id="modal-title">비밀번호 변경</h2><p class="modal-sub">지금 비밀번호를 확인한 뒤 새 비밀번호로 바꿔요. 다른 기기의 로그인은 그대로 유지돼요.</p><form id="password-form" class="chat-settings-form password-form"><label for="pw-current">지금 비밀번호</label><input id="pw-current" name="current" type="password" autocomplete="current-password" required maxlength="128"><label for="pw-next">새 비밀번호 <small>8자 이상</small></label><input id="pw-next" name="next" type="password" autocomplete="new-password" required minlength="8" maxlength="128"><label for="pw-confirm">새 비밀번호 확인</label><input id="pw-confirm" name="confirm" type="password" autocomplete="new-password" required minlength="8" maxlength="128"><p class="login-error" role="alert" id="password-error">${esc(message)}</p><div class="chat-delete-actions"><button type="button" class="secondary-button" data-action="close-modal">취소</button><button class="primary-button" type="submit">변경</button></div></form>`);
+ openModal(`<h2 id="modal-title">비밀번호 변경</h2><p class="modal-sub">지금 비밀번호를 확인한 뒤 새 비밀번호로 바꿔요. 다른 기기의 로그인은 그대로 유지돼요.</p><form id="password-form" class="chat-settings-form password-form"><label for="pw-current">지금 비밀번호</label>${passwordInputHTML({id:'pw-current',name:'current',autocomplete:'current-password'})}<label for="pw-next">새 비밀번호 <small>8자 이상</small></label>${passwordInputHTML({id:'pw-next',name:'next',autocomplete:'new-password',attrs:'minlength="8"'})}<label for="pw-confirm">새 비밀번호 확인</label>${passwordInputHTML({id:'pw-confirm',name:'confirm',autocomplete:'new-password',attrs:'minlength="8"'})}<p class="login-error" role="alert" id="password-error">${esc(message)}</p><div class="chat-delete-actions"><button type="button" class="secondary-button" data-action="close-modal">취소</button><button class="primary-button" type="submit">변경</button></div></form>`);
  $('#pw-current')?.focus();
 }
 async function changePassword(form){
@@ -706,6 +731,39 @@ async function changePassword(form){
   if(!res.ok)throw Error(body?.error||'비밀번호를 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.');
   closeModal();toast('비밀번호를 바꿨어요. 다음 로그인부터 새 비밀번호를 쓰세요.');
  }catch(e){if(error)error.textContent=e.message;submit.disabled=false;submit.textContent='변경';}
+}
+// 비밀번호 칸: 눈 모양 버튼으로 보기·가리기, Caps Lock이 켜져 있으면 칸 아래에 알린다
+document.addEventListener('click',e=>{
+ const b=e.target.closest?.('[data-password-toggle]');if(!b)return;
+ const input=document.getElementById(b.dataset.passwordToggle);if(!input)return;
+ const show=input.type==='password';input.type=show?'text':'password';
+ b.setAttribute('aria-pressed',String(show));b.setAttribute('aria-label',show?'비밀번호 가리기':'비밀번호 보기');b.title=b.getAttribute('aria-label');b.innerHTML=passwordEye(show);
+ input.focus({preventScroll:true});
+});
+const capsCheck=e=>{
+ const input=e.target;if(!input?.closest?.('.password-field')||typeof e.getModifierState!=='function')return;
+ const warn=document.querySelector(`[data-caps-for="${input.id}"]`);if(warn)warn.hidden=!e.getModifierState('CapsLock');
+};
+document.addEventListener('keydown',capsCheck);document.addEventListener('keyup',capsCheck);
+document.addEventListener('focusout',e=>{const w=e.target?.id&&document.querySelector(`[data-caps-for="${e.target.id}"]`);if(w)w.hidden=true;});
+// Knowly 화면이 다 뜨면 불러오는 중 표시를 걷는다(load는 거품이 일지 않아 붙잡기 단계에서 받는다)
+document.addEventListener('load',e=>{if(e.target?.matches?.('iframe.knowly-frame'))e.target.closest('.knowly-frame-wrap')?.classList.add('loaded');},true);
+// 답변 복사: 화면에 보이는 핵심·절차·설명·근거를 글자로 정리해 복사한다
+function answerText(r){
+ const list=v=>Array.isArray(v)?v.filter(x=>typeof x==='string'&&x.trim()):[];
+ if(r?.kind==='knowly'){
+  const k=r.knowly||{},summary=list(k.summary),steps=list(k.steps),cites=(Array.isArray(k.citations)?k.citations:[]).filter(c=>c&&c.title);
+  return [summary[0],...summary.slice(1).map(x=>'• '+x),steps.length?'':null,...steps.map((x,i)=>`${i+1}. ${x}`),k.details?'\n'+k.details:null,
+   cites.length?'\n근거: '+cites.map(c=>[c.title,c.pages].filter(Boolean).join(' ')).join(', '):null].filter(x=>x!==null&&x!==undefined).join('\n').replace(/\n{3,}/g,'\n\n').trim();
+ }
+ const card=document.querySelector(`[data-copy-answer="${CSS.escape(r?.messageId||'')}"]`)?.closest('.answer-content');
+ if(!card)return '';
+ const copy=card.cloneNode(true);copy.querySelectorAll('button,.answer-tools,.answer-label,.unknown-board-offer,.answer-source-panel').forEach(x=>x.remove());
+ return copy.innerText.replace(/\n{3,}/g,'\n\n').trim();
+}
+async function copyText(text){
+ try{await navigator.clipboard.writeText(text);return true;}
+ catch{const area=document.createElement('textarea');area.value=text;area.setAttribute('readonly','');area.style.position='fixed';area.style.opacity='0';document.body.append(area);area.select();let ok=false;try{ok=document.execCommand('copy');}catch{}area.remove();return ok;}
 }
 // 마지막으로 브라우저 저장소에 넣은 서버 기록 묶음(같은 묶음을 두 번 넣지 않는다)
 let lastPersonalState=null;
@@ -722,7 +780,7 @@ function reloadAccountRecords(){
 addEventListener('pagehide',()=>{accountSync.flush();});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')accountSync.flush();});
 initCommunity({
- toast,modal:openModal,close:closeModal,render,
+ toast,modal:openModal,close:closeModal,render,loading:showLoading,
  // 내 질문 상세 창을 열면(게시판·내 활동 어디서든) 그 질문의 답변을 읽은 것으로 표시한다
  seen(post){
   if(!post?.mine||(Number(seenReplies[post.id])||0)>=post.replies.length)return;

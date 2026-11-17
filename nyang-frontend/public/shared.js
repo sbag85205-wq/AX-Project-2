@@ -15,3 +15,9 @@ export const isCategoryId=id=>FIXED_CATEGORY_IDS.includes(id)||(typeof id==='str
 
 /** 질문 게시판 '유익해요' 한 번에 글쓴이가 받는 포인트(drizzle 0006 트리거와 같다) */
 export const HELPFUL_POINTS=10;
+
+/**
+ * 불러오는 중 표시(옆모습 냥대리가 걷는 애니메이션 + 글). 모양은 nyang-loading.css.
+ * text: 보여 줄 글(끝의 '...'은 저절로 움직인다), compact: 한 줄로 작게.
+ */
+export const loadingHTML=(text='불러오는 중',{compact=false}={})=>`<div class="nyang-loading${compact?' compact':''}" role="status" aria-live="polite"><div class="nyang-loading-track" aria-hidden="true"><span class="nyang-loading-walker"><span class="nyang-loading-cat"></span><span class="nyang-loading-shadow"></span></span></div><p>${esc(String(text).replace(/[.…]+$/,''))}<span class="nyang-loading-dots" aria-hidden="true"></span></p></div>`;

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useToast } from '../../components/Toast';
 import { callFunction, errorMessage } from '../../lib/api';
 import type { AppSettings, ModelOption, PreviewQuery, PreviewRow } from '../../lib/types';
+import Loading from '../../components/Loading';
 
 interface SettingsInfo {
   settings: AppSettings;
@@ -114,7 +115,7 @@ export default function Settings() {
   };
 
   if (error) return <main className="admin-main"><div className="error-box">{error}</div></main>;
-  if (!info || !draft) return <main className="admin-main"><div className="empty">불러오는 중…</div></main>;
+  if (!info || !draft) return <main className="admin-main"><Loading text="설정을 불러오는 중" /></main>;
 
   const passed = preview?.results.filter((r) => r.used ?? r.passed).length ?? 0;
 

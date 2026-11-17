@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { groupByManaged, useManagedCategories } from '../../lib/categories';
 import { fmt } from '../../lib/format';
 import { supabase } from '../../lib/supabase';
+import Loading from '../../components/Loading';
 
 interface UsageStats {
   total: number;
@@ -104,7 +105,7 @@ export default function Stats() {
       </div>
 
       {error && <div className="error-box">{error}</div>}
-      {!stats && !error && <div className="empty">불러오는 중…</div>}
+      {!stats && !error && <Loading text="통계를 불러오는 중" />}
       {stats && (
         <>
           <section className="stats-row" aria-label="요약">

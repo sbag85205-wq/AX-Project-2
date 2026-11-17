@@ -1,8 +1,8 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {categories as chatCategories} from './core.js?v=4dc923f4c7f7';
-import {boardView,boardPostHTML} from './board-view.js?v=8760a87b1cb3';
-import {loginHTML as loginView,statisticsHTML,periodLabel,rankingCSV} from './account-view.js?v=6b2071e7801a';
-import {esc} from './shared.js?v=76a19ab6baf7';
+import {boardView,boardPostHTML} from './board-view.js?v=f7eedab25232';
+import {loginHTML as loginView,statisticsHTML,periodLabel,rankingCSV} from './account-view.js?v=8c8a11c7f8cf';
+import {esc,loadingHTML} from './shared.js?v=5683e41533cc';
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 let state={loading:true},hooks,filter='all',query='',boardCategory='all',boardSort='new',openPostId=null,busy=false,connecting=null,authEpoch=0,loginRole='employee',stats=null;
 export const communityState=()=>state;
@@ -66,7 +66,7 @@ export async function communityAction(action,body={}){
  }catch(e){hooks.toast(e.message||'연결을 확인하고 다시 시도해 주세요.');return null;}
 }
 function gate(){
- if(state.loading)return '<div class="community-empty" role="status">체험 공간을 준비하고 있어요…</div>';
+ if(state.loading)return loadingHTML('불러오는 중');
  if(state.error)return `<div class="community-empty"><h2>잠시 연결이 끊겼어요.</h2><p>${esc(state.error)}</p><button class="primary-button" data-community="refresh">다시 연결</button></div>`;
  if(!state.member)return accountGateHTML();
  return '';
@@ -163,11 +163,11 @@ document.addEventListener('change',e=>{if(e.target.id==='board-sort'){boardSort=
 document.addEventListener('submit',async e=>{
  const f=e.target;
  if(f.id==='account-login'){
-  e.preventDefault();if(busy)return;busy=true;const button=f.querySelector('[type="submit"]'),error=f.querySelector('#login-error');button.disabled=true;button.textContent='로그인 중…';error.textContent='';
+  e.preventDefault();if(busy)return;busy=true;const button=f.querySelector('[type="submit"]'),error=f.querySelector('#login-error');button.disabled=true;button.textContent='로그인 중…';error.textContent='';hooks.loading?.('로그인하는 중');
   const epoch=++authEpoch;connecting=null;
   try{const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'login',...Object.fromEntries(new FormData(f))})}),data=await res.json();if(epoch!==authEpoch)return;if(!res.ok)throw Error(data.error);state=data;stats=null;filter='all';query='';hooks.update(state);broadcastAuth();}
   catch(e){if(epoch===authEpoch){error.textContent=e.message;f.querySelector('[name="password"]').focus();}}
-  finally{busy=false;button.disabled=false;button.textContent=loginRole==='staff'?'담당자로 로그인':'직원으로 로그인';}return;
+  finally{busy=false;hooks.loading?.(null);button.disabled=false;button.textContent=loginRole==='staff'?'담당자로 로그인':'직원으로 로그인';}return;
  }
 
  if(f.id==='board-search'){e.preventDefault();query=new FormData(f).get('query').trim();hooks.render();return;}

@@ -1,8 +1,20 @@
-import {esc} from './shared.js?v=76a19ab6baf7';
-import {levelLadder} from './activity-history.js?v=7636a2959edf';
+import {esc,loadingHTML} from './shared.js?v=5683e41533cc';
+import {levelLadder} from './activity-history.js?v=ffd1d56e2a93';
+// 눈 모양: 비밀번호 보기 / 가리기
+const EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18M10.6 5.1A10.7 10.7 0 0 1 12 5c6.4 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.1M6.6 6.6C3.7 8.4 2 12 2 12s3.6 7 10 7a9.8 9.8 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+/** 비밀번호 보기·가리기 버튼 아이콘 */
+export const passwordEye=shown=>shown?EYE_OFF:EYE;
+/**
+ * 비밀번호 칸: 눈 모양 버튼으로 입력한 글자를 보거나 가리고, Caps Lock이 켜져 있으면 칸 아래에 알려 준다(app.js가 처리).
+ * attrs: 칸에 더 붙일 속성 글자(예: 'minlength="8"').
+ */
+export function passwordInputHTML({id,name,autocomplete,attrs=''}){
+ return `<span class="password-field"><input id="${id}" name="${name}" type="password" autocomplete="${autocomplete}" required maxlength="128" ${attrs}><button type="button" class="password-toggle" data-password-toggle="${id}" aria-label="비밀번호 보기" aria-pressed="false" title="비밀번호 보기">${EYE}</button></span><small class="caps-warning" data-caps-for="${id}" role="status" hidden>Caps Lock이 켜져 있어요</small>`;
+}
 export function loginHTML(role='employee',state={}){
- if(state.loading)return '<section class="login-page"><p role="status">로그인 정보를 확인하고 있어요…</p></section>';
- return `<section class="login-page"><div class="login-intro"><div class="login-pet"><button type="button" class="login-cat-touch" data-action="login-pet" aria-label="냥대리 쓰다듬기" aria-describedby="login-pet-reply"><span class="cat-art login-cat" aria-hidden="true"></span></button><p id="login-pet-reply" class="login-pet-reply" role="status" aria-live="polite" aria-atomic="true"></p></div><p class="login-eyebrow">나의 업무 도우미</p><h1>냥대리에 오신 걸 환영해요.</h1><p>${role==='staff'?'질문에 답하고, 직원들의 이용 현황을 확인하세요.':'로그인하고, 어디서든 내 포인트를 이어가세요.'}</p></div><div class="login-card"><div class="login-types" role="group" aria-label="로그인 유형"><button data-login-role="employee" aria-pressed="${role==='employee'}">직원</button><button data-login-role="staff" aria-pressed="${role==='staff'}">담당자</button></div><form id="account-login"><input type="hidden" name="role" value="${role}"><label for="login-username">아이디</label><input id="login-username" name="username" autocomplete="username" required maxlength="50" placeholder="${role==='staff'?'담당자':'직원'} 아이디"><label for="login-password">비밀번호</label><input id="login-password" name="password" type="password" autocomplete="current-password" required maxlength="128"><p id="login-error" class="login-error" role="alert">${esc(state.error||'')}</p><button class="primary-button login-submit" type="submit">${role==='staff'?'담당자로':'직원으로'} 로그인</button></form><p class="login-note">${role==='staff'?'담당자는 질문·FAQ·문서·사용자·검색 모델 관리 화면과 이용통계를 확인할 수 있어요.':'Knowly에서 발급한 개인 계정으로 로그인하세요.'}</p></div></section>`;
+ if(state.loading)return `<section class="login-page">${loadingHTML('로그인 정보를 확인하는 중')}</section>`;
+ return `<section class="login-page"><div class="login-intro"><div class="login-pet"><button type="button" class="login-cat-touch" data-action="login-pet" aria-label="냥대리 쓰다듬기" aria-describedby="login-pet-reply"><span class="cat-art login-cat" aria-hidden="true"></span></button><p id="login-pet-reply" class="login-pet-reply" role="status" aria-live="polite" aria-atomic="true"></p></div><p class="login-eyebrow">나의 업무 도우미</p><h1>냥대리에 오신 걸 환영해요.</h1><p>${role==='staff'?'질문에 답하고, 직원들의 이용 현황을 확인하세요.':'로그인하고, 어디서든 내 포인트를 이어가세요.'}</p></div><div class="login-card"><div class="login-types" role="group" aria-label="로그인 유형"><button data-login-role="employee" aria-pressed="${role==='employee'}">직원</button><button data-login-role="staff" aria-pressed="${role==='staff'}">담당자</button></div><form id="account-login"><input type="hidden" name="role" value="${role}"><label for="login-username">아이디</label><input id="login-username" name="username" autocomplete="username" required maxlength="50" placeholder="${role==='staff'?'담당자':'직원'} 아이디"><label for="login-password">비밀번호</label>${passwordInputHTML({id:'login-password',name:'password',autocomplete:'current-password'})}<p id="login-error" class="login-error" role="alert">${esc(state.error||'')}</p><button class="primary-button login-submit" type="submit">${role==='staff'?'담당자로':'직원으로'} 로그인</button></form><p class="login-note">${role==='staff'?'담당자는 질문·FAQ·문서·사용자·검색 모델 관리 화면과 이용통계를 확인할 수 있어요.':'Knowly에서 발급한 개인 계정으로 로그인하세요.'}</p></div></section>`;
 }
 // ── 사용자 통계(담당자) ─────────────────────────────────────────────
 /** 순위 기간(포인트 순위·유익해요 순위에 함께 적용) */
@@ -24,7 +36,7 @@ const rankNo=i=>`<span class="rank-no ${i<3?'top':''}">${i+1}</span>`;
  */
 export function statisticsHTML(state,ui={}){
  const header='<header class="activity-heading"><div><h1>사용자 통계</h1><p>직원들의 포인트·레벨·출석 참여를 한눈에 확인하세요.</p></div><button class="secondary-button" data-community="statistics">새로고침</button></header>';
- if(state?.loading)return `<section class="stats-page">${header}<p role="status">통계를 불러오고 있어요…</p></section>`;
+ if(state?.loading)return `<section class="stats-page">${header}${loadingHTML('통계를 불러오는 중')}</section>`;
  if(!state||state.error)return `<section class="stats-page">${header}<p role="alert">${esc(state?.error||'담당자만 통계를 볼 수 있어요.')}</p></section>`;
  const s=state,period=STATS_PERIODS.some(p=>p[0]===ui.period)?ui.period:'quarter',label=periodLabel(period,s.periods?.[period]??s.rankingSince);
  const ranking=s.rankings?.[period]||s.ranking||[],helpful=s.helpful?.[period]||[],shown=ui.expanded?ranking:ranking.slice(0,RANK_PREVIEW);

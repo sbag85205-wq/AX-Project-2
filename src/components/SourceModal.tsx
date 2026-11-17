@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import type { Citation } from '../lib/types';
 import { Modal } from './Modal';
 import { docFileType, pageLabel } from '../lib/sheet';
+import Loading from './Loading';
 
 interface ChunkView {
   content: string;
@@ -58,7 +59,7 @@ export function SourceModal({ citation, onClose }: { citation: Citation; onClose
         {chunk?.section_title ? ` · ${chunk.section_title}` : ''}
         {chunk?.documents?.effective_from ? ` · 시행일 ${chunk.documents.effective_from}` : ''}
       </div>
-      {error ? <div className="error-box">{error}</div> : <div className="source-text">{chunk ? chunk.content : '불러오는 중…'}</div>}
+      {error ? <div className="error-box">{error}</div> : <div className="source-text">{chunk ? chunk.content : <Loading text="원문을 불러오는 중" compact />}</div>}
     </Modal>
   );
 }

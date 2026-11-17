@@ -7,6 +7,7 @@ import {
   exampleProblem, examplesOf, loadCategories, movedList, saveCategories, saveCategorySettings, type CategoryDetails, type CategoryExamples
 } from '../../lib/categories';
 import { supabase } from '../../lib/supabase';
+import Loading from '../../components/Loading';
 
 interface Editing {
   from: string;
@@ -176,7 +177,7 @@ export default function Categories() {
 
       <section className="card" aria-label="분야 목록" style={{ overflow: 'hidden' }}>
         {loadError && <div className="error-box" role="alert" style={{ margin: 16 }}>{loadError}</div>}
-        {!loaded && <div className="empty">불러오는 중…</div>}
+        {!loaded && <Loading text="분야를 불러오는 중" />}
         {loaded && categories.map((c, i) => (
           <div key={c} className="list-row category-row">
             <div className="category-order" role="group" aria-label={`${c} 순서`} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

@@ -2,8 +2,8 @@
 // 담당자가 질문해 보면서 답변 모델과 검색 기준을 바로 바꿔 볼 수 있게 채팅 입력칸 아래에 둔다.
 // 값은 서버(admin-settings)에 저장되고 다음 질문부터 모든 사용자에게 적용된다.
 import {fetch} from './transport.js?v=fd4b994ba12d';
-import {communityState} from './community-ui.js?v=5e7f1906131e';
-import {esc} from './shared.js?v=76a19ab6baf7';
+import {communityState} from './community-ui.js?v=12818a8a970a';
+import {esc,loadingHTML} from './shared.js?v=5683e41533cc';
 // app.js가 넘겨주는 화면 도구(아이콘·알림)
 let icon,toast;
 const ss={info:null,draft:null,models:[],modelsError:'',error:'',loading:false,saving:false,testing:false,test:null,open:true};
@@ -38,7 +38,7 @@ export function staffSettingsHTML(){
  const head=`<div class="ss-head"><button type="button" class="ss-toggle" data-ss-action="toggle" aria-expanded="${ss.open}" aria-controls="ss-body">${icon('settings')}<strong>검색·모델 설정</strong>${icon('down')}</button><span class="ss-note">저장하면 다음 질문부터 모든 사용자에게 적용돼요.</span>${ss.draft?`<div class="ss-actions"><button type="button" class="text-button" data-ss-action="revert" ${busy?'disabled':''}>되돌리기</button><button type="button" class="primary-button" data-ss-action="save" ${busy?'disabled':''}>${ss.saving?'저장 중…':'저장'}</button></div>`:''}</div>`;
  let body;
  if(ss.error)body=`<p class="ss-message warn">${esc(ss.error)}</p>`;
- else if(!ss.draft)body='<p class="ss-message">설정을 불러오는 중…</p>';
+ else if(!ss.draft)body=loadingHTML('설정을 불러오는 중',{compact:true});
  else{
   const i=ss.info,d=ss.draft;
   const test=ss.test?`<p class="ss-test ${ss.test.ok?'ok':'warn'}">${ss.test.ok?`응답 성공 · ${(ss.test.latency_ms/1000).toFixed(1)}초 · ${esc(ss.test.model)}`:`응답 실패: ${esc(ss.test.error||'')}`}</p>`:'';

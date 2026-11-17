@@ -18,3 +18,12 @@ test('분야 목록·유익해요 포인트가 예전 값과 같다',()=>{
  assert.deepEqual(FIXED_CATEGORY_IDS,['server','client','trouble','etc','hr','pay','trip','life']);
  assert.equal(HELPFUL_POINTS,10);
 });
+
+test('불러오는 중 표시: 걷는 냥대리와 글(끝의 점은 떼고 움직이는 점으로), 글자는 HTML로 해석하지 않는다',async()=>{
+ const {loadingHTML}=await import('../public/shared.js');
+ const html=loadingHTML('통계를 불러오고 있어요…');
+ assert.match(html,/class="nyang-loading" role="status"/);assert.match(html,/nyang-loading-walker"><span class="nyang-loading-cat"><\/span><span class="nyang-loading-shadow">/);
+ assert.match(html,/<p>통계를 불러오고 있어요<span class="nyang-loading-dots"/);
+ assert.match(loadingHTML('불러오는 중...'),/<p>불러오는 중<span/);assert.match(loadingHTML('x',{compact:true}),/class="nyang-loading compact"/);
+ assert.doesNotMatch(loadingHTML('<img src=x>'),/<img/);assert.match(loadingHTML(),/<p>불러오는 중<span/);
+});

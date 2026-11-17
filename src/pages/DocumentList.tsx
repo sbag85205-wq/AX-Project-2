@@ -6,6 +6,7 @@ import { CATEGORIES } from '../lib/constants';
 import { supabase } from '../lib/supabase';
 import type { DocumentRow } from '../lib/types';
 import { pageCountLabel } from '../lib/sheet';
+import Loading from '../components/Loading';
 
 export default function DocumentList() {
   const [docs, setDocs] = useState<DocumentRow[] | null>(null);
@@ -55,7 +56,7 @@ export default function DocumentList() {
         ))}
       </div>
 
-      {docs === null && <div className="empty">불러오는 중…</div>}
+      {docs === null && <Loading text="문서를 불러오는 중" />}
       {docs !== null && shown.length === 0 && <div className="card empty">{docs.length ? '조건에 맞는 문서가 없어요.' : '아직 등록된 문서가 없어요.'}</div>}
       <div className="doc-grid">
         {shown.map((d) => (

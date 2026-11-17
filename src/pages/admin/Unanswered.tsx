@@ -6,6 +6,7 @@ import { useManagedCategories } from '../../lib/categories';
 import { daysAgo, fmt, relativeDay, shortDate } from '../../lib/format';
 import { supabase } from '../../lib/supabase';
 import type { GroupStatus, QuestionGroup } from '../../lib/types';
+import Loading from '../../components/Loading';
 
 const STATUSES: ('전체' | GroupStatus)[] = ['전체', '신규', '검토 중', 'FAQ 등록 완료', '보류'];
 const PILL: Record<GroupStatus, string> = { 신규: 'pill-new', '검토 중': 'pill-review', 'FAQ 등록 완료': 'pill-done', 보류: 'pill-hold' };
@@ -174,7 +175,7 @@ export default function Unanswered() {
               <div className="grid-row grid-head" style={{ gridTemplateColumns: COLS }}>
                 <div>순위</div><div>질문</div><div>카테고리</div><div>질문 횟수</div><div>최근</div><div>상태</div>
               </div>
-              {loading && <div className="empty">불러오는 중…</div>}
+              {loading && <Loading text="질문을 불러오는 중" />}
               {!loading && filtered.length === 0 && <div className="empty">조건에 맞는 질문이 없어요.</div>}
               {filtered.map((i, idx) => (
                 <button key={i.id} type="button" className="grid-row" style={{ gridTemplateColumns: COLS }} aria-pressed={selected?.id === i.id} onClick={() => setSelectedId(i.id)}>

@@ -34,7 +34,7 @@ test('값이 비어 있거나 예전 응답(ranking만 있음)이어도 그린�
  const old=statisticsHTML({day:'2026-11-16',updatedAt:'2026-11-16T03:00:00.000Z',accounts:0,attendance:0,rankingSince:'2026-08-16T03:00:00.000Z',ranking:[row('kim01',30)]});
  assert.deepEqual(rows(old),['1 kim01 30 P']);assert.match(text(old),/최근 7일 출석률 —/);assert.match(text(old),/아직 출석한 직원이 없어요/);
  const empty=statisticsHTML(stats({rankings:{month:[],quarter:[],all:[]},ranking:[]}));assert.match(empty,/data-stats-csv disabled/);assert.match(text(empty),/로그인한 직원 계정의 활동부터 표시됩니다/);
- assert.match(statisticsHTML({loading:true}),/불러오고 있어요/);assert.match(statisticsHTML({error:'담당자만 통계를 볼 수 있어요.'}),/role="alert">담당자만/);
+ assert.match(statisticsHTML({loading:true}),/class="nyang-loading"[^]*통계를 불러오는 중/);assert.match(statisticsHTML({error:'담당자만 통계를 볼 수 있어요.'}),/role="alert">담당자만/);
 });
 test('아이디는 HTML로 해석되지 않게 바꿔서 넣는다',()=>{
  const html=statisticsHTML(stats({rankings:{quarter:[row('<img src=x>',5)]},helpful:{quarter:[{username:'<b>x',n:1}]},streaks:[{username:'"><i>',days:2}]}));
