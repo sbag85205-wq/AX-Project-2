@@ -123,3 +123,7 @@ body[data-role=staff] .desktop-workspace .chat-home .resident-speech h1{font-siz
 .userstats .stats-categories b{font-weight:600}.userstats .stats-categories small{color:var(--ui-sub);font-weight:400;margin-left:4px}.userstats .stats-track{height:8px;border-radius:4px}.userstats .stats-track i{background:var(--ui-accent);border-radius:4px}
 .userstats .stats-bars{height:150px;gap:10px}.userstats .stats-bar>div{height:96px}.userstats .stats-bar i{background:var(--ui-accent)}.userstats .stats-bar.today span{color:var(--ui-ink);font-weight:600}
 @media(max-width:900px){.userstats-grid{grid-template-columns:1fr;gap:0}}
+/* 내 계정: 비밀번호 변경·로그아웃 / 비밀번호 변경 창 */
+.account-menu-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px}.password-form small{font-weight:400;color:var(--ui-sub);margin-left:4px}.password-form .login-error:empty{display:none}
+/* 첫 화면 위쪽 출석체크(꾸미기 오른쪽): 오늘 했으면 '출석 완료'로 흐리게 */
+.workspace-utilities>.attendance-quick{color:var(--ui-accent)}.workspace-utilities>.attendance-quick.done,.workspace-utilities>.attendance-quick:disabled{color:var(--ui-sub);opacity:.75;cursor:default}.workspace-utilities>.attendance-quick:disabled:hover{background:none}

@@ -5,17 +5,18 @@ import {createReactionPicker} from './reaction-variety.js?v=115ea2f34987';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=ef11f91be08e';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=07deb347a2ff';
-import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=675fe8d6d6a0';
+import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=5e7f1906131e';
 import {categories,applyManagedCategories,defaultCategory,categoryOf,documents,faq,startersFor,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=4dc923f4c7f7';
 import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=93bd9a4c6e6f';
 import {createPetInteraction} from './pet-interaction.js?v=25ddd542a513';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=7636a2959edf';
 const $=s=>document.querySelector(s);
+import {passwordProblem} from './account-view.js?v=6b2071e7801a';
 import {createAccountSync} from './account-sync.js?v=7c9808eca089';
 import {esc} from './shared.js?v=76a19ab6baf7';
-import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=fc7d370f8218';
+import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=2b8781e39084';
 import {orderNav,installNavLayout} from './nav-layout.js?v=34db55cc4081';
-import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=238d9c0e5b98';
+import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=2715720c7a99';
 import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=d2afdbbf0a96';
 const mode=document.body.dataset.mode;
 const isCat=mode==='cat';
@@ -95,7 +96,7 @@ function shell(){
    <div class="header-account"><div id="wallet" class="wallet" aria-label="보유 포인트와 하트"></div></div>
   </header>
   <div class="main-shell">
-   <header class="topbar workspace-toolbar"><div class="workspace-context"><span id="workspace-title">물어보기</span></div><div class="top-actions"><div class="workspace-utilities"><button data-action="personality" id="personality-button" aria-label="냥대리 성격 설정">${icon('moon')}<span>차가운 모드</span></button><button data-action="wardrobe">${icon('shirt')}<span>꾸미기</span></button></div><button class="appearance-button theme-toggle" data-action="toggle-theme" aria-label="다크 모드" aria-pressed="false" title="다크 모드로 전환">${icon('moon')}</button></div></header>
+   <header class="topbar workspace-toolbar"><div class="workspace-context"><span id="workspace-title">물어보기</span></div><div class="top-actions"><div class="workspace-utilities"><button data-action="personality" id="personality-button" aria-label="냥대리 성격 설정">${icon('moon')}<span>차가운 모드</span></button><button data-action="wardrobe">${icon('shirt')}<span>꾸미기</span></button><button class="attendance-quick" id="attendance-button" data-community="attendance" data-busy-label="출석 중…">${icon('calendar')}<span>출석체크</span></button></div><button class="appearance-button theme-toggle" data-action="toggle-theme" aria-label="다크 모드" aria-pressed="false" title="다크 모드로 전환">${icon('moon')}</button></div></header>
    <main class="main-content cat-mode" id="main"></main>
    <footer class="bottom-note"><span id="page-title" class="visually-hidden"></span><span>Knowly 사내 문서와 FAQ를 검색합니다.</span><button data-action="docs">참고 자료 보기 ${icon('chevron')}</button></footer>
   </div>
@@ -104,6 +105,9 @@ function shell(){
 }
 function updateWallet(){
  $('#wallet').hidden=communityState().me?.role==='staff';
+ // 첫 화면 출석체크: 오늘 이미 했으면 '출석 완료'로 막아 둔다
+ const attendance=$('#attendance-button'),attended=!!communityState().today;
+ if(attendance){attendance.disabled=attended;attendance.classList.toggle('done',attended);attendance.innerHTML=icon(attended?'check':'calendar')+`<span>${attended?'출석 완료':'출석체크'}</span>`;attendance.title=attended?'오늘 출석했어요. 내일 또 만나요!':'하루 한 번, 포인트 또는 츄르 선물';}
  $('#wallet').innerHTML=`<button class="wallet-level" data-action="activity">${communityState().member?'Lv. '+communityState().level.level:'내 활동'}</button><span title="새 질문 +10 P · 하루 최대 20개"><i>P</i><strong id="points-balance">${rewards.points}</strong></span><span title="츄르를 주고 하트를 눌러 모아요"><i class="heart-mark">♥</i><strong id="hearts-balance">${rewards.hearts}</strong></span>`;
  const count=tasks.filter(t=>!t.done).length;$('#task-count').textContent=count||'';
  const unread=unseenReplies(communityState().posts,seenReplies).length,indicator=$('#activity-unread');
@@ -601,7 +605,8 @@ const clickByAction=[
  [is('toggle-chat-history'),(a,b,e)=>{chatHistoryCollapsed=!chatHistoryCollapsed;render();return;},true],
  [is('login-pet'),(a,b,e)=>{reactLoginPet();return;},true],
  [is('logout'),async (a,b,e)=>{await logoutAccount();return;},true],
- [is('account'),(a,b,e)=>{const me=communityState().me;openModal('<div class="account-menu"><h2 id="modal-title">내 계정</h2><strong>'+esc(me.username)+' · '+(me.role==='staff'?'담당자':'직원')+'</strong><p>'+ (me.role==='staff'?'질문 게시판 관리와 통계에 접근할 수 있어요.':'포인트와 보상은 같은 계정으로 로그인한<br>모든 기기에서 이어져요.') +'</p><p>Knowly 개인 계정으로 연결되어 있어요.<br>대화와 보상은 계정별로 구분됩니다.</p><button class="primary-button" data-action="logout">로그아웃</button></div>');return;},true],
+ [is('account'),(a,b,e)=>{const me=communityState().me;openModal('<div class="account-menu"><h2 id="modal-title">내 계정</h2><strong>'+esc(me.username)+' · '+(me.role==='staff'?'담당자':'직원')+'</strong><p>'+ (me.role==='staff'?'질문 게시판 관리와 통계에 접근할 수 있어요.':'포인트와 보상은 같은 계정으로 로그인한<br>모든 기기에서 이어져요.') +'</p><p>Knowly 개인 계정으로 연결되어 있어요.<br>대화와 보상은 계정별로 구분됩니다.</p><div class="account-menu-actions"><button class="secondary-button" data-action="change-password">비밀번호 변경</button><button class="primary-button" data-action="logout">로그아웃</button></div></div>');return;},true],
+ [is('change-password'),(a,b,e)=>{showPasswordForm();return;},true],
  [is('unanswered','library'),(a,b,e)=>{if(a==='library')openLibrary();else if(communityState().me?.role==='staff'){view=a;petInteraction.reset();render();$('#main').scrollTop=0;}return;},true],
  [(a,b)=>viewOf(a)?.open==='staff',(a,b,e)=>{if(communityState().me?.role==='staff'){view=a;petInteraction.reset();render();$('#main').scrollTop=0;}return;},true],
  // 사용자 통계(포인트 순위 등): 담당자만, 열 때마다 새로 집계한다
@@ -687,6 +692,21 @@ function loadAccountRecords(next){
  tasks=read('om-tasks',[]);history=normalizeHistory(read('om-question-history',[]));seenReplies=read('om-seen-replies',{});if(!seenReplies||typeof seenReplies!=='object')seenReplies={};
  if(next){const stored=read('om-chat-sessions',null);chats=stored===null?importQuestionHistory(history):normalizeChats(stored);}
 }
+// 비밀번호 변경: 지금 비밀번호를 확인한 뒤 새 비밀번호(8자 이상)로 바꾼다. 다른 기기의 로그인은 그대로 둔다.
+function showPasswordForm(message=''){
+ openModal(`<h2 id="modal-title">비밀번호 변경</h2><p class="modal-sub">지금 비밀번호를 확인한 뒤 새 비밀번호로 바꿔요. 다른 기기의 로그인은 그대로 유지돼요.</p><form id="password-form" class="chat-settings-form password-form"><label for="pw-current">지금 비밀번호</label><input id="pw-current" name="current" type="password" autocomplete="current-password" required maxlength="128"><label for="pw-next">새 비밀번호 <small>8자 이상</small></label><input id="pw-next" name="next" type="password" autocomplete="new-password" required minlength="8" maxlength="128"><label for="pw-confirm">새 비밀번호 확인</label><input id="pw-confirm" name="confirm" type="password" autocomplete="new-password" required minlength="8" maxlength="128"><p class="login-error" role="alert" id="password-error">${esc(message)}</p><div class="chat-delete-actions"><button type="button" class="secondary-button" data-action="close-modal">취소</button><button class="primary-button" type="submit">변경</button></div></form>`);
+ $('#pw-current')?.focus();
+}
+async function changePassword(form){
+ const data=Object.fromEntries(new FormData(form)),problem=passwordProblem(String(data.current||''),String(data.next||''),String(data.confirm||''));
+ const error=$('#password-error');if(problem){error.textContent=problem;return;}
+ const submit=form.querySelector('[type="submit"]');submit.disabled=true;submit.textContent='바꾸는 중…';error.textContent='';
+ try{
+  const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'password',current:data.current,next:data.next})}),body=await res.json().catch(()=>null);
+  if(!res.ok)throw Error(body?.error||'비밀번호를 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.');
+  closeModal();toast('비밀번호를 바꿨어요. 다음 로그인부터 새 비밀번호를 쓰세요.');
+ }catch(e){if(error)error.textContent=e.message;submit.disabled=false;submit.textContent='변경';}
+}
 // 마지막으로 브라우저 저장소에 넣은 서버 기록 묶음(같은 묶음을 두 번 넣지 않는다)
 let lastPersonalState=null;
 // 계정에 저장된 화면 테마·움직임 설정을 이 화면에 적용한다
@@ -703,6 +723,11 @@ addEventListener('pagehide',()=>{accountSync.flush();});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')accountSync.flush();});
 initCommunity({
  toast,modal:openModal,close:closeModal,render,
+ // 내 질문 상세 창을 열면(게시판·내 활동 어디서든) 그 질문의 답변을 읽은 것으로 표시한다
+ seen(post){
+  if(!post?.mine||(Number(seenReplies[post.id])||0)>=post.replies.length)return;
+  const next={...seenReplies,[post.id]:post.replies.length};if(save('om-seen-replies',next)){seenReplies=next;updateWallet();}
+ },
  show(next){view=next;render();$('#main').scrollTop=0;},
  update(state){
   const next=state.member?(state.me.id||state.me.username):null;
@@ -732,6 +757,7 @@ initCommunity({
 });
 
 document.addEventListener('submit',e=>{
+ if(e.target.id==='password-form'){e.preventDefault();changePassword(e.target);return;}
  if(!['chat-settings-form','chat-folder-form'].includes(e.target.id))return;
  e.preventDefault();if(!communityState().member)return;
  const form=e.target,data=new FormData(form);saveCurrentChat();

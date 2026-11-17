@@ -1,7 +1,7 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {categories as chatCategories} from './core.js?v=4dc923f4c7f7';
 import {boardView,boardPostHTML} from './board-view.js?v=8760a87b1cb3';
-import {loginHTML as loginView,statisticsHTML,periodLabel,rankingCSV} from './account-view.js?v=8be004d90f5f';
+import {loginHTML as loginView,statisticsHTML,periodLabel,rankingCSV} from './account-view.js?v=6b2071e7801a';
 import {esc} from './shared.js?v=76a19ab6baf7';
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 let state={loading:true},hooks,filter='all',query='',boardCategory='all',boardSort='new',openPostId=null,busy=false,connecting=null,authEpoch=0,loginRole='employee',stats=null;
@@ -105,7 +105,7 @@ export function activityHTML(content='',rewards=true){ // rewards=false면 아�
 }
 export function showMyPost(id){filter='mine';query='';boardCategory='all';hooks.show('board');requestAnimationFrame(()=>{document.getElementById('post-'+id)?.scrollIntoView({block:'center'});showBoardPost(id);});}
 /** 게시판 질문 상세 창을 연다(질문·답변·유익해요). */
-export function showBoardPost(id){const html=boardPostHTML(state,id);if(!html)return;openPostId=id;hooks.modal(html,true);}
+export function showBoardPost(id){const html=boardPostHTML(state,id);if(!html)return;openPostId=id;hooks.modal(html,true);hooks.seen?.(state.posts.find(p=>p.id===id));}
 // 유익해요·답변 등록 뒤 열려 있는 상세 창을 새 내용으로 다시 그린다
 const refreshOpenPost=()=>{if(openPostId&&document.querySelector('#modal[open] [data-board-post]'))showBoardPost(openPostId);};
 export function boardHTML(){
@@ -152,11 +152,11 @@ document.addEventListener('click',async e=>{
  if(busy)return;busy=true;b.disabled=true;
  try{
   if(action==='attendance'){
-   b.textContent='오늘의 선물을 여는 중…';
-   const result=await communityAction('attendance');if(result){hooks.render();hooks.toast(result.notice);}
+   b.textContent=b.dataset.busyLabel||'오늘의 선물을 여는 중…';
+   const result=await communityAction('attendance');hooks.render();if(result)hooks.toast(result.notice); // 실패해도 버튼 글자를 되돌린다
   }
   if(b.dataset.like){if(await communityAction('like',{post:b.dataset.like})){hooks.render();refreshOpenPost();}}
- }finally{busy=false;b.disabled=false;}
+ }finally{busy=false;b.disabled=action==='attendance'&&!!state.today;} // 출석했으면 버튼을 다시 풀지 않는다
 });
 // 게시판 정렬(최신순 / 유익해요 많은 순)
 document.addEventListener('change',e=>{if(e.target.id==='board-sort'){boardSort=e.target.value;hooks.show('board');}});

@@ -91,3 +91,16 @@ test('지갑만 바뀐 응답(쓰다듬기)은 화면 불러오기 때 받은 �
  await communityAction('reward',{type:'pet',id:'p1'});
  const last=updates.at(-1);assert.equal('personalState' in last,false);assert.equal('personalLarge' in last,false);assert.equal(last.wallet.points,20);assert.equal(last.me.id,'a');
 });
+
+test('내 질문 상세 창을 열면(게시판에서 열어도) 새 답변을 읽은 것으로 알린다',async t=>{
+ const originalDocument=globalThis.document;
+ globalThis.document={addEventListener(){},getElementById(){return null;},querySelector(){return null;}};
+ t.after(()=>{if(originalDocument===undefined)delete globalThis.document;else globalThis.document=originalDocument;});
+ const {initCommunity,refreshCommunity,showBoardPost}=await import('../public/community-ui.js?seen-replies');
+ const mine={id:'p1',category:'server',body:'내 질문입니다',created:'2026-11-17T00:00:00Z',mine:true,likes:0,liked:false,replies:[{id:'r1',body:'답변',source:'규정',created:'2026-11-17T01:00:00Z',department:'운영',name:'담당'}]};
+ const other={...mine,id:'p2',mine:false};
+ t.mock.method(globalThis,'fetch',async()=>({ok:true,json:async()=>({member:true,me:{id:'a',role:'employee',username:'a'},wallet:{points:0},level:{level:1},posts:[mine,other]})}));
+ const seen=[];initCommunity({update(){},toast(){},show(){},modal(){},seen:p=>seen.push(p?.id)});
+ await refreshCommunity();showBoardPost('p1');showBoardPost('p2');
+ assert.deepEqual(seen,['p1','p2']); // 앱은 내 글(mine)만 읽음 처리한다
+});

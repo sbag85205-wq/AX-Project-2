@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ getSession: vi.fn(), signInWithPassword: vi.fn(), signOut: vi.fn(), single: vi.fn(), call: vi.fn(), invoke: vi.fn(), exportLocal: vi.fn() }));
+const mocks = vi.hoisted(() => ({ getSession: vi.fn(), signInWithPassword: vi.fn(), signOut: vi.fn(), updateUser: vi.fn(), single: vi.fn(), call: vi.fn(), invoke: vi.fn(), exportLocal: vi.fn() }));
 vi.mock('../src/lib/supabase', () => ({ supabaseConfigured: true, loginEmail: (id: string) => `${id}@knowly.local`, supabase: {
   auth: mocks, functions: { invoke: mocks.invoke }, from: () => ({ select: () => ({ eq: () => ({ single: mocks.single }) }) })
 } }));
@@ -97,6 +97,24 @@ describe('main Knowly transport', () => {
     mocks.call.mockRejectedValue(new Error('검색 실패'));
     const r=await request('/api/knowly',post({question:'휴가 규정'}));
     expect(r.ok).toBe(false);expect(await r.json()).toEqual({error:'검색 실패'});
+  });
+  it('changes the password after checking the current one, without signing other devices out', async () => {
+    mocks.getSession.mockResolvedValue({ data: { session: { user: { id: 'employee-a', email: 'alice@knowly.local' } } } });
+    mocks.signInWithPassword.mockResolvedValue({ data: {}, error: new Error('Invalid login credentials') });
+    let r = await request('/api/account', post({ action: 'password', current: 'wrong', next: 'new-password-1' }));
+    expect(r.status).toBe(400);expect((await r.json()).error).toBe('지금 비밀번호가 맞지 않아요.');expect(mocks.updateUser).not.toHaveBeenCalled();
+    r = await request('/api/account', post({ action: 'password', current: 'old-password', next: 'short' }));
+    expect((await r.json()).error).toBe('새 비밀번호는 8자 이상이어야 해요.');
+    r = await request('/api/account', post({ action: 'password', current: 'same-password', next: 'same-password' }));
+    expect((await r.json()).error).toBe('지금 비밀번호와 다른 비밀번호로 정해 주세요.');
+    mocks.signInWithPassword.mockResolvedValue({ data: {}, error: null });mocks.updateUser.mockResolvedValue({ data: {}, error: null });
+    r = await request('/api/account', post({ action: 'password', current: 'old-password', next: 'new-password-1' }));
+    expect(r.ok).toBe(true);expect(await r.json()).toEqual({ ok: true });
+    expect(mocks.signInWithPassword).toHaveBeenLastCalledWith({ email: 'alice@knowly.local', password: 'old-password' });
+    expect(mocks.updateUser).toHaveBeenCalledWith({ password: 'new-password-1' });
+    expect(mocks.signOut).not.toHaveBeenCalled();expect(mocks.call).not.toHaveBeenCalled();
+    mocks.updateUser.mockResolvedValue({ data: {}, error: new Error('New password should be different from the old password.') });
+    expect((await (await request('/api/account', post({ action: 'password', current: 'old-password', next: 'new-password-2' }))).json()).error).toBe('지금 비밀번호와 다른 비밀번호로 정해 주세요.');
   });
   it('logs out only this device, and when the login ended elsewhere it signs this device out too', async () => {
     await request('/api/account', post({ action: 'logout' }));

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {statisticsHTML,rankingCSV,periodLabel,STATS_PERIODS} from '../public/account-view.js';
+import {statisticsHTML,rankingCSV,periodLabel,STATS_PERIODS,passwordProblem} from '../public/account-view.js';
 
 const row=(username,points)=>({username,points});
 const stats=(over={})=>({day:'2026-11-16',updatedAt:'2026-11-16T03:00:00.000Z',accounts:4,attendance:2,rankingSince:'2026-08-16T03:00:00.000Z',
@@ -44,4 +44,13 @@ test('CSV: 엑셀용 BOM·머리글·순위 번호, 쉼표·따옴표와 수식 
  const csv=rankingCSV([row('kim01',1200),row('a,b"c',5),row('=SUM(A1)',3),row('-x',0)],periodLabel('month','2026-10-31T15:00:00.000Z'));
  assert.equal(csv,'﻿순위,아이디,받은 포인트(이번 달 · 2026-11-01 이후)\r\n1,kim01,1200\r\n2,"a,b""c",5\r\n3,\'=SUM(A1),3\r\n4,\'-x,0\r\n');
  assert.equal(periodLabel('all',''),'전체 기간');assert.equal(periodLabel('quarter','2026-08-16T03:00:00.000Z'),'최근 3개월 · 2026-08-16 이후');
+});
+
+test('비밀번호 변경 검사: 8자 이상, 확인 일치, 지금 비밀번호와 달라야 한다',()=>{
+ assert.equal(passwordProblem('','abcdefgh','abcdefgh'),'지금 비밀번호를 입력해 주세요.');
+ assert.equal(passwordProblem('old','short','short'),'새 비밀번호는 8자 이상이어야 해요.');
+ assert.equal(passwordProblem('old','abcdefgh','abcdefgX'),'새 비밀번호 확인이 일치하지 않아요.');
+ assert.equal(passwordProblem('abcdefgh','abcdefgh','abcdefgh'),'지금 비밀번호와 다른 비밀번호로 정해 주세요.');
+ assert.equal(passwordProblem('x'.repeat(5),'y'.repeat(129),'y'.repeat(129)),'새 비밀번호는 128자 이내로 정해 주세요.');
+ assert.equal(passwordProblem('old-password','new-password','new-password'),'');
 });

@@ -7,6 +7,28 @@ import { localExport } from './local-store';
 /** nyang 서버 함수를 호출한다(DB와 같은 지역에서). 실패하면 서버가 보낸 메시지와 상태 번호(status)를 가진 예외를 던진다. */
 const callNyang = <T = Record<string, unknown>>(body: Record<string, unknown>) => callFunction<T>('nyang', body);
 
+// ── 비밀번호 변경 ─────────────────────────────────────────────────
+/** 새 비밀번호 규칙(관리자 화면·사용자 관리 서버 함수와 같다: 8자 이상) */
+export const PASSWORD_MIN = 8;
+async function changePassword(email: string, current: unknown, next: unknown): Promise<{ ok: true }> {
+  const fail = (message: string) => { throw Object.assign(new Error(message), { status: 400 }); };
+  if (typeof current !== 'string' || !current) fail('지금 비밀번호를 입력해 주세요.');
+  if (typeof next !== 'string' || next.length < PASSWORD_MIN) fail(`새 비밀번호는 ${PASSWORD_MIN}자 이상이어야 해요.`);
+  if ((next as string).length > 128) fail('새 비밀번호는 128자 이내로 정해 주세요.');
+  if (next === current) fail('지금 비밀번호와 다른 비밀번호로 정해 주세요.');
+  // 지금 비밀번호 확인: 맞으면 이 기기의 로그인을 새로 받는다(같은 계정이라 화면은 그대로)
+  const { error: wrong } = await supabase.auth.signInWithPassword({ email, password: current as string });
+  if (wrong) fail('지금 비밀번호가 맞지 않아요.');
+  const { error } = await supabase.auth.updateUser({ password: next as string });
+  if (error) {
+    const text = error.message || '';
+    fail(/should be different|same/i.test(text) ? '지금 비밀번호와 다른 비밀번호로 정해 주세요.'
+      : /weak|characters|length|pwned/i.test(text) ? '더 길거나 추측하기 어려운 비밀번호로 정해 주세요.'
+      : '비밀번호를 바꾸지 못했어요. 잠시 후 다시 시도해 주세요.');
+  }
+  return { ok: true };
+}
+
 // ── 이 브라우저에만 있던 예전 기록을 서버로 올리기 ─────────────────────
 // 계정마다 이 브라우저에서 한 번 올린다. 글쓴이가 아직 올리지 않아 미뤄진 것(유익해요·답변·삭제 표시)이 있으면
 // 다음에 페이지를 열 때 그것만 다시 올린다. 한 페이지에서는 한 번만 시도한다(창을 다시 볼 때마다 올리지 않는다).
@@ -78,6 +100,8 @@ export async function request(path: string, init: RequestInit = {}): Promise<Res
     }
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return Response.json({ authenticated: false, member: false }, { status: path.startsWith('/api/account') && !input.action ? 200 : 401 });
+    // 비밀번호 변경: 지금 비밀번호로 한 번 더 확인한 뒤 바꾼다(이 기기의 로그인은 이어지고, 다른 기기 로그인도 끊지 않는다)
+    if (input.action === 'password') return Response.json(await changePassword(session.user.email ?? '', input.current, input.next));
     if (path === '/api/knowly-session') return Response.json({ connected: true });
     // 냥대리 테스트 화면의 검색·모델 설정 (관리자인지는 서버 함수가 확인한다)
     if (path === '/api/knowly-settings') return Response.json(await callFunction('admin-settings', input));

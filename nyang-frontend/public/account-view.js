@@ -45,3 +45,12 @@ export function statisticsHTML(state,ui={}){
   +`<h3>연속 출석 상위</h3>${streaks.length?`<ol class="userstats-list">${streaks.map((r,i)=>`<li>${rankNo(i)}<span>${esc(r.username)}</span><strong>${r.days}일 연속</strong></li>`).join('')}</ol>`:'<p class="stats-note">아직 출석한 직원이 없어요.</p>'}</section>`;
  return `<section class="stats-page userstats">${header}<p class="stats-date">${esc(s.day)} · 한국 시간 기준 · 담당자 전용 · 익명성을 위해 아이디만 보여요</p>${metrics}${filter}<div class="userstats-grid">${points}<div class="userstats-side">${helpfulPanel}${levelPanel}${attendancePanel}</div></div><p class="stats-note">직원 계정의 포인트·레벨·출석과 게시판 유익해요만 집계합니다. 개인의 질문 내용은 통계에 표시하지 않아요.<br>마지막 조회 ${new Date(s.updatedAt).toLocaleTimeString('ko-KR',{timeZone:'Asia/Seoul'})}</p></section>`;
 }
+/** 새 비밀번호 검사. 문제가 없으면 빈 글자. */
+export function passwordProblem(current,next,confirm){
+ if(!current)return '지금 비밀번호를 입력해 주세요.';
+ if(next.length<8)return '새 비밀번호는 8자 이상이어야 해요.';
+ if(next.length>128)return '새 비밀번호는 128자 이내로 정해 주세요.';
+ if(next!==confirm)return '새 비밀번호 확인이 일치하지 않아요.';
+ if(next===current)return '지금 비밀번호와 다른 비밀번호로 정해 주세요.';
+ return '';
+}
