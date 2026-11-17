@@ -46,19 +46,22 @@ test('warm and cold reactions have distinct expressions without changing the res
  assert.equal(petAppearance('warm').expression,'');
 });
 
-test('only warm mode uses the dedicated reaction pictures',async()=>{
+test('each personality uses only its own reaction pictures',async()=>{
  const {companionAppearance}=await import('../public/companion-behavior.js');
- const arts=new Set(['pet','wink','shy','joy']);
- for(const kind of ['like','dislike','bonus']){
-  for(const pose of reactionPoses.warm[kind]){assert.ok(arts.has(pose.art),kind+': '+pose.line);assert.equal(pose.wag,false);}
-  for(const pose of reactionPoses.cold[kind])assert.equal(pose.art,'');
+ const arts={warm:['joy','pet','shy','wink'],cold:['shoo','stop','sulk','think','tsun']};
+ for(const mode of ['warm','cold']){
+  for(const kind of ['like','dislike','bonus'])for(const pose of reactionPoses[mode][kind]){assert.ok(arts[mode].includes(pose.art),mode+' '+kind+': '+pose.line);assert.equal(pose.wag,false);}
+  // 반응 개수(=같은 그림·멘트가 나올 확률)는 예전과 같다: 좋아함 4, 쉬고 싶음 3, 보너스 2
+  assert.deepEqual(['like','dislike','bonus'].map(k=>reactionPoses[mode][k].length),[4,3,2]);
+  // 그림이 모두 어딘가에서 쓰인다
+  const phases=['welcome','stretch','cozy','snack','savor','tasty','sleepy','peek','hesitate'];
+  const used=new Set([...Object.values(reactionPoses[mode]).flat().map(p=>p.art),...phases.map(phase=>companionAppearance(mode,{phase}).art).filter(Boolean)]);
+  assert.deepEqual([...used].sort(),arts[mode]);
+  for(const phase of phases){const art=companionAppearance(mode,{phase}).art;if(art)assert.ok(arts[mode].includes(art),mode+' '+phase);}
  }
  assert.ok(reactionPoses.warm.dislike.every(p=>p.art==='shy'));
- assert.ok(reactionPoses.warm.bonus.every(p=>p.art==='joy'));
- // 4장 모두 어딘가에서 쓰인다
- const used=new Set([...Object.values(reactionPoses.warm).flat().map(p=>p.art),...['welcome','stretch','cozy','snack','savor','tasty'].map(phase=>companionAppearance('warm',{phase}).art)]);
- assert.deepEqual([...used].sort(),[...arts].sort());
- for(const phase of ['welcome','stretch','cozy','snack','savor','tasty','sleepy','peek','hesitate'])assert.equal(companionAppearance('cold',{phase}).art,undefined);
+ assert.ok(reactionPoses.cold.dislike.every(p=>['stop','sulk','shoo'].includes(p.art)));
+ assert.equal(companionAppearance('cold',{phase:'sleepy'}).art,undefined);
  assert.equal(companionAppearance('warm',{phase:'idle'}).art,undefined);
- assert.equal(companionAppearance('warm',{phase:'welcome',reaction:'like'}).art,undefined);
+ assert.equal(companionAppearance('cold',{phase:'peek',reaction:'like'}).art,undefined);
 });
