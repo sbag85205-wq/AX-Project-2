@@ -5,18 +5,18 @@ import {createReactionPicker} from './reaction-variety.js?v=115ea2f34987';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=ef11f91be08e';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=2b1060400411';
-import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=e87262f4d32b';
+import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=fbc8c6de196d';
 import {categories,applyManagedCategories,defaultCategory,categoryOf,documents,faq,startersFor,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=4dc923f4c7f7';
 import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=93bd9a4c6e6f';
 import {createPetInteraction} from './pet-interaction.js?v=25ddd542a513';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=20d8b9f9b46b';
 const $=s=>document.querySelector(s);
-import {passwordProblem,passwordInputHTML,passwordEye} from './account-view.js?v=2900678d975c';
+import {passwordProblem,passwordInputHTML,passwordEye} from './account-view.js?v=a9c0222d97cb';
 import {createAccountSync} from './account-sync.js?v=7c9808eca089';
 import {esc,loadingHTML} from './shared.js?v=b4248c4d9fbf';
-import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=90171ec74189';
+import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=e67065b3ec64';
 import {orderNav,installNavLayout} from './nav-layout.js?v=34db55cc4081';
-import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=9709f9fc04d0';
+import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=7a9493222490';
 import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=00786df0fc53';
 const mode=document.body.dataset.mode;
 const isCat=mode==='cat';
@@ -292,7 +292,11 @@ window.addEventListener('message',e=>{
  if(e.data.type==='knowly-embed-height')frame.style.height=Math.max(320,Math.min(20000,Number(e.data.height)||0))+'px';
  if(e.data.type==='knowly-embed-route'&&frame.closest('[data-knowly-key^="library"]')){libraryRoute=String(e.data.route||'/docs');frame.parentElement.dataset.knowlyKey='library:'+libraryRoute;}
  if(e.data.type==='knowly-embed-off'||e.data.type==='knowly-embed-error'){toast(String(e.data.message||'연결을 확인해 주세요.'));}
- if(e.data.type==='knowly-embed-busy'){const wrap=frame.closest('.knowly-frame-wrap');if(wrap){wrap.dataset.signalled='1';wrap.classList.toggle('busy',!!e.data.busy);if(!e.data.busy)wrap.classList.add('ready');}}
+ if(e.data.type==='knowly-embed-busy'){const wrap=frame.closest('.knowly-frame-wrap');if(wrap){
+  wrap.dataset.signalled='1';wrap.classList.toggle('busy',!!e.data.busy);clearTimeout(wrap._busyTimer);
+  if(!e.data.busy)wrap.classList.add('ready');
+  else wrap._busyTimer=setTimeout(()=>{wrap.classList.remove('busy');wrap.classList.add('ready');},8000); // 안전장치: 8초 넘게 남아 있지 않게
+ }}
 });
 function openLibrary(route='/docs'){libraryRoute=route;view='library';petInteraction.reset();render();$('#main').scrollTop=0;}
 // 개인 Knowly 세션의 답변 또는 명시적인 오류를 표시한다.
@@ -754,7 +758,7 @@ document.addEventListener('focusout',e=>{const w=e.target?.id&&document.querySel
 // (load는 거품이 일지 않아 붙잡기 단계에서 받는다)
 document.addEventListener('load',e=>{
  const wrap=e.target?.matches?.('iframe.knowly-frame')&&e.target.closest('.knowly-frame-wrap');if(!wrap)return;
- wrap.classList.add('loaded');clearTimeout(wrap._readyTimer);wrap._readyTimer=setTimeout(()=>{if(!wrap.dataset.signalled)wrap.classList.add('ready');},6000);
+ wrap.classList.add('loaded');clearTimeout(wrap._readyTimer);wrap._readyTimer=setTimeout(()=>{if(!wrap.dataset.signalled||!wrap.classList.contains('busy'))wrap.classList.add('ready');},6000);
 },true);
 // 답변 복사: 화면에 보이는 핵심·절차·설명·근거를 글자로 정리해 복사한다
 function answerText(r){

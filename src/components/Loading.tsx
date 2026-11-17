@@ -6,11 +6,11 @@ import '../../nyang-frontend/public/nyang-loading.css';
 // 냥대리 화면 안에 끼워 넣은 화면(iframe)인지. 그렇다면 불러오는 중 표시는 바깥(냥대리 화면)이 하나만 보여 준다.
 const embedded = typeof window !== 'undefined' && window.parent !== window;
 let busyCount = 0, sent: boolean | null = null, idle: ReturnType<typeof setTimeout> | undefined;
-/** 안쪽에서 불러오는 중인 곳이 있는지 바깥에 알린다. 끝났다는 신호는 잠깐 기다렸다 보낸다(다음 불러오기가 이어지면 깜빡이지 않게). */
+/** 안쪽에서 불러오는 중인 곳이 있는지 바깥에 알린다. 끝났다는 신호는 아주 잠깐(0.04초) 기다렸다 보낸다(같은 순간 이어지는 불러오기에 깜빡이지 않게). */
 function report() {
   clearTimeout(idle);
   if (busyCount > 0) { if (sent !== true) { sent = true; notifyParent({ type: 'knowly-embed-busy', busy: true }); } return; }
-  idle = setTimeout(() => { if (busyCount === 0 && sent !== false) { sent = false; notifyParent({ type: 'knowly-embed-busy', busy: false }); } }, 250);
+  idle = setTimeout(() => { if (busyCount === 0 && sent !== false) { sent = false; notifyParent({ type: 'knowly-embed-busy', busy: false }); } }, 40);
 }
 /** 끼운 화면이 처음 그려진 뒤 불러올 것이 없으면 바로 '준비됨'을 알린다(embed/main.tsx에서 한 번 부른다). */
 export function startBusyReporting() { if (embedded) report(); }

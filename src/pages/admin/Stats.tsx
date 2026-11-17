@@ -105,7 +105,7 @@ export default function Stats() {
       </div>
 
       {error && <div className="error-box">{error}</div>}
-      {!stats && !error && <Loading text="통계를 불러오는 중" />}
+      {!stats && !error && <Loading text="통계를 불러오는 중" compact />}
       {stats && (
         <>
           <section className="stats-row" aria-label="요약">

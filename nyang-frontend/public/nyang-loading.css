@@ -23,14 +23,14 @@
 
 @keyframes nyang-shadow{0%{transform:scaleX(1);opacity:.16}50%{transform:scaleX(.78);opacity:.09}100%{transform:scaleX(1);opacity:.16}}
 @keyframes nyang-dots{0%{content:""}25%{content:"."}50%{content:".."}75%,100%{content:"..."}}
-/* 작은 곳(원문 한 조각·PDF·표·설정 칸)은 냥대리 없이 글만 */
-.nyang-loading-text{margin:0;padding:10px 0;color:var(--ui-sub,#6e6e73);font-size:13px}
+/* 화면이 이미 보이는 곳(목록·통계·원문 한 조각·PDF·표·설정 칸)은 냥대리 없이 그 자리에 글만 */
+.nyang-loading-text{margin:0;padding:18px 0;color:var(--ui-sub,#6e6e73);font-size:13px;text-align:center}
 /* 화면 전체를 잠깐 덮는 표시(로그인 중 등) */
 .nyang-loading-overlay{position:fixed;inset:0;z-index:9998;display:grid;place-items:center;background:color-mix(in srgb,var(--ui-bg,#fff) 72%,transparent);backdrop-filter:blur(2px);animation:nyang-fade .18s ease-out}
 .nyang-loading-overlay .nyang-loading{position:static;transform:none;pointer-events:auto;background:var(--ui-panel,#fff);border:1px solid var(--ui-line,#e5e5e8);border-radius:16px;padding:22px 36px 20px;box-shadow:0 12px 40px #0000001a;color:var(--ui-ink,#1d1d1f)}
 @keyframes nyang-fade{from{opacity:0}to{opacity:1}}
 /* Knowly 화면(안에 끼운 화면)이 뜰 때까지 */
-.knowly-frame-wrap{position:relative}.knowly-frame-wrap>.nyang-loading{transition:opacity .2s}
+.knowly-frame-wrap{position:relative}.knowly-frame-wrap>.nyang-loading{transition:opacity .12s}
 .knowly-frame-wrap.ready:not(.busy)>.nyang-loading{opacity:0;pointer-events:none}
 /* 안에 끼운 Knowly 화면 안쪽의 불러오는 중 자리: 바깥 표시 하나만 보이게 비워 둔다 */
 .nyang-loading-slot{min-height:120px}
