@@ -4,20 +4,20 @@ import {fetch} from './transport.js?v=fd4b994ba12d';
 import {createReactionPicker} from './reaction-variety.js?v=115ea2f34987';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=ef11f91be08e';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
-import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=da548f29e908';
-import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=12818a8a970a';
+import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=af3f2db57255';
+import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=1dca96e91883';
 import {categories,applyManagedCategories,defaultCategory,categoryOf,documents,faq,startersFor,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=4dc923f4c7f7';
 import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=93bd9a4c6e6f';
 import {createPetInteraction} from './pet-interaction.js?v=25ddd542a513';
-import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=ffd1d56e2a93';
+import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=ab9a495cafad';
 const $=s=>document.querySelector(s);
-import {passwordProblem,passwordInputHTML,passwordEye} from './account-view.js?v=8c8a11c7f8cf';
+import {passwordProblem,passwordInputHTML,passwordEye} from './account-view.js?v=1a8e1cf750cc';
 import {createAccountSync} from './account-sync.js?v=7c9808eca089';
-import {esc,loadingHTML} from './shared.js?v=5683e41533cc';
-import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=7b6bca956cad';
+import {esc,loadingHTML} from './shared.js?v=32d8c9fbd3c9';
+import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=b0ea4595e70f';
 import {orderNav,installNavLayout} from './nav-layout.js?v=34db55cc4081';
-import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=1b18017ae82a';
-import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=f10de9f5775a';
+import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=908687635db3';
+import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=3704d359b031';
 const mode=document.body.dataset.mode;
 const isCat=mode==='cat';
 const root='/nyang/';
@@ -275,7 +275,9 @@ function knowlyHTML(r){
 // ── Knowly(main 백엔드) 연결 ─────────────────────────────────────────
 // 통합 앱은 항상 실제 Knowly 기능을 사용한다. 연결 오류를 샘플로 대체하지 않는다.
 let libraryRoute='/docs',attachments=[],attachBusy=false;
-function knowlyFrameHTML(key,route){return `<div class="knowly-frame-wrap" data-knowly-key="${esc(key)}">${loadingHTML('화면을 불러오는 중')}<iframe class="knowly-frame" title="Knowly ${esc(key)}" src="/knowly/index.html#${esc(route)}"></iframe></div>`;}
+// 받침이 있으면 '을', 없으면 '를'(예: 사내 문서를, 검색 모델 설정을)
+const objectParticle=word=>{const c=String(word).trim().slice(-1).charCodeAt(0);return c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28?'을':'를';};
+function knowlyFrameHTML(key,route){const name=viewOf(view)?.title||'화면';return `<div class="knowly-frame-wrap" data-knowly-key="${esc(key)}">${loadingHTML(`${name}${objectParticle(name)} 불러오는 중`)}<iframe class="knowly-frame" title="Knowly ${esc(key)}" src="/knowly/index.html#${esc(route)}"></iframe></div>`;}
 // 같은 화면을 다시 그릴 때 iframe을 새로 불러오지 않도록, 이미 떠 있으면 그대로 둔다.
 function mountKnowly(name){
  const key=name==='library'?'library:'+libraryRoute:name,route=name==='library'?libraryRoute:viewOf(name)?.route;
@@ -290,6 +292,7 @@ window.addEventListener('message',e=>{
  if(e.data.type==='knowly-embed-height')frame.style.height=Math.max(320,Math.min(20000,Number(e.data.height)||0))+'px';
  if(e.data.type==='knowly-embed-route'&&frame.closest('[data-knowly-key^="library"]')){libraryRoute=String(e.data.route||'/docs');frame.parentElement.dataset.knowlyKey='library:'+libraryRoute;}
  if(e.data.type==='knowly-embed-off'||e.data.type==='knowly-embed-error'){toast(String(e.data.message||'연결을 확인해 주세요.'));}
+ if(e.data.type==='knowly-embed-busy'){const wrap=frame.closest('.knowly-frame-wrap');if(wrap){wrap.dataset.signalled='1';wrap.classList.toggle('busy',!!e.data.busy);if(!e.data.busy)wrap.classList.add('ready');}}
 });
 function openLibrary(route='/docs'){libraryRoute=route;view='library';petInteraction.reset();render();$('#main').scrollTop=0;}
 // 개인 Knowly 세션의 답변 또는 명시적인 오류를 표시한다.
@@ -746,8 +749,13 @@ const capsCheck=e=>{
 };
 document.addEventListener('keydown',capsCheck);document.addEventListener('keyup',capsCheck);
 document.addEventListener('focusout',e=>{const w=e.target?.id&&document.querySelector(`[data-caps-for="${e.target.id}"]`);if(w)w.hidden=true;});
-// Knowly 화면이 다 뜨면 불러오는 중 표시를 걷는다(load는 거품이 일지 않아 붙잡기 단계에서 받는다)
-document.addEventListener('load',e=>{if(e.target?.matches?.('iframe.knowly-frame'))e.target.closest('.knowly-frame-wrap')?.classList.add('loaded');},true);
+// Knowly 화면(안에 끼운 화면)의 불러오는 중 표시는 바깥에 하나만: 안쪽이 '준비됨'(knowly-embed-busy false)을 알릴 때까지 보이고,
+// 안쪽에서 다시 불러오기 시작하면 다시 보인다. 예전 화면처럼 신호가 없으면 다 뜬 뒤 6초 지나 걷는다.
+// (load는 거품이 일지 않아 붙잡기 단계에서 받는다)
+document.addEventListener('load',e=>{
+ const wrap=e.target?.matches?.('iframe.knowly-frame')&&e.target.closest('.knowly-frame-wrap');if(!wrap)return;
+ wrap.classList.add('loaded');clearTimeout(wrap._readyTimer);wrap._readyTimer=setTimeout(()=>{if(!wrap.dataset.signalled)wrap.classList.add('ready');},6000);
+},true);
 // 답변 복사: 화면에 보이는 핵심·절차·설명·근거를 글자로 정리해 복사한다
 function answerText(r){
  const list=v=>Array.isArray(v)?v.filter(x=>typeof x==='string'&&x.trim()):[];

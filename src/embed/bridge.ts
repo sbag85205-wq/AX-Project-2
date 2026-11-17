@@ -3,7 +3,8 @@ export type EmbedMessage =
   | { type: 'knowly-embed-height'; height: number }
   | { type: 'knowly-embed-route'; route: string }
   | { type: 'knowly-embed-off'; message: string }
-  | { type: 'knowly-embed-error'; message: string; status: number };
+  | { type: 'knowly-embed-error'; message: string; status: number }
+  | { type: 'knowly-embed-busy'; busy: boolean };
 
 export function notifyParent(message: EmbedMessage) {
   if (window.parent !== window) window.parent.postMessage(message, window.location.origin);

@@ -15,3 +15,7 @@ declare module '*/nyang-frontend/public/core.js' {
   /** 담당자가 추가한 분야의 기본 설명 */
   export const customCategoryDetail: string;
 }
+declare module '*/nyang-frontend/public/shared.js' {
+  /** 네 발로 걷는 옆모습 냥대리 그림(SVG 글자) */
+  export const WALKING_CAT_SVG: string;
+}
