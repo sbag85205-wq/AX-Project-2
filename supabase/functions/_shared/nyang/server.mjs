@@ -30,32 +30,46 @@ export const isLargeAction = (action) => action === 'state-set' || action === 'i
 /** 같은 사람의 요청을 차례로 처리해야 하는 요청인지(읽기만 하는 통계·개인 기록 읽기는 잠그지 않는다) */
 export const needsLock = (action) => action !== 'stats' && action !== 'state';
 
-/** 개인 기록 읽기. keys가 있으면 그 기록만. inline이면 큰 기록은 내용 대신 이름과 마지막 저장 시각(large: {이름: 시각})만 돌려준다. */
+/**
+ * 개인 기록 읽기. keys가 있으면 그 기록만. inline이면 큰 기록은 내용 대신 이름과 마지막 저장 시각(large: {이름: 시각})만 돌려준다.
+ * updated: 기록마다 마지막 저장 시각(기기가 '내가 마지막으로 본 판'을 기억해 두었다가 저장할 때 함께 보낸다).
+ */
 async function readState(db, uid, { keys = null, inline = false } = {}) {
   const wanted = Array.isArray(keys) ? keys.filter((k) => typeof k === 'string' && STATE_KEY.test(k)).slice(0, 20) : null;
-  if (wanted && !wanted.length) return { state: {}, large: {} };
+  if (wanted && !wanted.length) return { state: {}, large: {}, updated: {} };
   const list = await rows(db, 'SELECT key,value,updated FROM demo_user_state WHERE uid=?', uid);
-  const state = {}, large = {};
+  const state = {}, large = {}, updated = {};
   for (const r of list) {
     if (wanted && !wanted.includes(r.key)) continue;
+    updated[r.key] = r.updated;
     if (inline && r.value.length > STATE_INLINE_MAX) large[r.key] = r.updated; else state[r.key] = r.value;
   }
-  return { state, large };
+  return { state, large, updated };
 }
 
+/**
+ * 개인 기록 저장. 기록마다 ifUpdated(이 기기가 마지막으로 본 서버 저장 시각, 서버에 없었으면 null)를 함께 보내면,
+ * 그 사이 다른 기기가 먼저 저장했을 때 덮어쓰지 않고 conflicts로 지금 서버 기록을 돌려준다(기기가 합쳐서 다시 보낸다).
+ * ifUpdated를 보내지 않으면 확인 없이 저장한다(예전 화면).
+ */
 async function writeState(db, uid, input) {
-  const items = Array.isArray(input.items) ? input.items : [{ key: input.key, value: input.value }];
+  const items = Array.isArray(input.items) ? input.items : [{ key: input.key, value: input.value, ...('ifUpdated' in input ? { ifUpdated: input.ifUpdated } : {}) }];
   if (!items.length || items.length > 20) fail('저장할 기록을 확인해 주세요.');
-  const now = new Date().toISOString();
+  const now = new Date().toISOString(), saved = [], conflicts = [];
   for (const item of items) {
     if (!item || typeof item.key !== 'string' || !STATE_KEY.test(item.key)) fail('저장할 수 없는 기록이에요.');
+    if ('ifUpdated' in item) {
+      const current = await one(db, 'SELECT value,updated FROM demo_user_state WHERE uid=? AND key=?', uid, item.key);
+      if ((current?.updated ?? null) !== (item.ifUpdated ?? null)) { conflicts.push({ key: item.key, value: current?.value ?? null, updated: current?.updated ?? null }); continue; }
+    }
+    saved.push(item.key);
     if (item.value === null) { await run(db, 'DELETE FROM demo_user_state WHERE uid=? AND key=?', uid, item.key); continue; }
     if (typeof item.value !== 'string' || item.value.length > STATE_MAX) fail('기록이 너무 커서 저장하지 못했어요.', 413);
     try { JSON.parse(item.value); } catch { fail('기록 형식을 확인해 주세요.'); }
     await run(db, 'INSERT INTO demo_user_state(uid,key,value,updated) VALUES(?,?,?,?) ON CONFLICT(uid,key) DO UPDATE SET value=excluded.value,updated=excluded.updated', uid, item.key, item.value, now);
   }
-  // 저장 시각: 큰 기록을 보낸 기기가 자기가 보낸 것을 다시 받지 않게 알려 준다
-  return { saved: items.map((item) => item.key), updated: now };
+  // 저장 시각: 기기가 '내가 마지막으로 본 판'으로 기억하고, 큰 기록을 보낸 기기는 자기가 보낸 것을 다시 받지 않는다
+  return { saved, updated: now, conflicts };
 }
 
 // ── 기존 기록 올리기 ───────────────────────────────────────────────
@@ -149,10 +163,10 @@ export async function handleNyang(db, account, input) {
   if (!account?.id) fail('로그인 후 이용해 주세요.', 401);
   const action = input?.action ?? null;
   if (action === 'stats') return statistics(db, account);
-  if (action === 'state') return { state: (await readState(db, account.id, { keys: input.keys ?? null })).state };
+  if (action === 'state') { const { state, updated } = await readState(db, account.id, { keys: input.keys ?? null }); return { state, updated }; }
   if (action === 'state-set') return writeState(db, account.id, input);
   // 화면을 불러올 때는 개인 기록(내 일정·대화 기록 등)도 함께 돌려준다(요청을 한 번 줄인다). 큰 기록은 이름과 저장 시각만(personalLarge: {이름: 시각}).
-  const personal = async () => { const { state, large } = await readState(db, account.id, { inline: true }); return { personalState: state, personalLarge: large }; };
+  const personal = async () => { const { state, large, updated } = await readState(db, account.id, { inline: true }); return { personalState: state, personalLarge: large, personalUpdated: updated }; };
   if (action === 'import') return { ...(await importLocal(db, account, input)), ...(await personal()) };
   if (action === null) return { ...(await accountCommunity(db, account)), ...(await personal()) };
   return accountCommunity(db, account, action, input);

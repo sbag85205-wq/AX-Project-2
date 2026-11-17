@@ -11,7 +11,7 @@ import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,w
 import {createPetInteraction} from './pet-interaction.js?v=25ddd542a513';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=7636a2959edf';
 const $=s=>document.querySelector(s);
-import {createAccountSync} from './account-sync.js?v=566c60b20497';
+import {createAccountSync} from './account-sync.js?v=7c9808eca089';
 import {esc} from './shared.js?v=76a19ab6baf7';
 import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=fc7d370f8218';
 import {orderNav,installNavLayout} from './nav-layout.js?v=34db55cc4081';
@@ -711,7 +711,7 @@ initCommunity({
    clearTimeout(replyTimer);replyTimer=null;pendingReply=null;messages=[];chatDraft='';category=null;view='chat';activityTab='recent';activityQuery='';plan=null;petInteraction.reset();
    if($('#modal').open)closeModal();activeAccount=next;
    // 화면을 불러올 때 함께 받은 서버 기록(내 일정·대화 기록·테마 등)을 먼저 브라우저 저장소에 넣고 읽는다
-   lastPersonalState=state.personalState;const synced=accountSync.start(next,state.personalState,state.personalLarge);
+   lastPersonalState=state.personalState;const synced=accountSync.start(next,state.personalState,state.personalLarge,state.personalUpdated);
    applyDeviceSettings();
    uploads=read('om-docs',[]);loadAccountRecords(next);
    if(next){
@@ -727,7 +727,7 @@ initCommunity({
   // 같은 계정으로 다시 불러왔을 때(창으로 돌아옴 등): 다른 기기에서 바꾼 기록이 있으면 반영한다
   // 서버에서 새로 받은 기록 묶음일 때만(같은 묶음을 다시 넣으면 그 뒤에 바꾼 기록을 옛 기록으로 되돌린다)
   const fresh=state.personalState&&state.personalState!==lastPersonalState;if(fresh)lastPersonalState=state.personalState;
-  if(fresh&&accountSync.refresh(state.personalState,state.personalLarge,reloadAccountRecords)){rewards=state.wallet||rewards;reloadAccountRecords();return;}
+  if(fresh&&accountSync.refresh(state.personalState,state.personalLarge,reloadAccountRecords,state.personalUpdated)){rewards=state.wallet||rewards;reloadAccountRecords();return;}
   rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};updateWallet();refreshPet();if(viewOf(view)?.community&&!$('#modal').open)render();}
 });
 

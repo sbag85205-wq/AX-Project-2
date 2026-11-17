@@ -85,7 +85,7 @@ test('서버 저장: 브라우저 저장소와 같은 규칙(보상·게시판·
 test('서버 저장: 개인 기록(내 일정·대화 기록 등)은 계정별로 저장되고 정해진 이름·크기만 받는다', async () => {
   const { pg, call } = await server();
   try {
-    assert.deepEqual(await call(a, 'state'), { state: {} });
+    assert.deepEqual(await call(a, 'state'), { state: {}, updated: {} });
     assert.deepEqual((await call(a)).personalState, {}); assert.deepEqual((await call(a)).personalLarge, {}); // 화면 불러오기에도 개인 기록이 함께 온다
     const tasks = JSON.stringify([{ id: 't1', title: '회의', date: '2026-11-17' }]);
     const savedRes = await call(a, 'state-set', { items: [{ key: 'om-tasks', value: tasks }, { key: 'om-personality', value: '"warm"' }, { key: 'om-bg-theme-cat', value: '"ocean"' }] });
@@ -110,8 +110,17 @@ test('서버 저장: 개인 기록(내 일정·대화 기록 등)은 계정별�
     const load = await call(a);
     assert.deepEqual(Object.keys(load.personalState).sort(), ['nyang-color-theme', 'om-bg-theme-cat', 'om-chat-active', 'om-docs', 'om-tasks']);
     assert.deepEqual(Object.keys(load.personalLarge), ['om-bg-uploads-cat']); assert.match(load.personalLarge['om-bg-uploads-cat'], /^\d{4}-\d{2}-\d{2}T/);
-    assert.deepEqual(await call(a, 'state', { keys: ['om-bg-uploads-cat', 'nope'] }), { state: { 'om-bg-uploads-cat': image } });
-    assert.deepEqual(await call(a, 'state', { keys: [] }), { state: {} });
+    const big = await call(a, 'state', { keys: ['om-bg-uploads-cat', 'nope'] }); assert.deepEqual(big.state, { 'om-bg-uploads-cat': image }); assert.deepEqual(Object.keys(big.updated), ['om-bg-uploads-cat']);
+    assert.deepEqual(await call(a, 'state', { keys: [] }), { state: {}, updated: {} });
+    // 동시에 저장: 마지막으로 본 판(ifUpdated)이 지금 서버 판과 다르면 덮어쓰지 않고 지금 기록을 돌려준다
+    const seen = (await call(a)).personalUpdated['om-tasks'];
+    assert.deepEqual((await call(a, 'state-set', { key: 'om-tasks', value: '[{"id":"pc"}]', ifUpdated: seen })).conflicts, []);
+    const late = await call(a, 'state-set', { key: 'om-tasks', value: '[{"id":"phone"}]', ifUpdated: seen });
+    assert.deepEqual(late.saved, []); assert.equal(late.conflicts[0].value, '[{"id":"pc"}]'); assert.ok(late.conflicts[0].updated > seen);
+    assert.deepEqual((await call(a, 'state-set', { key: 'om-tasks', value: '[{"id":"pc"},{"id":"phone"}]', ifUpdated: late.conflicts[0].updated })).saved, ['om-tasks']);
+    assert.equal((await call(a, 'state-set', { key: 'om-new-x', value: '1', ifUpdated: null }).catch((e) => e.message)), '저장할 수 없는 기록이에요.');
+    assert.deepEqual((await call(a, 'state-set', { key: 'om-cat-motion', value: 'false', ifUpdated: null })).saved, ['om-cat-motion']); // 서버에 없을 때는 null
+    assert.equal((await call(a, 'state-set', { key: 'om-cat-motion', value: 'true', ifUpdated: null })).conflicts[0].value, 'false');
   } finally { await pg.close(); }
 });
 
