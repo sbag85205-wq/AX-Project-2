@@ -64,6 +64,25 @@ async function importLocalOnce(userId: string): Promise<Record<string, unknown> 
   }
 }
 
+// ── 첫 사용자 가이드 기록 ────────────────────────────────────────
+// 다 봤는지·건너뛰었는지를 로그인 계정 정보(Supabase Auth user_metadata.nyang_guide)에 남긴다.
+// 본인 계정 정보라 DB 표·서버 함수를 바꾸지 않아도 되고, 다른 PC로 로그인해도 같은 기록을 읽는다.
+export const GUIDE_STATES = ['done', 'skipped'] as const;
+async function guideRecord(input: { action?: unknown; state?: unknown; version?: unknown }) {
+  if (input.action === 'save') {
+    if (!GUIDE_STATES.includes(input.state as (typeof GUIDE_STATES)[number])) throw Object.assign(new Error('저장할 수 없는 가이드 기록이에요.'), { status: 400 });
+    const version = Math.max(1, Math.min(1000, Math.floor(Number(input.version) || 1)));
+    // updateUser의 data는 기존 계정 정보(이름·부서)와 합쳐진다(이 키만 바뀐다)
+    const { error } = await supabase.auth.updateUser({ data: { nyang_guide: { version, state: input.state, at: new Date().toISOString() } } });
+    if (error) throw new Error('가이드 기록을 저장하지 못했어요.');
+    return { ok: true };
+  }
+  // 다른 PC에서 방금 저장한 기록도 보이게, 이 브라우저에 남은 로그인 정보가 아니라 서버에서 새로 읽는다
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw new Error('가이드 기록을 읽지 못했어요.');
+  return { guide: data.user?.user_metadata?.nyang_guide ?? null };
+}
+
 // 사용자 통계의 순위 목록(포인트·유익해요·연속 출석): uid를 로그인 아이디로만 바꾼다(이름·부서는 보여 주지 않는다). 프로필은 담당자만 읽을 수 있다.
 type StatsRow = { uid: string; username: string } & Record<string, unknown>;
 type StatsLists = { ranking?: StatsRow[]; rankings?: Record<string, StatsRow[]>; helpful?: Record<string, StatsRow[]>; streaks?: StatsRow[] };
@@ -102,6 +121,7 @@ export async function request(path: string, init: RequestInit = {}): Promise<Res
     if (!session) return Response.json({ authenticated: false, member: false }, { status: path.startsWith('/api/account') && !input.action ? 200 : 401 });
     // 비밀번호 변경: 지금 비밀번호로 한 번 더 확인한 뒤 바꾼다(이 기기의 로그인은 이어지고, 다른 기기 로그인도 끊지 않는다)
     if (input.action === 'password') return Response.json(await changePassword(session.user.email ?? '', input.current, input.next));
+    if (path === '/api/guide') return Response.json(await guideRecord(input));
     if (path === '/api/knowly-session') return Response.json({ connected: true });
     // 냥대리 테스트 화면의 검색·모델 설정 (관리자인지는 서버 함수가 확인한다)
     if (path === '/api/knowly-settings') return Response.json(await callFunction('admin-settings', input));

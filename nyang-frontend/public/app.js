@@ -16,6 +16,7 @@ import {createAccountSync} from './account-sync.js?v=7c9808eca089';
 import {esc,loadingHTML} from './shared.js?v=b4248c4d9fbf';
 import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=e67065b3ec64';
 import {orderNav,installNavLayout} from './nav-layout.js?v=34db55cc4081';
+import {createGuide} from './guide.js?v=40d8504018c5';
 import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=7a9493222490';
 import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=00786df0fc53';
 const mode=document.body.dataset.mode;
@@ -119,7 +120,7 @@ function shell(){
    <div class="header-account"><div id="wallet" class="wallet" aria-label="보유 포인트와 하트"></div></div>
   </header>
   <div class="main-shell">
-   <header class="topbar workspace-toolbar"><div class="workspace-context"><span id="workspace-title">물어보기</span></div><div class="top-actions"><div class="workspace-utilities"><button data-action="personality" id="personality-button" aria-label="냥대리 성격 설정">${icon('moon')}<span>차가운 모드</span></button><button data-action="wardrobe">${icon('shirt')}<span>꾸미기</span></button><button class="attendance-quick" id="attendance-button" data-community="attendance" data-busy-label="출석 중…">${icon('calendar')}<span>출석체크</span></button></div><button class="appearance-button theme-toggle" data-action="toggle-theme" aria-label="다크 모드" aria-pressed="false" title="다크 모드로 전환">${icon('moon')}</button></div></header>
+   <header class="topbar workspace-toolbar"><div class="workspace-context"><span id="workspace-title">물어보기</span></div><div class="top-actions"><div class="workspace-utilities"><button data-action="personality" id="personality-button" aria-label="냥대리 성격 설정">${icon('moon')}<span>차가운 모드</span></button><button data-action="guide" id="guide-button" aria-label="냥대리 사용 가이드 다시 보기" title="냥대리 사용법을 처음부터 다시 봐요" hidden>${icon('book')}<span>가이드</span></button><button data-action="wardrobe">${icon('shirt')}<span>꾸미기</span></button><button class="attendance-quick" id="attendance-button" data-community="attendance" data-busy-label="출석 중…">${icon('calendar')}<span>출석체크</span></button></div><button class="appearance-button theme-toggle" data-action="toggle-theme" aria-label="다크 모드" aria-pressed="false" title="다크 모드로 전환">${icon('moon')}</button></div></header>
    <main class="main-content cat-mode" id="main"></main>
    <footer class="bottom-note"><span id="page-title" class="visually-hidden"></span><span>Knowly 사내 문서와 FAQ를 검색합니다.</span><button data-action="docs">참고 자료 보기 ${icon('chevron')}</button></footer>
   </div>
@@ -144,6 +145,9 @@ installStaffSettings({icon,toast});
 
 // ── 주 메뉴 배치 (nav-layout.js) ─────────────────────────────────────
 installNavLayout();
+// ── 첫 사용자 가이드 (guide.js · guide-steps.js) ─────────────────────
+// 직원에게 첫 로그인 때 한 번 띄우고, 도구 줄의 '가이드' 버튼으로 다시 본다. 담당자에게는 띄우지 않는다.
+const guide=createGuide({request:fetch,busy:()=>$('#modal').open,returnFocus:()=>$('#guide-button'),beforeStart(){if(view!=='chat'){view='chat';petInteraction.reset();render();$('#main').scrollTop=0;}}});
 function render(){
  document.body.dataset.personality=personality;
  // 성격별 반응 그림은 처음 반응할 때 늦게 뜨지 않게 미리 받아 둔다
@@ -152,6 +156,7 @@ function render(){
  document.body.dataset.view=view;
  const session=communityState(),staff=session.me?.role==='staff';document.body.dataset.authenticated=String(!!session.member);document.body.dataset.role=staff?'staff':'employee';
  for(const name of EMPLOYEE_NAVS)$('#nav-'+name).hidden=staff;
+ $('#guide-button').hidden=staff||!session.member;
  $('#nav-chat span').textContent=staff?'냥대리 테스트':'물어보기';
  orderNav(staff);
  if(staff&&!viewOf(view)?.staff)view='unanswered';
@@ -641,6 +646,7 @@ const clickByData=[
 // ② ③ data-action 이름으로 구분하는 버튼 [맞는지(a: 동작 이름), 처리, stop]
 const clickByAction=[
  [is('personality'),(a,b,e)=>{showPersonality();return;},true],
+ [is('guide'),(a,b,e)=>{const me=communityState().me;if(communityState().member&&me?.role!=='staff')guide.start({id:activeAccount,role:me.role});return;},true],
  [is('toggle-chat-history'),(a,b,e)=>{chatHistoryCollapsed=!chatHistoryCollapsed;render();return;},true],
  [is('login-pet'),(a,b,e)=>{reactLoginPet();return;},true],
  [is('logout'),async (a,b,e)=>{await logoutAccount();return;},true],
@@ -823,6 +829,8 @@ initCommunity({
    rewards=state.wallet||{...normalizeRewards(null),treatTokens:0};applyBackground();render();if(next)refreshCategories().then(changed=>{if(changed)render();});if(next&&state.me.role!=='staff')companionBehavior.greet(personality);
    // 나중에 받은 기록(큰 배경 이미지·예전 서버 응답)으로 바뀌었으면 다시 그린다
    synced.then(changed=>{if(changed&&activeAccount===next)reloadAccountRecords();});
+   // 첫 사용자 가이드: 직원 계정이 처음 로그인하면 한 번 띄운다(본 기록은 계정에 저장되어 다른 PC에서도 다시 뜨지 않는다)
+   guide.close();if(next&&state.me.role!=='staff')guide.maybeAutoStart({id:next,role:state.me.role});
    return;
   }
   if(!state.member){render();return;}
