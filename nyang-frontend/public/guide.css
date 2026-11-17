@@ -1,0 +1,54 @@
+/* 첫 사용자 가이드 (guide.js). 색은 테마 변수만 써서 다크 모드에서도 그대로 맞는다. */
+.nyang-guide{position:fixed;inset:0;z-index:10000;font-family:var(--font-ui)}
+.nyang-guide.no-target{background:#0f121987}
+.guide-spotlight{position:fixed;border-radius:14px;box-shadow:0 0 0 9999px #0f121987,0 0 0 3px var(--blue);pointer-events:none;transition:top .2s ease,left .2s ease,width .2s ease,height .2s ease}
+.guide-bubble{position:fixed;box-sizing:border-box;width:min(380px,calc(100vw - 24px));max-height:calc(100vh - 24px);overflow:auto;padding:16px 18px 14px;border:1px solid var(--line);border-radius:18px;background:var(--surface,#fff);color:var(--ink);box-shadow:0 18px 50px #0f12193d;transition:top .2s ease,left .2s ease}
+.guide-bubble:focus{outline:none}
+
+.guide-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+/* 냥대리 얼굴: 기존 표정 그림(2×2)을 그대로 쓴다. 기본은 왼쪽 위, 웃음은 오른쪽 아래 */
+.guide-cat{flex:none;width:52px;height:52px;border-radius:50%;background:var(--pale) url('./assets/cat-expressions-v2.png') 0 0/200% 200% no-repeat;border:1px solid var(--line)}
+.guide-cat.happy{background-position:91.07% 96.65%}
+.guide-progress{flex:1;margin:0;font-size:12px;font-weight:600;color:var(--muted)}
+.guide-skip{border:0;background:none;padding:6px 8px;border-radius:8px;font:inherit;font-size:13px;color:var(--muted);cursor:pointer}
+.guide-skip:hover{color:var(--ink);background:var(--soft)}
+
+.guide-bubble h2{margin:4px 0 6px;font-size:17px;line-height:1.4;letter-spacing:-.3px}
+.guide-text{font-size:14px;line-height:1.65;color:var(--ink)}
+.guide-text p{margin:0 0 6px}
+.guide-text ul{margin:4px 0 0;padding-left:18px}
+.guide-text li{margin:3px 0}
+.guide-text strong{color:var(--blue-dark,var(--blue))}
+
+/* 예시 화면 (누를 수 없는 그림) */
+.guide-example{margin:10px 0 2px;padding:10px;border:1px dashed var(--line);border-radius:12px;background:var(--soft)}
+.guide-example figcaption{margin-bottom:6px;font-size:11px;font-weight:700;color:var(--muted)}
+.ge-card{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:10px;background:var(--surface,#fff);border:1px solid var(--line);font-size:13px;line-height:1.5}
+.ge-row{flex-direction:row;gap:8px}
+.ge-label{font-size:11px;font-weight:700}
+.ge-ok{color:var(--blue)}
+.ge-warn{color:#b35a00}
+.ge-source{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 8px;padding:7px 9px;border-radius:8px;background:var(--pale);border:1px solid var(--blue)}
+.ge-source small,.ge-offer small{color:var(--muted)}
+.ge-offer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px}
+.ge-offer>span:first-child{display:flex;flex-direction:column}
+.ge-button{display:inline-flex;align-items:center;padding:5px 10px;border:1px solid var(--line);border-radius:999px;font-size:12px;font-weight:600;background:var(--surface,#fff)}
+
+.guide-dots{display:flex;justify-content:center;gap:5px;margin:12px 0 10px;padding:0;list-style:none}
+.guide-dots li{width:6px;height:6px;border-radius:50%;background:var(--line)}
+.guide-dots li.on{width:16px;border-radius:3px;background:var(--blue)}
+.guide-actions{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.guide-final{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+.guide-button{min-height:36px;padding:0 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface,#fff);color:var(--ink);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.guide-button.primary{border-color:var(--blue);background:var(--blue);color:#fff}
+html[data-theme=dark] .guide-button.primary{color:#0f1219}
+.guide-button:focus-visible,.guide-skip:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+html[data-theme=dark] .ge-warn{color:#ffb766}
+
+/* 좁은 화면: 말풍선을 화면 아래쪽 카드로 고정해 잘리지 않게 한다 */
+.guide-bubble[data-place=sheet]{left:12px!important;right:12px;bottom:max(12px,env(safe-area-inset-bottom));top:auto!important;width:auto;max-height:min(70vh,calc(100vh - 24px))}
+
+@media (prefers-reduced-motion:reduce){.guide-spotlight,.guide-bubble{transition:none}}
+
+/* 도구 줄의 '가이드' 버튼 (따뜻한/차가운 모드 옆) */
+#guide-button[hidden]{display:none}
