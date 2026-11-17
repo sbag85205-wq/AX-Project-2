@@ -2,8 +2,8 @@
 // 담당자가 질문해 보면서 답변 모델과 검색 기준을 바로 바꿔 볼 수 있게 채팅 입력칸 아래에 둔다.
 // 값은 서버(admin-settings)에 저장되고 다음 질문부터 모든 사용자에게 적용된다.
 import {fetch} from './transport.js?v=fd4b994ba12d';
-import {communityState} from './community-ui.js?v=ba054ff9bb4b';
-import {esc,loadingHTML} from './shared.js?v=0fcb6a1b22de';
+import {communityState} from './community-ui.js?v=e87262f4d32b';
+import {esc,loadingHTML} from './shared.js?v=b4248c4d9fbf';
 // app.js가 넘겨주는 화면 도구(아이콘·알림)
 let icon,toast;
 const ss={info:null,draft:null,models:[],modelsError:'',error:'',loading:false,saving:false,testing:false,test:null,open:true};

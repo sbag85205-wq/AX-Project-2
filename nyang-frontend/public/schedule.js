@@ -2,7 +2,7 @@
 // 버튼(날짜·필터·달 이동·완료 체크 등)은 app.js 클릭 표와 change 처리가 맡는다.
 import {timeLabel} from './event-request.js?v=7dffe9d847bc';
 import {localDate,addDays,asDate,displayDate} from './core.js?v=4dc923f4c7f7';
-import {esc} from './shared.js?v=0fcb6a1b22de';
+import {esc} from './shared.js?v=b4248c4d9fbf';
 const $=s=>document.querySelector(s);
 // app.js가 넘겨주는 화면 도구(아이콘·배지)
 let icon,badge;

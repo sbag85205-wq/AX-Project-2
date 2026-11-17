@@ -1,4 +1,4 @@
-import {esc,HELPFUL_POINTS} from './shared.js?v=0fcb6a1b22de';
+import {esc,HELPFUL_POINTS} from './shared.js?v=b4248c4d9fbf';
 import {categories as chatCategories} from './core.js?v=4dc923f4c7f7';
 // 지금 고를 수 있는 분야(분야 관리 목록 = 채팅 분야). 목록에 없는 분야(예전 분야·지워진 분야)로 올라온 글은 '이전 분야'로 묶어 보여 준다.
 const current=()=>chatCategories.map(c=>c.id);

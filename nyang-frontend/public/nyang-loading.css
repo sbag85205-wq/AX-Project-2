@@ -1,22 +1,22 @@
 /* 불러오는 중 표시: 네 발로 걷는 냥대리 + "불러오는 중..." (냥대리 화면과 Knowly 화면이 같이 쓴다)
-   그림: 받은 걷는 옆모습(assets/nyang-walk.webp)을 몸(머리·꼬리·사원증)과 네 다리로 잘라 같은 그림을 겹쳐 쓴다.
+   그림: 받은 걷는 옆모습(assets/nyang-walk2.webp)을 몸(머리·꼬리·사원증)과 네 다리로 잘라 같은 그림을 겹쳐 쓴다.
    대각선 두 쌍(뒤로 뻗은 뒷다리+가슴 아래 앞다리 / 가운데 뒷다리+앞으로 뻗은 앞다리)이 관절을 축으로 번갈아 앞뒤로,
    몸은 걸음마다 살짝 들썩이고, 전체가 왼쪽→오른쪽으로 걸어간다(nyang-walk). 다리는 몸 뒤에 두어 이음매가 가려진다. */
 .nyang-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 16px;color:var(--ui-sub,#6e6e73);font-size:13px;text-align:center}
 .nyang-loading p{margin:0;font-weight:500;letter-spacing:-.1px}
-.nyang-loading-track{position:relative;width:230px;height:104px;overflow:hidden}
-.nyang-loading-walker{position:absolute;left:50%;bottom:6px;width:80px;height:92px;margin-left:-40px;animation:nyang-walk 4.2s linear infinite}
-.nyang-loading-shadow{position:absolute;left:50%;bottom:-2px;width:66px;height:7px;margin-left:-33px;z-index:-1;border-radius:50%;background:currentColor;opacity:.14;animation:nyang-shadow .42s ease-in-out infinite alternate}
+.nyang-loading-track{position:relative;width:250px;height:104px;overflow:hidden}
+.nyang-loading-walker{position:absolute;left:50%;bottom:6px;width:100px;height:92px;margin-left:-50px;animation:nyang-walk 4.2s linear infinite}
+.nyang-loading-shadow{position:absolute;left:50%;bottom:-2px;width:76px;height:7px;margin-left:-38px;z-index:-1;border-radius:50%;background:currentColor;opacity:.14;animation:nyang-shadow .42s ease-in-out infinite alternate}
 .nyang-loading-dots::after{content:"";display:inline-block;width:1.2em;text-align:left;animation:nyang-dots 1.2s steps(4,end) infinite}
-@keyframes nyang-walk{0%{transform:translateX(-95px);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateX(95px);opacity:0}}
+@keyframes nyang-walk{0%{transform:translateX(-100px);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateX(100px);opacity:0}}
 .cat-rig{position:relative;display:block;width:100%;height:100%}
-.cat-rig>i{position:absolute;inset:0;background:url(assets/nyang-walk.webp) 0 0/100% 100% no-repeat}
-.cat-rig>.cr-body{clip-path:polygon(0.00% 0.00%,99.90% 0.00%,99.90% 80.76%,47.77% 80.76%,47.77% 82.52%,28.54% 82.52%,28.54% 79.70%,21.46% 79.70%,21.46% 75.73%,0.00% 75.73%);z-index:2;animation:cr-bob .32s ease-in-out infinite alternate}
-.cr-l1{clip-path:polygon(3.24% 73.52%,22.47% 73.52%,23.68% 81.91%,20.24% 99.91%,0.00% 99.91%,0.00% 87.64%);transform-origin:17.61% 75.73%}.cr-l2{clip-path:polygon(24.49% 77.93%,42.71% 77.93%,46.26% 84.11%,46.26% 99.91%,20.24% 99.91%,23.68% 81.91%);transform-origin:33.81% 80.58%}.cr-l3{clip-path:polygon(47.77% 77.93%,63.77% 77.93%,63.77% 99.91%,46.26% 99.91%,46.26% 84.11%);transform-origin:55.06% 79.70%}.cr-l4{clip-path:polygon(63.77% 78.38%,69.03% 78.38%,99.90% 87.64%,99.90% 99.91%,63.77% 99.91%);transform-origin:66.50% 81.02%}
+.cat-rig>i{position:absolute;inset:0;background:url(assets/nyang-walk2.webp) 0 0/100% 100% no-repeat}
+.cat-rig>.cr-body{clip-path:polygon(0.00% 0.00%,99.89% 0.00%,99.89% 81.41%,67.44% 81.41%,67.44% 83.21%,49.56% 83.21%,49.56% 86.33%,26.16% 86.33%,26.16% 82.61%,0.00% 82.61%);z-index:2;animation:cr-bob .32s ease-in-out infinite alternate}
+.cr-l1{clip-path:polygon(0.00% 79.02%,25.50% 79.02%,25.50% 84.41%,25.06% 99.88%,0.00% 99.88%);transform-origin:13.80% 82.61%}.cr-l2{clip-path:polygon(26.60% 82.61%,49.12% 82.61%,49.12% 99.88%,25.50% 99.88%,25.94% 84.41%);transform-origin:34.11% 86.33%}.cr-l3{clip-path:polygon(49.78% 79.86%,67.44% 79.86%,67.44% 99.88%,49.78% 99.88%);transform-origin:57.51% 83.21%}.cr-l4{clip-path:polygon(67.88% 80.82%,78.81% 79.38%,78.81% 76.62%,99.89% 76.62%,99.89% 99.88%,67.88% 99.88%);transform-origin:80.46% 80.34%}
 .cat-rig>.cr-l1,.cat-rig>.cr-l3{animation:cr-fwd .64s ease-in-out infinite alternate}
 .cat-rig>.cr-l2,.cat-rig>.cr-l4{animation:cr-back .64s ease-in-out infinite alternate}
-@keyframes cr-fwd{from{transform:rotate(0deg)}to{transform:rotate(-17deg)}}
-@keyframes cr-back{from{transform:rotate(0deg)}to{transform:rotate(15deg)}}
+@keyframes cr-fwd{from{transform:rotate(0deg)}to{transform:rotate(-13deg)}}
+@keyframes cr-back{from{transform:rotate(0deg)}to{transform:rotate(12deg)}}
 @keyframes cr-bob{from{transform:translateY(0)}to{transform:translateY(-1.4%)}}
 
 @keyframes nyang-shadow{0%{transform:scaleX(1);opacity:.16}50%{transform:scaleX(.78);opacity:.09}100%{transform:scaleX(1);opacity:.16}}

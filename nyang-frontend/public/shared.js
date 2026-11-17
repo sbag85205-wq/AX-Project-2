@@ -17,7 +17,7 @@ export const isCategoryId=id=>FIXED_CATEGORY_IDS.includes(id)||(typeof id==='str
 export const HELPFUL_POINTS=10;
 
 /**
- * 네 발로 걷는 냥대리: 받은 걷는 옆모습 그림(assets/nyang-walk.webp)을 몸과 네 다리로 잘라(nyang-loading.css)
+ * 네 발로 걷는 냥대리: 받은 걷는 옆모습 그림(assets/nyang-walk2.webp)을 몸과 네 다리로 잘라(nyang-loading.css)
  * 대각선 두 쌍의 다리가 번갈아 앞뒤로 움직이고 몸이 걸음마다 살짝 들썩인다. 다리는 몸 뒤에 있어 이음매가 가려진다.
  */
 export const WALKING_CAT_HTML='<span class="cat-rig" aria-hidden="true"><i class="cr-l2"></i><i class="cr-l1"></i><i class="cr-l3"></i><i class="cr-l4"></i><i class="cr-body"></i></span>';
