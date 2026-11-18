@@ -1,9 +1,9 @@
-// 주 메뉴 배치. 직원은 한 줄로, 담당자는 '채팅 관리'·'관리'·'냥대리 관리' 묶음 아래로 펼쳐지는 메뉴를 쓴다.
+// 주 메뉴 배치. 직원은 한 줄로, 담당자는 '냥대리 테스트'·'이용통계'·'채팅 관리'·'관리' 묶음 아래로 펼쳐지는 메뉴를 쓴다.
 // 버튼 자체(id·동작)는 그대로 두고 자리만 옮긴다. 배치가 다를 때만 옮긴다(옮기면 버튼의 포커스가 풀리므로).
 const $=s=>document.querySelector(s);
 const NAV_LAYOUT={
- employee:{top:['nav-chat','nav-schedule','nav-board','nav-activity','nav-library','nav-unanswered','nav-statistics','nav-userstats','nav-faq','nav-documents','nav-categories','nav-users','nav-model','nav-manage-reactions','nav-manage-seasons','nav-manage-items','nav-group-stats','nav-group-chat','nav-group-admin','nav-group-nyang'],groups:{stats:[],chat:[],admin:[],nyang:[]}},
- staff:{top:['nav-chat','nav-group-stats','nav-group-chat','nav-group-admin','nav-group-nyang','nav-schedule','nav-activity','nav-library','nav-model'],groups:{stats:['nav-statistics','nav-userstats'],chat:['nav-unanswered','nav-faq','nav-board'],admin:['nav-documents','nav-categories','nav-users'],nyang:['nav-manage-reactions','nav-manage-seasons','nav-manage-items']}}
+ employee:{top:['nav-chat','nav-schedule','nav-board','nav-activity','nav-library','nav-unanswered','nav-statistics','nav-userstats','nav-faq','nav-documents','nav-categories','nav-users','nav-model','nav-manage','nav-group-test','nav-group-stats','nav-group-chat','nav-group-admin'],groups:{test:[],stats:[],chat:[],admin:[]}},
+ staff:{top:['nav-group-test','nav-group-stats','nav-group-chat','nav-group-admin','nav-schedule','nav-activity','nav-library','nav-model'],groups:{test:['nav-chat','nav-manage'],stats:['nav-statistics','nav-userstats'],chat:['nav-unanswered','nav-faq','nav-board'],admin:['nav-documents','nav-categories','nav-users']}}
 };
 export function orderNav(staff){
  const layout=NAV_LAYOUT[staff?'staff':'employee'],by=id=>document.getElementById(id);
@@ -13,7 +13,7 @@ export function orderNav(staff){
   for(const [box,want] of slots.slice(1))box.replaceChildren(...want);
   slots[0][0].replaceChildren(...slots[0][1]);
  }
- for(const g of ['stats','chat','admin','nyang'])by('nav-group-'+g).hidden=!staff;
+ for(const g of ['test','stats','chat','admin'])by('nav-group-'+g).hidden=!staff;
  if(!staff)closeNavGroups();
 }
 export function closeNavGroups(except=null){

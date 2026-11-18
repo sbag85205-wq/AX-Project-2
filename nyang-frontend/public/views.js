@@ -25,10 +25,8 @@ export const VIEWS={
  model:{title:'검색 모델 설정',open:'staff',staff:true,staffOnly:true,route:'/admin/settings'},
  unanswered:{title:'챗봇 미답변',staff:true,staffOnly:true,route:'/admin/unanswered'},
  library:{title:'사내 문서',staff:true,route:'/docs'},
- // 냥대리 관리(담당자): 상단 '냥대리 관리' 묶음 아래 세 화면(nyang-manage.js)
- 'manage-reactions':{title:'모드별 반응',pageTitle:'냥대리 관리 · 모드별 반응',open:'staff',staff:true,staffOnly:true,staffNav:true},
- 'manage-seasons':{title:'계절별 모습',pageTitle:'냥대리 관리 · 계절별 모습',open:'staff',staff:true,staffOnly:true,staffNav:true},
- 'manage-items':{title:'꾸미기 아이템',pageTitle:'냥대리 관리 · 꾸미기 아이템',open:'staff',staff:true,staffOnly:true,staffNav:true}
+ // 냥대리 관리(담당자): 상단 '냥대리 테스트' 묶음 아래. 화면 안에서 모드별 반응·계절별 모습·꾸미기 아이템으로 나눠 본다(nyang-manage.js)
+ manage:{title:'냥대리 관리',open:'staff',staff:true,staffOnly:true,staffNav:true}
 };
 const names=Object.keys(VIEWS);
 /** 화면 정보. 표에 없는 이름이면 null(객체 기본 속성 이름도 null). */

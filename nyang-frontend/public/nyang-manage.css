@@ -1,7 +1,14 @@
-/* 냥대리 관리(담당자): 상단 '냥대리 관리' 아래 세 화면(nyang-manage.js) */
+/* 냥대리 관리(담당자): 상단 '냥대리 테스트' 묶음 아래 화면(nyang-manage.js) */
 
 .nyang-manage{color:var(--ui-ink)}
-.nm-body{padding-top:8px}
+.nm-tabs{display:flex;gap:4px;border-bottom:1px solid var(--ui-line);margin:8px 0 0}
+.nm-tab{padding:10px 16px;border-bottom:2px solid transparent;color:var(--ui-sub);font-size:14px;font-weight:600;margin-bottom:-1px}
+.nm-tab:hover{color:var(--ui-ink)}
+.nm-tab.on{color:var(--ui-ink);border-bottom-color:var(--ui-accent)}
+.nm-lead{font-size:13px;line-height:1.7;color:var(--ui-sub);margin:14px 0 0}
+.nm-body{padding-top:14px}
+/* 펼친 메뉴 안의 '냥대리 테스트'는 다른 항목처럼 글자만 보인다 */
+.nav-submenu #nav-chat .icon{display:none}
 .nm-modes{display:inline-flex;gap:4px;padding:3px;border-radius:10px;background:var(--ui-fill);flex-wrap:wrap}
 .nm-mode{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;color:var(--ui-sub)}
 .nm-mode.on{background:var(--ui-panel);color:var(--ui-ink);box-shadow:0 1px 3px #0000001a}

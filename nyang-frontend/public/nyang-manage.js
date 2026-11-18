@@ -1,5 +1,5 @@
-// 상단 메뉴 '냥대리 관리' 묶음 아래 세 화면 (담당자 전용, views.js의 manage-*).
-// 모드별 반응 그림 / 계절별 기본 모습 / 꾸미기 아이템.
+// 상단 메뉴 '냥대리 테스트' 묶음 아래 '냥대리 관리' 화면 (담당자 전용, views.js의 manage).
+// 화면 안에서 세 칸으로 나눠 본다: 모드별 반응 그림 / 계절별 기본 모습 / 꾸미기 아이템.
 //  - 그림을 추가해도 같은 종류의 반응은 모두 같은 확률로 나온다(2개면 50%, 3개면 33%…).
 //  - 반응마다 나올 계절을 고를 수 있다(아무것도 고르지 않으면 사계절).
 //  - 계절을 고르면 그 계절의 기본 모습이 평소 모습이 되고, 그 계절 반응이 자동으로 '사용'이 된다.
@@ -115,20 +115,19 @@ function itemsHTML(c){
   <p class="nm-hint">냥대리 그림과 같은 크기의 투명 배경 그림에 아이템만 그려서 올리면 냥대리 위에 그대로 겹쳐져요.</p></form>`;
 }
 
-const PAGES={
- 'manage-reactions':['reactions','모드별 반응','따뜻한·차가운 모드의 쓰다듬기 반응 그림과 멘트예요. 그림을 추가하고, 반응마다 나오는 계절을 고를 수 있어요.'],
- 'manage-seasons':['seasons','계절별 모습','지금 계절과 계절마다의 평소 모습을 정해요. 계절을 고르면 그 계절 반응도 자동으로 선택돼요.'],
- 'manage-items':['items','꾸미기 아이템','직원이 하트로 열고 착용하는 아이템이에요. 새 아이템을 추가하고 판매를 켜고 끌 수 있어요.']
-};
+const TABS=[['reactions','모드별 반응','따뜻한·차가운 모드의 쓰다듬기 반응 그림과 멘트예요. 그림을 추가하고, 반응마다 나오는 계절을 고를 수 있어요.'],
+ ['seasons','계절별 모습','지금 계절과 계절마다의 평소 모습을 정해요. 계절을 고르면 그 계절 반응도 자동으로 선택돼요.'],
+ ['items','꾸미기 아이템','직원이 하트로 열고 착용하는 아이템이에요. 새 아이템을 추가하고 판매를 켜고 끌 수 있어요.']];
 function pageHTML(){
- const c=deps.catalog(),[,title,lead]=Object.values(PAGES).find(([tab])=>tab===ui.tab)||Object.values(PAGES)[0];
- return `<section class="admin-page nyang-manage"><header class="admin-heading"><p>냥대리 관리</p><h1>${title}</h1><div>${lead} 바꾼 내용은 바로 저장되고 모든 직원의 냥대리에 적용돼요.</div></header>
- <div class="nm-body">${ui.tab==='reactions'?reactionsHTML(c):ui.tab==='seasons'?seasonsHTML(c):itemsHTML(c)}</div></section>`;
+ const c=deps.catalog(),tab=TABS.find(([id])=>id===ui.tab)||TABS[0];
+ return `<section class="admin-page nyang-manage"><header class="admin-heading"><h1>냥대리 관리</h1><div>바꾼 내용은 바로 저장되고 모든 직원의 냥대리에 적용돼요.</div></header>
+ <div class="nm-tabs" role="tablist" aria-label="냥대리 관리">${TABS.map(([id,label])=>`<button type="button" role="tab" class="nm-tab ${tab[0]===id?'on':''}" aria-selected="${tab[0]===id}" data-nm="tab" data-tab="${id}">${label}</button>`).join('')}</div>
+ <p class="nm-lead">${tab[2]}</p>
+ <div class="nm-body">${tab[0]==='reactions'?reactionsHTML(c):tab[0]==='seasons'?seasonsHTML(c):itemsHTML(c)}</div></section>`;
 }
 /** 상단 메뉴에서 연 화면(app.js가 #main에 넣는다). 올린 그림은 받는 대로 다시 그린다. */
-export function nyangManagePageHTML(view){
+export function nyangManagePageHTML(){
  if(!deps)return '';
- ui.tab=(PAGES[view]||PAGES['manage-reactions'])[0];
  const c=deps.catalog(),ids=[...c.custom.reactions.map(r=>r.image),...c.custom.seasonImages.map(r=>r.image),...c.custom.items.map(r=>r.image)].filter(id=>!deps.images.has(id));
  if(ids.length)Promise.resolve(deps.loadImages?.(ids)).then(render);
  return pageHTML();
@@ -143,6 +142,7 @@ export function installNyangManage(d){
  document.addEventListener('click',e=>{
   const b=e.target.closest?.('[data-nm]');if(!b||!staff())return;
   const a=b.dataset.nm;
+  if(a==='tab'){ui.tab=b.dataset.tab;render();return;}
   if(a==='mode'){ui.mode=b.dataset.mode==='cold'?'cold':'warm';render();return;}
   if(ui.saving)return;
   const next=draft(),id=b.dataset.id;

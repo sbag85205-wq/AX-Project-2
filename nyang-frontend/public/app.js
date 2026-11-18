@@ -1,8 +1,8 @@
 import {parseEventRequest,timeLabel,eventTask} from './event-request.js?v=7dffe9d847bc';
-import {viewOf,pageTitleOf,NAV_NAMES,navViews,STAFF_NAVS,EMPLOYEE_NAVS} from './views.js?v=07c7730ae28b';
+import {viewOf,pageTitleOf,NAV_NAMES,navViews,STAFF_NAVS,EMPLOYEE_NAVS} from './views.js?v=45faa08e1272';
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {emptyCatalog,normalizeCatalog,createCatalogPicker,idleLook,shopItems,neededImages} from './nyang-catalog.js?v=5d75771528af';
-import {installNyangManage,nyangManagePageHTML} from './nyang-manage.js?v=a5fc9d2de133';
+import {installNyangManage,nyangManagePageHTML} from './nyang-manage.js?v=e541730c49fd';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=291139f9595c';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=2b1060400411';
@@ -16,7 +16,7 @@ import {passwordProblem,passwordInputHTML,passwordEye} from './account-view.js?v
 import {createAccountSync} from './account-sync.js?v=422e8ba71441';
 import {esc,loadingHTML} from './shared.js?v=b4248c4d9fbf';
 import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=e67065b3ec64';
-import {orderNav,installNavLayout} from './nav-layout.js?v=90c54e21cc9d';
+import {orderNav,installNavLayout} from './nav-layout.js?v=67e2e5647e86';
 import {createGuide} from './guide.js?v=40d8504018c5';
 import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=7a9493222490';
 import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=00786df0fc53';
@@ -141,10 +141,8 @@ function shell(){
     <button data-action="categories" id="nav-categories" hidden>분야 관리</button>
     <button data-action="users" id="nav-users" hidden>사용자 관리</button>
     <button data-action="model" id="nav-model" hidden>검색 모델 설정</button>
-    <button data-action="manage-reactions" id="nav-manage-reactions" hidden>모드별 반응</button>
-    <button data-action="manage-seasons" id="nav-manage-seasons" hidden>계절별 모습</button>
-    <button data-action="manage-items" id="nav-manage-items" hidden>꾸미기 아이템</button>
-    ${['stats:이용통계','chat:채팅 관리','admin:관리','nyang:냥대리 관리'].map(g=>{const [id,label]=g.split(':');return `<div class="nav-group" id="nav-group-${id}" hidden><button type="button" class="nav-group-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="nav-submenu-${id}">${label}${icon('down')}</button><div class="nav-submenu" id="nav-submenu-${id}"></div></div>`;}).join('')}
+    <button data-action="manage" id="nav-manage" hidden>냥대리 관리</button>
+    ${['test:냥대리 테스트','stats:이용통계','chat:채팅 관리','admin:관리'].map(g=>{const [id,label]=g.split(':');return `<div class="nav-group" id="nav-group-${id}" hidden><button type="button" class="nav-group-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="nav-submenu-${id}">${label}${icon('down')}</button><div class="nav-submenu" id="nav-submenu-${id}"></div></div>`;}).join('')}
    </nav>
    <div class="header-account"><div id="wallet" class="wallet" aria-label="보유 포인트와 하트"></div></div>
   </header>
@@ -206,7 +204,7 @@ function render(){
  $('#page-title').textContent=pageTitleOf(view);
  if(staff&&view==='chat')$('#workspace-title').textContent='냥대리 테스트';
  $('#main').classList.toggle('work-view',view!=='chat');updateWallet();
- if(viewOf(view)?.route){mountKnowly(view);}else if(view.startsWith('manage-'))$('#main').innerHTML=nyangManagePageHTML(view);else if(view==='statistics')$('#main').innerHTML=knowlyStatsHTML();else if(view==='userstats')$('#main').innerHTML=statsHTML();else if(view==='activity')$('#main').innerHTML=activityHTML(activityContent(),activityTab==='level');else if(view==='board')$('#main').innerHTML=boardHTML();else if(view==='calendar')renderCalendar(scheduleState());else if(view==='todos')renderTodos(scheduleState());else renderCat();
+ if(viewOf(view)?.route){mountKnowly(view);}else if(view==='manage')$('#main').innerHTML=nyangManagePageHTML();else if(view==='statistics')$('#main').innerHTML=knowlyStatsHTML();else if(view==='userstats')$('#main').innerHTML=statsHTML();else if(view==='activity')$('#main').innerHTML=activityHTML(activityContent(),activityTab==='level');else if(view==='board')$('#main').innerHTML=boardHTML();else if(view==='calendar')renderCalendar(scheduleState());else if(view==='todos')renderTodos(scheduleState());else renderCat();
 }
 async function commitReward(event){
  if(communityState().me?.role==='staff')return null;
