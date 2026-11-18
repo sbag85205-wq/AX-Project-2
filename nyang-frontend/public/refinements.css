@@ -243,6 +243,9 @@ html[data-theme=dark] .toast-item{background:#e4e7ee;color:#17191e;border-color:
 .password-toggle:hover{background:var(--ui-fill,#f5f5f7);color:var(--ui-ink,#1d1d1f)}.password-toggle svg{width:19px;height:19px}
 .caps-warning{display:block;margin:6px 0 0;font-size:12px;font-weight:500;color:#b25e00}.caps-warning[hidden]{display:none}
 html[data-theme=dark] .caps-warning{color:#ffb35c}
+/* 비밀번호 변경 창·설정 창의 small 글자 규칙(회색·왼쪽 여백)보다 앞서게 한다 */
+.password-form small.caps-warning,.chat-settings-form small.caps-warning{color:#b25e00;margin:6px 0 0;font-weight:500;font-size:12px}
+html[data-theme=dark] .password-form small.caps-warning,html[data-theme=dark] .chat-settings-form small.caps-warning{color:#ffb35c}
 /* 답변 복사: 저장하기 왼쪽에 같은 크기의 옅은 버튼으로 */
 html body .chat-room .answer-tools>button.answer-copy-button{margin-left:auto;gap:6px;min-height:32px;padding:5px 14px;border:1px solid var(--ui-line,#e5e5e8);border-radius:999px;background:var(--ui-panel,#fff);color:var(--ui-ink,#1d1d1f);font-size:13px;font-weight:500}
 html body .chat-room .answer-tools>button.answer-copy-button:hover{background:var(--ui-fill,#f5f5f7);color:var(--ui-ink,#1d1d1f)}

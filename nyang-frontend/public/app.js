@@ -89,7 +89,9 @@ window.addEventListener('storage',e=>{if(e.key==='nyang-color-theme'||e.key===nu
 
 let rewards={...normalizeRewards(null),treatTokens:0};
 let calendarMonth=localDate().slice(0,7),calendarDay=localDate(),happyUntil=0;
-const artRequested=new Set();
+// 성격별 반응 그림은 첫 반응·모드 전환 때 냥대리가 잠깐 비어 보이지 않게 처음에 두 장 모두 미리 받아 둔다.
+// (주소는 화면 주소가 아니라 /nyang/ 기준이어야 한다: 화면은 /nyang/cat/ 등 여러 곳에서 열린다)
+const reactionArt=['warm','cold'].map(mode=>{const img=new Image();img.src=`${root}assets/cat-${mode}-reactions.webp`;return img;});
 let petReaction=null,petTimer=null,petGesture=null,ignorePetClickUntil=0,petPending=false,petMoving=false,petMotionTimer=null;
 let personality='cold',companionPhase='idle';
 const pickReaction=createReactionPicker();
@@ -150,8 +152,6 @@ installNavLayout();
 const guide=createGuide({request:fetch,busy:()=>$('#modal').open,returnFocus:()=>$('#guide-button'),beforeStart(){if(view!=='chat'){view='chat';petInteraction.reset();render();$('#main').scrollTop=0;}}});
 function render(){
  document.body.dataset.personality=personality;
- // 성격별 반응 그림은 처음 반응할 때 늦게 뜨지 않게 미리 받아 둔다
- if(!artRequested.has(personality)){artRequested.add(personality);new Image().src=`./assets/cat-${personality}-reactions.webp`;}
  const personalityButton=$('#personality-button');if(personalityButton)personalityButton.innerHTML=icon(personality==='warm'?'sun':'moon')+'<span>'+voice().label+'</span>';
  document.body.dataset.view=view;
  const session=communityState(),staff=session.me?.role==='staff';document.body.dataset.authenticated=String(!!session.member);document.body.dataset.role=staff?'staff':'employee';
