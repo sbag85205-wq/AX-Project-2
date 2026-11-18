@@ -28,7 +28,7 @@ export function normalizeCatalog(value){
  const c=emptyCatalog();if(!value||typeof value!=='object')return c;
  if(SEASON_IDS.includes(value.season))c.season=value.season;
  if(value.defaults&&typeof value.defaults==='object')for(const id of SEASON_IDS)if(typeof value.defaults[id]==='string')c.defaults[id]=value.defaults[id];
- if(value.reactions&&typeof value.reactions==='object')for(const [id,v] of Object.entries(value.reactions))if(v&&typeof v==='object')c.reactions[id]={enabled:v.enabled!==false};
+ if(value.reactions&&typeof value.reactions==='object')for(const [id,v] of Object.entries(value.reactions))if(v&&typeof v==='object')c.reactions[id]={enabled:v.enabled!==false,...(typeof v.line==='string'&&v.line.trim()?{line:v.line}:{}),...(typeof v.mark==='string'?{mark:v.mark}:{})};
  const custom=value.custom&&typeof value.custom==='object'?value.custom:{};
  for(const key of ['reactions','seasonImages','items'])c.custom[key]=Array.isArray(custom[key])?custom[key].filter(x=>x&&typeof x==='object'&&typeof x.id==='string'):[];
  c.custom.reactions=c.custom.reactions.map(r=>({...r,season:SEASON_IDS.includes(r.season)?r.season:'none'}));
@@ -41,7 +41,11 @@ export function allReactions(catalog,mode,kind){
  const builtin=(reactionPoses[m][kind]||[]).map((pose,i)=>({id:`b:${m}:${kind}:${i}`,mode:m,kind,season:'none',builtin:true,pose,line:pose.line,mark:pose.mark}));
  const custom=catalog.custom.reactions.filter(r=>r.mode===m&&r.kind===kind).map(r=>({id:r.id,mode:m,kind,season:r.season,builtin:false,image:r.image,line:r.line,mark:r.mark,
   pose:{motion:DEFAULT_MOTION[kind],line:r.line,mark:r.mark,eyes:'',wag:false,art:'',image:r.image}}));
- return [...builtin,...custom].map(r=>({...r,enabled:catalog.reactions[r.id]?.enabled!==false}));
+ // 처음부터 있던 반응은 관리에서 고친 멘트(line·mark)가 있으면 그것을 쓴다
+ return [...builtin,...custom].map(r=>{
+  const o=catalog.reactions[r.id]||{},line=r.builtin&&o.line?o.line:r.line,mark=r.builtin&&typeof o.mark==='string'?o.mark:r.mark;
+  return {...r,line,mark,original:{line:r.line,mark:r.mark},edited:r.builtin&&(line!==r.pose.line||mark!==r.pose.mark),pose:{...r.pose,line,mark},enabled:o.enabled!==false};
+ });
 }
 /** 한 칸(기본값 'none' 또는 계절)의 사용 중인 반응. ready(그림 번호): 올린 그림을 받아 두었는지. */
 export function bucketReactions(catalog,season,mode,kind,ready=()=>true){
@@ -94,4 +98,33 @@ export function neededImages(catalog){
  const idle=idleLook(catalog);if(idle.image)ids.add(idle.image);
  for(const i of catalog.custom.items)ids.add(i.image);
  return [...ids];
+}
+
+// ── 멘트 자동 작성 ─────────────────────────────────────────────────
+// 반응을 추가하면 모드(말투)·종류·칸(계절)에 맞는 멘트를 골라 써 둔다. 이미 쓰고 있는 멘트는 피한다. 담당자가 '수정'으로 고칠 수 있다.
+const LINES={
+ warm:{
+  like:[['오늘도 손길이 참 따뜻하다냥!','좋다냥 ♥'],['쓰다듬어 주니 기분이 몽글몽글하다냥.','몽글몽글'],['이렇게 다정하면 또 오고 싶어진다냥!','헤헤'],['골골, 마음까지 포근해졌다냥.','골골 ♥'],['조금만 더 이렇게 있어 달라냥.','포근포근']],
+  dislike:[['지금은 살짝 쉬고 싶다냥. 금방 다시 놀자냥.','잠깐만냥…'],['오늘은 조금 피곤하다냥… 이따 만나자냥.','쉬는 중이다냥'],['잠깐만 숨 돌리고 오겠다냥.','이따 보자냥'],['살살 부탁한다냥. 조금 뒤에 다시 와 달라냥.','살살냥…']],
+  bonus:[['너무 행복해서 작은 선물을 준비했다냥!','선물이다냥 ♥'],['오늘 손길은 특별하다냥! 선물 받아 달라냥.','특별하다냥'],['고마운 마음을 담아 주는 선물이다냥.','고맙다냥 ♥']]
+ },
+ cold:{
+  like:[['…나쁘지 않은 손길이다냥.','…흠'],['흠, 조금은 인정해 주겠다냥.','…합격이다냥'],['좋아서 가만히 있는 건 아니다냥.','비밀이다냥'],['딱 조금만 더 해도 된다냥.','…더 해라냥'],['…이 정도면 봐주겠다냥.','흥, 됐다냥']],
+  dislike:[['지금은 건드리지 마라냥.','흥이다냥'],['거리 유지다냥. 업무 중이다냥.','방해 금지다냥'],['흥, 오늘은 그런 기분 아니다냥.','저리 가라냥'],['손은 거기까지라고 했다냥.','거리 유지다냥']],
+  bonus:[['…특별히 이번만 주는 거다냥.','…이번만이다냥'],['착각하지 마라냥. 그냥 주는 선물이다냥.','특별히다냥'],['흥, 기분이 좋아서 주는 거 아니다냥.','비밀이다냥 ♥']]
+ }
+};
+const SEASON_LINES={
+ spring:{warm:{like:['봄바람처럼 손길이 살랑살랑 좋다냥!','살랑 ♥'],dislike:['봄볕에 졸려서 잠깐 쉬고 싶다냥…','꾸벅꾸벅'],bonus:['벚꽃처럼 기분이 활짝 폈다냥! 선물이다냥.','활짝 ♥']},cold:{like:['…봄이라서 특별히 봐주는 거다냥.','…봄이다냥'],dislike:['꽃가루 날리니까 건드리지 마라냥.','에취냥'],bonus:['봄 기분이니까 이번만 주는 거다냥.','…벚꽃냥']}},
+ summer:{warm:{like:['시원한 손길이라 더위가 싹 가신다냥!','시원 ♥'],dislike:['너무 더워서 잠깐만 쉬겠다냥…','더워냥…'],bonus:['아이스커피처럼 상쾌한 선물이다냥!','쨍 ♥']},cold:{like:['…더운데 손은 시원하니 봐주겠다냥.','…시원하다냥'],dislike:['더우니까 붙지 마라냥.','더워냥'],bonus:['흥, 여름이라 기분 내는 거다냥.','…여름냥']}},
+ autumn:{warm:{like:['가을바람처럼 손길이 포근하다냥!','포근 ♥'],dislike:['낙엽 구경하느라 잠깐 쉬고 싶다냥.','바스락'],bonus:['풍성한 가을처럼 선물도 듬뿍이다냥!','듬뿍 ♥']},cold:{like:['…가을이라 조금 감성적인 것뿐이다냥.','…가을냥'],dislike:['낙엽 밟는 중이다냥. 방해 마라냥.','바스락냥'],bonus:['독서의 계절이라 기분 좋아서 주는 거다냥.','…이번만냥']}},
+ winter:{warm:{like:['따뜻한 손길 덕분에 하나도 안 춥다냥!','따끈 ♥'],dislike:['추워서 이불 속에 잠깐 있겠다냥…','덜덜냥'],bonus:['눈처럼 소복소복 쌓인 고마움이다냥!','소복 ♥']},cold:{like:['…추우니까 손은 인정해 주겠다냥.','…따뜻하다냥'],dislike:['추운데 손 차갑다냥. 저리 가라냥.','차갑다냥'],bonus:['연말이라 특별히 주는 거다냥.','…연말냥']}}
+};
+/** 추가할 반응의 멘트를 써 준다({line, mark}). used: 이미 쓰고 있는 멘트들(겹치지 않게). */
+export function suggestLine(mode,kind,season='none',used=[],random=Math.random){
+ const m=mode==='warm'?'warm':'cold',taken=new Set(used);
+ const seasonal=SEASON_LINES[season]?.[m]?.[kind],pool=[...(seasonal?[seasonal]:[]),...(LINES[m][kind]||[])].map(([line,mark])=>({line,mark}));
+ const fresh=pool.filter(x=>!taken.has(x.line));
+ if(seasonal&&fresh[0]?.line===seasonal[0])return fresh[0]; // 계절 칸이면 계절 멘트부터
+ const list=fresh.length?fresh:pool;return list[Math.min(list.length-1,Math.floor(random()*list.length))]||{line:'…냥.',mark:''};
 }

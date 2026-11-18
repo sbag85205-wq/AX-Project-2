@@ -61,3 +61,13 @@
 .nm-now-badge{font-size:11px;font-weight:700;color:var(--ui-accent);background:var(--ui-accent-fill);border-radius:6px;padding:4px 8px}
 .nm-section-title{font-size:18px;font-weight:700;letter-spacing:-.4px;margin:34px 0 12px;padding-top:22px;border-top:1px solid var(--ui-line)}
 .nm-empty{font-size:13px;color:var(--ui-faint);padding:18px;border:1px dashed var(--ui-line);border-radius:12px;text-align:center}
+/* 멘트 수정: 카드 안에서 바로 고친다 */
+.nm-edit-open{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:2px 0;margin-top:2px}
+.nm-edit-open .icon{width:13px;height:13px}
+.nm-edit{display:flex;flex-direction:column;gap:8px}
+.nm-edit label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--ui-sub)}
+.nm-edit input{border:1px solid var(--ui-line);border-radius:8px;padding:7px 9px;background:var(--ui-panel);color:var(--ui-ink);font-size:12px;min-width:0}
+.nm-edit-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.nm-edit-actions .primary-button{padding:6px 12px;font-size:12px}
+.nm-edit-actions .text-button{font-size:12px;padding:2px 0}
+.nm-card.editing{border-color:var(--ui-accent)}

@@ -1,8 +1,8 @@
 import {parseEventRequest,timeLabel,eventTask} from './event-request.js?v=7dffe9d847bc';
 import {viewOf,pageTitleOf,NAV_NAMES,navViews,STAFF_NAVS,EMPLOYEE_NAVS} from './views.js?v=45faa08e1272';
 import {fetch} from './transport.js?v=fd4b994ba12d';
-import {emptyCatalog,normalizeCatalog,createCatalogPicker,idleLook,shopItems,neededImages} from './nyang-catalog.js?v=141e7125f6ea';
-import {installNyangManage,nyangManagePageHTML} from './nyang-manage.js?v=fe7ef3252f32';
+import {emptyCatalog,normalizeCatalog,createCatalogPicker,idleLook,shopItems,neededImages} from './nyang-catalog.js?v=6a3f01963466';
+import {installNyangManage,nyangManagePageHTML} from './nyang-manage.js?v=f530a94d50dc';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=291139f9595c';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=2b1060400411';
@@ -29,6 +29,7 @@ const icon=(name,cls='')=>`<svg class="icon ${cls}" viewBox="0 0 24 24" fill="no
 const CAT_LABELS={searching:'책에서 자료를 찾고 있는',annoyed:'귀찮은 표정의',happy:'행복한 표정의','warm-pet':'눈을 감고 골골거리는','warm-wink':'윙크하는','warm-shy':'수줍게 쉬고 싶어 하는','warm-joy':'두 손 모아 기뻐하는','cold-tsun':'곁눈질하며 볼이 빨개진','cold-think':'턱을 괴고 생각하는','cold-stop':'손바닥으로 멈추라는','cold-sulk':'고개를 돌리고 삐친','cold-shoo':'콧김을 뿜으며 손을 젓는'};
 // style: 관리에서 올린 그림(--art), inner: 냥대리 위에 겹치는 추가 꾸미기 아이템
 const cat=(mood='',extra='',style='',inner='')=>`<div class="cat-art ${mood} ${extra}" role="img" aria-label="${CAT_LABELS[mood]||(mood.startsWith('season-')?'계절 옷을 입은':mood==='custom-art'?'새 모습의':'차갑지만 귀여운')} 고양이 냥대리"${style?` style="${style}"`:''}>${inner}</div>`;
+paths.edit='M4 20h4L19 9l-4-4L4 16v4ZM14 6l4 4';
 paths.settings='M9 3h6l1 3 3 1v6l-3 1-1 3H9l-1-3-3-1V7l3-1 1-3ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z';
 paths.moon='M20.9 13.1A9 9 0 0 1 10.9 3a9 9 0 1 0 10 10.1Z';
 paths.cat='M5 9 4 3l6 4h4l6-4-1 6a8 8 0 1 1-14 0ZM8 12h.01M16 12h.01m-6 4 2 1 2-1';

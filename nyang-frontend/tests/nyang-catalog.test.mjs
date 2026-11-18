@@ -61,3 +61,14 @@ test('꾸미기: 처음부터 있던 아이템 + 판매 중인 추가 아이템'
  assert.equal(shopItems(c,{all:true}).length,5);
  assert.equal(allReactions(c,'cold','dislike').every(r=>r.builtin),true);
 });
+
+test('멘트: 추가할 때 모드·종류·계절에 맞게 자동으로 쓰고, 이미 쓰는 멘트는 피하며, 고친 멘트가 반응에 쓰인다',async()=>{
+ const {suggestLine}=await import('../public/nyang-catalog.js');
+ const spring=suggestLine('warm','like','spring',[]);assert.match(spring.line,/봄/);
+ const used=[];for(let i=0;i<5;i++){const s=suggestLine('cold','like','none',used,()=>0);assert.ok(!used.includes(s.line));used.push(s.line);assert.match(s.line,/냥/);}
+ for(const mode of ['warm','cold'])for(const kind of ['like','dislike','bonus'])for(const season of ['none','spring','summer','autumn','winter'])assert.ok(suggestLine(mode,kind,season,[]).line.length>3);
+ // 처음부터 있던 반응의 멘트를 고치면 반응에도 그 멘트가 나온다
+ const c=normalizeCatalog({reactions:{'b:cold:dislike:0':{line:'고친 멘트다냥',mark:'고침'}}});
+ const r=allReactions(c,'cold','dislike')[0];assert.equal(r.line,'고친 멘트다냥');assert.equal(r.pose.line,'고친 멘트다냥');assert.equal(r.edited,true);assert.notEqual(r.original.line,'고친 멘트다냥');
+ const pick=createCatalogPicker(()=>c,()=>true,()=>0);assert.equal(pick('cold','dislike').line,'고친 멘트다냥');
+});
