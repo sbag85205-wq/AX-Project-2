@@ -7,7 +7,8 @@
 //   state-set    개인 기록 저장(items: [{key,value}], value가 null이면 지운다)
 //   import       이 브라우저에만 있던 기존 활동 기록을 한 번 올린다
 import { accountCommunity, statistics } from './demo-account.mjs';
-import { AppError, wallet } from './community.mjs';
+import { AppError, HELPFUL_POINTS, seoulDay, wallet } from './community.mjs';
+import { PET_BONUS_POINTS, QUESTION_POINTS, TREAT_COST } from './companion.mjs';
 import { FIXED_CATEGORY_IDS, isCustomCategoryId } from './shared.mjs';
 
 const fail = (message, status = 400) => { throw new AppError(message, status); };
@@ -82,6 +83,23 @@ const dayOf = (v) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v
 const whole = (v, max) => (Number.isSafeInteger(v) && v >= 0 && v <= max ? v : null);
 const list = (v, max) => (Array.isArray(v) ? v.slice(0, max).filter((x) => x && typeof x === 'object') : []);
 const LIMITS = { questions: 5000, attendance: 800, operations: 5000, posts: 1000, likes: 5000, replies: 5000, deleted: 1000 };
+/** 냥대리를 처음 쓰기 시작한 날. 이보다 이른 날짜의 질문·출석은 꾸며 낸 기록이다. */
+const SERVICE_START = '2026-11-01';
+/** 근거로 다 셀 수 없는 포인트(같은 PC를 함께 쓴 사람이 누른 유익해요 등)를 위해 더 인정해 주는 여유분 */
+const IMPORT_SLACK = 100;
+/** 올린 지갑을 믿을 수 있는 만큼: 서버에 남은 근거(질문·출석·유익해요·쓰다듬기 보너스)로 받을 수 있었던 포인트·하트·츄르 이용권 */
+async function importCeiling(db, uid) {
+  const n = async (sql, ...args) => Number((await one(db, sql, ...args)).n) || 0;
+  const questions = await n('SELECT COUNT(*) AS n FROM demo_questions WHERE uid=?', uid);
+  const attendance = await n('SELECT COALESCE(SUM(points),0) AS n FROM demo_attendance WHERE uid=?', uid);
+  const tokens = await n('SELECT COALESCE(SUM(tokens),0) AS n FROM demo_attendance WHERE uid=?', uid);
+  const likes = await n('SELECT COUNT(*) AS n FROM demo_likes l JOIN demo_posts p ON p.id=l.post WHERE p.author=? AND l.uid<>?', uid, uid);
+  // 쓰다듬기 보너스는 드물다(약 2%, companion.js). 꾸민 기록으로 부풀리지 못하게 100번까지만 근거로 센다.
+  const bonuses = Math.min(100, await n("SELECT COUNT(*) AS n FROM demo_operations WHERE uid=? AND kind='pet' AND json_extract(result,'$.kind')='bonus'", uid));
+  const points = questions * QUESTION_POINTS + attendance + likes * HELPFUL_POINTS + bonuses * PET_BONUS_POINTS + IMPORT_SLACK;
+  // 하트는 츄르 한 번에 3개: 받을 수 있었던 포인트·츄르 이용권으로 살 수 있었던 츄르 수까지
+  return { points, treatTokens: tokens, hearts: 3 * (Math.floor(points / TREAT_COST) + tokens) };
+}
 
 async function importLocal(db, account, input) {
   const uid = account.id, staff = account.role === 'staff';
@@ -90,20 +108,26 @@ async function importLocal(db, account, input) {
   await accountCommunity(db, account); // 계정·지갑 행을 먼저 만든다
   const opId = 'import:' + importId;
   const first = !(await one(db, 'SELECT 1 AS n FROM demo_operations WHERE uid=? AND id=?', uid, opId));
+  // 포인트와 이어지는 기록(지갑·질문·출석·쓰다듬기 결과)은 계정당 처음 한 번만 받는다.
+  // (예전에는 브라우저마다 받아서, 올리기 번호만 바꿔 같은 요청을 되풀이하면 포인트를 끝없이 늘릴 수 있었다)
+  const rewards = first && !(await one(db, "SELECT 1 AS n FROM demo_operations WHERE uid=? AND kind='import'", uid));
+  const today = seoulDay(), inService = (day) => day && day >= SERVICE_START && day <= today;
   // 이 요청(트랜잭션) 안에서는 포인트 트리거를 건너뛴다. 포인트는 아래에서 지갑으로 한 번만 옮긴다.
   await one(db, "SELECT set_config('nyang.importing','1',true) AS on_import");
   let pending = 0;
   const exists = async (post) => (await one(db, 'SELECT author FROM demo_posts WHERE id=?', post));
 
-  for (const q of list(data.questions, LIMITS.questions)) {
+  // 질문은 화면과 같은 규칙(하루 20개까지)으로, 서비스 시작일~오늘 사이 날짜만 받는다
+  if (rewards) for (const q of list(data.questions, LIMITS.questions)) {
     const id = text(q.id, 100), hash = text(q.hash, 64, 64), day = dayOf(q.day), created = stamp(q.created);
-    if (id && hash && day && created) await run(db, 'INSERT OR IGNORE INTO demo_questions(id,uid,hash,day,created) VALUES(?,?,?,?,?)', id, uid, hash, day, created);
+    if (id && hash && inService(day) && created) await run(db, `INSERT OR IGNORE INTO demo_questions(id,uid,hash,day,created)
+      SELECT ?,?,?,?,? WHERE (SELECT COUNT(*) FROM demo_questions WHERE uid=? AND day=?)<20`, id, uid, hash, day, created, uid, day);
   }
-  for (const a of list(data.attendance, LIMITS.attendance)) {
+  if (rewards) for (const a of list(data.attendance, LIMITS.attendance)) {
     const day = dayOf(a.day), points = whole(a.points, 10), tokens = whole(a.tokens, 3), created = stamp(a.created);
-    if (day && points !== null && tokens !== null && created) await run(db, 'INSERT OR IGNORE INTO demo_attendance(uid,day,points,tokens,created) VALUES(?,?,?,?,?)', uid, day, points, tokens, created);
+    if (inService(day) && points !== null && tokens !== null && created) await run(db, 'INSERT OR IGNORE INTO demo_attendance(uid,day,points,tokens,created) VALUES(?,?,?,?,?)', uid, day, points, tokens, created);
   }
-  for (const o of list(data.operations, LIMITS.operations)) {
+  if (rewards) for (const o of list(data.operations, LIMITS.operations)) {
     const id = text(o.id, 100), result = text(o.result, 2000), created = stamp(o.created);
     if (!id || id.startsWith('import:') || !['pet', 'feed', 'collect', 'buy', 'equip'].includes(o.kind) || !result || !created) continue;
     try { JSON.parse(result); } catch { continue; }
@@ -139,10 +163,15 @@ async function importLocal(db, account, input) {
   }
 
   if (first) {
-    // 지갑은 브라우저마다 한 번만 옮긴다. 서버 지갑을 아직 쓴 적이 없으면 그대로 옮기고, 이미 쓰고 있으면 더한다.
+    // 지갑은 계정당 한 번만 옮긴다. 서버 지갑을 아직 쓴 적이 없으면 그대로 옮기고, 이미 쓰고 있으면 더한다.
+    // 올린 지갑 값은 꾸밀 수 있으므로, 서버에 남은 근거로 받을 수 있었던 만큼까지만 인정한다.
     const row = await one(db, 'SELECT data,version FROM demo_wallets WHERE uid=?', uid), server = wallet(row.data);
     let local = null;
-    try { local = data.wallet ? wallet(data.wallet) : null; } catch { local = null; }
+    try { local = rewards && data.wallet ? wallet(data.wallet) : null; } catch { local = null; }
+    if (local) {
+      const cap = await importCeiling(db, uid), room = (key) => Math.max(0, cap[key] - (row.version === 0 ? 0 : server[key] || 0));
+      for (const key of ['points', 'hearts', 'treatTokens']) local[key] = Math.min(Math.max(0, local[key] || 0), room(key));
+    }
     if (local) {
       const sum = (key) => Math.min(Number.MAX_SAFE_INTEGER, (server[key] || 0) + (local[key] || 0));
       const merged = row.version === 0 ? { ...local } : { ...server, points: sum('points'), hearts: sum('hearts'), treats: sum('treats'), pettings: sum('pettings'), petBonuses: sum('petBonuses'), treatTokens: sum('treatTokens'), owned: [...new Set([...server.owned, ...local.owned])], equipped: server.equipped ?? local.equipped };

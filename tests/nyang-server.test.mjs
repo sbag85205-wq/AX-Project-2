@@ -184,8 +184,8 @@ test('기존 기록 올리기: 서버를 이미 쓰던 계정은 더해서 합�
     const merged = await call(a, 'import', { id: 'old-pc', data: await local.pick(a) });
     assert.equal(merged.wallet.points, 30); assert.equal(merged.wallet.questions, 2); // 포인트는 더하고, 질문 수는 겹치는 질문을 뺀 실제 기록 수
     assert.equal((await call(a, 'import', { id: 'old-pc', data: await local.pick(a) })).wallet.points, 30);
-    // 또 다른 브라우저(다른 올리기 번호)는 한 번 더 더한다
-    assert.equal((await call(a, 'import', { id: 'third-pc', data: { wallet: { points: 5 }, questions: [] } })).wallet.points, 35);
+    // 포인트와 이어지는 기록은 계정당 한 번만 받는다: 다른 올리기 번호로 다시 보내도 늘지 않는다
+    assert.equal((await call(a, 'import', { id: 'third-pc', data: { wallet: { points: 5 }, questions: [] } })).wallet.points, 30);
 
     // 꾸며 낸 요청: 남의 uid·남의 글에 대한 삭제·직원이 쓴 '담당자 답변'·잘못된 값은 모두 버린다
     const victim = (await call(b, 'post', { category: 'server', body: 'B가 올린 진짜 질문입니다' })).posts[0];
@@ -199,8 +199,8 @@ test('기존 기록 올리기: 서버를 이미 쓰던 계정은 더해서 합�
       likes: [{ post: victim.id, uid: 'user-c', created: '2026-11-01T00:00:00.000Z' }],
       replies: [{ id: 'r-x', post: victim.id, body: '직원이 꾸민 담당자 답변', source: '가짜 규정', created: '2026-11-01T00:00:00.000Z' }]
     } });
-    assert.equal(forged.wallet.points, 35); assert.deepEqual(forged.wallet.owned, []);
-    assert.equal((await pg.query("SELECT uid FROM nyang.questions WHERE id='q-x'")).rows[0].uid, 'user-a'); // uid는 로그인한 계정으로만 남는다
+    assert.equal(forged.wallet.points, 30); assert.deepEqual(forged.wallet.owned, []);
+    assert.equal((await pg.query("SELECT COUNT(*)::int AS n FROM nyang.questions WHERE id='q-x'")).rows[0].n, 0); // 두 번째 올리기의 질문은 받지 않는다(받더라도 uid는 로그인한 계정으로만)
     assert.equal((await pg.query("SELECT COUNT(*)::int AS n FROM nyang.questions WHERE id='q-bad'")).rows[0].n, 0);
     assert.equal((await pg.query('SELECT COUNT(*)::int AS n FROM nyang.attendance')).rows[0].n, 0);
     assert.equal((await pg.query("SELECT COUNT(*)::int AS n FROM nyang.operations WHERE id='import:other'")).rows[0].n, 0);
@@ -210,6 +210,31 @@ test('기존 기록 올리기: 서버를 이미 쓰던 계정은 더해서 합�
     assert.equal((await call(b)).wallet.points, 0); // 올리는 동안에는 유익해요 포인트를 새로 주지 않는다
     assert.equal((await call(staff)).deletedPosts.length, 0);
     await assert.rejects(call(a, 'import', { id: '', data: {} }), /확인/); await assert.rejects(call(a, 'import', { id: 'x' }), /확인/);
+  } finally { await pg.close(); }
+});
+
+test('기존 기록 올리기: 올리기 번호를 바꿔 되풀이하거나 지갑·출석·질문을 꾸며도 포인트를 늘릴 수 없다', async () => {
+  const { pg, call } = await server();
+  try {
+    const day = (n) => { const d = new Date(Date.now() + 9 * 3600000 + n * 86400000); return d.toISOString().slice(0, 10); };
+    const at = (d) => d + 'T01:00:00.000Z', h = (i) => i.toString(16).padStart(64, '0');
+    // 처음 올리기: 지갑에 100만 P를 적어도, 함께 올린 근거(어제 질문 20개 = 200 P, 출석 1번 = 5 P)와 여유분 100 P까지만 인정한다
+    const first = await call(a, 'import', { id: 'forge-0', data: {
+      wallet: { points: 1000000, hearts: 99999, treatTokens: 999 },
+      questions: [...Array.from({ length: 25 }, (_, i) => ({ id: 'fq-' + i, hash: h(i), day: day(-1), created: at(day(-1)) })), // 하루 20개까지만
+        { id: 'fq-old', hash: h(100), day: '2020-01-01', created: '2020-01-01T00:00:00.000Z' }, // 서비스 전 날짜
+        { id: 'fq-future', hash: h(101), day: day(3), created: at(day(3)) }], // 미래 날짜
+      attendance: [{ day: day(-1), points: 5, tokens: 1, created: at(day(-1)) }, { day: '2019-05-05', points: 10, tokens: 3, created: '2019-05-05T00:00:00.000Z' }, { day: day(5), points: 10, tokens: 3, created: at(day(5)) }]
+    } });
+    assert.equal(first.wallet.questions, 20);
+    assert.equal(first.wallet.points, 20 * 10 + 5 + 100); assert.equal(first.wallet.treatTokens, 1); assert.ok(first.wallet.hearts <= 3 * (30 + 1));
+    assert.equal((await pg.query('SELECT COUNT(*)::int AS n FROM nyang.attendance')).rows[0].n, 1);
+    // 올리기 번호만 바꿔 되풀이: 지갑·질문·출석 모두 그대로다
+    for (let i = 1; i <= 3; i++) {
+      const again = await call(a, 'import', { id: 'forge-' + i, data: { wallet: { points: 1000000 }, questions: [{ id: 'more-' + i, hash: h(200 + i), day: day(-2), created: at(day(-2)) }], attendance: [{ day: day(-2 - i), points: 10, tokens: 3, created: at(day(-2 - i)) }] } });
+      assert.equal(again.wallet.points, 305); assert.equal(again.wallet.questions, 20); assert.equal(again.streak, first.streak);
+    }
+    assert.equal((await pg.query('SELECT COUNT(*)::int AS n FROM nyang.attendance')).rows[0].n, 1);
   } finally { await pg.close(); }
 });
 
