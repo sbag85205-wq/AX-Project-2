@@ -201,10 +201,13 @@ export function cleanCatalog(input) {
   const m = input && typeof input === 'object' ? input : {};
   const out = { season: SEASON_IDS.includes(m.season) ? m.season : 'none', defaults: {}, reactions: {}, custom: { reactions: [], seasonImages: [], items: [] } };
   for (const id of SEASON_IDS) { const v = m.defaults?.[id]; if (typeof v === 'string' && ENTRY_ID.test(v)) out.defaults[id] = v; }
-  // 반응마다 사용 여부. (예전 목록의 계절 표시 seasons는 추가한 반응의 칸(season)을 정할 때만 쓴다)
+  // 반응마다 사용 여부·고친 멘트. (예전 목록의 계절 표시 seasons는 추가한 반응의 칸(season)을 정할 때만 쓴다)
   const oldTags = {};
   for (const [id, v] of Object.entries(m.reactions && typeof m.reactions === 'object' ? m.reactions : {}).slice(0, 400)) {
-    if (ENTRY_ID.test(id) && v && typeof v === 'object') { out.reactions[id] = { enabled: v.enabled !== false }; oldTags[id] = seasonList(v.seasons); }
+    if (!ENTRY_ID.test(id) || !v || typeof v !== 'object') continue;
+    // 사용 여부와, 처음부터 있던 반응의 멘트를 고친 값(line·mark)
+    out.reactions[id] = { enabled: v.enabled !== false, ...(short(v.line, 80) ? { line: short(v.line, 80) } : {}), ...(typeof v.mark === 'string' ? { mark: short(v.mark, 30) } : {}) };
+    oldTags[id] = seasonList(v.seasons);
   }
   const c = m.custom && typeof m.custom === 'object' ? m.custom : {};
   for (const r of (Array.isArray(c.reactions) ? c.reactions : []).slice(0, 200)) {

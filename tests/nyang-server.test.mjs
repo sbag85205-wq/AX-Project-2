@@ -249,7 +249,7 @@ test('냥대리 관리: 담당자만 목록·그림을 바꾸고, 모든 직원�
     assert.match(img, /^img-[a-z0-9]{8,40}$/);
     const saved = await call(staff, 'catalog-save', { catalog: {
       season: 'spring', defaults: { spring: 's-1', bogus: 'x' },
-      reactions: { 'b:warm:like:0': { enabled: false, seasons: ['winter', 'nope'] } },
+      reactions: { 'b:warm:like:0': { enabled: false, seasons: ['winter', 'nope'] }, 'b:cold:like:1': { line: '  고친 멘트다냥  ', mark: '고침', extra: 1 }, 'b:cold:like:2': { line: '' } },
       custom: {
         reactions: [{ id: 'c-1', mode: 'warm', kind: 'like', image: img, line: '새 반응이다냥', mark: '♥' }, { id: 'c-2', mode: 'cold', kind: 'bonus', season: 'autumn', image: img, line: '가을 반응이다냥' }, { id: 'c-3', mode: 'cold', kind: 'like', season: 'x', image: img, line: '잘못된 칸' }, { id: 'c-bad', mode: 'x', kind: 'like', image: img, line: '버린다' }],
         seasonImages: [{ id: 's-1', season: 'spring', image: img, name: '봄 2' }],
@@ -257,6 +257,7 @@ test('냥대리 관리: 담당자만 목록·그림을 바꾸고, 모든 직원�
       } } });
     assert.equal(saved.catalog.season, 'spring'); assert.deepEqual(saved.catalog.defaults, { spring: 's-1' });
     assert.deepEqual(saved.catalog.reactions['b:warm:like:0'], { enabled: false });
+    assert.deepEqual(saved.catalog.reactions['b:cold:like:1'], { enabled: true, line: '고친 멘트다냥', mark: '고침' }); assert.deepEqual(saved.catalog.reactions['b:cold:like:2'], { enabled: true }); // 빈 멘트는 원래 멘트
     assert.deepEqual(saved.catalog.custom.reactions.map((r) => [r.id, r.season]), [['c-1', 'none'], ['c-2', 'autumn'], ['c-3', 'none']]); // 칸이 없거나 잘못되면 기본값 assert.deepEqual(saved.catalog.custom.items.map((r) => r.id), ['item-abc12345']);
     // 직원 화면 불러오기에 같은 목록이 오고, 그림은 따로 받는다
     const loaded = await call(a);
