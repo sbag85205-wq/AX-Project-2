@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {emptyCatalog,normalizeCatalog,allReactions,activeReactions,createCatalogPicker,selectSeason,idleLook,seasonImages,shopItems,neededImages} from '../public/nyang-catalog.js';
+import {emptyCatalog,normalizeCatalog,allReactions,activeReactions,bucketReactions,createCatalogPicker,selectSeason,idleLook,seasonImages,shopItems,neededImages} from '../public/nyang-catalog.js';
 import {reactionPoses} from '../public/reaction-variety.js';
 
 const lcg=(seed=7)=>()=>((seed=(seed*1103515245+12345)%2147483648)/2147483648);
@@ -23,19 +23,28 @@ test('올린 그림을 아직 받지 않았으면 그 반응은 고르지 않는
  for(let i=0;i<200;i++)assert.notEqual(pick('warm','like').id,'c-new');
 });
 
-test('계절: 계절 표시가 있는 반응은 그 계절에만, 표시가 없으면 사계절 나온다. 계절을 고르면 자동 선택된다',()=>{
- let c=withCustom({reactions:{'c-new':{enabled:true,seasons:['spring']},'b:warm:like:0':{enabled:true,seasons:['winter']}}});
- const ids=()=>activeReactions(c,'warm','like').map(r=>r.id);
- assert.equal(ids().includes('c-new'),false);assert.equal(ids().includes('b:warm:like:0'),false); // 지금은 '기본' 계절
+test('칸: 처음부터 있던 반응은 모두 기본값 칸, 계절 칸은 비어 있고, 비어 있으면 기본값 반응이 나온다',()=>{
+ let c=emptyCatalog();
+ for(const mode of ['warm','cold'])for(const kind of ['like','dislike','bonus']){
+  assert.ok(allReactions(c,mode,kind).every(r=>r.season==='none'));
+  for(const s of ['spring','summer','autumn','winter'])assert.equal(bucketReactions(c,s,mode,kind).length,0);
+ }
  c=selectSeason(c,'spring');
- assert.equal(c.season,'spring');assert.equal(ids().includes('c-new'),true);assert.equal(ids().includes('b:warm:like:0'),false);
- assert.equal(c.reactions['b:warm:like:0'].enabled,false);assert.equal(c.reactions['c-new'].enabled,true);assert.equal(c.reactions['b:warm:like:1'].enabled,true); // 사계절
- c=selectSeason(c,'winter');
- assert.equal(ids().includes('c-new'),false);assert.equal(ids().includes('b:warm:like:0'),true);
- // 같은 종류 안에서는 계절이 바뀌어도 모두 같은 확률
- const live=activeReactions(c,'warm','like'),pick=createCatalogPicker(()=>c,()=>true,lcg(3)),count=new Map();
- for(let i=0;i<40000;i++){const p=pick('warm','like');count.set(p.id,(count.get(p.id)||0)+1);}
- assert.equal(count.size,live.length);for(const v of count.values())assert.ok(Math.abs(v/40000-1/live.length)<0.01);
+ assert.deepEqual(activeReactions(c,'warm','like').map(r=>r.id),bucketReactions(c,'none','warm','like').map(r=>r.id)); // 봄 칸이 비어 있으면 기본값
+ // 봄 칸에 좋아함 반응 2개를 넣으면 봄에는 그 2개만(각 50%), 다른 종류는 여전히 기본값
+ c=normalizeCatalog({...c,custom:{seasonImages:[],items:[],reactions:[
+  {id:'c-s1',mode:'warm',kind:'like',season:'spring',image:'img-aaaaaaaa1',line:'봄 1'},{id:'c-s2',mode:'warm',kind:'like',season:'spring',image:'img-aaaaaaaa2',line:'봄 2'},
+  {id:'c-old',mode:'warm',kind:'like',image:'img-aaaaaaaa3',line:'칸 없음 → 기본값'}]}});
+ assert.deepEqual(activeReactions(c,'warm','like').map(r=>r.id),['c-s1','c-s2']);
+ assert.equal(activeReactions(c,'warm','dislike').length,bucketReactions(c,'none','warm','dislike').length);
+ assert.ok(bucketReactions(c,'none','warm','like').some(r=>r.id==='c-old'));
+ const pick=createCatalogPicker(()=>c,()=>true,lcg(5)),count=new Map();
+ for(let i=0;i<20000;i++){const p=pick('warm','like');count.set(p.id,(count.get(p.id)||0)+1);}
+ assert.deepEqual([...count.keys()].sort(),['c-s1','c-s2']);for(const v of count.values())assert.ok(Math.abs(v/20000-.5)<0.01);
+ // 봄 반응을 모두 끄면 다시 기본값, 다른 계절로 바꿔도 기본값
+ c.reactions={'c-s1':{enabled:false},'c-s2':{enabled:false}};assert.ok(activeReactions(c,'warm','like').some(r=>r.id==='b:warm:like:0'));
+ c=selectSeason({...c,reactions:{}},'winter');assert.ok(activeReactions(c,'warm','like').every(r=>r.season==='none'));
+ assert.ok(!neededImages(c).includes('img-aaaaaaaa1'));assert.ok(neededImages(selectSeason(c,'spring')).includes('img-aaaaaaaa1'));
 });
 
 test('계절별 기본 모습: 고른 계절의 기본 모습이 평소 모습이 되고, 고르지 않았으면 그 계절의 첫 그림',()=>{

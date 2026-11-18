@@ -7,10 +7,10 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {communityState} from './community-ui.js?v=fbc8c6de196d';
 import {esc} from './shared.js?v=b4248c4d9fbf';
-import {SEASONS,KINDS,MODES,allReactions,activeReactions,seasonImages,seasonDefault,shopItems,selectSeason,normalizeCatalog} from './nyang-catalog.js?v=5d75771528af';
+import {SEASONS,KINDS,MODES,allReactions,bucketReactions,seasonImages,seasonDefault,shopItems,selectSeason,normalizeCatalog} from './nyang-catalog.js?v=141e7125f6ea';
 
 let deps=null;
-const ui={tab:'reactions',mode:'warm',saving:false};
+const ui={tab:'none',mode:'warm',saving:false};
 const seasonLabel=id=>SEASONS.find(([s])=>s===id)?.[1]||'기본';
 const staff=()=>communityState().me?.role==='staff';
 
@@ -65,41 +65,34 @@ function itemThumb(item){
  const src=deps.images.get(item.image);
  return src?deps.cat('','nm-thumb','',`<span class="outfit-custom" style="--outfit:url('${src}')"></span>`):'<div class="nm-thumb nm-missing">그림을 불러오는 중</div>';
 }
-const seasonChips=(r)=>`<div class="nm-seasons" role="group" aria-label="나오는 계절">${SEASONS.slice(1).map(([id,label])=>`<button type="button" class="nm-chip ${r.seasons.includes(id)?'on':''}" data-nm="tag" data-id="${esc(r.id)}" data-season="${id}" aria-pressed="${r.seasons.includes(id)}">${label}</button>`).join('')}<span class="nm-chip-note">${r.seasons.length?'':'사계절'}</span></div>`;
-
-// ── 칸 1: 모드별 반응 ────────────────────────────────────────────
-function reactionsHTML(c){
- const ready=id=>deps.images.has(id);
- return `<div class="nm-modes" role="tablist" aria-label="모드">${MODES.map(([id,label])=>`<button type="button" role="tab" class="nm-mode ${ui.mode===id?'on':''}" aria-selected="${ui.mode===id}" data-nm="mode" data-mode="${id}">${label}</button>`).join('')}</div>
- <p class="nm-hint">지금 계절은 <b>${seasonLabel(c.season)}</b>이에요. '사용'이 켜져 있고 계절이 맞는(또는 사계절) 반응만 나오고, 같은 종류 안에서는 모두 같은 확률로 나와요.</p>
- ${KINDS.map(([kind,label])=>{
-  const list=allReactions(c,ui.mode,kind),live=activeReactions(c,ui.mode,kind,ready),pct=live.length?Math.round(1000/live.length)/10:0;
-  return `<section class="nm-group"><header><h3>${label}</h3><span>지금 나오는 반응 ${live.length}개 · 각각 ${pct}%</span></header><div class="nm-grid">${list.map(r=>{
+// ── 기본값·계절 칸: 평소 모습 + 모드별 반응 ───────────────────────────
+const tabLabel=season=>season==='none'?'기본값':seasonLabel(season);
+function bucketHTML(c,season){
+ const ready=id=>deps.images.has(id),label=tabLabel(season),current=c.season===season;
+ const images=seasonImages(c,season),chosen=seasonDefault(c,season);
+ const head=current
+  ?`<div class="nm-now"><span class="nm-now-badge">지금 쓰는 칸</span>직원들에게 이 칸의 평소 모습과 반응이 나와요.${season==='none'?'':' 이 칸에 반응이 없는 종류는 기본값 반응이 나와요.'}</div>`
+  :`<div class="nm-now"><button type="button" class="primary-button" data-nm="season" data-season="${season}" ${ui.saving?'disabled':''}>${season==='none'?'기본값으로 쓰기':`지금 계절을 ${label}로 바꾸기`}</button><span>지금은 '${tabLabel(c.season)}' 칸을 쓰고 있어요.</span></div>`;
+ const look=`<section class="nm-group"><header><h3>평소 모습</h3><span>기본 모습: ${esc(chosen.name||'')}</span></header><div class="nm-grid">${images.map(item=>`<article class="nm-card ${chosen.id===item.id?'chosen':''}">${seasonThumb(item)}<div class="nm-card-text"><strong>${esc(item.name||'새 모습')}</strong></div>
+   <div class="nm-card-foot"><label class="nm-switch"><input type="radio" name="default-${season}" data-nm="default" data-season="${season}" data-id="${esc(item.id)}" ${chosen.id===item.id?'checked':''}> 기본 모습</label>${item.builtin?'<span class="nm-badge">기본</span>':`<button type="button" class="text-button nm-del" data-nm="del-season" data-id="${esc(item.id)}">지우기</button>`}</div></article>`).join('')}
+   <form class="nm-add nm-add-inline" data-nm-form="season" data-season="${season}"><label class="nm-file">${label} 모습 추가<input type="file" name="image" accept="image/png,image/webp,image/jpeg" required></label><input name="name" maxlength="30" placeholder="이름(예: ${label} 냥대리 2)"><button class="secondary-button" ${ui.saving?'disabled':''}>추가</button></form></div></section>`;
+ const modes=`<div class="nm-modes" role="tablist" aria-label="모드">${MODES.map(([id,l])=>`<button type="button" role="tab" class="nm-mode ${ui.mode===id?'on':''}" aria-selected="${ui.mode===id}" data-nm="mode" data-mode="${id}">${l}</button>`).join('')}</div>`;
+ const kinds=KINDS.map(([kind,kl])=>{
+  const list=allReactions(c,ui.mode,kind).filter(r=>r.season===season),live=bucketReactions(c,season,ui.mode,kind,ready),pct=live.length?Math.round(1000/live.length)/10:0;
+  const note=list.length?`사용 중 ${live.length}개 · 각각 ${pct}%`:season==='none'?'반응이 없어요':'비어 있어요 · 기본값 반응이 나와요';
+  return `<section class="nm-group"><header><h3>${kl}</h3><span>${note}</span></header>${list.length?`<div class="nm-grid">${list.map(r=>{
    const on=live.some(x=>x.id===r.id);
    return `<article class="nm-card ${on?'':'off'}">${poseThumb(r)}<div class="nm-card-text"><strong>${esc(r.line)}</strong>${r.mark?`<small>${esc(r.mark)}</small>`:''}</div>
-    ${seasonChips(r)}
-    <div class="nm-card-foot"><label class="nm-switch"><input type="checkbox" data-nm="enable" data-id="${esc(r.id)}" ${r.enabled?'checked':''}> 사용</label><span class="nm-pct">${on?pct+'%':r.enabled?'다른 계절':'꺼짐'}</span>${r.builtin?'<span class="nm-badge">기본</span>':`<button type="button" class="text-button nm-del" data-nm="del-reaction" data-id="${esc(r.id)}">지우기</button>`}</div></article>`;}).join('')}</div></section>`;
- }).join('')}
- <form class="nm-add" data-nm-form="reaction"><h3>${MODES.find(([m])=>m===ui.mode)[1]} 반응 추가</h3>
+    <div class="nm-card-foot"><label class="nm-switch"><input type="checkbox" data-nm="enable" data-id="${esc(r.id)}" ${r.enabled?'checked':''}> 사용</label><span class="nm-pct">${on?pct+'%':'꺼짐'}</span>${r.builtin?'<span class="nm-badge">기본</span>':`<button type="button" class="text-button nm-del" data-nm="del-reaction" data-id="${esc(r.id)}">지우기</button>`}</div></article>`;}).join('')}</div>`:`<p class="nm-empty">${season==='none'?'아직 반응이 없어요.':`${label} 칸에 아직 ${kl} 반응이 없어요. 아래에서 추가해 주세요.`}</p>`}</section>`;
+ }).join('');
+ const add=`<form class="nm-add" data-nm-form="reaction" data-season="${season}"><h3>${label} · ${MODES.find(([m])=>m===ui.mode)[1]} 반응 추가</h3>
   <label class="nm-file">그림<input type="file" name="image" accept="image/png,image/webp,image/jpeg" required></label>
   <label>반응 종류<select name="kind">${KINDS.map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}</select></label>
   <label>멘트<input name="line" maxlength="80" required placeholder="예: 오늘도 손길이 좋다냥!"></label>
   <label>작은 말풍선<input name="mark" maxlength="30" placeholder="예: 골골 ♥"></label>
-  <fieldset class="nm-seasons"><legend>나오는 계절(안 고르면 사계절)</legend>${SEASONS.slice(1).map(([id,l])=>`<label class="nm-check"><input type="checkbox" name="season" value="${id}"> ${l}</label>`).join('')}</fieldset>
   <button class="primary-button" ${ui.saving?'disabled':''}>추가하기</button>
-  <p class="nm-hint">냥대리 그림처럼 정사각형에 냥대리가 가운데 있는 투명 배경 그림이 가장 잘 맞아요.</p></form>`;
-}
-
-// ── 칸 2: 계절별 기본 모습 ───────────────────────────────────────
-function seasonsHTML(c){
- return `<div class="nm-season-pick"><h3>지금 계절</h3><div class="nm-modes" role="radiogroup" aria-label="지금 계절">${SEASONS.map(([id,label])=>`<button type="button" role="radio" class="nm-mode ${c.season===id?'on':''}" aria-checked="${c.season===id}" data-nm="season" data-season="${id}">${label}</button>`).join('')}</div>
- <p class="nm-hint">계절을 고르면 그 계절의 기본 모습이 평소 냥대리가 되고, 반응도 그 계절(또는 사계절) 것으로 자동 선택돼요.</p></div>
- ${SEASONS.map(([season,label])=>{
-  const list=seasonImages(c,season),chosen=seasonDefault(c,season);
-  return `<section class="nm-group ${c.season===season?'current':''}"><header><h3>${label}${c.season===season?' <em>지금 계절</em>':''}</h3><span>기본 모습: ${esc(chosen.name||'')}</span></header><div class="nm-grid">${list.map(item=>`<article class="nm-card ${chosen.id===item.id?'chosen':''}">${seasonThumb(item)}<div class="nm-card-text"><strong>${esc(item.name||'새 모습')}</strong></div>
-   <div class="nm-card-foot"><label class="nm-switch"><input type="radio" name="default-${season}" data-nm="default" data-season="${season}" data-id="${esc(item.id)}" ${chosen.id===item.id?'checked':''}> 기본 모습</label>${item.builtin?'<span class="nm-badge">기본</span>':`<button type="button" class="text-button nm-del" data-nm="del-season" data-id="${esc(item.id)}">지우기</button>`}</div></article>`).join('')}
-   <form class="nm-add nm-add-inline" data-nm-form="season" data-season="${season}"><label class="nm-file">${label} 모습 추가<input type="file" name="image" accept="image/png,image/webp,image/jpeg" required></label><input name="name" maxlength="30" placeholder="이름(예: ${label} 냥대리 2)"><button class="secondary-button" ${ui.saving?'disabled':''}>추가</button></form></div></section>`;
- }).join('')}`;
+  <p class="nm-hint">냥대리 그림처럼 정사각형에 냥대리가 가운데 있는 투명 배경 그림이 가장 잘 맞아요. 같은 종류 안에서는 모든 반응이 같은 확률로 나와요.</p></form>`;
+ return `${head}${look}<h2 class="nm-section-title">반응</h2>${modes}${kinds}${add}`;
 }
 
 // ── 칸 3: 꾸미기 아이템 ──────────────────────────────────────────
@@ -115,15 +108,13 @@ function itemsHTML(c){
   <p class="nm-hint">냥대리 그림과 같은 크기의 투명 배경 그림에 아이템만 그려서 올리면 냥대리 위에 그대로 겹쳐져요.</p></form>`;
 }
 
-const TABS=[['reactions','모드별 반응','따뜻한·차가운 모드의 쓰다듬기 반응 그림과 멘트예요. 그림을 추가하고, 반응마다 나오는 계절을 고를 수 있어요.'],
- ['seasons','계절별 모습','지금 계절과 계절마다의 평소 모습을 정해요. 계절을 고르면 그 계절 반응도 자동으로 선택돼요.'],
- ['items','꾸미기 아이템','직원이 하트로 열고 착용하는 아이템이에요. 새 아이템을 추가하고 판매를 켜고 끌 수 있어요.']];
+const TABS=[...SEASONS.map(([id])=>[id,tabLabel(id)]),['items','꾸미기 아이템']];
 function pageHTML(){
  const c=deps.catalog(),tab=TABS.find(([id])=>id===ui.tab)||TABS[0];
  return `<section class="admin-page nyang-manage"><header class="admin-heading"><h1>냥대리 관리</h1><div>바꾼 내용은 바로 저장되고 모든 직원의 냥대리에 적용돼요.</div></header>
- <div class="nm-tabs" role="tablist" aria-label="냥대리 관리">${TABS.map(([id,label])=>`<button type="button" role="tab" class="nm-tab ${tab[0]===id?'on':''}" aria-selected="${tab[0]===id}" data-nm="tab" data-tab="${id}">${label}</button>`).join('')}</div>
- <p class="nm-lead">${tab[2]}</p>
- <div class="nm-body">${tab[0]==='reactions'?reactionsHTML(c):tab[0]==='seasons'?seasonsHTML(c):itemsHTML(c)}</div></section>`;
+ <div class="nm-tabs" role="tablist" aria-label="냥대리 관리">${TABS.map(([id,label])=>`<button type="button" role="tab" class="nm-tab ${tab[0]===id?'on':''}" aria-selected="${tab[0]===id}" data-nm="tab" data-tab="${id}">${label}${c.season===id?'<i class="nm-tab-dot" title="지금 쓰는 칸"></i>':''}</button>`).join('')}</div>
+ <p class="nm-lead">${tab[0]==='items'?'직원이 하트로 열고 착용하는 아이템이에요. 새 아이템을 추가하고 판매를 켜고 끌 수 있어요.':tab[0]==='none'?'계절을 정하지 않았을 때(기본값) 냥대리의 평소 모습과 쓰다듬기 반응이에요.':`${tab[1]}에 쓸 평소 모습과 쓰다듬기 반응이에요. 지금 계절을 ${tab[1]}로 바꾸면 이 칸이 쓰여요.`}</p>
+ <div class="nm-body">${tab[0]==='items'?itemsHTML(c):bucketHTML(c,tab[0])}</div></section>`;
 }
 /** 상단 메뉴에서 연 화면(app.js가 #main에 넣는다). 올린 그림은 받는 대로 다시 그린다. */
 export function nyangManagePageHTML(){
@@ -146,15 +137,9 @@ export function installNyangManage(d){
   if(a==='mode'){ui.mode=b.dataset.mode==='cold'?'cold':'warm';render();return;}
   if(ui.saving)return;
   const next=draft(),id=b.dataset.id;
-  if(a==='tag'){
-   const r=[...MODES.flatMap(([m])=>KINDS.flatMap(([k])=>allReactions(next,m,k)))].find(x=>x.id===id);if(!r)return;
-   const seasons=r.seasons.includes(b.dataset.season)?r.seasons.filter(s=>s!==b.dataset.season):[...r.seasons,b.dataset.season];
-   next.reactions[id]={enabled:r.enabled,seasons};save(next);return;
-  }
   if(a==='season'){
    const chosen=selectSeason(next,b.dataset.season);
-   const count=MODES.reduce((n,[m])=>n+KINDS.reduce((k,[kind])=>k+activeReactions(chosen,m,kind).length,0),0);
-   save(chosen,`지금 계절을 '${seasonLabel(chosen.season)}'(으)로 바꿨어요. 반응 ${count}개가 자동으로 선택됐어요.`);return;
+   save(chosen,chosen.season==='none'?'기본값 칸을 쓰도록 바꿨어요.':`지금 계절을 '${tabLabel(chosen.season)}'(으)로 바꿨어요. 직원들에게 ${tabLabel(chosen.season)} 칸의 모습과 반응이 나와요.`);return;
   }
   if(a==='del-reaction'&&confirm('이 반응을 지울까요?')){const r=next.custom.reactions.find(x=>x.id===id);next.custom.reactions=next.custom.reactions.filter(x=>x.id!==id);delete next.reactions[id];save(next,'반응을 지웠어요.').then(()=>r&&call({action:'catalog-image-delete',id:r.image}).catch(()=>{}));return;}
   if(a==='del-season'&&confirm('이 모습을 지울까요?')){const r=next.custom.seasonImages.find(x=>x.id===id);next.custom.seasonImages=next.custom.seasonImages.filter(x=>x.id!==id);for(const s in next.defaults)if(next.defaults[s]===id)delete next.defaults[s];save(next,'모습을 지웠어요.').then(()=>r&&call({action:'catalog-image-delete',id:r.image}).catch(()=>{}));return;}
@@ -164,8 +149,7 @@ export function installNyangManage(d){
   const t=e.target;if(!t.dataset?.nm||!staff()||ui.saving)return;
   const next=draft(),id=t.dataset.id;
   if(t.dataset.nm==='enable'){
-   const r=MODES.flatMap(([m])=>KINDS.flatMap(([k])=>allReactions(next,m,k))).find(x=>x.id===id);if(!r)return;
-   next.reactions[id]={enabled:t.checked,seasons:r.seasons};save(next);
+   next.reactions[id]={enabled:t.checked};save(next);
   }
   if(t.dataset.nm==='default'){next.defaults[t.dataset.season]=id;save(next,`${seasonLabel(t.dataset.season)} 기본 모습을 바꿨어요.`);}
   if(t.dataset.nm==='item-enable'){const item=next.custom.items.find(x=>x.id===id);if(item){item.enabled=t.checked;save(next);}}
@@ -177,8 +161,8 @@ export function installNyangManage(d){
   try{
    const image=await upload(data.get('image'));const next=draft();
    if(kind==='reaction'){
-    const id=newId('c-');next.custom.reactions.push({id,mode:ui.mode,kind:data.get('kind'),image,line:String(data.get('line')||''),mark:String(data.get('mark')||'')});
-    next.reactions[id]={enabled:true,seasons:data.getAll('season').map(String)};
+    const id=newId('c-');next.custom.reactions.push({id,mode:ui.mode,kind:data.get('kind'),season:f.dataset.season||'none',image,line:String(data.get('line')||''),mark:String(data.get('mark')||'')});
+    next.reactions[id]={enabled:true};
    }else if(kind==='season'){
     next.custom.seasonImages.push({id:newId('s-'),season:f.dataset.season,image,name:String(data.get('name')||'')||`${seasonLabel(f.dataset.season)} 냥대리`});
    }else{

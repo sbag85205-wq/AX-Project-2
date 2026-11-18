@@ -54,3 +54,10 @@
 .nm-add-inline{grid-column:1/-1;margin-top:0;grid-template-columns:minmax(200px,1.2fr) minmax(140px,1fr) auto;padding:12px}
 .nm-season-pick h3{font-size:14px;font-weight:700;margin-bottom:10px}
 @media(max-width:640px){.nm-add-inline{grid-template-columns:1fr}.nm-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}}
+/* 기본값·계절 칸: 지금 쓰는 칸 표시와 바꾸기 단추 */
+.nm-tab-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ui-accent);margin-left:6px;vertical-align:middle}
+.nm-now{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border-radius:12px;background:var(--ui-fill);font-size:13px;color:var(--ui-sub);line-height:1.6}
+.nm-now .primary-button{padding:8px 14px;font-size:12px}
+.nm-now-badge{font-size:11px;font-weight:700;color:var(--ui-accent);background:var(--ui-accent-fill);border-radius:6px;padding:4px 8px}
+.nm-section-title{font-size:18px;font-weight:700;letter-spacing:-.4px;margin:34px 0 12px;padding-top:22px;border-top:1px solid var(--ui-line)}
+.nm-empty{font-size:13px;color:var(--ui-faint);padding:18px;border:1px dashed var(--ui-line);border-radius:12px;text-align:center}

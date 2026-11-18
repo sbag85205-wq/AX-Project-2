@@ -1,6 +1,7 @@
 // 냥대리 관리(담당자)에서 정한 목록: 모드별 반응, 계절별 기본 모습, 꾸미기 아이템.
 // 목록은 서버(server.mjs의 catalog)에 있고 모든 사람에게 같다. 이 파일은 목록을 읽어
-//  - 지금 계절에 맞는 반응을 '모두 같은 확률'로 고르고(반응이 2개면 50%, 3개면 33%…)
+//  - 반응은 칸(기본값·봄·여름·가을·겨울)마다 따로 있다. 처음부터 있던 반응은 모두 기본값 칸.
+//  - 지금 계절 칸의 반응을 '모두 같은 확률'로 고르고(반응이 2개면 50%, 3개면 33%…), 그 칸에 반응이 없으면 기본값 칸에서 고른다
 //  - 평소(아이들) 모습으로 쓸 그림을 정하고
 //  - 꾸미기 상점에 보일 아이템을 알려 준다.
 // 화면 꾸밈만 정한다. 좋아함·쉬고 싶음·보너스 중 무엇이 나올지와 포인트는 계속 서버가 정한다.
@@ -27,23 +28,29 @@ export function normalizeCatalog(value){
  const c=emptyCatalog();if(!value||typeof value!=='object')return c;
  if(SEASON_IDS.includes(value.season))c.season=value.season;
  if(value.defaults&&typeof value.defaults==='object')for(const id of SEASON_IDS)if(typeof value.defaults[id]==='string')c.defaults[id]=value.defaults[id];
- if(value.reactions&&typeof value.reactions==='object')for(const [id,v] of Object.entries(value.reactions))if(v&&typeof v==='object')c.reactions[id]={enabled:v.enabled!==false,seasons:Array.isArray(v.seasons)?v.seasons.filter(s=>SEASON_IDS.includes(s)&&s!=='none'):[]};
+ if(value.reactions&&typeof value.reactions==='object')for(const [id,v] of Object.entries(value.reactions))if(v&&typeof v==='object')c.reactions[id]={enabled:v.enabled!==false};
  const custom=value.custom&&typeof value.custom==='object'?value.custom:{};
  for(const key of ['reactions','seasonImages','items'])c.custom[key]=Array.isArray(custom[key])?custom[key].filter(x=>x&&typeof x==='object'&&typeof x.id==='string'):[];
+ c.custom.reactions=c.custom.reactions.map(r=>({...r,season:SEASON_IDS.includes(r.season)?r.season:'none'}));
  return c;
 }
 
-/** 처음부터 있던 반응(reaction-variety.js)과 관리에서 추가한 반응을 하나의 목록으로. 반응마다 사용 여부·계절이 붙는다. */
+/** 처음부터 있던 반응(reaction-variety.js, 모두 기본값 칸)과 관리에서 추가한 반응. 반응마다 칸(season)과 사용 여부가 붙는다. */
 export function allReactions(catalog,mode,kind){
  const m=mode==='warm'?'warm':'cold';
- const builtin=(reactionPoses[m][kind]||[]).map((pose,i)=>({id:`b:${m}:${kind}:${i}`,mode:m,kind,builtin:true,pose,line:pose.line,mark:pose.mark}));
- const custom=catalog.custom.reactions.filter(r=>r.mode===m&&r.kind===kind).map(r=>({id:r.id,mode:m,kind,builtin:false,image:r.image,line:r.line,mark:r.mark,
+ const builtin=(reactionPoses[m][kind]||[]).map((pose,i)=>({id:`b:${m}:${kind}:${i}`,mode:m,kind,season:'none',builtin:true,pose,line:pose.line,mark:pose.mark}));
+ const custom=catalog.custom.reactions.filter(r=>r.mode===m&&r.kind===kind).map(r=>({id:r.id,mode:m,kind,season:r.season,builtin:false,image:r.image,line:r.line,mark:r.mark,
   pose:{motion:DEFAULT_MOTION[kind],line:r.line,mark:r.mark,eyes:'',wag:false,art:'',image:r.image}}));
- return [...builtin,...custom].map(r=>({...r,enabled:catalog.reactions[r.id]?.enabled!==false,seasons:catalog.reactions[r.id]?.seasons||[]}));
+ return [...builtin,...custom].map(r=>({...r,enabled:catalog.reactions[r.id]?.enabled!==false}));
 }
-/** 지금 계절에 나오는 반응: 사용 중이고, 계절 표시가 없거나(사계절) 지금 계절이 표시된 것. ready(그림 번호): 올린 그림을 받아 두었는지. */
+/** 한 칸(기본값 'none' 또는 계절)의 사용 중인 반응. ready(그림 번호): 올린 그림을 받아 두었는지. */
+export function bucketReactions(catalog,season,mode,kind,ready=()=>true){
+ return allReactions(catalog,mode,kind).filter(r=>r.season===season&&r.enabled&&(r.builtin||ready(r.image)));
+}
+/** 지금 나오는 반응: 지금 계절 칸에 사용 중인 반응이 있으면 그것들, 없으면 기본값 칸의 반응. */
 export function activeReactions(catalog,mode,kind,ready=()=>true){
- return allReactions(catalog,mode,kind).filter(r=>r.enabled&&(!r.seasons.length||r.seasons.includes(catalog.season))&&(r.builtin||ready(r.image)));
+ const seasonal=catalog.season!=='none'?bucketReactions(catalog,catalog.season,mode,kind,ready):[];
+ return seasonal.length?seasonal:bucketReactions(catalog,'none',mode,kind,ready);
 }
 /**
  * 반응 고르기: 지금 나올 수 있는 반응 중 하나를 같은 확률로 고른다. 바로 전과 같은 반응은 연달아 고르지 않는다
@@ -61,13 +68,9 @@ export function createCatalogPicker(getCatalog,ready=()=>true,random=Math.random
   previous.set(key,chosen.id);return {...chosen.pose,id:chosen.id};
  };
 }
-/** 계절을 고르면 그 계절 표시가 있거나 사계절인 반응만 '사용'으로 바꾼다(관리 화면의 자동 선택). */
+/** 지금 계절 바꾸기: 평소 모습과 반응이 그 계절 칸 것으로 바뀐다(칸에 반응이 없으면 기본값 반응). */
 export function selectSeason(catalog,season){
- const next=normalizeCatalog(JSON.parse(JSON.stringify(catalog)));next.season=SEASON_IDS.includes(season)?season:'none';
- for(const [mode] of MODES)for(const [kind] of KINDS)for(const r of allReactions(next,mode,kind)){
-  next.reactions[r.id]={enabled:!r.seasons.length||r.seasons.includes(next.season),seasons:r.seasons};
- }
- return next;
+ const next=normalizeCatalog(JSON.parse(JSON.stringify(catalog)));next.season=SEASON_IDS.includes(season)?season:'none';return next;
 }
 /** 계절별 모습 목록(처음부터 있던 것 + 추가한 것). */
 export function seasonImages(catalog,season){
@@ -87,7 +90,7 @@ export function shopItems(catalog,{all=false}={}){
 /** 화면에 필요한 올린 그림 번호들(지금 계절의 반응·평소 모습·아이템). */
 export function neededImages(catalog){
  const ids=new Set();
- for(const r of catalog.custom.reactions){const s=catalog.reactions[r.id];if(s?.enabled!==false&&(!s?.seasons?.length||s.seasons.includes(catalog.season)))ids.add(r.image);}
+ for(const r of catalog.custom.reactions)if(catalog.reactions[r.id]?.enabled!==false&&(r.season==='none'||r.season===catalog.season))ids.add(r.image);
  const idle=idleLook(catalog);if(idle.image)ids.add(idle.image);
  for(const i of catalog.custom.items)ids.add(i.image);
  return [...ids];
