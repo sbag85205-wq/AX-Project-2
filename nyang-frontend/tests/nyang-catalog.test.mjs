@@ -23,14 +23,17 @@ test('올린 그림을 아직 받지 않았으면 그 반응은 고르지 않는
  for(let i=0;i<200;i++)assert.notEqual(pick('warm','like').id,'c-new');
 });
 
-test('칸: 처음부터 있던 반응은 모두 기본값 칸, 계절 칸은 비어 있고, 비어 있으면 기본값 반응이 나온다',()=>{
+test('칸: 처음부터 있던 반응은 기본값 칸(봄 따뜻한 모드만 봄 칸에도), 빈 칸이면 기본값 반응이 나온다',()=>{
  let c=emptyCatalog();
  for(const mode of ['warm','cold'])for(const kind of ['like','dislike','bonus']){
-  assert.ok(allReactions(c,mode,kind).every(r=>r.season==='none'));
-  for(const s of ['spring','summer','autumn','winter'])assert.equal(bucketReactions(c,s,mode,kind).length,0);
+  assert.ok(allReactions(c,mode,kind).every(r=>r.season==='none'||r.season==='spring'&&mode==='warm'));
+  for(const s of ['summer','autumn','winter'])assert.equal(bucketReactions(c,s,mode,kind).length,0);
+  assert.equal(bucketReactions(c,'spring',mode,kind).length,mode==='warm'?{like:2,dislike:2,bonus:1}[kind]:0);
  }
  c=selectSeason(c,'spring');
- assert.deepEqual(activeReactions(c,'warm','like').map(r=>r.id),bucketReactions(c,'none','warm','like').map(r=>r.id)); // 봄 칸이 비어 있으면 기본값
+ assert.ok(activeReactions(c,'warm','like').every(r=>r.season==='spring'&&r.pose.art.startsWith('spring-'))); // 봄 따뜻한 모드는 봄 반응
+ assert.deepEqual(activeReactions(c,'cold','like').map(r=>r.id),bucketReactions(c,'none','cold','like').map(r=>r.id)); // 봄 칸이 비어 있으면 기본값
+ c.reactions=Object.fromEntries(['like','dislike','bonus'].flatMap(k=>bucketReactions(c,'spring','warm',k)).map(r=>[r.id,{enabled:false}])); // 봄 기본 반응을 끄고 아래에서 시험
  // 봄 칸에 좋아함 반응 2개를 넣으면 봄에는 그 2개만(각 50%), 다른 종류는 여전히 기본값
  c=normalizeCatalog({...c,custom:{seasonImages:[],items:[],reactions:[
   {id:'c-s1',mode:'warm',kind:'like',season:'spring',image:'img-aaaaaaaa1',line:'봄 1'},{id:'c-s2',mode:'warm',kind:'like',season:'spring',image:'img-aaaaaaaa2',line:'봄 2'},
@@ -42,7 +45,7 @@ test('칸: 처음부터 있던 반응은 모두 기본값 칸, 계절 칸은 비
  for(let i=0;i<20000;i++){const p=pick('warm','like');count.set(p.id,(count.get(p.id)||0)+1);}
  assert.deepEqual([...count.keys()].sort(),['c-s1','c-s2']);for(const v of count.values())assert.ok(Math.abs(v/20000-.5)<0.01);
  // 봄 반응을 모두 끄면 다시 기본값, 다른 계절로 바꿔도 기본값
- c.reactions={'c-s1':{enabled:false},'c-s2':{enabled:false}};assert.ok(activeReactions(c,'warm','like').some(r=>r.id==='b:warm:like:0'));
+ c.reactions={...c.reactions,'c-s1':{enabled:false},'c-s2':{enabled:false}};assert.ok(activeReactions(c,'warm','like').some(r=>r.id==='b:warm:like:0'));
  c=selectSeason({...c,reactions:{}},'winter');assert.ok(activeReactions(c,'warm','like').every(r=>r.season==='none'));
  assert.ok(!neededImages(c).includes('img-aaaaaaaa1'));assert.ok(neededImages(selectSeason(c,'spring')).includes('img-aaaaaaaa1'));
 });

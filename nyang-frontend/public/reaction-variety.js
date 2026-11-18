@@ -47,6 +47,23 @@ export const reactionPoses={
    art('nod','따, 딱히 좋아서 주는 건 아니다냥. 받아라냥.','…착각하지 마라냥 ♥','tsun'),art('purr','볼이 빨개진 건 기분 탓이다냥. 선물이다냥.','…비밀이다냥 ♥','tsun')]
  }
 };
+// 계절 칸의 처음부터 있는 반응(냥대리 관리의 그 계절 칸에 '기본'으로 보인다). 그 계절을 고르면 기본값 칸 대신 이것들이 나온다.
+// 봄·따뜻한 모드: cat-spring-warm-reactions.webp(3x2: 신남·윙크·손 인사 / 수줍음·골골)
+export const seasonReactionPoses={
+ spring:{
+  warm:{
+   like:[
+    art('purr','봄볕 아래서 쓰다듬어 주니 스르르 녹는다냥.','포근 ♥','spring-pet'),
+    art('bounce','벚꽃보다 네 손길이 더 좋다냥! 찡긋!','찡긋 ☆','spring-wink')
+   ],
+   dislike:[
+    art('tuck','봄바람에 괜히 쑥스럽다냥… 조금만 쉬고 오자냥.','부끄럽다냥…','spring-shy'),
+    art('backstep','꽃구경 잠깐 다녀오겠다냥. 이따 또 만나자냥!','이따 보자냥 ♥','spring-wave')
+   ],
+   bonus:[art('bounce','봄이 와서 너무 신난다냥! 벚꽃 선물 받아 달라냥!','신난다냥 ♥','spring-joy')]
+  }
+ }
+};
 export function createReactionPicker(random=Math.random){
  const previous=new Map();
  return (mode,kind)=>{

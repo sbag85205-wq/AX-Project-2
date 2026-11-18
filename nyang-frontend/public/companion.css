@@ -58,6 +58,13 @@ body[data-mode=cat] .main-content.work-view{overflow:auto;background:#fbfcfe!imp
 .pet-body .pet-resolution .cat-art.cold-sulk::before,.cat-art.cold-sulk::before{background-position:100% 0!important}
 .pet-body .pet-resolution .cat-art.cold-think::before,.cat-art.cold-think::before{background-position:0 100%!important}
 .pet-body .pet-resolution .cat-art.cold-shoo::before,.cat-art.cold-shoo::before{background-position:50% 100%!important}
+/* 봄 칸의 따뜻한 모드 반응(cat-spring-warm-reactions.webp, 3x2: 신남·윙크·손 인사 / 수줍음·골골) */
+.pet-body .pet-resolution .cat-art.reaction-art[class*=warm-spring-]::before,.cat-art.reaction-art[class*=warm-spring-]::before{background-image:url('./assets/cat-spring-warm-reactions.webp')!important;background-size:300% 200%!important}
+.pet-body .pet-resolution .cat-art.warm-spring-joy::before,.cat-art.warm-spring-joy::before{background-position:0 0!important}
+.pet-body .pet-resolution .cat-art.warm-spring-wink::before,.cat-art.warm-spring-wink::before{background-position:50% 0!important}
+.pet-body .pet-resolution .cat-art.warm-spring-wave::before,.cat-art.warm-spring-wave::before{background-position:100% 0!important}
+.pet-body .pet-resolution .cat-art.warm-spring-shy::before,.cat-art.warm-spring-shy::before{background-position:0 100%!important}
+.pet-body .pet-resolution .cat-art.warm-spring-pet::before,.cat-art.warm-spring-pet::before{background-position:50% 100%!important}
 /* 계절별 기본 모습(cat-seasons.webp, 2x2: 봄·여름 / 가을·겨울)과 냥대리 관리에서 올린 그림(--art: data 주소) */
 .pet-body .pet-resolution .cat-art.reaction-art[class*=season-]::before,.cat-art.reaction-art[class*=season-]::before{background-image:url('./assets/cat-seasons.webp')!important;background-size:200% 200%!important}
 .pet-body .pet-resolution .cat-art.season-summer::before,.cat-art.season-summer::before{background-position:100% 0!important}

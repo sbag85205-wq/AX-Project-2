@@ -1,11 +1,11 @@
 // 냥대리 관리(담당자)에서 정한 목록: 모드별 반응, 계절별 기본 모습, 꾸미기 아이템.
 // 목록은 서버(server.mjs의 catalog)에 있고 모든 사람에게 같다. 이 파일은 목록을 읽어
-//  - 반응은 칸(기본값·봄·여름·가을·겨울)마다 따로 있다. 처음부터 있던 반응은 모두 기본값 칸.
+//  - 반응은 칸(기본값·봄·여름·가을·겨울)마다 따로 있다. 처음부터 있던 반응은 기본값 칸, 봄 따뜻한 모드는 봄 칸에도 처음부터 있다.
 //  - 지금 계절 칸의 반응을 '모두 같은 확률'로 고르고(반응이 2개면 50%, 3개면 33%…), 그 칸에 반응이 없으면 기본값 칸에서 고른다
 //  - 평소(아이들) 모습으로 쓸 그림을 정하고
 //  - 꾸미기 상점에 보일 아이템을 알려 준다.
 // 화면 꾸밈만 정한다. 좋아함·쉬고 싶음·보너스 중 무엇이 나올지와 포인트는 계속 서버가 정한다.
-import {reactionPoses} from './reaction-variety.js?v=f4ed01acb281';
+import {reactionPoses,seasonReactionPoses} from './reaction-variety.js?v=ac3fe50a9444';
 import {wardrobe} from './companion.js?v=80ab82355587';
 
 export const SEASONS=[['none','기본'],['spring','봄'],['summer','여름'],['autumn','가을'],['winter','겨울']];
@@ -35,10 +35,11 @@ export function normalizeCatalog(value){
  return c;
 }
 
-/** 처음부터 있던 반응(reaction-variety.js, 모두 기본값 칸)과 관리에서 추가한 반응. 반응마다 칸(season)과 사용 여부가 붙는다. */
+/** 처음부터 있던 반응(reaction-variety.js: 기본값 칸 + 계절 칸)과 관리에서 추가한 반응. 반응마다 칸(season)과 사용 여부가 붙는다. */
 export function allReactions(catalog,mode,kind){
  const m=mode==='warm'?'warm':'cold';
- const builtin=(reactionPoses[m][kind]||[]).map((pose,i)=>({id:`b:${m}:${kind}:${i}`,mode:m,kind,season:'none',builtin:true,pose,line:pose.line,mark:pose.mark}));
+ const builtin=[...(reactionPoses[m][kind]||[]).map((pose,i)=>({id:`b:${m}:${kind}:${i}`,mode:m,kind,season:'none',builtin:true,pose,line:pose.line,mark:pose.mark})),
+  ...Object.entries(seasonReactionPoses).flatMap(([season,modes])=>(modes[m]?.[kind]||[]).map((pose,i)=>({id:`b:${season}:${m}:${kind}:${i}`,mode:m,kind,season,builtin:true,pose,line:pose.line,mark:pose.mark})))];
  const custom=catalog.custom.reactions.filter(r=>r.mode===m&&r.kind===kind).map(r=>({id:r.id,mode:m,kind,season:r.season,builtin:false,image:r.image,line:r.line,mark:r.mark,
   pose:{motion:DEFAULT_MOTION[kind],line:r.line,mark:r.mark,eyes:'',wag:false,art:'',image:r.image}}));
  // 처음부터 있던 반응은 관리에서 고친 멘트(line·mark)가 있으면 그것을 쓴다
