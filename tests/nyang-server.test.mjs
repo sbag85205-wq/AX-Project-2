@@ -251,13 +251,13 @@ test('냥대리 관리: 담당자만 목록·그림을 바꾸고, 모든 직원�
       season: 'spring', defaults: { spring: 's-1', bogus: 'x' },
       reactions: { 'b:warm:like:0': { enabled: false, seasons: ['winter', 'nope'] } },
       custom: {
-        reactions: [{ id: 'c-1', mode: 'warm', kind: 'like', image: img, line: '새 반응이다냥', mark: '♥' }, { id: 'c-bad', mode: 'x', kind: 'like', image: img, line: '버린다' }],
+        reactions: [{ id: 'c-1', mode: 'warm', kind: 'like', image: img, line: '새 반응이다냥', mark: '♥' }, { id: 'c-2', mode: 'cold', kind: 'bonus', season: 'autumn', image: img, line: '가을 반응이다냥' }, { id: 'c-3', mode: 'cold', kind: 'like', season: 'x', image: img, line: '잘못된 칸' }, { id: 'c-bad', mode: 'x', kind: 'like', image: img, line: '버린다' }],
         seasonImages: [{ id: 's-1', season: 'spring', image: img, name: '봄 2' }],
         items: [{ id: 'item-abc12345', image: img, name: '벚꽃 핀', cost: 4, description: '봄', enabled: true }, { id: 'item-free0000', image: img, name: '공짜', cost: 0 }]
       } } });
     assert.equal(saved.catalog.season, 'spring'); assert.deepEqual(saved.catalog.defaults, { spring: 's-1' });
-    assert.deepEqual(saved.catalog.reactions['b:warm:like:0'], { enabled: false, seasons: ['winter'] });
-    assert.deepEqual(saved.catalog.custom.reactions.map((r) => r.id), ['c-1']); assert.deepEqual(saved.catalog.custom.items.map((r) => r.id), ['item-abc12345']);
+    assert.deepEqual(saved.catalog.reactions['b:warm:like:0'], { enabled: false });
+    assert.deepEqual(saved.catalog.custom.reactions.map((r) => [r.id, r.season]), [['c-1', 'none'], ['c-2', 'autumn'], ['c-3', 'none']]); // 칸이 없거나 잘못되면 기본값 assert.deepEqual(saved.catalog.custom.items.map((r) => r.id), ['item-abc12345']);
     // 직원 화면 불러오기에 같은 목록이 오고, 그림은 따로 받는다
     const loaded = await call(a);
     assert.equal(loaded.catalog.season, 'spring'); assert.equal(loaded.catalog.custom.items[0].cost, 4);

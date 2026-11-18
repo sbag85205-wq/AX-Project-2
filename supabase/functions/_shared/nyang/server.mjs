@@ -201,13 +201,17 @@ export function cleanCatalog(input) {
   const m = input && typeof input === 'object' ? input : {};
   const out = { season: SEASON_IDS.includes(m.season) ? m.season : 'none', defaults: {}, reactions: {}, custom: { reactions: [], seasonImages: [], items: [] } };
   for (const id of SEASON_IDS) { const v = m.defaults?.[id]; if (typeof v === 'string' && ENTRY_ID.test(v)) out.defaults[id] = v; }
+  // 반응마다 사용 여부. (예전 목록의 계절 표시 seasons는 추가한 반응의 칸(season)을 정할 때만 쓴다)
+  const oldTags = {};
   for (const [id, v] of Object.entries(m.reactions && typeof m.reactions === 'object' ? m.reactions : {}).slice(0, 400)) {
-    if (ENTRY_ID.test(id) && v && typeof v === 'object') out.reactions[id] = { enabled: v.enabled !== false, seasons: seasonList(v.seasons) };
+    if (ENTRY_ID.test(id) && v && typeof v === 'object') { out.reactions[id] = { enabled: v.enabled !== false }; oldTags[id] = seasonList(v.seasons); }
   }
   const c = m.custom && typeof m.custom === 'object' ? m.custom : {};
   for (const r of (Array.isArray(c.reactions) ? c.reactions : []).slice(0, 200)) {
     if (!r || !ENTRY_ID.test(r.id) || !IMAGE_ID.test(r.image) || !['warm', 'cold'].includes(r.mode) || !['like', 'dislike', 'bonus'].includes(r.kind)) continue;
-    out.custom.reactions.push({ id: r.id, mode: r.mode, kind: r.kind, image: r.image, line: short(r.line, 80) || '…냥.', mark: short(r.mark, 30) });
+    // season: 이 반응이 들어 있는 칸(기본값 'none' 또는 계절). 예전 목록은 계절 표시가 하나뿐이면 그 계절, 아니면 기본값.
+    const season = SEASON_IDS.includes(r.season) ? r.season : oldTags[r.id]?.length === 1 ? oldTags[r.id][0] : 'none';
+    out.custom.reactions.push({ id: r.id, mode: r.mode, kind: r.kind, season, image: r.image, line: short(r.line, 80) || '…냥.', mark: short(r.mark, 30) });
   }
   for (const r of (Array.isArray(c.seasonImages) ? c.seasonImages : []).slice(0, 60)) {
     if (!r || !ENTRY_ID.test(r.id) || !IMAGE_ID.test(r.image) || !SEASON_IDS.includes(r.season)) continue;
