@@ -238,6 +238,49 @@ test('기존 기록 올리기: 올리기 번호를 바꿔 되풀이하거나 지
   } finally { await pg.close(); }
 });
 
+test('냥대리 관리: 담당자만 목록·그림을 바꾸고, 모든 직원이 같은 목록을 받으며, 추가한 아이템은 관리 목록 가격으로만 산다', async () => {
+  const { pg, call } = await server();
+  try {
+    const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    await assert.rejects(call(a, 'catalog-save', { catalog: {} }), /담당자만/);
+    await assert.rejects(call(a, 'catalog-image-add', { src: png }), /담당자만/);
+    await assert.rejects(call(staff, 'catalog-image-add', { src: 'data:text/html;base64,PGgxPg==' }), /PNG/);
+    const { id: img } = await call(staff, 'catalog-image-add', { src: png });
+    assert.match(img, /^img-[a-z0-9]{8,40}$/);
+    const saved = await call(staff, 'catalog-save', { catalog: {
+      season: 'spring', defaults: { spring: 's-1', bogus: 'x' },
+      reactions: { 'b:warm:like:0': { enabled: false, seasons: ['winter', 'nope'] } },
+      custom: {
+        reactions: [{ id: 'c-1', mode: 'warm', kind: 'like', image: img, line: '새 반응이다냥', mark: '♥' }, { id: 'c-bad', mode: 'x', kind: 'like', image: img, line: '버린다' }],
+        seasonImages: [{ id: 's-1', season: 'spring', image: img, name: '봄 2' }],
+        items: [{ id: 'item-abc12345', image: img, name: '벚꽃 핀', cost: 4, description: '봄', enabled: true }, { id: 'item-free0000', image: img, name: '공짜', cost: 0 }]
+      } } });
+    assert.equal(saved.catalog.season, 'spring'); assert.deepEqual(saved.catalog.defaults, { spring: 's-1' });
+    assert.deepEqual(saved.catalog.reactions['b:warm:like:0'], { enabled: false, seasons: ['winter'] });
+    assert.deepEqual(saved.catalog.custom.reactions.map((r) => r.id), ['c-1']); assert.deepEqual(saved.catalog.custom.items.map((r) => r.id), ['item-abc12345']);
+    // 직원 화면 불러오기에 같은 목록이 오고, 그림은 따로 받는다
+    const loaded = await call(a);
+    assert.equal(loaded.catalog.season, 'spring'); assert.equal(loaded.catalog.custom.items[0].cost, 4);
+    assert.equal((await call(a, 'catalog-images', { ids: [img, 'img-missing000', '../x'] })).images[img], png);
+    // 개인 기록 읽기에는 섞이지 않는다
+    assert.deepEqual(Object.keys((await call(a, 'state')).state), []);
+    // 추가 아이템 사기: 하트가 모자라면 못 사고, 가격은 화면이 보낸 값이 아니라 관리 목록 값(4)
+    await pg.query("UPDATE nyang.wallets SET data = jsonb_set(data::jsonb, '{hearts}', '3')::text WHERE uid = 'user-a'");
+    await assert.rejects(call(a, 'reward', { type: 'buy', id: 'buy-1', item: 'item-abc12345', catalogItem: { id: 'item-abc12345', cost: 1 } }), /하트/);
+    await pg.query("UPDATE nyang.wallets SET data = jsonb_set(data::jsonb, '{hearts}', '6')::text WHERE uid = 'user-a'");
+    const bought = await call(a, 'reward', { type: 'buy', id: 'buy-2', item: 'item-abc12345' });
+    assert.equal(bought.wallet.hearts, 2); assert.deepEqual(bought.wallet.owned, ['item-abc12345']); assert.equal(bought.wallet.equipped, 'item-abc12345');
+    assert.deepEqual((await call(a)).wallet.owned, ['item-abc12345']); // 다시 불러와도 남는다
+    await assert.rejects(call(a, 'reward', { type: 'buy', id: 'buy-3', item: 'item-none0000' }), /살 수 없는/);
+    // 판매를 멈추면 새로 살 수는 없지만, 이미 연 사람은 그대로 착용할 수 있다
+    await call(staff, 'catalog-save', { catalog: { ...saved.catalog, custom: { ...saved.catalog.custom, items: [{ ...saved.catalog.custom.items[0], enabled: false }] } } });
+    await assert.rejects(call(b, 'reward', { type: 'buy', id: 'buy-4', item: 'item-abc12345' }), /살 수 없는/);
+    assert.equal((await call(a, 'reward', { type: 'equip', id: 'eq-1', item: 'item-abc12345' })).wallet.equipped, 'item-abc12345');
+    await call(staff, 'catalog-image-delete', { id: img });
+    assert.deepEqual((await call(a, 'catalog-images', { ids: [img] })).images, {});
+  } finally { await pg.close(); }
+});
+
 test('SQL 바꾸기: SQLite 문법을 Postgres 문법으로', () => {
   assert.equal(translate('INSERT OR IGNORE INTO demo_likes(post,uid,created) VALUES(?,?,?)'), 'INSERT INTO nyang.likes(post,uid,created) VALUES($1,$2,$3) ON CONFLICT DO NOTHING');
   assert.equal(translate("SELECT COUNT(*) AS n FROM demo_operations WHERE uid=? AND kind='pet' AND json_extract(result,'$.kind')='bonus' AND created>=?"), "SELECT COUNT(*)::int AS n FROM nyang.operations WHERE uid=$1 AND kind='pet' AND (result::jsonb->>'kind')='bonus' AND created>=$2");

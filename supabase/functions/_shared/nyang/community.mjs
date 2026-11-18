@@ -160,7 +160,7 @@ export async function community(db,user,adminEmail,action=null,input={}){
     if(w.treatTokens>0)return {next:{...w,treatTokens:w.treatTokens-1,treats:w.treats+1,pending:event.ids},result:{}};
    }
    if(type==='collect')event.id=id(input.heart);
-   if(type==='buy'||type==='equip')event.id=input.item??null;
+   if(type==='buy'||type==='equip'){event.id=input.item??null;if(input.catalogItem)event.item=input.catalogItem;} // catalogItem: 서버가 관리 목록에서 찾아 넣는다(server.mjs)
    let next;try{next={...rewardTransition(w,event),treatTokens:w.treatTokens};}catch(e){fail(e.message);}
    return {next,result:extra};
   });

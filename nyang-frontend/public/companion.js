@@ -15,13 +15,16 @@ export const wardrobe=[
  {id:'crown',name:'오늘의 왕관',cost:5,description:'오늘도 출근한 우리 냥대리가 최고.',symbol:'♛'},
  {id:'starlight',name:'반짝이는 별빛',cost:8,description:'냥대리 곁에 작은 별들이 머물러요.',symbol:'✦'}
 ];
+/** 담당자가 '냥대리 관리'에서 추가한 꾸미기 아이템 번호. 가격·이름은 서버의 관리 목록에서 정한다. */
+export const CUSTOM_ITEM=/^item-[a-z0-9]{6,40}$/;
+const knownItem=x=>typeof x==='string'&&(wardrobe.some(i=>i.id===x)||CUSTOM_ITEM.test(x));
 export function initialRewards(){return {points:0,hearts:0,pending:[],owned:[],equipped:null,questions:0,treats:0,pettings:0,petBonuses:0,lastPetAt:0,lastPetId:null};}
 export function normalizeRewards(value){
  const s=initialRewards();if(!value||typeof value!=='object')return s;
  for(const key of ['points','hearts','questions','treats','pettings','petBonuses','lastPetAt'])if(Number.isSafeInteger(value[key])&&value[key]>=0)s[key]=value[key];
  s.lastPetId=typeof value.lastPetId==='string'?value.lastPetId:null;
  s.pending=[...new Set((Array.isArray(value.pending)?value.pending:[]).filter(x=>typeof x==='string'))].slice(0,3);
- s.owned=[...new Set((Array.isArray(value.owned)?value.owned:[]).filter(x=>wardrobe.some(i=>i.id===x)))];
+ s.owned=[...new Set((Array.isArray(value.owned)?value.owned:[]).filter(knownItem))];
  s.equipped=s.owned.includes(value.equipped)?value.equipped:null;return s;
 }
 export function rewardTransition(previous,event){
@@ -42,7 +45,9 @@ export function rewardTransition(previous,event){
   if(!s.pending.includes(event.id))return s;
   s.pending=s.pending.filter(x=>x!==event.id);s.hearts++;
  }else if(event.type==='buy'){
-  const item=wardrobe.find(x=>x.id===event.id);if(!item)throw Error('없는 꾸미기 아이템이에요.');
+  // 추가한 아이템은 서버가 관리 목록에서 찾은 값(event.item: {id,cost})으로만 산다
+  const custom=event.item&&event.item.id===event.id&&CUSTOM_ITEM.test(event.id)&&Number.isSafeInteger(event.item.cost)&&event.item.cost>=1&&event.item.cost<=999?event.item:null;
+  const item=wardrobe.find(x=>x.id===event.id)||custom;if(!item)throw Error('없는 꾸미기 아이템이에요.');
   if(!s.owned.includes(item.id)){if(s.hearts<item.cost)throw Error('하트가 조금 더 필요하다냥.');s.hearts-=item.cost;s.owned.push(item.id);}s.equipped=item.id;
  }else if(event.type==='equip'){
   if(event.id!==null&&!s.owned.includes(event.id))throw Error('먼저 아이템을 열어 주세요.');s.equipped=event.id;

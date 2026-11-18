@@ -6,6 +6,8 @@
 //   state        내 개인 기록(내 일정·대화 기록 등) 모두 읽기
 //   state-set    개인 기록 저장(items: [{key,value}], value가 null이면 지운다)
 //   import       이 브라우저에만 있던 기존 활동 기록을 한 번 올린다
+//   catalog-images        냥대리 관리에서 올린 그림 받기(모두)
+//   catalog-save·catalog-image-add·catalog-image-delete  냥대리 관리 목록·그림 저장(담당자만)
 import { accountCommunity, statistics } from './demo-account.mjs';
 import { AppError, HELPFUL_POINTS, seoulDay, wallet } from './community.mjs';
 import { PET_BONUS_POINTS, QUESTION_POINTS, TREAT_COST } from './companion.mjs';
@@ -27,7 +29,7 @@ export const STATE_MAX = 8_000_000;
 export const STATE_INLINE_MAX = 200_000;
 /** 요청 본문 최대 크기: 보통 요청 / 개인 기록 저장·기존 기록 올리기 */
 export const BODY_MAX = 16_000, BODY_MAX_LARGE = 9_000_000;
-export const isLargeAction = (action) => action === 'state-set' || action === 'import';
+export const isLargeAction = (action) => action === 'state-set' || action === 'import' || action === 'catalog-save' || action === 'catalog-image-add';
 /** 같은 사람의 요청을 차례로 처리해야 하는 요청인지(읽기만 하는 통계·개인 기록 읽기는 잠그지 않는다) */
 export const needsLock = (action) => action !== 'stats' && action !== 'state';
 
@@ -184,6 +186,70 @@ async function importLocal(db, account, input) {
   return { ...(await accountCommunity(db, account)), imported: { first, pending } };
 }
 
+// ── 냥대리 관리(담당자): 반응·계절별 모습·꾸미기 아이템 목록과 올린 그림 ─────────────────────────────
+// 모든 사람에게 같은 목록이므로 개인 기록 표(user_state)에 계정이 아닌 예약 번호(CATALOG_UID)로 둔다(표를 새로 만들지 않는다).
+//   manifest       목록(JSON)   img:<그림 번호>  올린 그림(data:image/... 글자)
+export const CATALOG_UID = '__nyang_catalog__';
+export const CATALOG_IMAGE_MAX = 1_500_000;
+const SEASON_IDS = ['none', 'spring', 'summer', 'autumn', 'winter'];
+const IMAGE_ID = /^img-[a-z0-9]{8,40}$/;
+const ENTRY_ID = /^[a-z0-9:_-]{1,80}$/;
+const seasonList = (v) => (Array.isArray(v) ? [...new Set(v.filter((x) => SEASON_IDS.includes(x) && x !== 'none'))] : []);
+const short = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+/** 담당자가 보낸 목록에서 정해진 모양만 남긴다(모르는 값·너무 긴 글은 버린다). */
+export function cleanCatalog(input) {
+  const m = input && typeof input === 'object' ? input : {};
+  const out = { season: SEASON_IDS.includes(m.season) ? m.season : 'none', defaults: {}, reactions: {}, custom: { reactions: [], seasonImages: [], items: [] } };
+  for (const id of SEASON_IDS) { const v = m.defaults?.[id]; if (typeof v === 'string' && ENTRY_ID.test(v)) out.defaults[id] = v; }
+  for (const [id, v] of Object.entries(m.reactions && typeof m.reactions === 'object' ? m.reactions : {}).slice(0, 400)) {
+    if (ENTRY_ID.test(id) && v && typeof v === 'object') out.reactions[id] = { enabled: v.enabled !== false, seasons: seasonList(v.seasons) };
+  }
+  const c = m.custom && typeof m.custom === 'object' ? m.custom : {};
+  for (const r of (Array.isArray(c.reactions) ? c.reactions : []).slice(0, 200)) {
+    if (!r || !ENTRY_ID.test(r.id) || !IMAGE_ID.test(r.image) || !['warm', 'cold'].includes(r.mode) || !['like', 'dislike', 'bonus'].includes(r.kind)) continue;
+    out.custom.reactions.push({ id: r.id, mode: r.mode, kind: r.kind, image: r.image, line: short(r.line, 80) || '…냥.', mark: short(r.mark, 30) });
+  }
+  for (const r of (Array.isArray(c.seasonImages) ? c.seasonImages : []).slice(0, 60)) {
+    if (!r || !ENTRY_ID.test(r.id) || !IMAGE_ID.test(r.image) || !SEASON_IDS.includes(r.season)) continue;
+    out.custom.seasonImages.push({ id: r.id, season: r.season, image: r.image, name: short(r.name, 30) });
+  }
+  for (const r of (Array.isArray(c.items) ? c.items : []).slice(0, 60)) {
+    if (!r || !/^item-[a-z0-9]{6,40}$/.test(r.id) || !IMAGE_ID.test(r.image) || !Number.isSafeInteger(r.cost) || r.cost < 1 || r.cost > 999) continue;
+    out.custom.items.push({ id: r.id, image: r.image, name: short(r.name, 30) || '새 아이템', cost: r.cost, description: short(r.description, 80), enabled: r.enabled !== false });
+  }
+  return out;
+}
+async function readCatalog(db) {
+  const row = await one(db, 'SELECT value,updated FROM demo_user_state WHERE uid=? AND key=?', CATALOG_UID, 'manifest');
+  let parsed = null; try { parsed = row ? JSON.parse(row.value) : null; } catch { parsed = null; }
+  return { ...cleanCatalog(parsed), updated: row?.updated ?? null };
+}
+const putCatalog = (db, key, value) => run(db, 'INSERT INTO demo_user_state(uid,key,value,updated) VALUES(?,?,?,?) ON CONFLICT(uid,key) DO UPDATE SET value=excluded.value,updated=excluded.updated', CATALOG_UID, key, value, new Date().toISOString());
+async function catalogAction(db, account, action, input) {
+  if (action === 'catalog-images') {
+    const ids = (Array.isArray(input.ids) ? input.ids : []).filter((x) => typeof x === 'string' && IMAGE_ID.test(x)).slice(0, 30);
+    const images = {};
+    for (const id of ids) { const row = await one(db, 'SELECT value FROM demo_user_state WHERE uid=? AND key=?', CATALOG_UID, 'img:' + id); if (row) images[id] = row.value; }
+    return { images };
+  }
+  if (account.role !== 'staff') fail('담당자만 냥대리를 관리할 수 있어요.', 403);
+  if (action === 'catalog-save') { await putCatalog(db, 'manifest', JSON.stringify(cleanCatalog(input.catalog))); return { catalog: await readCatalog(db) }; }
+  if (action === 'catalog-image-add') {
+    const src = input.src;
+    if (typeof src !== 'string' || !/^data:image\/(png|webp|jpeg);base64,[A-Za-z0-9+/=]+$/.test(src)) fail('PNG·WEBP·JPG 그림만 올릴 수 있어요.');
+    if (src.length > CATALOG_IMAGE_MAX) fail('그림이 너무 커요. 더 작은 그림을 올려 주세요.', 413);
+    const id = 'img-' + crypto.randomUUID().replace(/-/g, '').slice(0, 20);
+    await putCatalog(db, 'img:' + id, src);
+    return { id };
+  }
+  if (action === 'catalog-image-delete') {
+    if (typeof input.id !== 'string' || !IMAGE_ID.test(input.id)) fail('지울 그림을 확인해 주세요.');
+    await run(db, 'DELETE FROM demo_user_state WHERE uid=? AND key=?', CATALOG_UID, 'img:' + input.id);
+    return { deleted: input.id };
+  }
+  fail('지원하지 않는 요청입니다.');
+}
+
 /**
  * 요청 하나를 처리한다. db: 규칙 코드가 쓰는 D1 모양 연결(postgresDatabase), account: 로그인으로 확인한 계정
  * {id, username, name, department, role:'staff'|'employee'}. 역할·아이디는 요청 본문에서 받지 않는다.
@@ -196,7 +262,18 @@ export async function handleNyang(db, account, input) {
   if (action === 'state-set') return writeState(db, account.id, input);
   // 화면을 불러올 때는 개인 기록(내 일정·대화 기록 등)도 함께 돌려준다(요청을 한 번 줄인다). 큰 기록은 이름과 저장 시각만(personalLarge: {이름: 시각}).
   const personal = async () => { const { state, large, updated } = await readState(db, account.id, { inline: true }); return { personalState: state, personalLarge: large, personalUpdated: updated }; };
-  if (action === 'import') return { ...(await importLocal(db, account, input)), ...(await personal()) };
-  if (action === null) return { ...(await accountCommunity(db, account)), ...(await personal()) };
+  if (typeof action === 'string' && action.startsWith('catalog-')) return catalogAction(db, account, action, input);
+  if (action === 'import') return { ...(await importLocal(db, account, input)), ...(await personal()), catalog: await readCatalog(db) };
+  if (action === null) return { ...(await accountCommunity(db, account)), ...(await personal()), catalog: await readCatalog(db) };
+  if (action === 'reward') {
+    // 꾸미기 아이템 값은 화면이 보낸 것을 믿지 않고, 추가한 아이템이면 관리 목록에서 찾아 넣는다
+    const { catalogItem: _ignored, ...clean } = input;
+    if ((clean.type === 'buy' || clean.type === 'equip') && typeof clean.item === 'string' && clean.item.startsWith('item-')) {
+      const item = (await readCatalog(db)).custom.items.find((x) => x.id === clean.item);
+      if (clean.type === 'buy' && (!item || !item.enabled)) fail('지금은 살 수 없는 꾸미기 아이템이에요.');
+      if (item) clean.catalogItem = { id: item.id, cost: item.cost };
+    }
+    return accountCommunity(db, account, action, clean);
+  }
   return accountCommunity(db, account, action, input);
 }

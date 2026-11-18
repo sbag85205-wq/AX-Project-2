@@ -33,11 +33,12 @@ checks AS (
   SELECT 9, '같은 브라우저 기록을 두 번 올림', o.uid || ' ' || o.id FROM nyang.operations o WHERE o.kind = 'import' GROUP BY o.uid, o.id HAVING COUNT(*) > 1
   UNION ALL
   -- 10) 개인 기록(내 일정·대화 기록 등) 이름·형식 이상
+  -- (냥대리 관리 목록·그림은 계정이 아닌 '__nyang_catalog__' 번호로 같은 표에 있다: 개인 기록 검사에서 뺀다)
   SELECT 10, '개인 기록 이름이 허용 목록에 없음', s.uid || ' ' || s.key FROM nyang.user_state s
-   WHERE s.key !~ '^(om-tasks|om-question-history|om-seen-replies|om-chat-sessions|om-chat-active|om-docs|om-personality|om-cat-motion|nyang-color-theme|om-bg-(theme|uploads)-[a-z]{1,12})$'
+   WHERE s.uid <> '__nyang_catalog__' AND s.key !~ '^(om-tasks|om-question-history|om-seen-replies|om-chat-sessions|om-chat-active|om-docs|om-personality|om-cat-motion|nyang-color-theme|om-bg-(theme|uploads)-[a-z]{1,12})$'
   UNION ALL
   SELECT 11, '개인 기록이 목록이어야 하는데 아님', s.uid || ' ' || s.key FROM nyang.user_state s
-   WHERE s.key IN ('om-tasks', 'om-question-history', 'om-chat-sessions', 'om-docs') AND left(ltrim(s.value), 1) <> '['
+   WHERE s.uid <> '__nyang_catalog__' AND s.key IN ('om-tasks', 'om-question-history', 'om-chat-sessions', 'om-docs') AND left(ltrim(s.value), 1) <> '['
   UNION ALL
   SELECT 12, '개인 기록 크기 8MB 초과', s.uid || ' ' || s.key FROM nyang.user_state s WHERE length(s.value) > 8000000
   UNION ALL
