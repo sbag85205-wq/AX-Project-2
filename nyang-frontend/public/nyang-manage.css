@@ -1,0 +1,60 @@
+/* 냥대리 관리(담당자): 냥대리 테스트 아래 열기 단추와 관리 창(nyang-manage.js) */
+.nyang-manage-entry{width:100%;box-sizing:border-box;margin-top:8px}
+.chat-compose-dock>.nyang-manage-entry{max-width:860px;margin:8px auto 0}
+.nm-open{display:flex;align-items:center;gap:10px;width:100%;border:1px solid var(--ui-line);border-radius:14px;background:var(--ui-panel);padding:11px 16px;color:var(--ui-ink);text-align:left;font-size:13px}
+.nm-open:hover{background:var(--ui-fill)}
+.nm-open strong{font-weight:600;white-space:nowrap}
+.nm-open span{flex:1;color:var(--ui-sub);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nm-open .icon{width:18px;height:18px;color:var(--ui-accent)}
+.nm-open .icon:last-child{color:var(--ui-faint)}
+
+.nyang-manage{color:var(--ui-ink)}
+.nm-tabs{display:flex;gap:4px;border-bottom:1px solid var(--ui-line);margin:18px 0 0}
+.nm-tab{padding:10px 14px;border-bottom:2px solid transparent;color:var(--ui-sub);font-size:13px;font-weight:600;margin-bottom:-1px}
+.nm-tab.on{color:var(--ui-ink);border-bottom-color:var(--ui-accent)}
+.nm-body{padding-top:16px}
+.nm-modes{display:inline-flex;gap:4px;padding:3px;border-radius:10px;background:var(--ui-fill);flex-wrap:wrap}
+.nm-mode{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;color:var(--ui-sub)}
+.nm-mode.on{background:var(--ui-panel);color:var(--ui-ink);box-shadow:0 1px 3px #0000001a}
+.nm-hint{font-size:12px;line-height:1.7;color:var(--ui-sub);margin:10px 0 0}
+.nm-hint b{color:var(--ui-ink)}
+.nm-group{margin-top:22px}
+.nm-group>header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px}
+.nm-group h3{font-size:14px;font-weight:700}
+.nm-group h3 em{font-style:normal;font-size:11px;font-weight:600;color:var(--ui-accent);margin-left:6px}
+.nm-group>header span{font-size:12px;color:var(--ui-sub)}
+.nm-group.current{border-left:3px solid var(--ui-accent);padding-left:12px}
+.nm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:10px}
+.nm-card{display:flex;flex-direction:column;gap:8px;border:1px solid var(--ui-line);border-radius:12px;background:var(--ui-panel);padding:12px;min-width:0}
+.nm-card.off{opacity:.55}
+.nm-card.chosen{border-color:var(--ui-accent);box-shadow:inset 0 0 0 1px var(--ui-accent)}
+.nm-card-text{display:flex;flex-direction:column;gap:3px;min-width:0}
+.nm-card-text strong{font-size:12px;font-weight:600;line-height:1.5;word-break:keep-all;overflow-wrap:anywhere}
+.nm-card-text small{font-size:11px;color:var(--ui-sub);line-height:1.5}
+.nm-card-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:auto;font-size:12px}
+.nm-switch{display:inline-flex;align-items:center;gap:5px;font-size:12px;cursor:pointer}
+.nm-switch input{accent-color:var(--ui-accent);margin:0}
+.nm-pct{font-size:11px;color:var(--ui-sub);font-variant-numeric:tabular-nums}
+.nm-badge{font-size:10px;font-weight:600;color:var(--ui-sub);background:var(--ui-fill);border-radius:5px;padding:3px 6px;margin-left:auto}
+.nm-del{margin-left:auto;font-size:12px;padding:2px 0}
+.nm-seasons{display:flex;align-items:center;gap:4px;flex-wrap:wrap;border:0;padding:0;margin:0}
+.nm-seasons legend{font-size:12px;color:var(--ui-sub);margin-bottom:6px;padding:0}
+.nm-chip{font-size:11px;padding:3px 8px;border-radius:999px;border:1px solid var(--ui-line);color:var(--ui-sub)}
+.nm-chip.on{background:var(--ui-accent-fill);border-color:var(--ui-accent);color:var(--ui-accent);font-weight:600}
+.nm-chip-note{font-size:11px;color:var(--ui-faint)}
+.nm-check{display:inline-flex;align-items:center;gap:4px;font-size:12px;margin-right:8px}
+/* 그림 미리보기: 냥대리 그림은 상자보다 크게 그려지므로(사방 12.5%) 여백을 둔다 */
+.cat-art.nm-thumb{width:96px;height:96px;margin:12px auto 4px;flex:none}
+.nm-missing{display:grid;place-items:center;font-size:11px;color:var(--ui-faint);background:var(--ui-fill);border-radius:10px}
+.nm-item-symbol{height:96px;display:grid;place-items:center;font-size:40px;margin:12px 0 4px}
+.nm-add{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px 14px;align-items:end;margin-top:26px;padding:16px;border:1px dashed var(--ui-line);border-radius:12px;background:var(--ui-fill)}
+.nm-add h3,.nm-add .nm-hint,.nm-add fieldset{grid-column:1/-1}
+.nm-add h3{font-size:14px;font-weight:700}
+.nm-add label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ui-sub)}
+.nm-add label.nm-check{flex-direction:row}
+.nm-add input:not([type=checkbox]):not([type=file]),.nm-add select{border:1px solid var(--ui-line);border-radius:8px;padding:8px 10px;background:var(--ui-panel);color:var(--ui-ink);font-size:13px}
+.nm-add input[type=file]{font-size:12px;color:var(--ui-ink)}
+.nm-add .primary-button{justify-self:start}
+.nm-add-inline{grid-column:1/-1;margin-top:0;grid-template-columns:minmax(200px,1.2fr) minmax(140px,1fr) auto;padding:12px}
+.nm-season-pick h3{font-size:14px;font-weight:700;margin-bottom:10px}
+@media(max-width:640px){.nm-add-inline{grid-template-columns:1fr}.nm-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}}

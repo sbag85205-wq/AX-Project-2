@@ -1,13 +1,14 @@
 import {parseEventRequest,timeLabel,eventTask} from './event-request.js?v=7dffe9d847bc';
 import {viewOf,pageTitleOf,NAV_NAMES,navViews,STAFF_NAVS,EMPLOYEE_NAVS} from './views.js?v=8d20c79e9ab8';
 import {fetch} from './transport.js?v=fd4b994ba12d';
-import {createReactionPicker} from './reaction-variety.js?v=f4ed01acb281';
+import {emptyCatalog,normalizeCatalog,createCatalogPicker,idleLook,shopItems,neededImages} from './nyang-catalog.js?v=5d75771528af';
+import {installNyangManage,nyangManageEntryHTML} from './nyang-manage.js?v=9f4eb77fc30f';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=291139f9595c';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=2b1060400411';
 import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=fbc8c6de196d';
 import {categories,applyManagedCategories,defaultCategory,categoryOf,documents,faq,startersFor,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=4dc923f4c7f7';
-import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=93bd9a4c6e6f';
+import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=80ab82355587';
 import {createPetInteraction} from './pet-interaction.js?v=25ddd542a513';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=20d8b9f9b46b';
 const $=s=>document.querySelector(s);
@@ -26,7 +27,8 @@ const root='/nyang/';
 const paths={bookmark:'M7 4h10v16l-5-3.5L7 20V4Z',spark:'m12 3 2.4 6.6L21 12l-6.6 2.4L12 21l-2.4-6.6L3 12l6.6-2.4L12 3Z',chat:'M21 11.5a8.4 8.4 0 0 1-9 8.5 10 10 0 0 1-4-.9L3 21l1.7-5a8.5 8.5 0 1 1 16.3-4.5Z',list:'m3 6 1 1 2-2M10 6h11M3 12l1 1 2-2m4 1h11M3 18l1 1 2-2m4 1h11',book:'M4 3h13a3 3 0 0 1 3 3v15H6a3 3 0 0 1-3-3V6a3 3 0 0 1 1-3ZM3 17h17M7 7h9M7 11h7',arrow:'M5 12h14m-6-6 6 6-6 6',chevron:'m9 5 7 7-7 7',down:'m6 9 6 6 6-6',sun:'M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',wallet:'M20 8H5a3 3 0 0 1 0-6h13v6M3 5v14a2 2 0 0 0 2 2h15V8m0 5h-5v4h5',case:'M3 7h18v14H3V7Zm5 0V3h8v4M3 12l9 3 9-3M10 12h4',coffee:'M3 7h13v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7Zm13 1h3a3 3 0 0 1 0 6h-3M6 2v2m5-2v2',picture:'M3 3h18v18H3V3Zm0 14 6-6 5 5 3-3 4 4M8 7h.01',check:'m5 12 4 4L19 6',close:'m6 6 12 12M6 18 18 6',send:'M12 19V5m-6 6 6-6 6 6',plus:'M12 5v14M5 12h14',back:'M19 12H5m6-6-6 6 6 6',calendar:'M3 5h18v16H3V5Zm4-3v6m10-6v6M3 11h18',trash:'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7',info:'M12 11v6m0-10v.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z',menu:'M4 6h16M4 12h16M4 18h16',clock:'M12 7v5l3 2M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z',logout:'M9 4H4v16h5m5-13 5 5-5 5m-6-5h12'};
 const icon=(name,cls='')=>`<svg class="icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[name]||paths.spark}"/></svg>`;
 const CAT_LABELS={searching:'책에서 자료를 찾고 있는',annoyed:'귀찮은 표정의',happy:'행복한 표정의','warm-pet':'눈을 감고 골골거리는','warm-wink':'윙크하는','warm-shy':'수줍게 쉬고 싶어 하는','warm-joy':'두 손 모아 기뻐하는','cold-tsun':'곁눈질하며 볼이 빨개진','cold-think':'턱을 괴고 생각하는','cold-stop':'손바닥으로 멈추라는','cold-sulk':'고개를 돌리고 삐친','cold-shoo':'콧김을 뿜으며 손을 젓는'};
-const cat=(mood='',extra='')=>`<div class="cat-art ${mood} ${extra}" role="img" aria-label="${CAT_LABELS[mood]||'차갑지만 귀여운'} 고양이 냥대리"></div>`;
+// style: 관리에서 올린 그림(--art), inner: 냥대리 위에 겹치는 추가 꾸미기 아이템
+const cat=(mood='',extra='',style='',inner='')=>`<div class="cat-art ${mood} ${extra}" role="img" aria-label="${CAT_LABELS[mood]||(mood.startsWith('season-')?'계절 옷을 입은':mood==='custom-art'?'새 모습의':'차갑지만 귀여운')} 고양이 냥대리"${style?` style="${style}"`:''}>${inner}</div>`;
 paths.settings='M9 3h6l1 3 3 1v6l-3 1-1 3H9l-1-3-3-1V7l3-1 1-3ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z';
 paths.moon='M20.9 13.1A9 9 0 0 1 10.9 3a9 9 0 1 0 10 10.1Z';
 paths.cat='M5 9 4 3l6 4h4l6-4-1 6a8 8 0 1 1-14 0ZM8 12h.01M16 12h.01m-6 4 2 1 2-1';
@@ -94,9 +96,29 @@ let calendarMonth=localDate().slice(0,7),calendarDay=localDate(),happyUntil=0;
 // 성격별 반응 그림은 첫 반응·모드 전환 때 냥대리가 잠깐 비어 보이지 않게 처음에 두 장 모두 미리 받아 둔다.
 // (주소는 화면 주소가 아니라 /nyang/ 기준이어야 한다: 화면은 /nyang/cat/ 등 여러 곳에서 열린다)
 const reactionArt=['warm','cold'].map(mode=>{const img=new Image();img.src=`${root}assets/cat-${mode}-reactions.webp`;return img;});
+// 계절별 모습(cat-seasons.webp)은 계절을 정했을 때만 받는다
+const seasonArt=new Image();
 let petReaction=null,petTimer=null,petGesture=null,ignorePetClickUntil=0,petPending=false,petMoving=false,petMotionTimer=null;
 let personality='cold',companionPhase='idle';
-const pickReaction=createReactionPicker();
+// 냥대리 관리(담당자)에서 정한 반응·계절별 모습·꾸미기 아이템(nyang-catalog.js). 올린 그림은 data: 글자로 받아 둔다.
+let nyangCatalog=emptyCatalog();const catalogImages=new Map(),catalogRequested=new Set();
+const artStyle=id=>{const src=catalogImages.get(id);return src?`--art:url('${src}')`:'';};
+// 반응은 지금 계절에 나올 수 있는 것 중에서 모두 같은 확률로 고른다(올린 그림은 받아 둔 것만)
+const pickReaction=createCatalogPicker(()=>nyangCatalog,id=>catalogImages.has(id));
+function applyCatalog(value){
+ nyangCatalog=normalizeCatalog(value);
+ if(nyangCatalog.season!=='none'&&!seasonArt.src)seasonArt.src=`${root}assets/cat-seasons.webp`;
+ loadCatalogImages();
+}
+async function loadCatalogImages(ids=neededImages(nyangCatalog)){
+ const missing=ids.filter(id=>!catalogImages.has(id)&&!catalogRequested.has(id)).slice(0,30);if(!missing.length)return;
+ missing.forEach(id=>catalogRequested.add(id));
+ try{
+  const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'catalog-images',ids:missing})}),data=await res.json().catch(()=>null);
+  for(const [id,src] of Object.entries(data?.images||{}))if(typeof src==='string'&&src.startsWith('data:image/'))catalogImages.set(id,src);
+  refreshPet();
+ }catch{}finally{missing.forEach(id=>catalogRequested.delete(id));}
+}
 const companionBehavior=createCompanionBehavior({change(phase){companionPhase=phase;refreshPet();}});
 const voice=()=>personalities[personality];
 const tone=text=>personalityText(text,personality);
@@ -146,6 +168,9 @@ function updateWallet(){
 }
 // ── 냥대리 테스트: 검색·모델 설정 (staff-settings.js) ──────────────────
 installStaffSettings({icon,toast});
+// ── 냥대리 테스트: 냥대리 관리 (nyang-manage.js) ─────────────────────
+installNyangManage({icon,toast,openModal:(html)=>openModal(html,true),cat,catalog:()=>nyangCatalog,images:catalogImages,
+ setCatalog:value=>{applyCatalog(value);refreshPet();},loadImages:ids=>loadCatalogImages(ids)});
 
 // ── 주 메뉴 배치 (nav-layout.js) ─────────────────────────────────────
 installNavLayout();
@@ -188,7 +213,12 @@ async function commitReward(event){
  const result=await communityAction('reward',payload);
  return result;
 }
-function outfitHTML(id=rewards.equipped){return id?`<span class="cat-outfit outfit-${id}" aria-label="${wardrobe.find(x=>x.id===id)?.name}">${id==='ribbon'?'<i></i>':id==='crown'?'♛':'✦ <i>✧</i> ✦'}</span>`:'';}
+/** 관리에서 추가한 꾸미기 아이템: 냥대리 그림과 같은 틀의 그림을 냥대리 위에 겹친다(cat()의 inner로 넣는다) */
+function customOutfitHTML(id=rewards.equipped){
+ if(!id?.startsWith('item-'))return '';const item=nyangCatalog.custom.items.find(x=>x.id===id),src=item&&catalogImages.get(item.image);
+ return src?`<span class="outfit-custom" aria-label="${esc(item.name)}" style="--outfit:url('${src}')"></span>`:'';
+}
+function outfitHTML(id=rewards.equipped){if(id?.startsWith('item-'))return '';return id?`<span class="cat-outfit outfit-${id}" aria-label="${wardrobe.find(x=>x.id===id)?.name}">${id==='ribbon'?'<i></i>':id==='crown'?'♛':'✦ <i>✧</i> ✦'}</span>`:'';}
 function petHTML(){
  const reaction=petReaction&&Date.now()<petReaction.until?petReaction.kind:null;
  const happy=(rewards.pending.length>0||Date.now()<happyUntil)&&!['sleepy','peek','hesitate'].includes(companionPhase);
@@ -199,12 +229,19 @@ function petHTML(){
  const searching=!!pendingReply&&!pose;
  const expression=pose?(pose.eyes==='closed'?'':pose.eyes):searching?'searching':(appearance.sleepy?'':base.expression);
  // 반응·인사·츄르 장면은 성격별 전용 그림을 쓴다(그림에 눈·꼬리가 이미 그려져 있어 눈 깜빡임·꼬리 겹침은 끈다)
- const art=!searching?(pose?pose.art:reaction?'':appearance.art)||'':'';
+ const poseArt=!searching&&pose?pose.art||'':'',phaseArt=!searching&&!pose&&!reaction?appearance.art||'':'';
+ // 관리에서 올린 반응 그림, 그리고 반응이 없을 때는 지금 계절의 기본 모습(관리에서 고른 것)
+ const custom=!searching&&pose?.image&&catalogImages.has(pose.image)?pose.image:'';
+ const idle=!searching&&!pose&&!phaseArt?idleLook(nyangCatalog):null;
+ const seasonal=idle&&idle.id!=='base'&&(idle.builtin||catalogImages.has(idle.image))?idle:null;
+ const art=custom||poseArt||phaseArt||(seasonal?'season':'');
+ const artMood=custom||seasonal&&!seasonal.builtin?'custom-art':poseArt||phaseArt?personality+'-'+(poseArt||phaseArt):seasonal?seasonal.id:'';
+ const artCss=custom?artStyle(custom):seasonal&&!seasonal.builtin?artStyle(seasonal.image):'';
  const wag=!art&&(pose?pose.wag:base.wag);
  if(pose){appearance.sleepy=pose.eyes==='closed';appearance.soft=false;appearance.mark=pose.mark;}
  if(searching){appearance.sleepy=false;appearance.mark='';}
  if(art){appearance.sleepy=false;appearance.soft=false;}
- return `<span class="resident-shadow"></span><button class="pet-touch" data-action="pet" aria-label="냥대리 쓰다듬기" aria-busy="${petPending}" aria-describedby="pet-guide" ${pendingReply?'disabled title="자료를 찾는 중이라 잠시 쓰다듬을 수 없어요"':'title="클릭하거나 드래그해서 쓰다듬어 주세요"'}></button><div class="pet-body behavior-${companionPhase} ${pose?'gesture-'+pose.motion:''} ${appearance.soft?'pet-soft-boundary':''} ${petReaction?.affection?'pet-affection':''} ${petMoving?'pet-engaged':''} ${reaction?'pet-'+reaction:happy?'delighted':''}"><div class="pet-resolution">${wag?'<span class="pet-wag-tail" aria-hidden="true"></span>':''}${cat(art?personality+'-'+art:expression,'resident'+(art?' reaction-art':'')+(wag?' pet-bonus-body':'')+(appearance.sleepy?' pet-sleepy':''))}${searching?'':outfitHTML()}</div></div><span class="resident-spark spark-one">✧</span><span class="resident-spark spark-two">✦</span><div class="pet-feedback ${reaction?'has-reaction reaction-'+reaction:''}" ${reaction||appearance.mark?'':'aria-hidden="true"'}>${appearance.mark?`<span class="companion-emote" aria-hidden="true">${appearance.mark}</span>`:''}${reaction?`<span class="pet-feedback-kicker">${reaction==='bonus'?'아주 드문 친밀감 보너스':reaction==='like'?'골골, 기분 좋은가 봐요':personality==='warm'?'지금은 쉬고 싶대요':'오늘은 조금 까칠해요'}</span><strong>${petReaction.line}</strong>${reaction==='bonus'?`<span class="pet-point-pop">+${PET_BONUS_POINTS} <small>P</small></span><small>작은 마음의 표시다냥.</small>`:`<small>${reaction==='like'?(personality==='warm'?'조금 더 함께 있자냥.':'좋아하는 건 비밀이다냥.'):(personality==='warm'?'기다려줘서 고맙다냥.':'잠깐 쉬었다 만나자냥.')}</small>`}`:''}</div>${rewards.pending.map((id,i)=>`<button class="collect-heart heart-${i}" data-heart="${id}" aria-label="하트 ${i+1} 모으기"><span>♥</span><small>+1</small></button>`).join('')}<div class="pet-actions"><button class="treat-button" data-action="feed" ${(rewards.points<TREAT_COST&&!rewards.treatTokens)||rewards.pending.length?'disabled':''}><span class="treat-stick" aria-hidden="true"></span> 츄르 주기 <b>${rewards.treatTokens?`보유 ${rewards.treatTokens}개`:'10 P'}</b></button><span>${rewards.pending.length?'하트를 눌러서 모아달라냥!':rewards.treatTokens?'출석 선물부터 먼저 쓰겠다냥.':rewards.points<TREAT_COST?'질문하면 포인트가 쌓여요':(personality==='warm'?'고맙다냥. 맛있게 먹겠다냥!':'이건… 조금 기대된다냥.')}</span><span class="pet-guide" id="pet-guide">클릭하거나 드래그해서 쓰다듬기</span></div>`;
+ return `<span class="resident-shadow"></span><button class="pet-touch" data-action="pet" aria-label="냥대리 쓰다듬기" aria-busy="${petPending}" aria-describedby="pet-guide" ${pendingReply?'disabled title="자료를 찾는 중이라 잠시 쓰다듬을 수 없어요"':'title="클릭하거나 드래그해서 쓰다듬어 주세요"'}></button><div class="pet-body behavior-${companionPhase} ${pose?'gesture-'+pose.motion:''} ${appearance.soft?'pet-soft-boundary':''} ${petReaction?.affection?'pet-affection':''} ${petMoving?'pet-engaged':''} ${reaction?'pet-'+reaction:happy?'delighted':''}"><div class="pet-resolution">${wag?'<span class="pet-wag-tail" aria-hidden="true"></span>':''}${cat(art?artMood:expression,'resident'+(art?' reaction-art':'')+(wag?' pet-bonus-body':'')+(appearance.sleepy?' pet-sleepy':''),artCss,searching?'':customOutfitHTML())}${searching?'':outfitHTML()}</div></div><span class="resident-spark spark-one">✧</span><span class="resident-spark spark-two">✦</span><div class="pet-feedback ${reaction?'has-reaction reaction-'+reaction:''}" ${reaction||appearance.mark?'':'aria-hidden="true"'}>${appearance.mark?`<span class="companion-emote" aria-hidden="true">${appearance.mark}</span>`:''}${reaction?`<span class="pet-feedback-kicker">${reaction==='bonus'?'아주 드문 친밀감 보너스':reaction==='like'?'골골, 기분 좋은가 봐요':personality==='warm'?'지금은 쉬고 싶대요':'오늘은 조금 까칠해요'}</span><strong>${petReaction.line}</strong>${reaction==='bonus'?`<span class="pet-point-pop">+${PET_BONUS_POINTS} <small>P</small></span><small>작은 마음의 표시다냥.</small>`:`<small>${reaction==='like'?(personality==='warm'?'조금 더 함께 있자냥.':'좋아하는 건 비밀이다냥.'):(personality==='warm'?'기다려줘서 고맙다냥.':'잠깐 쉬었다 만나자냥.')}</small>`}`:''}</div>${rewards.pending.map((id,i)=>`<button class="collect-heart heart-${i}" data-heart="${id}" aria-label="하트 ${i+1} 모으기"><span>♥</span><small>+1</small></button>`).join('')}<div class="pet-actions"><button class="treat-button" data-action="feed" ${(rewards.points<TREAT_COST&&!rewards.treatTokens)||rewards.pending.length?'disabled':''}><span class="treat-stick" aria-hidden="true"></span> 츄르 주기 <b>${rewards.treatTokens?`보유 ${rewards.treatTokens}개`:'10 P'}</b></button><span>${rewards.pending.length?'하트를 눌러서 모아달라냥!':rewards.treatTokens?'출석 선물부터 먼저 쓰겠다냥.':rewards.points<TREAT_COST?'질문하면 포인트가 쌓여요':(personality==='warm'?'고맙다냥. 맛있게 먹겠다냥!':'이건… 조금 기대된다냥.')}</span><span class="pet-guide" id="pet-guide">클릭하거나 드래그해서 쓰다듬기</span></div>`;
 }
 function refreshPet(){
  refreshChatRewards();
@@ -452,9 +489,9 @@ function renderCat(){
  document.body.classList.toggle('motion-paused',!read('om-cat-motion',true));
  let content;
  if(home){
-  content=`<section class="cat-room home-scene chat-home"><div class="cat-resident-stage"><div class="scene-window" aria-hidden="true"></div><div class="active-cat-slot"></div><div class="home-cat-aside"></div><div class="chat-rewards home-cat-rewards" aria-label="냥대리에게 츄르 주기">${chatRewards()}</div><div class="resident-speech"><h1>${voice().greeting}</h1><p>${voice().intro}</p></div></div><div class="cat-below chat-home-below">${starterQuestions()}${composer(true)}${staffSettingsHTML()}</div></section>`;
+  content=`<section class="cat-room home-scene chat-home"><div class="cat-resident-stage"><div class="scene-window" aria-hidden="true"></div><div class="active-cat-slot"></div><div class="home-cat-aside"></div><div class="chat-rewards home-cat-rewards" aria-label="냥대리에게 츄르 주기">${chatRewards()}</div><div class="resident-speech"><h1>${voice().greeting}</h1><p>${voice().intro}</p></div></div><div class="cat-below chat-home-below">${starterQuestions()}${composer(true)}${staffSettingsHTML()}${nyangManageEntryHTML()}</div></section>`;
  }else{
-  content=`<section class="chat-room" aria-label="냥대리 채팅방"><div class="chat-transcript" tabindex="0" aria-label="대화 내역"><div class="chat-transcript-inner">${conversation()}</div></div><div class="chat-compose-dock">${composer()}${staffSettingsHTML()}<p class="chat-dock-note">중요한 내용은 답변의 출처에서 확인하세요.</p></div></section>`;
+  content=`<section class="chat-room" aria-label="냥대리 채팅방"><div class="chat-transcript" tabindex="0" aria-label="대화 내역"><div class="chat-transcript-inner">${conversation()}</div></div><div class="chat-compose-dock">${composer()}${staffSettingsHTML()}${nyangManageEntryHTML()}<p class="chat-dock-note">중요한 내용은 답변의 출처에서 확인하세요.</p></div></section>`;
  }
  $('#main').innerHTML=`<div class="chat-layout">${chatHistoryHTML()}<div class="chat-workspace">${content}</div></div>`;
  const pet=previousPet||document.createElement('div');pet.className='resident-portrait';
@@ -564,7 +601,7 @@ function showPersonality(){
  openModal(`<h2 id="modal-title">어떤 냥대리가 좋아요?</h2><p class="modal-sub">움직임을 미리 보고, 마음에 드는 냥대리를 골라 주세요.</p><div class="personality-options" role="group" aria-label="냥대리 성격">${['cold','warm'].map(mode=>`<button class="personality-option ${personality===mode?'selected':''}" data-personality="${mode}" aria-pressed="${personality===mode}"><span class="personality-preview" aria-hidden="true">${cat('','personality-preview-cat')}</span><strong>${personalities[mode].label}</strong><span>${mode==='warm'?'먼저 인사하고, 손길에는 골골. 츄르는 바로 냠냠!':'무심하게 힐끗. 가끔 손길에 마음을 열어요.'}</span><q>${mode==='warm'?'쓰다듬어주면 행복하다냥!':'츄르? …잠깐, 나 주고 가라냥.'}</q><small>${personality===mode?'사용 중':'이 모드로 선택'}</small></button>`).join('')}</div><p class="personality-note">답변의 정보와 출처, 포인트 보상은 같아요.<br>선택은 이 브라우저에 계정별로 저장됩니다.</p>`);
 }
 function showWardrobe(){
- openModal(`<h2 id="modal-title">꾸미기</h2>${customizeTabs('outfit')}<p class="modal-sub">모은 하트로 아이템을 선택하세요.</p><div class="wardrobe-preview">${cat('','closet-cat')}${outfitHTML()}<span class="heart-balance">♥ <strong>${rewards.hearts}</strong> 보유</span></div><div class="wardrobe-items">${wardrobe.map(item=>{const owned=rewards.owned.includes(item.id),equipped=rewards.equipped===item.id;return `<article class="wardrobe-item ${equipped?'equipped':''}"><div class="item-symbol item-${item.id}">${item.symbol}</div><h3>${item.name}</h3><p>${item.description}</p><button class="${owned?'secondary':'primary'}-button" ${equipped||!owned&&rewards.hearts<item.cost?'disabled':''} data-item="${item.id}" data-owned="${owned}">${equipped?'착용 중':owned?'착용하기':`♥ ${item.cost} · 열고 착용`}</button>${!owned&&rewards.hearts<item.cost?`<small>하트 ${item.cost-rewards.hearts}개 더 모으면 돼</small>`:''}</article>`;}).join('')}</div><div class="wardrobe-footer"><button class="text-button" data-action="unequip" ${!rewards.equipped?'disabled':''}>기본 모습으로</button><span>한 번 연 아이템은 다시 하트를 쓰지 않아요.</span></div><p class="caption">질문 +10 P → 츄르 10 P → 하트 3개 → 눌러 모으고 꾸미기</p>`,true);
+ openModal(`<h2 id="modal-title">꾸미기</h2>${customizeTabs('outfit')}<p class="modal-sub">모은 하트로 아이템을 선택하세요.</p><div class="wardrobe-preview">${cat('','closet-cat','',customOutfitHTML())}${outfitHTML()}<span class="heart-balance">♥ <strong>${rewards.hearts}</strong> 보유</span></div><div class="wardrobe-items">${shopItems(nyangCatalog,{all:true}).filter(item=>item.builtin||(item.enabled!==false||rewards.owned.includes(item.id))&&catalogImages.has(item.image)).map(item=>{const owned=rewards.owned.includes(item.id),equipped=rewards.equipped===item.id;return `<article class="wardrobe-item ${equipped?'equipped':''}">${item.builtin?`<div class="item-symbol item-${item.id}">${item.symbol}</div>`:`<div class="item-symbol item-custom" style="--outfit:url('${catalogImages.get(item.image)}')" aria-hidden="true"></div>`}<h3>${esc(item.name)}</h3><p>${esc(item.description||'')}</p><button class="${owned?'secondary':'primary'}-button" ${equipped||!owned&&rewards.hearts<item.cost?'disabled':''} data-item="${item.id}" data-owned="${owned}">${equipped?'착용 중':owned?'착용하기':`♥ ${item.cost} · 열고 착용`}</button>${!owned&&rewards.hearts<item.cost?`<small>하트 ${item.cost-rewards.hearts}개 더 모으면 돼</small>`:''}</article>`;}).join('')}</div><div class="wardrobe-footer"><button class="text-button" data-action="unequip" ${!rewards.equipped?'disabled':''}>기본 모습으로</button><span>한 번 연 아이템은 다시 하트를 쓰지 않아요.</span></div><p class="caption">질문 +10 P → 츄르 10 P → 하트 3개 → 눌러 모으고 꾸미기</p>`,true);
 }
 function openModal(content,wide=false){const m=$('#modal');if(!m.open)dialogOpener=document.activeElement;m.className=wide?'wide':'';m.innerHTML=`<button class="icon-button modal-close" data-action="close-modal" aria-label="닫기">${icon('close')}</button>${content}`;if(!m.open)m.showModal();}
 // 츄르 확인 창을 화면 가운데가 아니라 냥대리 캐릭터 가운데에 맞춘다. 화면 밖으로 나가지 않게 가장자리 12px 안쪽으로 제한한다.
@@ -815,6 +852,7 @@ initCommunity({
  },
  show(next){view=next;render();$('#main').scrollTop=0;},
  update(state){
+  if(state.catalog)applyCatalog(state.catalog);
   const next=state.member?(state.me.id||state.me.username):null;
   if(next!==activeAccount){
    chats=[];activeChatId=null;chatHistoryCollapsed=false;chatHistoryCategory='all';chatHistoryFolder='all';historyMessageId=null;heroTransition=null;

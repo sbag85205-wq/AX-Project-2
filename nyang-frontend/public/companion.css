@@ -58,3 +58,17 @@ body[data-mode=cat] .main-content.work-view{overflow:auto;background:#fbfcfe!imp
 .pet-body .pet-resolution .cat-art.cold-sulk::before,.cat-art.cold-sulk::before{background-position:100% 0!important}
 .pet-body .pet-resolution .cat-art.cold-think::before,.cat-art.cold-think::before{background-position:0 100%!important}
 .pet-body .pet-resolution .cat-art.cold-shoo::before,.cat-art.cold-shoo::before{background-position:50% 100%!important}
+/* 계절별 기본 모습(cat-seasons.webp, 2x2: 봄·여름 / 가을·겨울)과 냥대리 관리에서 올린 그림(--art: data 주소) */
+.pet-body .pet-resolution .cat-art.reaction-art[class*=season-]::before,.cat-art.reaction-art[class*=season-]::before{background-image:url('./assets/cat-seasons.webp')!important;background-size:200% 200%!important}
+.pet-body .pet-resolution .cat-art.season-summer::before,.cat-art.season-summer::before{background-position:100% 0!important}
+.pet-body .pet-resolution .cat-art.season-autumn::before,.cat-art.season-autumn::before{background-position:0 100%!important}
+.pet-body .pet-resolution .cat-art.season-winter::before,.cat-art.season-winter::before{background-position:100% 100%!important}
+.pet-body .pet-resolution .cat-art.custom-art::before,.cat-art.custom-art::before{background-image:var(--art)!important;background-size:100% 100%!important;background-position:0 0!important}
+/* 쓰다듬기 화면 밖(관리 창 미리보기·꾸미기 미리보기)에서도 그림을 상자보다 크게(사방 12.5%) 그린다: 눈 깜빡임 층의 inset:0보다 앞서게 */
+.cat-art.reaction-art:not(.happy):not(.annoyed)::before{inset:-12.5%}
+/* 관리에서 추가한 꾸미기 아이템: 냥대리 그림과 같은 틀이라 같은 자리에 겹친다 */
+.cat-art>.outfit-custom{position:absolute;inset:-12.5%;z-index:3;pointer-events:none;background:var(--outfit) 0 0/100% 100% no-repeat}
+.item-symbol.item-custom{background:var(--outfit) center/contain no-repeat}
+/* 관리 창 미리보기: 눈 감은 표정(움직이지 않는 그림) */
+.cat-art.nm-closed{background-image:url('./assets/cat-expressions-v2.png')!important;background-position:91.07% 0;clip-path:inset(0 0 0 9%)}
+.cat-art.nm-closed::before,.cat-art.nm-closed::after{display:none!important}
