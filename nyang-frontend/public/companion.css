@@ -70,6 +70,8 @@ body[data-mode=cat] .main-content.work-view{overflow:auto;background:#fbfcfe!imp
 .pet-body .pet-resolution .cat-art.season-summer::before,.cat-art.season-summer::before{background-position:100% 0!important}
 .pet-body .pet-resolution .cat-art.season-autumn::before,.cat-art.season-autumn::before{background-position:0 100%!important}
 .pet-body .pet-resolution .cat-art.season-winter::before,.cat-art.season-winter::before{background-position:100% 100%!important}
+/* 봄 기본 모습의 눈 깜빡임: 눈 감은 그림(cat-spring-blink.webp, 봄 칸과 같은 틀)에서 눈 부분만 원래 냥대리처럼 깜빡인다 */
+.pet-body .pet-resolution .cat-art.reaction-art.season-spring::after,.cat-art.reaction-art.season-spring::after{display:block!important;content:'';position:absolute;inset:-12.5%;background:url('./assets/cat-spring-blink.webp') 0 0/100% 100% no-repeat;clip-path:inset(34.4% 26.9% 55.5% 32.7%);opacity:0;animation:cat-blink 5.8s steps(1,end) infinite!important;pointer-events:none}
 .pet-body .pet-resolution .cat-art.custom-art::before,.cat-art.custom-art::before{background-image:var(--art)!important;background-size:100% 100%!important;background-position:0 0!important}
 /* 쓰다듬기 화면 밖(관리 창 미리보기·꾸미기 미리보기)에서도 그림을 상자보다 크게(사방 12.5%) 그린다: 눈 깜빡임 층의 inset:0보다 앞서게 */
 .cat-art.reaction-art:not(.happy):not(.annoyed)::before{inset:-12.5%}

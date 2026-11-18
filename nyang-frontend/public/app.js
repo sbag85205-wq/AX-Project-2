@@ -98,7 +98,7 @@ let calendarMonth=localDate().slice(0,7),calendarDay=localDate(),happyUntil=0;
 // (주소는 화면 주소가 아니라 /nyang/ 기준이어야 한다: 화면은 /nyang/cat/ 등 여러 곳에서 열린다)
 const reactionArt=['warm','cold'].map(mode=>{const img=new Image();img.src=`${root}assets/cat-${mode}-reactions.webp`;return img;});
 // 계절별 모습(cat-seasons.webp)과 봄 반응 그림은 그 계절을 정했을 때만 받는다
-const seasonArt=new Image(),springArt=new Image();
+const seasonArt=new Image(),springArt=new Image(),springBlink=new Image();
 let petReaction=null,petTimer=null,petGesture=null,ignorePetClickUntil=0,petPending=false,petMoving=false,petMotionTimer=null;
 let personality='cold',companionPhase='idle';
 // 냥대리 관리(담당자)에서 정한 반응·계절별 모습·꾸미기 아이템(nyang-catalog.js). 올린 그림은 data: 글자로 받아 둔다.
@@ -109,7 +109,7 @@ const pickReaction=createCatalogPicker(()=>nyangCatalog,id=>catalogImages.has(id
 function applyCatalog(value){
  nyangCatalog=normalizeCatalog(value);
  if(nyangCatalog.season!=='none'&&!seasonArt.src)seasonArt.src=`${root}assets/cat-seasons.webp`;
- if(nyangCatalog.season==='spring'&&!springArt.src)springArt.src=`${root}assets/cat-spring-warm-reactions.webp`;
+ if(nyangCatalog.season==='spring'&&!springArt.src){springArt.src=`${root}assets/cat-spring-warm-reactions.webp`;springBlink.src=`${root}assets/cat-spring-blink.webp`;}
  loadCatalogImages();
 }
 async function loadCatalogImages(ids=neededImages(nyangCatalog)){
