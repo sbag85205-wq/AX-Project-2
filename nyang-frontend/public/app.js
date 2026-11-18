@@ -12,7 +12,7 @@ import {createPetInteraction} from './pet-interaction.js?v=25ddd542a513';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=20d8b9f9b46b';
 const $=s=>document.querySelector(s);
 import {passwordProblem,passwordInputHTML,passwordEye} from './account-view.js?v=a9c0222d97cb';
-import {createAccountSync} from './account-sync.js?v=7c9808eca089';
+import {createAccountSync} from './account-sync.js?v=422e8ba71441';
 import {esc,loadingHTML} from './shared.js?v=b4248c4d9fbf';
 import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=e67065b3ec64';
 import {orderNav,installNavLayout} from './nav-layout.js?v=34db55cc4081';
@@ -40,6 +40,8 @@ function read(key,fallback){try{return JSON.parse(localStorage.getItem(storageKe
 function save(key,value){try{localStorage.setItem(storageKey(key),JSON.stringify(value));accountSync.changed(key);return true;}catch{toast('브라우저 저장 공간이 부족해 저장하지 못했어요.');return false;}}
 // 계정별 기록(내 일정·대화 기록·내 활동 기록·배경/성격 설정)을 서버와 맞춰 다른 PC에서도 보이게 한다(account-sync.js)
 const accountSync=createAccountSync({
+ // 다른 기기 기록과 합쳐졌으면 화면이 들고 있는 일정·대화 기록 등을 곧바로 다시 읽는다(옛 목록으로 저장해 합친 항목을 지우지 않게)
+ onMerged:()=>{if(activeAccount)reloadAccountRecords();},
  keyFor:(account,key)=>personalKeys.has(key)||key.startsWith('om-bg-')?'nyang-account:'+account+':'+key:key,
  async send(body){const res=await fetch('/api/account',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}),data=await res.json().catch(()=>null);if(!res.ok)throw Object.assign(Error(data?.error||'기록을 저장하지 못했어요.'),{status:res.status});return data;}
 });

@@ -181,8 +181,10 @@ function sharedServer(){
    const t='T'+(++clock);if(b.value===null)delete rows[b.key];else rows[b.key]={value:b.value,updated:t};return {saved:[b.key],updated:t,conflicts:[]};
   }
  };
- const device=()=>{const map=new Map(),storage={getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,String(v)),get length(){return map.size;},key:i=>[...map.keys()][i]??null};
-  return {map,sync:createAccountSync({keyFor:(a,k)=>`nyang-account:${a}:${k}`,send,storage,delay:1,later:()=>0,cancel:()=>{}}),put:(k,v)=>map.set(`nyang-account:a:${k}`,v),get:k=>map.get(`nyang-account:a:${k}`)??null};};
+ const device=({onMerged=null,during=null}={})=>{const map=new Map(),storage={getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,String(v)),get length(){return map.size;},key:i=>[...map.keys()][i]??null};
+  // during(body): 요청이 서버에 가 있는 동안(응답 전에) 이 기기에서 일어나는 일
+  const mine=async b=>{const r=await send(b);await during?.(b);return r;};
+  return {map,sync:createAccountSync({keyFor:(a,k)=>`nyang-account:${a}:${k}`,send:mine,storage,delay:1,later:()=>0,cancel:()=>{},onMerged}),put:(k,v)=>map.set(`nyang-account:a:${k}`,v),get:k=>map.get(`nyang-account:a:${k}`)??null};};
  return {rows,send,device};
 }
 
@@ -208,4 +210,33 @@ test('겹치지 않으면 지운 항목은 다른 기기에서도 지워지고, 
  pc.put('om-personality','"warm"');pc.sync.changed('om-personality');await pc.sync.flush(); // PC는 폰이 성격을 바꾸기 전 판을 봤다
  phone.put('om-personality','"cold"');phone.sync.changed('om-personality');await phone.sync.flush();
  assert.equal(srv.rows['om-personality'].value,'"cold"'); // 겹치면 방금 바꾼 기기 값
+});
+
+test('합쳐지면 화면이 곧바로 다시 읽어, 화면에 있던 옛 목록으로 저장해도 다른 기기 일정이 지워지지 않는다',async()=>{
+ const srv=sharedServer(),pc=srv.device();let screen=[];
+ const phone=srv.device({onMerged:key=>{if(key==='om-tasks')screen=JSON.parse(phone.get('om-tasks'));}}); // app.js의 reloadAccountRecords 역할
+ await pc.sync.start('a');await phone.sync.start('a');
+ pc.put('om-tasks','[{"id":"TA"}]');pc.sync.changed('om-tasks');await pc.sync.flush();
+ screen=[{id:'TB'}];phone.put('om-tasks',JSON.stringify(screen));phone.sync.changed('om-tasks');await phone.sync.flush(); // 폰은 PC 일정을 아직 못 봄
+ assert.deepEqual(screen.map(t=>t.id).sort(),['TA','TB']); // 화면 목록도 합친 것으로 바뀐다
+ // 폰 화면에서 일정을 완료로 표시하면 화면 목록 전체를 저장한다: PC 일정이 남아 있어야 한다
+ screen=screen.map(t=>t.id==='TB'?{...t,done:true}:t);phone.put('om-tasks',JSON.stringify(screen));phone.sync.changed('om-tasks');await phone.sync.flush();
+ const final=JSON.parse(srv.rows['om-tasks'].value);
+ assert.deepEqual(final.map(t=>t.id).sort(),['TA','TB']);assert.equal(final.find(t=>t.id==='TB').done,true);
+});
+
+test('저장 요청이 가는 동안 또 고친 내용은, 다른 기기 기록과 합칠 때 사라지지 않는다',async()=>{
+ const srv=sharedServer(),pc=srv.device();let edited=false,phone;
+ phone=srv.device({during:b=>{
+  if(b.action!=='state-set'||edited)return;edited=true;
+  // 첫 저장 요청이 서버에 가 있는 동안 일정을 하나 더 추가했다
+  phone.put('om-tasks','[{"id":"TB"},{"id":"TB2"}]');phone.sync.changed('om-tasks');
+ }});
+ await pc.sync.start('a');await phone.sync.start('a');
+ pc.put('om-tasks','[{"id":"TA"}]');pc.sync.changed('om-tasks');await pc.sync.flush();
+ phone.put('om-tasks','[{"id":"TB"}]');phone.sync.changed('om-tasks');await phone.sync.flush();
+ for(let i=0;i<3&&phone.sync.pending().length;i++)await phone.sync.flush();
+ assert.deepEqual(JSON.parse(srv.rows['om-tasks'].value).map(t=>t.id).sort(),['TA','TB','TB2']);
+ assert.deepEqual(JSON.parse(phone.get('om-tasks')).map(t=>t.id).sort(),['TA','TB','TB2']);
+ assert.deepEqual(phone.sync.pending(),[]);
 });

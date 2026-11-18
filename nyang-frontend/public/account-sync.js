@@ -44,7 +44,9 @@ export function mergeFirst(key,remote,local,preferLocal=false){
  * keyFor(account,key): 브라우저 저장소에서 쓰는 실제 이름. send(body): 서버 요청(실패하면 예외, 너무 크면 status 413).
  * storage: localStorage 모양. delay: 저장 뒤 서버로 보내기까지 모으는 시간(ms), retryDelay: 연결 실패 뒤 다시 보내기까지(ms).
  */
-export function createAccountSync({keyFor,send,storage=globalThis.localStorage,delay=300,retryDelay=15000,later=setTimeout,cancel=clearTimeout}){
+// onMerged(key): 저장하다 다른 기기 기록과 합쳐 브라우저 저장소 값이 바뀌었을 때 곧바로 부른다. 화면은 이때 저장소에서 기록을
+// 다시 읽어야 한다(그러지 않으면 화면이 들고 있던 옛 목록으로 다음에 저장할 때 합친 항목을 지운다).
+export function createAccountSync({keyFor,send,storage=globalThis.localStorage,delay=300,retryDelay=15000,later=setTimeout,cancel=clearTimeout,onMerged=null}){
  let account=null,dirty=new Set(),timer=null,sending=null;
  const tooBig=new Set();
  const get=k=>{try{return storage.getItem(k);}catch{return null;}};
@@ -128,9 +130,13 @@ export function createAccountSync({keyFor,send,storage=globalThis.localStorage,d
      if(account!==mine)return;
      const conflict=Array.isArray(res?.conflicts)&&res.conflicts.find(c=>c?.key===key);
      if(!conflict)break;
-     // 다른 기기가 먼저 저장했다: 그 기록과 이 기기 기록을 합쳐(어느 쪽도 잃지 않게) 다시 보낸다
-     const want=mergeFirst(key,typeof conflict.value==='string'?conflict.value:null,value,true);
-     if(want!==value&&!set(name,want)){skip=true;break;} // 저장 공간이 부족하면 다음에 다시
+     // 다른 기기가 먼저 저장했다: 그 기록과 이 기기 기록을 합쳐(어느 쪽도 잃지 않게) 다시 보낸다.
+     // 보내는 동안 이 기기에서 또 고쳤을 수 있으니, 보낸 값이 아니라 지금 저장소 값과 합친다.
+     const now=get(name),want=mergeFirst(key,typeof conflict.value==='string'?conflict.value:null,now,true);
+     if(want!==now){
+      if(!set(name,want)){skip=true;break;} // 저장 공간이 부족하면 다음에 다시
+      onMerged?.(key); // 화면이 들고 있는 기록을 합친 값으로 바로 바꾸게 한다
+     }
      value=want;setKnown(mine,[[key,conflict.updated??null]]);res=null;
     }
     if(skip)continue;
