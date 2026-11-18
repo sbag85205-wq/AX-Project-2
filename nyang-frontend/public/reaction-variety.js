@@ -48,19 +48,23 @@ export const reactionPoses={
  }
 };
 // 계절 칸의 처음부터 있는 반응(냥대리 관리의 그 계절 칸에 '기본'으로 보인다). 그 계절을 고르면 기본값 칸 대신 이것들이 나온다.
-// 봄·따뜻한 모드: cat-spring-warm-reactions.webp(3x2: 신남·윙크·손 인사 / 수줍음·골골)
+// 봄·따뜻한 모드: cat-spring-warm-reactions.webp(3x2: 신남·윙크·손 인사 / 수줍음·골골). 가장 자주 나오는 좋아함에는 5장 모두 넣는다.
+// (번호로 관리에서 고친 멘트를 찾으니 새 반응은 끝에 더한다)
 export const seasonReactionPoses={
  spring:{
   warm:{
    like:[
     art('purr','봄볕 아래서 쓰다듬어 주니 스르르 녹는다냥.','포근 ♥','spring-pet'),
-    art('bounce','벚꽃보다 네 손길이 더 좋다냥! 찡긋!','찡긋 ☆','spring-wink')
+    art('bounce','벚꽃보다 네 손길이 더 좋다냥! 찡긋!','찡긋 ☆','spring-wink'),
+    art('bounce','쓰다듬어 주니 꽃처럼 웃음이 활짝 핀다냥!','헤헤 ♥','spring-joy'),
+    art('nod','봄이라 그런가… 손길에 괜히 설렌다냥.','두근 ♥','spring-shy'),
+    art('purr','반갑다냥! 봄 인사로 하트 하나 보낸다냥.','안녕냥 ♥','spring-wave')
    ],
    dislike:[
     art('tuck','봄바람에 괜히 쑥스럽다냥… 조금만 쉬고 오자냥.','부끄럽다냥…','spring-shy'),
     art('backstep','꽃구경 잠깐 다녀오겠다냥. 이따 또 만나자냥!','이따 보자냥 ♥','spring-wave')
    ],
-   bonus:[art('bounce','봄이 와서 너무 신난다냥! 벚꽃 선물 받아 달라냥!','신난다냥 ♥','spring-joy')]
+   bonus:[art('bounce','봄이 와서 너무 신난다냥! 벚꽃 선물 받아 달라냥!','신난다냥 ♥','spring-joy'),art('bounce','찡긋! 봄맞이 특별 선물 준비했다냥!','선물이다냥 ☆','spring-wink')]
   }
  }
 };

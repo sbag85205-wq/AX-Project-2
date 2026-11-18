@@ -28,7 +28,7 @@ test('칸: 처음부터 있던 반응은 기본값 칸(봄 따뜻한 모드만 �
  for(const mode of ['warm','cold'])for(const kind of ['like','dislike','bonus']){
   assert.ok(allReactions(c,mode,kind).every(r=>r.season==='none'||r.season==='spring'&&mode==='warm'));
   for(const s of ['summer','autumn','winter'])assert.equal(bucketReactions(c,s,mode,kind).length,0);
-  assert.equal(bucketReactions(c,'spring',mode,kind).length,mode==='warm'?{like:2,dislike:2,bonus:1}[kind]:0);
+  assert.equal(bucketReactions(c,'spring',mode,kind).length,mode==='warm'?{like:5,dislike:2,bonus:2}[kind]:0);
  }
  c=selectSeason(c,'spring');
  assert.ok(activeReactions(c,'warm','like').every(r=>r.season==='spring'&&r.pose.art.startsWith('spring-'))); // 봄 따뜻한 모드는 봄 반응
