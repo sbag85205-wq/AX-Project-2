@@ -1,18 +1,7 @@
-/* 냥대리 관리(담당자): 냥대리 테스트 아래 열기 단추와 관리 창(nyang-manage.js) */
-.nyang-manage-entry{width:100%;box-sizing:border-box;margin-top:8px}
-.chat-compose-dock>.nyang-manage-entry{max-width:860px;margin:8px auto 0}
-.nm-open{display:flex;align-items:center;gap:10px;width:100%;border:1px solid var(--ui-line);border-radius:14px;background:var(--ui-panel);padding:11px 16px;color:var(--ui-ink);text-align:left;font-size:13px}
-.nm-open:hover{background:var(--ui-fill)}
-.nm-open strong{font-weight:600;white-space:nowrap}
-.nm-open span{flex:1;color:var(--ui-sub);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.nm-open .icon{width:18px;height:18px;color:var(--ui-accent)}
-.nm-open .icon:last-child{color:var(--ui-faint)}
+/* 냥대리 관리(담당자): 상단 '냥대리 관리' 아래 세 화면(nyang-manage.js) */
 
 .nyang-manage{color:var(--ui-ink)}
-.nm-tabs{display:flex;gap:4px;border-bottom:1px solid var(--ui-line);margin:18px 0 0}
-.nm-tab{padding:10px 14px;border-bottom:2px solid transparent;color:var(--ui-sub);font-size:13px;font-weight:600;margin-bottom:-1px}
-.nm-tab.on{color:var(--ui-ink);border-bottom-color:var(--ui-accent)}
-.nm-body{padding-top:16px}
+.nm-body{padding-top:8px}
 .nm-modes{display:inline-flex;gap:4px;padding:3px;border-radius:10px;background:var(--ui-fill);flex-wrap:wrap}
 .nm-mode{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;color:var(--ui-sub)}
 .nm-mode.on{background:var(--ui-panel);color:var(--ui-ink);box-shadow:0 1px 3px #0000001a}

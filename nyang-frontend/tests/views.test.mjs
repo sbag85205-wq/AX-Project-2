@@ -5,16 +5,16 @@ import {VIEWS,viewOf,pageTitleOf,NAV_NAMES,navViews,STAFF_NAVS,EMPLOYEE_NAVS} fr
 // 표에서 계산한 값이 예전과 완전히 같은지 확인한다(화면 동작이 바뀌지 않았다는 증거).
 const OLD={
  employeeNavs:['schedule','activity'],
- staffViews:['chat','board','statistics','userstats','faq','documents','categories','users','model','unanswered','library'],
- staffNavs:['statistics','userstats','faq','documents','categories','users'],
- staffOnly:['statistics','userstats','faq','documents','categories','users','model','unanswered'],
- navNames:['chat','schedule','activity','board','statistics','userstats','faq','documents','categories','users','model','unanswered','library'],
- openStaff:['faq','documents','categories','users','model'],
+ staffViews:['chat','board','statistics','userstats','faq','documents','categories','users','model','unanswered','library','manage-reactions','manage-seasons','manage-items'],
+ staffNavs:['statistics','userstats','faq','documents','categories','users','manage-reactions','manage-seasons','manage-items'],
+ staffOnly:['statistics','userstats','faq','documents','categories','users','model','unanswered','manage-reactions','manage-seasons','manage-items'],
+ navNames:['chat','schedule','activity','board','statistics','userstats','faq','documents','categories','users','model','unanswered','library','manage-reactions','manage-seasons','manage-items'],
+ openStaff:['faq','documents','categories','users','model','manage-reactions','manage-seasons','manage-items'],
  openAny:['chat','todos','calendar','board','activity'],
  community:['activity','board'],
  routes:{faq:'/admin/faqs',documents:'/admin/documents',categories:'/admin/categories',users:'/admin/users',model:'/admin/settings',unanswered:'/admin/unanswered',library:'/docs'},
- workspaceTitles:{chat:'물어보기',calendar:'내 일정',todos:'내 일정',activity:'내 활동',board:'질문 게시판',statistics:'이용 통계',userstats:'사용자 통계',faq:'FAQ 관리',documents:'문서 관리',categories:'분야 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서'},
- pageTitles:{chat:'냥대리에게 물어보기',calendar:'내 캘린더',todos:'내가 해야 할 일',activity:'나의 질문 활동',board:'익명 질문 게시판',statistics:'이용 통계',userstats:'사용자 통계',faq:'FAQ 관리',documents:'문서 관리',categories:'분야 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서'}
+ workspaceTitles:{chat:'물어보기',calendar:'내 일정',todos:'내 일정',activity:'내 활동',board:'질문 게시판',statistics:'이용 통계',userstats:'사용자 통계',faq:'FAQ 관리',documents:'문서 관리',categories:'분야 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서','manage-reactions':'모드별 반응','manage-seasons':'계절별 모습','manage-items':'꾸미기 아이템'},
+ pageTitles:{chat:'냥대리에게 물어보기',calendar:'내 캘린더',todos:'내가 해야 할 일',activity:'나의 질문 활동',board:'익명 질문 게시판',statistics:'이용 통계',userstats:'사용자 통계',faq:'FAQ 관리',documents:'문서 관리',categories:'분야 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서','manage-reactions':'냥대리 관리 · 모드별 반응','manage-seasons':'냥대리 관리 · 계절별 모습','manage-items':'냥대리 관리 · 꾸미기 아이템'}
 };
 // 화면 이름 + 표에 없는 이름(메뉴 이름·잘못된 값·객체 기본 속성 이름)까지 모두 검사한다
 const every=[...Object.keys(OLD.workspaceTitles),'schedule','reset','background','',undefined,null,'constructor','toString','__proto__','hasOwnProperty'];
