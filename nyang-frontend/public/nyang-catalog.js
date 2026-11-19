@@ -5,7 +5,7 @@
 //  - 평소(아이들) 모습으로 쓸 그림을 정하고
 //  - 꾸미기 상점에 보일 아이템을 알려 준다.
 // 화면 꾸밈만 정한다. 좋아함·쉬고 싶음·보너스 중 무엇이 나올지와 포인트는 계속 서버가 정한다.
-import {reactionPoses,seasonReactionPoses} from './reaction-variety.js?v=56864d49a539';
+import {reactionPoses,seasonReactionPoses} from './reaction-variety.js?v=5efb92e5b926';
 import {wardrobe} from './companion.js?v=80ab82355587';
 
 export const SEASONS=[['none','기본'],['spring','봄'],['summer','여름'],['autumn','가을'],['winter','겨울']];

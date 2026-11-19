@@ -99,6 +99,15 @@ body[data-mode=cat] .main-content.work-view{overflow:auto;background:#fbfcfe!imp
 .pet-body .pet-resolution .cat-art.warm-autumn-wave::before,.cat-art.warm-autumn-wave::before{background-position:100% 0!important}
 .pet-body .pet-resolution .cat-art.warm-autumn-shy::before,.cat-art.warm-autumn-shy::before{background-position:0 100%!important}
 .pet-body .pet-resolution .cat-art.warm-autumn-pet::before,.cat-art.warm-autumn-pet::before{background-position:50% 100%!important}
+/* 가을 칸의 차가운 모드 반응(cat-autumn-cold-reactions.webp, 4x2: 콧김·생각·삐짐·츤데레 / 멈춰·팔짱·뚱함) */
+.pet-body .pet-resolution .cat-art.reaction-art[class*=cold-autumn-]::before,.cat-art.reaction-art[class*=cold-autumn-]::before{background-image:url('./assets/cat-autumn-cold-reactions.webp')!important;background-size:400% 200%!important}
+.pet-body .pet-resolution .cat-art.cold-autumn-huff::before,.cat-art.cold-autumn-huff::before{background-position:0 0!important}
+.pet-body .pet-resolution .cat-art.cold-autumn-think::before,.cat-art.cold-autumn-think::before{background-position:33.3333% 0!important}
+.pet-body .pet-resolution .cat-art.cold-autumn-sulk::before,.cat-art.cold-autumn-sulk::before{background-position:66.6667% 0!important}
+.pet-body .pet-resolution .cat-art.cold-autumn-tsun::before,.cat-art.cold-autumn-tsun::before{background-position:100% 0!important}
+.pet-body .pet-resolution .cat-art.cold-autumn-stop::before,.cat-art.cold-autumn-stop::before{background-position:0 100%!important}
+.pet-body .pet-resolution .cat-art.cold-autumn-cross::before,.cat-art.cold-autumn-cross::before{background-position:33.3333% 100%!important}
+.pet-body .pet-resolution .cat-art.cold-autumn-grump::before,.cat-art.cold-autumn-grump::before{background-position:66.6667% 100%!important}
 /* 계절별 기본 모습(cat-seasons.webp, 2x2: 봄·여름 / 가을·겨울)과 냥대리 관리에서 올린 그림(--art: data 주소) */
 .pet-body .pet-resolution .cat-art.reaction-art[class*=season-]::before,.cat-art.reaction-art[class*=season-]::before{background-image:url('./assets/cat-seasons.webp')!important;background-size:200% 200%!important}
 .pet-body .pet-resolution .cat-art.season-summer::before,.cat-art.season-summer::before{background-position:100% 0!important}
