@@ -22,7 +22,7 @@ export function SheetViewer({ url, path, sheet = 1, title }: { url: string; path
       if (!res.ok) throw new Error(String(res.status));
       const data = await readSpreadsheet(await res.arrayBuffer(), kind);
       if (!cancelled) setSheets(data);
-    })().catch(() => !cancelled && setError('원본 표를 불러오지 못했어요. "원본 파일 받기"로 확인해 주세요.'));
+    })().catch(() => !cancelled && setError('원본 표를 불러오지 못했어요. "다운로드"로 받아 확인해 주세요.'));
     return () => {
       cancelled = true;
     };
