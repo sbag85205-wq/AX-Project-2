@@ -55,6 +55,7 @@ export const reactionPoses={
 // 가을·따뜻한 모드: cat-autumn-warm-reactions.webp(3x2: 신남·윙크·손 인사 / 수줍음·골골·방긋). 좋아함에는 6장 모두 넣는다.
 // 가을·차가운 모드: cat-autumn-cold-reactions.webp(4x2: 콧김·생각·삐짐·츤데레 / 멈춰·팔짱·뚱함). 좋아함에는 7장 모두 넣는다.
 // 겨울·따뜻한 모드: cat-winter-warm-reactions.webp(3x2: 신남·윙크·손 인사 / 수줍음·골골). 좋아함에는 5장 모두 넣는다.
+// 겨울·차가운 모드: cat-winter-cold-reactions.webp(4x2: 콧김·생각·삐짐·츤데레 / 멈춰·팔짱·뚱함). 좋아함에는 7장 모두 넣는다.
 // (번호로 관리에서 고친 멘트를 찾으니 새 반응은 끝에 더한다)
 export const seasonReactionPoses={
  spring:{
@@ -202,6 +203,29 @@ export const seasonReactionPoses={
    bonus:[
     art('bounce','눈 오는 날이라 신난다냥! 따뜻한 선물 받아 달라냥!','소복 ♥','winter-joy'),
     art('bounce','찡긋! 연말맞이 특별 선물 준비했다냥!','선물이다냥 ☆','winter-wink')
+   ]
+  },
+  cold:{
+   like:[
+    art('purr','…추워서 볼이 빨간 거다냥. 착각 마라냥.','…흥 ♥','winter-tsun'),
+    art('nod','흠… 추운 날엔 이 손길도 쓸모가 있다냥.','…흠','winter-think'),
+    art('nod','좋아서 가만히 있는 거 아니다냥. 추워서 못 움직이는 거다냥.','…딴청이다냥','winter-sulk'),
+    art('stretch','흥, 손이 따뜻하니까 봐주겠다냥. 조금만이다냥.','흥이다냥','winter-huff'),
+    art('nod','거기까지… 아니, 추우니까 조금만 더 해도 된다냥.','…조금만이다냥','winter-stop'),
+    art('purr','팔짱 낀 건 추워서다냥. 손길은… 인정한다냥.','…인정이다냥','winter-cross'),
+    art('nod','…추워서 표정이 굳은 거다냥. 싫은 거 아니다냥.','…원래 이렇다냥','winter-grump')
+   ],
+   dislike:[
+    art('backstep','흥, 손 차갑다냥. 저리 가라냥.','차갑다냥','winter-huff'),
+    art('tuck','추워서 말하기도 귀찮다냥. 이불 속에 있겠다냥.','흥이다냥','winter-sulk'),
+    art('backstep','발바닥 보이냐옹? 눈 오는 중이니 여기까지다냥.','멈추라냥','winter-stop'),
+    art('tuck','지금은 바쁘다냥. 연말 업무 중이다냥.','방해 금지다냥','winter-cross'),
+    art('nod','…오늘은 너무 추워서 그런 기분 아니다냥.','…흥','winter-grump')
+   ],
+   bonus:[
+    art('purr','연말이라 특별히 주는 거다냥. 받아라냥.','…비밀이다냥 ♥','winter-tsun'),
+    art('nod','한참 고민했는데… 이번만 따뜻한 선물 주겠다냥.','…이번만이다냥','winter-think'),
+    art('bounce','착각하지 마라냥. 남아서 주는 겨울 선물이다냥.','…특별히다냥 ♥','winter-cross')
    ]
   }
  }

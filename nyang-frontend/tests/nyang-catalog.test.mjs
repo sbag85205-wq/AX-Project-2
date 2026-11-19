@@ -26,8 +26,8 @@ test('올린 그림을 아직 받지 않았으면 그 반응은 고르지 않는
 test('칸: 처음부터 있던 반응은 기본값 칸(봄 따뜻한 모드만 봄 칸에도), 빈 칸이면 기본값 반응이 나온다',()=>{
  let c=emptyCatalog();
  for(const mode of ['warm','cold'])for(const kind of ['like','dislike','bonus']){
-  assert.ok(allReactions(c,mode,kind).every(r=>r.season==='none'||r.season==='spring'||r.season==='summer'||r.season==='autumn'||r.season==='winter'&&mode==='warm'));
-  assert.equal(bucketReactions(c,'winter',mode,kind).length,mode==='warm'?{like:5,dislike:2,bonus:2}[kind]:0);
+  assert.ok(allReactions(c,mode,kind).every(r=>r.season==='none'||r.season==='spring'||r.season==='summer'||r.season==='autumn'||r.season==='winter'));
+  assert.equal(bucketReactions(c,'winter',mode,kind).length,(mode==='warm'?{like:5,dislike:2,bonus:2}:{like:7,dislike:5,bonus:3})[kind]);
   assert.equal(bucketReactions(c,'autumn',mode,kind).length,(mode==='warm'?{like:6,dislike:3,bonus:2}:{like:7,dislike:5,bonus:3})[kind]);
   assert.equal(bucketReactions(c,'summer',mode,kind).length,(mode==='warm'?{like:6,dislike:3,bonus:2}:{like:8,dislike:6,bonus:3})[kind]);
   assert.equal(bucketReactions(c,'spring',mode,kind).length,(mode==='warm'?{like:5,dislike:2,bonus:2}:{like:7,dislike:5,bonus:3})[kind]);
@@ -48,7 +48,7 @@ test('칸: 처음부터 있던 반응은 기본값 칸(봄 따뜻한 모드만 �
  assert.deepEqual([...count.keys()].sort(),['c-s1','c-s2']);for(const v of count.values())assert.ok(Math.abs(v/20000-.5)<0.01);
  // 봄 반응을 모두 끄면 다시 기본값, 다른 계절로 바꿔도 기본값
  c.reactions={...c.reactions,'c-s1':{enabled:false},'c-s2':{enabled:false}};assert.ok(activeReactions(c,'warm','like').some(r=>r.id==='b:warm:like:0'));
- c=selectSeason({...c,reactions:{}},'winter');assert.ok(activeReactions(c,'cold','like').every(r=>r.season==='none')); // 겨울 차가운 모드는 아직 비어 있어 기본값
+ c=selectSeason({...c,reactions:{}},'winter');for(const mode of ['warm','cold'])assert.ok(activeReactions(c,mode,'like').every(r=>r.season==='winter')); // 겨울에는 두 모드 모두 겨울 반응
  assert.ok(!neededImages(c).includes('img-aaaaaaaa1'));assert.ok(neededImages(selectSeason(c,'spring')).includes('img-aaaaaaaa1'));
 });
 
