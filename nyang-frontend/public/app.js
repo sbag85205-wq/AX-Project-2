@@ -32,6 +32,9 @@ const cat=(mood='',extra='',style='',inner='')=>`<div class="cat-art ${mood} ${e
 paths.edit='M4 20h4L19 9l-4-4L4 16v4ZM14 6l4 4';
 paths.settings='M9 3h6l1 3 3 1v6l-3 1-1 3H9l-1-3-3-1V7l3-1 1-3ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z';
 paths.moon='M20.9 13.1A9 9 0 0 1 10.9 3a9 9 0 1 0 10 10.1Z';
+// 냥대리 성격 버튼 전용(해·달은 화면 밝기 버튼이 쓴다): 따뜻한 모드 하트, 차가운 모드 눈송이
+paths.heart='M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20Z';
+paths.snow='M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M10 4.5 12 6.5l2-2M10 19.5l2-2 2 2';
 paths.cat='M5 9 4 3l6 4h4l6-4-1 6a8 8 0 1 1-14 0ZM8 12h.01M16 12h.01m-6 4 2 1 2-1';
 paths.activity='M4 20h16M7 16V9m5 7V4m5 12v-5';
 paths.shirt='m8 3-5 4 3 4 2-1v11h8V10l2 1 3-4-5-4a4 4 0 0 1-8 0Z';
@@ -152,7 +155,7 @@ function shell(){
    <div class="header-account"><div id="wallet" class="wallet" aria-label="보유 포인트와 하트"></div></div>
   </header>
   <div class="main-shell">
-   <header class="topbar workspace-toolbar"><div class="workspace-context"><span id="workspace-title">물어보기</span></div><div class="top-actions"><div class="workspace-utilities"><button data-action="personality" id="personality-button" aria-label="냥대리 성격 설정">${icon('moon')}<span>차가운 모드</span></button><button data-action="guide" id="guide-button" aria-label="냥대리 사용 가이드 다시 보기" title="냥대리 사용법을 처음부터 다시 봐요" hidden>${icon('book')}<span>가이드</span></button><button data-action="wardrobe">${icon('shirt')}<span>꾸미기</span></button><button class="attendance-quick" id="attendance-button" data-community="attendance" data-busy-label="출석 중…">${icon('calendar')}<span>출석체크</span></button></div><button class="appearance-button theme-toggle" data-action="toggle-theme" aria-label="다크 모드" aria-pressed="false" title="다크 모드로 전환">${icon('moon')}</button></div></header>
+   <header class="topbar workspace-toolbar"><div class="workspace-context"><span id="workspace-title">물어보기</span></div><div class="top-actions"><div class="workspace-utilities"><button data-action="personality" id="personality-button" aria-label="냥대리 성격 설정">${icon('snow')}<span>차가운 모드</span></button><button data-action="guide" id="guide-button" aria-label="냥대리 사용 가이드 다시 보기" title="냥대리 사용법을 처음부터 다시 봐요" hidden>${icon('book')}<span>가이드</span></button><button data-action="wardrobe">${icon('shirt')}<span>꾸미기</span></button><button class="attendance-quick" id="attendance-button" data-community="attendance" data-busy-label="출석 중…">${icon('calendar')}<span>출석체크</span></button></div><button class="appearance-button theme-toggle" data-action="toggle-theme" aria-label="다크 모드" aria-pressed="false" title="다크 모드로 전환">${icon('moon')}</button></div></header>
    <main class="main-content cat-mode" id="main"></main>
    <span id="page-title" class="visually-hidden"></span>
   </div>
@@ -185,7 +188,7 @@ installNavLayout();
 const guide=createGuide({request:fetch,busy:()=>$('#modal').open,returnFocus:()=>$('#guide-button'),beforeStart(){if(view!=='chat'){view='chat';petInteraction.reset();render();$('#main').scrollTop=0;}}});
 function render(){
  document.body.dataset.personality=personality;
- const personalityButton=$('#personality-button');if(personalityButton)personalityButton.innerHTML=icon(personality==='warm'?'sun':'moon')+'<span>'+voice().label+'</span>';
+ const personalityButton=$('#personality-button');if(personalityButton)personalityButton.innerHTML=icon(personality==='warm'?'heart':'snow')+'<span>'+voice().label+'</span>';
  document.body.dataset.view=view;
  const session=communityState(),staff=session.me?.role==='staff';document.body.dataset.authenticated=String(!!session.member);document.body.dataset.role=staff?'staff':'employee';
  for(const name of EMPLOYEE_NAVS)$('#nav-'+name).hidden=staff;
