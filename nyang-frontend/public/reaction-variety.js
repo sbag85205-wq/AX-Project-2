@@ -50,6 +50,7 @@ export const reactionPoses={
 // 계절 칸의 처음부터 있는 반응(냥대리 관리의 그 계절 칸에 '기본'으로 보인다). 그 계절을 고르면 기본값 칸 대신 이것들이 나온다.
 // 봄·따뜻한 모드: cat-spring-warm-reactions.webp(3x2: 신남·윙크·손 인사 / 수줍음·골골). 가장 자주 나오는 좋아함에는 5장 모두 넣는다.
 // 봄·차가운 모드: cat-spring-cold-reactions.webp(4x2: 콧김·생각·삐짐·츤데레 / 멈춰·팔짱·뚱함). 좋아함에는 7장 모두 넣는다.
+// 여름·따뜻한 모드: cat-summer-warm-reactions.webp(3x2: 신남·윙크·손 인사 / 수줍음·골골·방긋). 좋아함에는 6장 모두 넣는다.
 // (번호로 관리에서 고친 멘트를 찾으니 새 반응은 끝에 더한다)
 export const seasonReactionPoses={
  spring:{
@@ -88,6 +89,27 @@ export const seasonReactionPoses={
     art('purr','봄이라 특별히 주는 거다냥. 받아라냥.','…비밀이다냥 ♥','spring-tsun'),
     art('nod','한참 고민했는데… 이번만 선물 주겠다냥.','…이번만이다냥','spring-think'),
     art('bounce','착각하지 마라냥. 남아서 주는 벚꽃 선물이다냥.','…특별히다냥 ♥','spring-cross')
+   ]
+  }
+ },
+ summer:{
+  warm:{
+   like:[
+    art('purr','더운데도 손길은 시원하고 포근하다냥.','시원 ♥','summer-pet'),
+    art('bounce','아이스커피보다 네 손길이 더 상쾌하다냥! 찡긋!','찡긋 ☆','summer-wink'),
+    art('bounce','쓰다듬어 주니 여름 더위가 싹 날아간다냥!','신난다냥 ♥','summer-joy'),
+    art('nod','밀짚모자 쓴 모습 칭찬받은 것 같아 쑥스럽다냥.','두근 ♥','summer-shy'),
+    art('purr','반갑다냥! 여름 인사로 하트 하나 보낸다냥.','안녕냥 ♥','summer-wave'),
+    art('nod','시원한 바람 같은 손길이라 기분 좋다냥.','방긋 ♥','summer-smile')
+   ],
+   dislike:[
+    art('tuck','더워서 얼굴이 빨개졌다냥… 조금만 쉬고 오자냥.','더워냥…','summer-shy'),
+    art('backstep','아이스커피 마시고 금방 오겠다냥. 이따 또 만나자냥!','이따 보자냥 ♥','summer-wave'),
+    art('nod','그늘에서 잠깐 쉬고 싶다냥. 조금 뒤에 놀자냥.','쉬는 중이다냥','summer-smile')
+   ],
+   bonus:[
+    art('bounce','여름이라 신난다냥! 시원한 선물 받아 달라냥!','신난다냥 ♥','summer-joy'),
+    art('bounce','찡긋! 여름맞이 특별 선물 준비했다냥!','선물이다냥 ☆','summer-wink')
    ]
   }
  }

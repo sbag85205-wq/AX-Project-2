@@ -1,8 +1,8 @@
 import {parseEventRequest,timeLabel,eventTask} from './event-request.js?v=7dffe9d847bc';
 import {viewOf,pageTitleOf,NAV_NAMES,navViews,STAFF_NAVS,EMPLOYEE_NAVS} from './views.js?v=45faa08e1272';
 import {fetch} from './transport.js?v=fd4b994ba12d';
-import {emptyCatalog,normalizeCatalog,createCatalogPicker,idleLook,shopItems,neededImages} from './nyang-catalog.js?v=80ee3e28639a';
-import {installNyangManage,nyangManagePageHTML} from './nyang-manage.js?v=9bdf3d8ab922';
+import {emptyCatalog,normalizeCatalog,createCatalogPicker,idleLook,shopItems,neededImages} from './nyang-catalog.js?v=e2267e57064a';
+import {installNyangManage,nyangManagePageHTML} from './nyang-manage.js?v=db516a783c89';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=291139f9595c';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=2b1060400411';
@@ -97,8 +97,8 @@ let calendarMonth=localDate().slice(0,7),calendarDay=localDate(),happyUntil=0;
 // 성격별 반응 그림은 첫 반응·모드 전환 때 냥대리가 잠깐 비어 보이지 않게 처음에 두 장 모두 미리 받아 둔다.
 // (주소는 화면 주소가 아니라 /nyang/ 기준이어야 한다: 화면은 /nyang/cat/ 등 여러 곳에서 열린다)
 const reactionArt=['warm','cold'].map(mode=>{const img=new Image();img.src=`${root}assets/cat-${mode}-reactions.webp`;return img;});
-// 계절별 모습(cat-seasons.webp)과 봄 반응 그림은 그 계절을 정했을 때만 받는다
-const seasonArt=new Image(),springArt=new Image(),springCold=new Image(),springBlink=new Image();
+// 계절별 모습(cat-seasons.webp)과 계절 반응·눈 깜빡임 그림은 그 계절을 정했을 때만 받는다
+const seasonArt=new Image(),seasonFiles={spring:['spring-warm-reactions','spring-cold-reactions','spring-blink'],summer:['summer-warm-reactions','summer-blink']},seasonLoaded=new Map();
 let petReaction=null,petTimer=null,petGesture=null,ignorePetClickUntil=0,petPending=false,petMoving=false,petMotionTimer=null;
 let personality='cold',companionPhase='idle';
 // 냥대리 관리(담당자)에서 정한 반응·계절별 모습·꾸미기 아이템(nyang-catalog.js). 올린 그림은 data: 글자로 받아 둔다.
@@ -109,7 +109,7 @@ const pickReaction=createCatalogPicker(()=>nyangCatalog,id=>catalogImages.has(id
 function applyCatalog(value){
  nyangCatalog=normalizeCatalog(value);
  if(nyangCatalog.season!=='none'&&!seasonArt.src)seasonArt.src=`${root}assets/cat-seasons.webp`;
- if(nyangCatalog.season==='spring'&&!springArt.src){springArt.src=`${root}assets/cat-spring-warm-reactions.webp`;springCold.src=`${root}assets/cat-spring-cold-reactions.webp`;springBlink.src=`${root}assets/cat-spring-blink.webp`;}
+ for(const name of seasonFiles[nyangCatalog.season]||[])if(!seasonLoaded.has(name)){const img=new Image();img.src=`${root}assets/cat-${name}.webp`;seasonLoaded.set(name,img);}
  loadCatalogImages();
 }
 async function loadCatalogImages(ids=neededImages(nyangCatalog)){

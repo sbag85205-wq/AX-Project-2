@@ -74,6 +74,14 @@ body[data-mode=cat] .main-content.work-view{overflow:auto;background:#fbfcfe!imp
 .pet-body .pet-resolution .cat-art.cold-spring-stop::before,.cat-art.cold-spring-stop::before{background-position:0 100%!important}
 .pet-body .pet-resolution .cat-art.cold-spring-cross::before,.cat-art.cold-spring-cross::before{background-position:33.3333% 100%!important}
 .pet-body .pet-resolution .cat-art.cold-spring-grump::before,.cat-art.cold-spring-grump::before{background-position:66.6667% 100%!important}
+/* 여름 칸의 따뜻한 모드 반응(cat-summer-warm-reactions.webp, 3x2: 신남·윙크·손 인사 / 수줍음·골골·방긋) */
+.pet-body .pet-resolution .cat-art.reaction-art[class*=warm-summer-]::before,.cat-art.reaction-art[class*=warm-summer-]::before{background-image:url('./assets/cat-summer-warm-reactions.webp')!important;background-size:300% 200%!important}
+.pet-body .pet-resolution .cat-art.warm-summer-joy::before,.cat-art.warm-summer-joy::before{background-position:0 0!important}
+.pet-body .pet-resolution .cat-art.warm-summer-wink::before,.cat-art.warm-summer-wink::before{background-position:50% 0!important}
+.pet-body .pet-resolution .cat-art.warm-summer-wave::before,.cat-art.warm-summer-wave::before{background-position:100% 0!important}
+.pet-body .pet-resolution .cat-art.warm-summer-shy::before,.cat-art.warm-summer-shy::before{background-position:0 100%!important}
+.pet-body .pet-resolution .cat-art.warm-summer-pet::before,.cat-art.warm-summer-pet::before{background-position:50% 100%!important}
+.pet-body .pet-resolution .cat-art.warm-summer-smile::before,.cat-art.warm-summer-smile::before{background-position:100% 100%!important}
 /* 계절별 기본 모습(cat-seasons.webp, 2x2: 봄·여름 / 가을·겨울)과 냥대리 관리에서 올린 그림(--art: data 주소) */
 .pet-body .pet-resolution .cat-art.reaction-art[class*=season-]::before,.cat-art.reaction-art[class*=season-]::before{background-image:url('./assets/cat-seasons.webp')!important;background-size:200% 200%!important}
 .pet-body .pet-resolution .cat-art.season-summer::before,.cat-art.season-summer::before{background-position:100% 0!important}
@@ -81,6 +89,8 @@ body[data-mode=cat] .main-content.work-view{overflow:auto;background:#fbfcfe!imp
 .pet-body .pet-resolution .cat-art.season-winter::before,.cat-art.season-winter::before{background-position:100% 100%!important}
 /* 봄 기본 모습의 눈 깜빡임: 눈 감은 그림(cat-spring-blink.webp, 봄 칸과 같은 틀)에서 눈 부분만 원래 냥대리처럼 깜빡인다 */
 .pet-body .pet-resolution .cat-art.reaction-art.season-spring::after,.cat-art.reaction-art.season-spring::after{display:block!important;content:'';position:absolute;inset:-12.5%;background:url('./assets/cat-spring-blink.webp') 0 0/100% 100% no-repeat;clip-path:inset(34.4% 26.9% 55.5% 32.7%);opacity:0;animation:cat-blink 5.8s steps(1,end) infinite!important;pointer-events:none}
+/* 여름 기본 모습의 눈 깜빡임(cat-summer-blink.webp). 이마 흰 줄무늬는 두 그림이 조금 달라 눈 사이 윗부분은 뜬 그림을 그대로 둔다 */
+.pet-body .pet-resolution .cat-art.reaction-art.season-summer::after,.cat-art.reaction-art.season-summer::after{display:block!important;content:'';position:absolute;inset:-12.5%;background:url('./assets/cat-summer-blink.webp') 0 0/100% 100% no-repeat;clip-path:polygon(32.7% 34.4%,48.4% 34.4%,48.4% 41%,58.3% 41%,58.3% 34.4%,73.1% 34.4%,73.1% 44.5%,32.7% 44.5%);opacity:0;animation:cat-blink 5.8s steps(1,end) infinite!important;pointer-events:none}
 .pet-body .pet-resolution .cat-art.custom-art::before,.cat-art.custom-art::before{background-image:var(--art)!important;background-size:100% 100%!important;background-position:0 0!important}
 /* 쓰다듬기 화면 밖(관리 창 미리보기·꾸미기 미리보기)에서도 그림을 상자보다 크게(사방 12.5%) 그린다: 눈 깜빡임 층의 inset:0보다 앞서게 */
 .cat-art.reaction-art:not(.happy):not(.annoyed)::before{inset:-12.5%}
