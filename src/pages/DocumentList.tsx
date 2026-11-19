@@ -41,7 +41,6 @@ export default function DocumentList() {
       <div className="page-head">
         <div>
           <h1>문서</h1>
-          <p>챗봇이 답변 근거로 쓰는 문서예요. 원문을 직접 읽어볼 수 있어요.</p>
         </div>
         <div style={{ position: 'relative', flex: '0 1 300px' }}>
           <label htmlFor="doc-search" className="sr">문서 검색</label>

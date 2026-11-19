@@ -157,7 +157,6 @@ export default function Categories() {
       <div className="page-head">
         <div>
           <h1>분야 관리</h1>
-          <p>문서 관리와 채팅에서 고르는 분야(카테고리)를 추가·삭제하고 순서를 바꿔요. 분야마다 설정에서 이름과 예시 질문을 고칠 수 있어요. 바꾸면 바로 적용돼요.</p>
         </div>
       </div>
 
@@ -170,7 +169,6 @@ export default function Categories() {
               onChange={(e) => { setName(e.target.value); setError(''); }} disabled={!loaded || saving} style={{ flex: 1 }} />
             <button type="submit" className="btn btn-primary" disabled={!loaded || saving || !name.trim()}>추가</button>
           </div>
-          <span className="hint">{CATEGORY_MAX_LENGTH}자 이내 · 같은 이름은 추가할 수 없어요.</span>
         </div>
         {error && <div className="error-box" role="alert">{error}</div>}
       </form>

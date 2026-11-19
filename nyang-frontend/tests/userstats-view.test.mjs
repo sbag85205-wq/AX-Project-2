@@ -15,7 +15,7 @@ const rows=html=>[...html.matchAll(/<tr><td>.*?<\/tr>/g)].map(m=>text(m[0]).trim
 test('순위 기간을 고르면 포인트 순위와 유익해요 순위가 그 기간 것으로 바뀐다(기본은 최근 3개월)',()=>{
  assert.deepEqual(STATS_PERIODS.map(p=>p[0]),['month','quarter','all']);
  const q=statisticsHTML(stats());assert.deepEqual(rows(q),['1 kim01 30 P','2 lee02 20 P']);assert.match(q,/data-stats-period="quarter" aria-pressed="true"/);assert.match(text(q),/최근 3개월 · 2026-08-16 이후/);assert.match(text(q),/kim01 3개/);
- const m=statisticsHTML(stats(),{period:'month'});assert.deepEqual(rows(m),['1 lee02 20 P','2 kim01 10 P']);assert.match(text(m),/이번 달 · 2026-11-01 이후/);assert.match(text(m),/이 기간에 유익해요를 받은 질문이 없어요/);
+ const m=statisticsHTML(stats(),{period:'month'});assert.deepEqual(rows(m),['1 lee02 20 P','2 kim01 10 P']);assert.match(text(m),/이번 달 · 2026-11-01 이후/);assert.doesNotMatch(m,/userstats-list[^]*유익해요 많이 받은 순위/); // 받은 질문이 없으면 순위 목록 없이 제목만
  assert.match(text(statisticsHTML(stats(),{period:'all'})),/전체 기간/);
  assert.deepEqual(rows(statisticsHTML(stats(),{period:'없는기간'})),rows(q)); // 모르는 기간이면 기본으로
 });

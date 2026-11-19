@@ -119,7 +119,6 @@ export default function Users() {
       <div className="page-head">
         <div>
           <h1>사용자 관리</h1>
-          <p>회원가입 없이 관리자가 계정을 발급해요. 부서 정보는 부서별 이용 통계에 쓰여요.</p>
         </div>
       </div>
 

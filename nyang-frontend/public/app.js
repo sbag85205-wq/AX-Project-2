@@ -2,24 +2,24 @@ import {parseEventRequest,timeLabel,eventTask} from './event-request.js?v=7dffe9
 import {viewOf,pageTitleOf,NAV_NAMES,navViews,STAFF_NAVS,EMPLOYEE_NAVS} from './views.js?v=df74efb0e3fe';
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {emptyCatalog,normalizeCatalog,createCatalogPicker,idleLook,shopItems,neededImages} from './nyang-catalog.js?v=514ab761f254';
-import {installNyangManage,nyangManagePageHTML} from './nyang-manage.js?v=e2d32af03e85';
+import {installNyangManage,nyangManagePageHTML} from './nyang-manage.js?v=ea36f8a07d76';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=291139f9595c';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=2b1060400411';
-import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=231c2030b468';
+import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=201c584ff5a2';
 import {categories,applyManagedCategories,defaultCategory,categoryOf,documents,faq,startersFor,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=4dc923f4c7f7';
 import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=80ab82355587';
 import {createPetInteraction} from './pet-interaction.js?v=25ddd542a513';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=20d8b9f9b46b';
 const $=s=>document.querySelector(s);
-import {passwordProblem,passwordInputHTML,passwordEye} from './account-view.js?v=a9c0222d97cb';
+import {passwordProblem,passwordInputHTML,passwordEye} from './account-view.js?v=bbfa33131ccf';
 import {createAccountSync} from './account-sync.js?v=422e8ba71441';
 import {esc,loadingHTML} from './shared.js?v=b4248c4d9fbf';
-import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=8153ea7f75a4';
+import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=149d7dd11f7d';
 import {orderNav,installNavLayout} from './nav-layout.js?v=2a33659a9a7a';
 import {createGuide} from './guide.js?v=1fee1bbda06f';
-import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=765508434c1b';
-import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=00786df0fc53';
+import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=4a544c8cbd91';
+import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=89231fc15ea9';
 const mode=document.body.dataset.mode;
 const isCat=mode==='cat';
 const root='/nyang/';
@@ -154,7 +154,7 @@ function shell(){
   <div class="main-shell">
    <header class="topbar workspace-toolbar"><div class="workspace-context"><span id="workspace-title">물어보기</span></div><div class="top-actions"><div class="workspace-utilities"><button data-action="personality" id="personality-button" aria-label="냥대리 성격 설정">${icon('moon')}<span>차가운 모드</span></button><button data-action="guide" id="guide-button" aria-label="냥대리 사용 가이드 다시 보기" title="냥대리 사용법을 처음부터 다시 봐요" hidden>${icon('book')}<span>가이드</span></button><button data-action="wardrobe">${icon('shirt')}<span>꾸미기</span></button><button class="attendance-quick" id="attendance-button" data-community="attendance" data-busy-label="출석 중…">${icon('calendar')}<span>출석체크</span></button></div><button class="appearance-button theme-toggle" data-action="toggle-theme" aria-label="다크 모드" aria-pressed="false" title="다크 모드로 전환">${icon('moon')}</button></div></header>
    <main class="main-content cat-mode" id="main"></main>
-   <footer class="bottom-note"><span id="page-title" class="visually-hidden"></span><span>Knowly 사내 문서와 FAQ를 검색합니다.</span><button data-action="docs">참고 자료 보기 ${icon('chevron')}</button></footer>
+   <span id="page-title" class="visually-hidden"></span>
   </div>
  </div><dialog id="modal" aria-labelledby="modal-title"></dialog>`;
  applyColorTheme(preferredColorTheme());applyBackground();render();
@@ -529,7 +529,7 @@ function renderCat(){
   });
  }
 }
-function composer(home=false){const current=categoryOf(category);return `<form class="composer chat-composer" id="question-form"><div class="composer-scope"><span>${icon(current.icon)}<strong id="scope-name">${esc(current.label)}</strong>에 질문 중</span><div class="composer-scope-actions"><button type="button" class="text-button" data-action="chat-examples">질문 예시 ${icon('chevron')}</button><button type="button" class="text-button" data-action="choose-category">분야 변경 ${icon('down')}</button></div></div>${attachmentChips()}<div class="input-row"><button type="button" class="attach-button" data-action="attach" aria-label="${attachBusy?'첨부 파일을 읽는 중':'사진·파일 첨부'}" title="${attachBusy?'읽는 중…':'사진·파일 첨부'}" ${attachBusy?'disabled':''}>${icon('plus')}</button><input type="file" id="knowly-attach" hidden multiple accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.xlsx,.xls,.csv,.txt,.md"><textarea name="question" rows="1" maxlength="1000" aria-label="질문 입력" placeholder="${home?'회사 생활에서 궁금한 점을 물어보세요.':'이어서 질문해 보세요…'}" required>${esc(chatDraft)}</textarea><button class="send-button" aria-label="질문 보내기" title="질문 보내기" type="submit" ${pendingReply?'disabled':''}>${icon('send')}</button></div><div class="composer-meta"><span>등록된 사내 문서와 FAQ에서 답해요.</span><small>Enter 전송 · Shift+Enter 줄바꿈</small></div></form>`;}
+function composer(home=false){const current=categoryOf(category);return `<form class="composer chat-composer" id="question-form"><div class="composer-scope"><span>${icon(current.icon)}<strong id="scope-name">${esc(current.label)}</strong>에 질문 중</span><div class="composer-scope-actions"><button type="button" class="text-button" data-action="chat-examples">질문 예시 ${icon('chevron')}</button><button type="button" class="text-button" data-action="choose-category">분야 변경 ${icon('down')}</button></div></div>${attachmentChips()}<div class="input-row"><button type="button" class="attach-button" data-action="attach" aria-label="${attachBusy?'첨부 파일을 읽는 중':'사진·파일 첨부'}" title="${attachBusy?'읽는 중…':'사진·파일 첨부'}" ${attachBusy?'disabled':''}>${icon('plus')}</button><input type="file" id="knowly-attach" hidden multiple accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.xlsx,.xls,.csv,.txt,.md"><textarea name="question" rows="1" maxlength="1000" aria-label="질문 입력" placeholder="${home?'회사 생활에서 궁금한 점을 물어보세요.':'이어서 질문해 보세요…'}" required>${esc(chatDraft)}</textarea><button class="send-button" aria-label="질문 보내기" title="질문 보내기" type="submit" ${pendingReply?'disabled':''}>${icon('send')}</button></div></form>`;}
 // 분야 변경: 지금 목록으로 바로 열고, 분야 관리에서 바뀐 목록을 받아 오면 다시 그린다.
 function showCategories(refresh=true){openModal(`<h2 id="modal-title">어떤 분야가 궁금하세요?</h2><p class="modal-sub">고른 분야의 문서에서 먼저 찾고, 없으면 전체 자료에서 찾아요.${categories.some(c=>c.searchAll)?' 어느 분야인지 모르면 기타를 고르세요.':''} 작성 중인 질문은 유지됩니다.</p><div class="category-options">${categories.map(c=>`<button data-select-category="${esc(c.id)}" aria-pressed="${c.id===categoryOf(category).id}">${icon(c.icon)}<span><strong>${esc(c.label)}</strong><small>${esc(c.detail)}</small></span>${icon(c.id===categoryOf(category).id?'check':'chevron')}</button>`).join('')}</div>`);if(refresh)refreshCategories().then(changed=>{if(changed&&$('#modal').open&&$('#modal .category-options'))showCategories(false);});}
 // 분야 관리에서 정한 분야 목록을 받아 채팅 분야에 반영한다. 못 받으면 지금 목록을 그대로 쓴다.

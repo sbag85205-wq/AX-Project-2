@@ -116,7 +116,6 @@ export default function Unanswered() {
       <div className="page-head">
         <div>
           <h1>미등록 질문 모음</h1>
-          <p>챗봇이 근거를 찾지 못했거나 직원이 '도움 안 됨'을 누른 질문을 비슷한 것끼리 묶어 보여줘요.</p>
         </div>
         <div className="hint">기준: 최근 30일 · {relativeDay(new Date().toISOString())} 기준</div>
       </div>
@@ -244,7 +243,6 @@ export default function Unanswered() {
                   </div>
                 </div>
               )}
-              <div className="hint" style={{ borderTop: '1px solid var(--line-soft)', paddingTop: 14 }}>질문한 직원의 이름과 아이디는 저장하지 않고 익명으로 집계해요.</div>
             </>
           )}
         </aside>

@@ -133,7 +133,6 @@ export default function Documents() {
       <div className="page-head">
         <div>
           <h1>문서 관리</h1>
-          <p>PDF·엑셀·텍스트 문서를 올리면 페이지(엑셀은 시트) 위치를 유지한 채 나눠서 챗봇 검색에 사용해요.</p>
         </div>
       </div>
 
