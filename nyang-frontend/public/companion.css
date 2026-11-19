@@ -82,6 +82,16 @@ body[data-mode=cat] .main-content.work-view{overflow:auto;background:#fbfcfe!imp
 .pet-body .pet-resolution .cat-art.warm-summer-shy::before,.cat-art.warm-summer-shy::before{background-position:0 100%!important}
 .pet-body .pet-resolution .cat-art.warm-summer-pet::before,.cat-art.warm-summer-pet::before{background-position:50% 100%!important}
 .pet-body .pet-resolution .cat-art.warm-summer-smile::before,.cat-art.warm-summer-smile::before{background-position:100% 100%!important}
+/* 여름 칸의 차가운 모드 반응(cat-summer-cold-reactions.webp, 4x2: 콧김·생각·삐짐·츤데레 / 멈춰·팔짱·뚱함·눈 감음) */
+.pet-body .pet-resolution .cat-art.reaction-art[class*=cold-summer-]::before,.cat-art.reaction-art[class*=cold-summer-]::before{background-image:url('./assets/cat-summer-cold-reactions.webp')!important;background-size:400% 200%!important}
+.pet-body .pet-resolution .cat-art.cold-summer-huff::before,.cat-art.cold-summer-huff::before{background-position:0 0!important}
+.pet-body .pet-resolution .cat-art.cold-summer-think::before,.cat-art.cold-summer-think::before{background-position:33.3333% 0!important}
+.pet-body .pet-resolution .cat-art.cold-summer-sulk::before,.cat-art.cold-summer-sulk::before{background-position:66.6667% 0!important}
+.pet-body .pet-resolution .cat-art.cold-summer-tsun::before,.cat-art.cold-summer-tsun::before{background-position:100% 0!important}
+.pet-body .pet-resolution .cat-art.cold-summer-stop::before,.cat-art.cold-summer-stop::before{background-position:0 100%!important}
+.pet-body .pet-resolution .cat-art.cold-summer-cross::before,.cat-art.cold-summer-cross::before{background-position:33.3333% 100%!important}
+.pet-body .pet-resolution .cat-art.cold-summer-grump::before,.cat-art.cold-summer-grump::before{background-position:66.6667% 100%!important}
+.pet-body .pet-resolution .cat-art.cold-summer-doze::before,.cat-art.cold-summer-doze::before{background-position:100% 100%!important}
 /* 계절별 기본 모습(cat-seasons.webp, 2x2: 봄·여름 / 가을·겨울)과 냥대리 관리에서 올린 그림(--art: data 주소) */
 .pet-body .pet-resolution .cat-art.reaction-art[class*=season-]::before,.cat-art.reaction-art[class*=season-]::before{background-image:url('./assets/cat-seasons.webp')!important;background-size:200% 200%!important}
 .pet-body .pet-resolution .cat-art.season-summer::before,.cat-art.season-summer::before{background-position:100% 0!important}

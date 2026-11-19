@@ -51,6 +51,7 @@ export const reactionPoses={
 // 봄·따뜻한 모드: cat-spring-warm-reactions.webp(3x2: 신남·윙크·손 인사 / 수줍음·골골). 가장 자주 나오는 좋아함에는 5장 모두 넣는다.
 // 봄·차가운 모드: cat-spring-cold-reactions.webp(4x2: 콧김·생각·삐짐·츤데레 / 멈춰·팔짱·뚱함). 좋아함에는 7장 모두 넣는다.
 // 여름·따뜻한 모드: cat-summer-warm-reactions.webp(3x2: 신남·윙크·손 인사 / 수줍음·골골·방긋). 좋아함에는 6장 모두 넣는다.
+// 여름·차가운 모드: cat-summer-cold-reactions.webp(4x2: 콧김·생각·삐짐·츤데레 / 멈춰·팔짱·뚱함·눈 감음). 좋아함에는 8장 모두 넣는다.
 // (번호로 관리에서 고친 멘트를 찾으니 새 반응은 끝에 더한다)
 export const seasonReactionPoses={
  spring:{
@@ -110,6 +111,31 @@ export const seasonReactionPoses={
    bonus:[
     art('bounce','여름이라 신난다냥! 시원한 선물 받아 달라냥!','신난다냥 ♥','summer-joy'),
     art('bounce','찡긋! 여름맞이 특별 선물 준비했다냥!','선물이다냥 ☆','summer-wink')
+   ]
+  },
+  cold:{
+   like:[
+    art('purr','…더워서 얼굴이 빨간 거다냥. 착각 마라냥.','…흥 ♥','summer-tsun'),
+    art('nod','흠… 더운데 손은 시원하니 봐주겠다냥.','…흠','summer-think'),
+    art('nod','좋아서 가만히 있는 거 아니다냥. 더워서 못 움직이는 거다냥.','…딴청이다냥','summer-sulk'),
+    art('stretch','흥, 이 정도 손길은 참아 주겠다냥. 조금만이다냥.','흥이다냥','summer-huff'),
+    art('nod','거기까지… 아니, 시원하니까 조금만 더 해도 된다냥.','…조금만이다냥','summer-stop'),
+    art('purr','팔짱 낀 건 에어컨 바람 때문이다냥. 손길은… 인정한다냥.','…인정이다냥','summer-cross'),
+    art('nod','…더워서 표정이 이런 거다냥. 싫은 거 아니다냥.','…원래 이렇다냥','summer-grump'),
+    art('purr','…눈 감은 건 즐기는 게 아니라 더워서다냥.','…쉿이다냥','summer-doze')
+   ],
+   dislike:[
+    art('backstep','흥, 더우니까 붙지 마라냥.','더워냥','summer-huff'),
+    art('tuck','더워서 말하기도 귀찮다냥. 저리 가라냥.','흥이다냥','summer-sulk'),
+    art('backstep','발바닥 보이냐옹? 더우니까 여기까지다냥.','멈추라냥','summer-stop'),
+    art('tuck','지금은 바쁘다냥. 아이스커피 마시는 중이다냥.','방해 금지다냥','summer-cross'),
+    art('nod','…오늘은 너무 더워서 그런 기분 아니다냥.','…흥','summer-grump'),
+    art('tuck','…못 본 척 낮잠 자는 중이다냥. 깨우지 마라냥.','쿨쿨이다냥','summer-doze')
+   ],
+   bonus:[
+    art('purr','여름이라 특별히 주는 거다냥. 받아라냥.','…비밀이다냥 ♥','summer-tsun'),
+    art('nod','한참 고민했는데… 이번만 시원한 선물 주겠다냥.','…이번만이다냥','summer-think'),
+    art('bounce','착각하지 마라냥. 남아서 주는 여름 선물이다냥.','…특별히다냥 ♥','summer-cross')
    ]
   }
  }
