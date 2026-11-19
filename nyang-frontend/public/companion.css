@@ -41,6 +41,12 @@ body[data-mode=cat] .main-content.work-view{overflow:auto;background:#fbfcfe!imp
 .cat-art.searching{background-image:url('./assets/cat-sprite.png')!important;background-size:300% 100%!important;background-position:right center!important;clip-path:none}
 .cat-art.searching::before,.cat-art.searching::after{display:none!important}
 .cat-art.resident.searching{transform-origin:50% 90%;animation:cat-reading 1.7s ease-in-out infinite!important}
+/* 계절을 정했을 때 자료 찾는 모습(cat-season-search.webp, 2x2: 봄·여름 / 가을·겨울). 칸에 상자 밖 여백(12.5%)이 있어 상자보다 크게 그린다 */
+.pet-body .pet-resolution .cat-art.searching.seek-art,.cat-art.searching.seek-art{background-image:none!important}
+.pet-body .pet-resolution .cat-art.searching.seek-art::before,.cat-art.searching.seek-art::before{display:block!important;content:'';position:absolute;inset:-12.5%;background:url('./assets/cat-season-search.webp') 0 0/200% 200% no-repeat!important;opacity:1!important;animation:none!important;clip-path:none!important;pointer-events:none}
+.pet-body .pet-resolution .cat-art.searching.seek-art.seek-summer::before,.cat-art.searching.seek-art.seek-summer::before{background-position:100% 0!important}
+.pet-body .pet-resolution .cat-art.searching.seek-art.seek-autumn::before,.cat-art.searching.seek-art.seek-autumn::before{background-position:0 100%!important}
+.pet-body .pet-resolution .cat-art.searching.seek-art.seek-winter::before,.cat-art.searching.seek-art.seek-winter::before{background-position:100% 100%!important}
 @keyframes cat-reading{0%,100%{transform:translateY(0) rotate(0)}30%{transform:translateY(-2px) rotate(-1.6deg)}60%{transform:translateY(0) rotate(1.1deg)}80%{transform:translateY(-1px) rotate(0)}}
 .motion-paused .cat-art.resident.searching{animation-play-state:paused!important}
 @media(prefers-reduced-motion:reduce){.cat-art.resident.searching{animation:none!important}}
