@@ -49,6 +49,7 @@ export const reactionPoses={
 };
 // 계절 칸의 처음부터 있는 반응(냥대리 관리의 그 계절 칸에 '기본'으로 보인다). 그 계절을 고르면 기본값 칸 대신 이것들이 나온다.
 // 봄·따뜻한 모드: cat-spring-warm-reactions.webp(3x2: 신남·윙크·손 인사 / 수줍음·골골). 가장 자주 나오는 좋아함에는 5장 모두 넣는다.
+// 봄·차가운 모드: cat-spring-cold-reactions.webp(4x2: 콧김·생각·삐짐·츤데레 / 멈춰·팔짱·뚱함). 좋아함에는 7장 모두 넣는다.
 // (번호로 관리에서 고친 멘트를 찾으니 새 반응은 끝에 더한다)
 export const seasonReactionPoses={
  spring:{
@@ -65,6 +66,29 @@ export const seasonReactionPoses={
     art('backstep','꽃구경 잠깐 다녀오겠다냥. 이따 또 만나자냥!','이따 보자냥 ♥','spring-wave')
    ],
    bonus:[art('bounce','봄이 와서 너무 신난다냥! 벚꽃 선물 받아 달라냥!','신난다냥 ♥','spring-joy'),art('bounce','찡긋! 봄맞이 특별 선물 준비했다냥!','선물이다냥 ☆','spring-wink')]
+  },
+  cold:{
+   like:[
+    art('purr','…봄이라 기분이 좋은 것뿐이다냥. 착각 마라냥.','…흥 ♥','spring-tsun'),
+    art('nod','흠… 봄 손길이라 그런지 나쁘지 않다냥.','…흠','spring-think'),
+    art('nod','좋아서 가만히 있는 거 아니다냥. 꽃잎 보는 중이다냥.','…딴청이다냥','spring-sulk'),
+    art('stretch','흥, 이 정도면 봐주겠다냥. 조금만이다냥.','흥이다냥','spring-huff'),
+    art('nod','거기까지… 아니, 조금만 더 해도 된다냥.','…조금만이다냥','spring-stop'),
+    art('purr','꽃샘추위라 팔짱 낀 거다냥. 손길은… 인정한다냥.','…인정이다냥','spring-cross'),
+    art('nod','…표정은 원래 이렇다냥. 싫은 거 아니다냥.','…원래 이렇다냥','spring-grump')
+   ],
+   dislike:[
+    art('backstep','흥, 꽃가루 날리니까 저리 가라냥.','훠이훠이','spring-huff'),
+    art('tuck','봄인데 혼자 있고 싶다냥. 말 걸지 마라냥.','흥이다냥','spring-sulk'),
+    art('backstep','발바닥 보이냐옹? 벚꽃 구경 중이니 여기까지다냥.','멈추라냥','spring-stop'),
+    art('tuck','지금은 바쁘다냥. 봄맞이 업무 중이다냥.','방해 금지다냥','spring-cross'),
+    art('nod','…오늘은 그런 기분 아니다냥.','…흥','spring-grump')
+   ],
+   bonus:[
+    art('purr','봄이라 특별히 주는 거다냥. 받아라냥.','…비밀이다냥 ♥','spring-tsun'),
+    art('nod','한참 고민했는데… 이번만 선물 주겠다냥.','…이번만이다냥','spring-think'),
+    art('bounce','착각하지 마라냥. 남아서 주는 벚꽃 선물이다냥.','…특별히다냥 ♥','spring-cross')
+   ]
   }
  }
 };

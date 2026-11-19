@@ -26,14 +26,14 @@ test('올린 그림을 아직 받지 않았으면 그 반응은 고르지 않는
 test('칸: 처음부터 있던 반응은 기본값 칸(봄 따뜻한 모드만 봄 칸에도), 빈 칸이면 기본값 반응이 나온다',()=>{
  let c=emptyCatalog();
  for(const mode of ['warm','cold'])for(const kind of ['like','dislike','bonus']){
-  assert.ok(allReactions(c,mode,kind).every(r=>r.season==='none'||r.season==='spring'&&mode==='warm'));
+  assert.ok(allReactions(c,mode,kind).every(r=>r.season==='none'||r.season==='spring'));
   for(const s of ['summer','autumn','winter'])assert.equal(bucketReactions(c,s,mode,kind).length,0);
-  assert.equal(bucketReactions(c,'spring',mode,kind).length,mode==='warm'?{like:5,dislike:2,bonus:2}[kind]:0);
+  assert.equal(bucketReactions(c,'spring',mode,kind).length,(mode==='warm'?{like:5,dislike:2,bonus:2}:{like:7,dislike:5,bonus:3})[kind]);
  }
  c=selectSeason(c,'spring');
- assert.ok(activeReactions(c,'warm','like').every(r=>r.season==='spring'&&r.pose.art.startsWith('spring-'))); // 봄 따뜻한 모드는 봄 반응
- assert.deepEqual(activeReactions(c,'cold','like').map(r=>r.id),bucketReactions(c,'none','cold','like').map(r=>r.id)); // 봄 칸이 비어 있으면 기본값
- c.reactions=Object.fromEntries(['like','dislike','bonus'].flatMap(k=>bucketReactions(c,'spring','warm',k)).map(r=>[r.id,{enabled:false}])); // 봄 기본 반응을 끄고 아래에서 시험
+ for(const mode of ['warm','cold'])assert.ok(activeReactions(c,mode,'like').every(r=>r.season==='spring'&&r.pose.art.startsWith('spring-'))); // 봄에는 두 모드 모두 봄 반응
+ c.reactions=Object.fromEntries(['warm','cold'].flatMap(m=>['like','dislike','bonus'].flatMap(k=>bucketReactions(c,'spring',m,k))).map(r=>[r.id,{enabled:false}])); // 봄 기본 반응을 끄고 아래에서 시험
+ assert.deepEqual(activeReactions(c,'cold','like').map(r=>r.id),bucketReactions(c,'none','cold','like').map(r=>r.id)); // 봄 칸 반응을 모두 끄면 기본값
  // 봄 칸에 좋아함 반응 2개를 넣으면 봄에는 그 2개만(각 50%), 다른 종류는 여전히 기본값
  c=normalizeCatalog({...c,custom:{seasonImages:[],items:[],reactions:[
   {id:'c-s1',mode:'warm',kind:'like',season:'spring',image:'img-aaaaaaaa1',line:'봄 1'},{id:'c-s2',mode:'warm',kind:'like',season:'spring',image:'img-aaaaaaaa2',line:'봄 2'},
