@@ -28,7 +28,7 @@ const paths={bookmark:'M7 4h10v16l-5-3.5L7 20V4Z',spark:'m12 3 2.4 6.6L21 12l-6.
 const icon=(name,cls='')=>`<svg class="icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[name]||paths.spark}"/></svg>`;
 const CAT_LABELS={searching:'책에서 자료를 찾고 있는',annoyed:'귀찮은 표정의',happy:'행복한 표정의','warm-pet':'눈을 감고 골골거리는','warm-wink':'윙크하는','warm-shy':'수줍게 쉬고 싶어 하는','warm-joy':'두 손 모아 기뻐하는','cold-tsun':'곁눈질하며 볼이 빨개진','cold-think':'턱을 괴고 생각하는','cold-stop':'손바닥으로 멈추라는','cold-sulk':'고개를 돌리고 삐친','cold-shoo':'콧김을 뿜으며 손을 젓는'};
 // style: 관리에서 올린 그림(--art), inner: 냥대리 위에 겹치는 추가 꾸미기 아이템
-const cat=(mood='',extra='',style='',inner='')=>`<div class="cat-art ${mood} ${extra}" role="img" aria-label="${CAT_LABELS[mood]||(mood.startsWith('season-')?'계절 옷을 입은':mood==='custom-art'?'새 모습의':'차갑지만 귀여운')} 고양이 냥대리"${style?` style="${style}"`:''}>${inner}</div>`;
+const cat=(mood='',extra='',style='',inner='')=>`<div class="cat-art ${mood} ${extra}" role="img" aria-label="${CAT_LABELS[mood]||(mood.startsWith('treat-')?'츄르를 맛있게 먹는':mood.startsWith('season-')?'계절 옷을 입은':mood==='custom-art'?'새 모습의':'차갑지만 귀여운')} 고양이 냥대리"${style?` style="${style}"`:''}>${inner}</div>`;
 paths.edit='M4 20h4L19 9l-4-4L4 16v4ZM14 6l4 4';
 paths.settings='M9 3h6l1 3 3 1v6l-3 1-1 3H9l-1-3-3-1V7l3-1 1-3ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z';
 paths.moon='M20.9 13.1A9 9 0 0 1 10.9 3a9 9 0 1 0 10 10.1Z';
@@ -98,7 +98,9 @@ let calendarMonth=localDate().slice(0,7),calendarDay=localDate(),happyUntil=0;
 // (주소는 화면 주소가 아니라 /nyang/ 기준이어야 한다: 화면은 /nyang/cat/ 등 여러 곳에서 열린다)
 const reactionArt=['warm','cold'].map(mode=>{const img=new Image();img.src=`${root}assets/cat-${mode}-reactions.webp`;return img;});
 // 계절별 모습(cat-seasons.webp)과 계절 반응·눈 깜빡임 그림은 그 계절을 정했을 때만 받는다
-const seasonArt=new Image(),seasonFiles={spring:['spring-warm-reactions','spring-cold-reactions','spring-blink','season-search'],summer:['summer-warm-reactions','summer-cold-reactions','summer-blink','season-search'],autumn:['autumn-warm-reactions','autumn-cold-reactions','autumn-blink','season-search'],winter:['winter-warm-reactions','winter-cold-reactions','winter-blink','season-search']},seasonLoaded=new Map();
+// 츄르를 먹는 장면(companion-behavior.js의 먹이 장면 중 먹는 순간)
+const TREAT_PHASES=['snack','savor','tasty','yummy','relish','blush'];
+const seasonArt=new Image(),seasonFiles={spring:['spring-warm-reactions','spring-cold-reactions','spring-blink','season-search','season-treat'],summer:['summer-warm-reactions','summer-cold-reactions','summer-blink','season-search','season-treat'],autumn:['autumn-warm-reactions','autumn-cold-reactions','autumn-blink','season-search','season-treat'],winter:['winter-warm-reactions','winter-cold-reactions','winter-blink','season-search','season-treat']},seasonLoaded=new Map();
 let petReaction=null,petTimer=null,petGesture=null,ignorePetClickUntil=0,petPending=false,petMoving=false,petMotionTimer=null;
 let personality='cold',companionPhase='idle';
 // 냥대리 관리(담당자)에서 정한 반응·계절별 모습·꾸미기 아이템(nyang-catalog.js). 올린 그림은 data: 글자로 받아 둔다.
@@ -234,13 +236,15 @@ function petHTML(){
  const seek=searching&&nyangCatalog.season!=='none'?nyangCatalog.season:'';
  const expression=pose?(pose.eyes==='closed'?'':pose.eyes):searching?'searching':(appearance.sleepy?'':base.expression);
  // 반응·인사·츄르 장면은 성격별 전용 그림을 쓴다(그림에 눈·꼬리가 이미 그려져 있어 눈 깜빡임·꼬리 겹침은 끈다)
- const poseArt=!searching&&pose?pose.art||'':'',phaseArt=!searching&&!pose&&!reaction?appearance.art||'':'';
+ // 계절을 정했으면 츄르를 먹는 장면(두 모드 모두)은 그 계절 옷을 입고 츄르 먹는 그림(cat-season-treat.webp)
+ const treat=!searching&&!pose&&!reaction&&nyangCatalog.season!=='none'&&TREAT_PHASES.includes(companionPhase)?nyangCatalog.season:'';
+ const poseArt=!searching&&pose?pose.art||'':'',phaseArt=!searching&&!pose&&!reaction&&!treat?appearance.art||'':'';
  // 관리에서 올린 반응 그림, 그리고 반응이 없을 때는 지금 계절의 기본 모습(관리에서 고른 것)
  const custom=!searching&&pose?.image&&catalogImages.has(pose.image)?pose.image:'';
- const idle=!searching&&!pose&&!phaseArt?idleLook(nyangCatalog):null;
+ const idle=!searching&&!pose&&!phaseArt&&!treat?idleLook(nyangCatalog):null;
  const seasonal=idle&&idle.id!=='base'&&(idle.builtin||catalogImages.has(idle.image))?idle:null;
- const art=custom||poseArt||phaseArt||(seasonal?'season':'');
- const artMood=custom||seasonal&&!seasonal.builtin?'custom-art':poseArt||phaseArt?personality+'-'+(poseArt||phaseArt):seasonal?seasonal.id:'';
+ const art=custom||poseArt||(treat?'treat':'')||phaseArt||(seasonal?'season':'');
+ const artMood=custom||seasonal&&!seasonal.builtin?'custom-art':treat?'treat-'+treat:poseArt||phaseArt?personality+'-'+(poseArt||phaseArt):seasonal?seasonal.id:'';
  const artCss=custom?artStyle(custom):seasonal&&!seasonal.builtin?artStyle(seasonal.image):'';
  const wag=!art&&(pose?pose.wag:base.wag);
  if(pose){appearance.sleepy=pose.eyes==='closed';appearance.soft=false;appearance.mark=pose.mark;}

@@ -131,6 +131,12 @@ body[data-mode=cat] .main-content.work-view{overflow:auto;background:#fbfcfe!imp
 .pet-body .pet-resolution .cat-art.cold-winter-stop::before,.cat-art.cold-winter-stop::before{background-position:0 100%!important}
 .pet-body .pet-resolution .cat-art.cold-winter-cross::before,.cat-art.cold-winter-cross::before{background-position:33.3333% 100%!important}
 .pet-body .pet-resolution .cat-art.cold-winter-grump::before,.cat-art.cold-winter-grump::before{background-position:66.6667% 100%!important}
+/* 계절을 정했을 때 츄르 먹는 장면(cat-season-treat.webp, 2x2: 봄·여름 / 가을·겨울) */
+.pet-body .pet-resolution .cat-art.reaction-art[class*=treat-]::before,.cat-art.reaction-art[class*=treat-]::before{background-image:url('./assets/cat-season-treat.webp')!important;background-size:200% 200%!important}
+.pet-body .pet-resolution .cat-art.treat-spring::before,.cat-art.treat-spring::before{background-position:0 0!important}
+.pet-body .pet-resolution .cat-art.treat-summer::before,.cat-art.treat-summer::before{background-position:100% 0!important}
+.pet-body .pet-resolution .cat-art.treat-autumn::before,.cat-art.treat-autumn::before{background-position:0 100%!important}
+.pet-body .pet-resolution .cat-art.treat-winter::before,.cat-art.treat-winter::before{background-position:100% 100%!important}
 /* 계절별 기본 모습(cat-seasons.webp, 2x2: 봄·여름 / 가을·겨울)과 냥대리 관리에서 올린 그림(--art: data 주소) */
 .pet-body .pet-resolution .cat-art.reaction-art[class*=season-]::before,.cat-art.reaction-art[class*=season-]::before{background-image:url('./assets/cat-seasons.webp')!important;background-size:200% 200%!important}
 .pet-body .pet-resolution .cat-art.season-summer::before,.cat-art.season-summer::before{background-position:100% 0!important}
