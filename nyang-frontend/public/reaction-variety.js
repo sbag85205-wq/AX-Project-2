@@ -52,8 +52,9 @@ export const reactionPoses={
 // 봄·차가운 모드: cat-spring-cold-reactions.webp(4x2: 콧김·생각·삐짐·츤데레 / 멈춰·팔짱·뚱함). 좋아함에는 7장 모두 넣는다.
 // 여름·따뜻한 모드: cat-summer-warm-reactions.webp(3x2: 신남·윙크·손 인사 / 수줍음·골골·방긋). 좋아함에는 6장 모두 넣는다.
 // 여름·차가운 모드: cat-summer-cold-reactions.webp(4x2: 콧김·생각·삐짐·츤데레 / 멈춰·팔짱·뚱함·눈 감음). 좋아함에는 8장 모두 넣는다.
-// 가을·따뜻한 모드: cat-autumn-warm-reactions.webp(3x2: 신남·윙크·손 인사 / 수줍음·골골). 좋아함에는 5장 모두 넣는다.
+// 가을·따뜻한 모드: cat-autumn-warm-reactions.webp(3x2: 신남·윙크·손 인사 / 수줍음·골골·방긋). 좋아함에는 6장 모두 넣는다.
 // 가을·차가운 모드: cat-autumn-cold-reactions.webp(4x2: 콧김·생각·삐짐·츤데레 / 멈춰·팔짱·뚱함). 좋아함에는 7장 모두 넣는다.
+// 겨울·따뜻한 모드: cat-winter-warm-reactions.webp(3x2: 신남·윙크·손 인사 / 수줍음·골골). 좋아함에는 5장 모두 넣는다.
 // (번호로 관리에서 고친 멘트를 찾으니 새 반응은 끝에 더한다)
 export const seasonReactionPoses={
  spring:{
@@ -148,11 +149,13 @@ export const seasonReactionPoses={
     art('bounce','단풍보다 네 손길이 더 곱다냥! 찡긋!','찡긋 ☆','autumn-wink'),
     art('bounce','쓰다듬어 주니 가을 하늘처럼 마음이 맑아진다냥!','신난다냥 ♥','autumn-joy'),
     art('nod','베레모 칭찬받은 것 같아 괜히 쑥스럽다냥.','두근 ♥','autumn-shy'),
-    art('purr','반갑다냥! 가을 인사로 하트 하나 보낸다냥.','안녕냥 ♥','autumn-wave')
+    art('purr','반갑다냥! 가을 인사로 하트 하나 보낸다냥.','안녕냥 ♥','autumn-wave'),
+    art('nod','포근한 손길이라 기분이 몽글몽글하다냥.','방긋 ♥','autumn-smile')
    ],
    dislike:[
     art('tuck','가을 타서 그런가… 조금만 혼자 쉬고 오자냥.','살짝 쉬자냥…','autumn-shy'),
-    art('backstep','낙엽 구경 잠깐 다녀오겠다냥. 이따 또 만나자냥!','이따 보자냥 ♥','autumn-wave')
+    art('backstep','낙엽 구경 잠깐 다녀오겠다냥. 이따 또 만나자냥!','이따 보자냥 ♥','autumn-wave'),
+    art('nod','단풍 아래서 잠깐 쉬고 싶다냥. 조금 뒤에 놀자냥.','쉬는 중이다냥','autumn-smile')
    ],
    bonus:[
     art('bounce','풍성한 가을이라 신난다냥! 선물 듬뿍 받아 달라냥!','듬뿍 ♥','autumn-joy'),
@@ -180,6 +183,25 @@ export const seasonReactionPoses={
     art('purr','가을이라 특별히 주는 거다냥. 받아라냥.','…비밀이다냥 ♥','autumn-tsun'),
     art('nod','한참 고민했는데… 이번만 가을 선물 주겠다냥.','…이번만이다냥','autumn-think'),
     art('bounce','착각하지 마라냥. 남아서 주는 단풍 선물이다냥.','…특별히다냥 ♥','autumn-cross')
+   ]
+  }
+ },
+ winter:{
+  warm:{
+   like:[
+    art('purr','추운 날엔 네 손길이 제일 따뜻하다냥.','따끈 ♥','winter-pet'),
+    art('bounce','첫눈보다 네 손길이 더 반갑다냥! 찡긋!','찡긋 ☆','winter-wink'),
+    art('bounce','쓰다듬어 주니 추위가 싹 녹는다냥!','신난다냥 ♥','winter-joy'),
+    art('nod','털모자 칭찬받은 것 같아 괜히 쑥스럽다냥.','두근 ♥','winter-shy'),
+    art('purr','반갑다냥! 겨울 인사로 하트 하나 보낸다냥.','안녕냥 ♥','winter-wave')
+   ],
+   dislike:[
+    art('tuck','추워서 볼이 빨개졌다냥… 이불 속에서 조금만 쉬자냥.','덜덜냥…','winter-shy'),
+    art('backstep','코코아 마시고 금방 오겠다냥. 이따 또 만나자냥!','이따 보자냥 ♥','winter-wave')
+   ],
+   bonus:[
+    art('bounce','눈 오는 날이라 신난다냥! 따뜻한 선물 받아 달라냥!','소복 ♥','winter-joy'),
+    art('bounce','찡긋! 연말맞이 특별 선물 준비했다냥!','선물이다냥 ☆','winter-wink')
    ]
   }
  }

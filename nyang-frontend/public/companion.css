@@ -92,13 +92,21 @@ body[data-mode=cat] .main-content.work-view{overflow:auto;background:#fbfcfe!imp
 .pet-body .pet-resolution .cat-art.cold-summer-cross::before,.cat-art.cold-summer-cross::before{background-position:33.3333% 100%!important}
 .pet-body .pet-resolution .cat-art.cold-summer-grump::before,.cat-art.cold-summer-grump::before{background-position:66.6667% 100%!important}
 .pet-body .pet-resolution .cat-art.cold-summer-doze::before,.cat-art.cold-summer-doze::before{background-position:100% 100%!important}
-/* 가을 칸의 따뜻한 모드 반응(cat-autumn-warm-reactions.webp, 3x2: 신남·윙크·손 인사 / 수줍음·골골) */
+/* 가을 칸의 따뜻한 모드 반응(cat-autumn-warm-reactions.webp, 3x2: 신남·윙크·손 인사 / 수줍음·골골·방긋) */
 .pet-body .pet-resolution .cat-art.reaction-art[class*=warm-autumn-]::before,.cat-art.reaction-art[class*=warm-autumn-]::before{background-image:url('./assets/cat-autumn-warm-reactions.webp')!important;background-size:300% 200%!important}
 .pet-body .pet-resolution .cat-art.warm-autumn-joy::before,.cat-art.warm-autumn-joy::before{background-position:0 0!important}
 .pet-body .pet-resolution .cat-art.warm-autumn-wink::before,.cat-art.warm-autumn-wink::before{background-position:50% 0!important}
 .pet-body .pet-resolution .cat-art.warm-autumn-wave::before,.cat-art.warm-autumn-wave::before{background-position:100% 0!important}
 .pet-body .pet-resolution .cat-art.warm-autumn-shy::before,.cat-art.warm-autumn-shy::before{background-position:0 100%!important}
 .pet-body .pet-resolution .cat-art.warm-autumn-pet::before,.cat-art.warm-autumn-pet::before{background-position:50% 100%!important}
+.pet-body .pet-resolution .cat-art.warm-autumn-smile::before,.cat-art.warm-autumn-smile::before{background-position:100% 100%!important}
+/* 겨울 칸의 따뜻한 모드 반응(cat-winter-warm-reactions.webp, 3x2: 신남·윙크·손 인사 / 수줍음·골골) */
+.pet-body .pet-resolution .cat-art.reaction-art[class*=warm-winter-]::before,.cat-art.reaction-art[class*=warm-winter-]::before{background-image:url('./assets/cat-winter-warm-reactions.webp')!important;background-size:300% 200%!important}
+.pet-body .pet-resolution .cat-art.warm-winter-joy::before,.cat-art.warm-winter-joy::before{background-position:0 0!important}
+.pet-body .pet-resolution .cat-art.warm-winter-wink::before,.cat-art.warm-winter-wink::before{background-position:50% 0!important}
+.pet-body .pet-resolution .cat-art.warm-winter-wave::before,.cat-art.warm-winter-wave::before{background-position:100% 0!important}
+.pet-body .pet-resolution .cat-art.warm-winter-shy::before,.cat-art.warm-winter-shy::before{background-position:0 100%!important}
+.pet-body .pet-resolution .cat-art.warm-winter-pet::before,.cat-art.warm-winter-pet::before{background-position:50% 100%!important}
 /* 가을 칸의 차가운 모드 반응(cat-autumn-cold-reactions.webp, 4x2: 콧김·생각·삐짐·츤데레 / 멈춰·팔짱·뚱함) */
 .pet-body .pet-resolution .cat-art.reaction-art[class*=cold-autumn-]::before,.cat-art.reaction-art[class*=cold-autumn-]::before{background-image:url('./assets/cat-autumn-cold-reactions.webp')!important;background-size:400% 200%!important}
 .pet-body .pet-resolution .cat-art.cold-autumn-huff::before,.cat-art.cold-autumn-huff::before{background-position:0 0!important}
@@ -119,6 +127,8 @@ body[data-mode=cat] .main-content.work-view{overflow:auto;background:#fbfcfe!imp
 .pet-body .pet-resolution .cat-art.reaction-art.season-summer::after,.cat-art.reaction-art.season-summer::after{display:block!important;content:'';position:absolute;inset:-12.5%;background:url('./assets/cat-summer-blink.webp') 0 0/100% 100% no-repeat;clip-path:polygon(32.7% 34.4%,48.4% 34.4%,48.4% 41%,58.3% 41%,58.3% 34.4%,73.1% 34.4%,73.1% 44.5%,32.7% 44.5%);opacity:0;animation:cat-blink 5.8s steps(1,end) infinite!important;pointer-events:none}
 /* 가을 기본 모습의 눈 깜빡임(cat-autumn-blink.webp, 가을 칸과 같은 틀) */
 .pet-body .pet-resolution .cat-art.reaction-art.season-autumn::after,.cat-art.reaction-art.season-autumn::after{display:block!important;content:'';position:absolute;inset:-12.5%;background:url('./assets/cat-autumn-blink.webp') 0 0/100% 100% no-repeat;clip-path:inset(34.4% 26.9% 55.5% 32.7%);opacity:0;animation:cat-blink 5.8s steps(1,end) infinite!important;pointer-events:none}
+/* 겨울 기본 모습의 눈 깜빡임(cat-winter-blink.webp). 겨울은 코가 두 눈 사이에 있어 가운데 세로 줄은 뜬 그림을 그대로 둔다 */
+.pet-body .pet-resolution .cat-art.reaction-art.season-winter::after,.cat-art.reaction-art.season-winter::after{display:block!important;content:'';position:absolute;inset:-12.5%;background:url('./assets/cat-winter-blink.webp') 0 0/100% 100% no-repeat;clip-path:polygon(32.7% 34.4%,48.4% 34.4%,48.4% 44.9%,58.3% 44.9%,58.3% 34.4%,73.1% 34.4%,73.1% 44.9%,32.7% 44.9%);opacity:0;animation:cat-blink 5.8s steps(1,end) infinite!important;pointer-events:none}
 .pet-body .pet-resolution .cat-art.custom-art::before,.cat-art.custom-art::before{background-image:var(--art)!important;background-size:100% 100%!important;background-position:0 0!important}
 /* 쓰다듬기 화면 밖(관리 창 미리보기·꾸미기 미리보기)에서도 그림을 상자보다 크게(사방 12.5%) 그린다: 눈 깜빡임 층의 inset:0보다 앞서게 */
 .cat-art.reaction-art:not(.happy):not(.annoyed)::before{inset:-12.5%}

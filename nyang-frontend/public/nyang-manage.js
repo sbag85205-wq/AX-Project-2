@@ -7,7 +7,7 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {communityState} from './community-ui.js?v=fbc8c6de196d';
 import {esc} from './shared.js?v=b4248c4d9fbf';
-import {SEASONS,KINDS,MODES,allReactions,bucketReactions,suggestLine,seasonImages,seasonDefault,shopItems,selectSeason,normalizeCatalog} from './nyang-catalog.js?v=308b71f0f7a7';
+import {SEASONS,KINDS,MODES,allReactions,bucketReactions,suggestLine,seasonImages,seasonDefault,shopItems,selectSeason,normalizeCatalog} from './nyang-catalog.js?v=82c529998c4b';
 
 let deps=null;
 const ui={tab:'none',mode:'warm',saving:false,editing:null};
