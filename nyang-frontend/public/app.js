@@ -245,7 +245,9 @@ function petHTML(){
  const idle=!searching&&!pose&&!phaseArt&&!treat?idleLook(nyangCatalog):null;
  const seasonal=idle&&idle.id!=='base'&&(idle.builtin||catalogImages.has(idle.image))?idle:null;
  const art=custom||poseArt||(treat?'treat':'')||phaseArt||(seasonal?'season':'');
- const artMood=custom||seasonal&&!seasonal.builtin?'custom-art':treat?'treat-'+treat:poseArt||phaseArt?personality+'-'+(poseArt||phaseArt):seasonal?seasonal.id:'';
+ // 인사·츄르 앞뒤 장면(PHASE_ART: 윙크·골골·신남 / 생각·삐짐·츤데레)도 계절을 정했으면 그 계절 그림으로(네 계절 모두 같은 이름의 그림이 있다)
+ const phaseName=phaseArt&&nyangCatalog.season!=='none'?nyangCatalog.season+'-'+phaseArt:phaseArt;
+ const artMood=custom||seasonal&&!seasonal.builtin?'custom-art':treat?'treat-'+treat:poseArt||phaseName?personality+'-'+(poseArt||phaseName):seasonal?seasonal.id:'';
  const artCss=custom?artStyle(custom):seasonal&&!seasonal.builtin?artStyle(seasonal.image):'';
  const wag=!art&&(pose?pose.wag:base.wag);
  if(pose){appearance.sleepy=pose.eyes==='closed';appearance.soft=false;appearance.mark=pose.mark;}
