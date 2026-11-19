@@ -26,8 +26,9 @@ test('올린 그림을 아직 받지 않았으면 그 반응은 고르지 않는
 test('칸: 처음부터 있던 반응은 기본값 칸(봄 따뜻한 모드만 봄 칸에도), 빈 칸이면 기본값 반응이 나온다',()=>{
  let c=emptyCatalog();
  for(const mode of ['warm','cold'])for(const kind of ['like','dislike','bonus']){
-  assert.ok(allReactions(c,mode,kind).every(r=>r.season==='none'||r.season==='spring'||r.season==='summer'));
-  for(const s of ['autumn','winter'])assert.equal(bucketReactions(c,s,mode,kind).length,0);
+  assert.ok(allReactions(c,mode,kind).every(r=>r.season==='none'||r.season==='spring'||r.season==='summer'||r.season==='autumn'&&mode==='warm'));
+  assert.equal(bucketReactions(c,'winter',mode,kind).length,0);
+  assert.equal(bucketReactions(c,'autumn',mode,kind).length,mode==='warm'?{like:5,dislike:2,bonus:2}[kind]:0);
   assert.equal(bucketReactions(c,'summer',mode,kind).length,(mode==='warm'?{like:6,dislike:3,bonus:2}:{like:8,dislike:6,bonus:3})[kind]);
   assert.equal(bucketReactions(c,'spring',mode,kind).length,(mode==='warm'?{like:5,dislike:2,bonus:2}:{like:7,dislike:5,bonus:3})[kind]);
  }
