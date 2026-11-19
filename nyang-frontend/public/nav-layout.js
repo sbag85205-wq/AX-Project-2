@@ -2,8 +2,8 @@
 // 버튼 자체(id·동작)는 그대로 두고 자리만 옮긴다. 배치가 다를 때만 옮긴다(옮기면 버튼의 포커스가 풀리므로).
 const $=s=>document.querySelector(s);
 const NAV_LAYOUT={
- employee:{top:['nav-chat','nav-schedule','nav-board','nav-activity','nav-library','nav-unanswered','nav-statistics','nav-userstats','nav-faq','nav-documents','nav-categories','nav-users','nav-model','nav-manage','nav-group-test','nav-group-stats','nav-group-chat','nav-group-admin'],groups:{test:[],stats:[],chat:[],admin:[]}},
- staff:{top:['nav-group-test','nav-group-stats','nav-group-chat','nav-group-admin','nav-schedule','nav-activity','nav-library','nav-model'],groups:{test:['nav-chat','nav-manage'],stats:['nav-statistics','nav-userstats'],chat:['nav-unanswered','nav-faq','nav-board'],admin:['nav-documents','nav-categories','nav-users']}}
+ employee:{top:['nav-chat','nav-schedule','nav-board','nav-library','nav-unanswered','nav-statistics','nav-userstats','nav-faq','nav-documents','nav-categories','nav-users','nav-model','nav-manage','nav-group-test','nav-group-stats','nav-group-chat','nav-group-admin'],groups:{test:[],stats:[],chat:[],admin:[]}},
+ staff:{top:['nav-group-test','nav-group-stats','nav-group-chat','nav-group-admin','nav-schedule','nav-library','nav-model'],groups:{test:['nav-chat','nav-manage'],stats:['nav-statistics','nav-userstats'],chat:['nav-unanswered','nav-faq','nav-board'],admin:['nav-documents','nav-categories','nav-users']}}
 };
 export function orderNav(staff){
  const layout=NAV_LAYOUT[staff?'staff':'employee'],by=id=>document.getElementById(id);

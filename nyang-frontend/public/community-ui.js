@@ -72,7 +72,7 @@ function gate(){
  return '';
 }
 export function activityHTML(content='',rewards=true){ // rewards=false면 아래 '포인트와 보상' 칸을 그리지 않는다(내 레벨 탭에서만 보여줌). 접히지 않는 칸이라 출석 등으로 다시 그려도 닫히지 않는다.
- const intro='<header class="activity-heading"><h1>내 활동</h1><button class="activity-text-button" data-community="refresh">새로고침</button></header>';
+ const intro='<header class="activity-heading"><h1>내 레벨</h1><button class="activity-text-button" data-community="refresh">새로고침</button></header>';
  const blocked=gate();if(blocked)return `<section class="community-page activity-page">${intro}${content}${blocked}</section>`;
  const {wallet:w,today,streak,receivedLikes}=state; // 레벨은 '내 레벨' 탭에서 보여준다
  const gift=today?(today.tokens?`츄르 ${today.tokens}개 받았어요`:`${today.points} P 받았어요`):'하루 한 번, 포인트 또는 츄르 선물';

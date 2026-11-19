@@ -4,17 +4,17 @@ import {VIEWS,viewOf,pageTitleOf,NAV_NAMES,navViews,STAFF_NAVS,EMPLOYEE_NAVS} fr
 // 화면 표(views.js)로 바꾸기 전 app.js에 흩어져 있던 목록과 제목을 그대로 옮겨 두고,
 // 표에서 계산한 값이 예전과 완전히 같은지 확인한다(화면 동작이 바뀌지 않았다는 증거).
 const OLD={
- employeeNavs:['schedule','activity'],
+ employeeNavs:['schedule'],
  staffViews:['chat','board','statistics','userstats','faq','documents','categories','users','model','unanswered','library','manage'],
  staffNavs:['statistics','userstats','faq','documents','categories','users','manage'],
  staffOnly:['statistics','userstats','faq','documents','categories','users','model','unanswered','manage'],
- navNames:['chat','schedule','activity','board','statistics','userstats','faq','documents','categories','users','model','unanswered','library','manage'],
+ navNames:['chat','schedule','board','statistics','userstats','faq','documents','categories','users','model','unanswered','library','manage'],
  openStaff:['faq','documents','categories','users','model','manage'],
  openAny:['chat','todos','calendar','board','activity'],
  community:['activity','board'],
  routes:{faq:'/admin/faqs',documents:'/admin/documents',categories:'/admin/categories',users:'/admin/users',model:'/admin/settings',unanswered:'/admin/unanswered',library:'/docs'},
- workspaceTitles:{chat:'물어보기',calendar:'내 일정',todos:'내 일정',activity:'내 활동',board:'질문 게시판',statistics:'이용 통계',userstats:'사용자 통계',faq:'FAQ 관리',documents:'문서 관리',categories:'분야 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서',manage:'냥대리 관리'},
- pageTitles:{chat:'냥대리에게 물어보기',calendar:'내 캘린더',todos:'내가 해야 할 일',activity:'나의 질문 활동',board:'익명 질문 게시판',statistics:'이용 통계',userstats:'사용자 통계',faq:'FAQ 관리',documents:'문서 관리',categories:'분야 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서',manage:'냥대리 관리'}
+ workspaceTitles:{chat:'물어보기',calendar:'내 일정',todos:'내 일정',activity:'내 레벨',board:'질문 게시판',statistics:'이용 통계',userstats:'사용자 통계',faq:'FAQ 관리',documents:'문서 관리',categories:'분야 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서',manage:'냥대리 관리'},
+ pageTitles:{chat:'냥대리에게 물어보기',calendar:'내 캘린더',todos:'내가 해야 할 일',activity:'내 레벨',board:'익명 질문 게시판',statistics:'이용 통계',userstats:'사용자 통계',faq:'FAQ 관리',documents:'문서 관리',categories:'분야 관리',users:'사용자 관리',model:'검색 모델 설정',unanswered:'챗봇 미답변',library:'사내 문서',manage:'냥대리 관리'}
 };
 // 화면 이름 + 표에 없는 이름(메뉴 이름·잘못된 값·객체 기본 속성 이름)까지 모두 검사한다
 const every=[...Object.keys(OLD.workspaceTitles),'schedule','reset','background','',undefined,null,'constructor','toString','__proto__','hasOwnProperty'];

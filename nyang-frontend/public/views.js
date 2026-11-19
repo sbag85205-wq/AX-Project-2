@@ -10,11 +10,13 @@
 //  staffNav    담당자에게만 보이는 메뉴 버튼(직원에게는 숨긴다)
 //  route       Knowly 화면 주소(iframe으로 띄운다)
 //  community   게시판·포인트 정보가 바뀌면 다시 그린다
+//  noNav       메뉴 버튼이 없는 화면(다른 버튼으로만 연다)
 export const VIEWS={
  chat:{title:'물어보기',pageTitle:'냥대리에게 물어보기',open:'any',staff:true},
  calendar:{title:'내 일정',pageTitle:'내 캘린더',nav:'schedule',open:'any'},
  todos:{title:'내 일정',pageTitle:'내가 해야 할 일',nav:'schedule',open:'any'},
- activity:{title:'내 활동',pageTitle:'나의 질문 활동',open:'any',community:true},
+ // 내 레벨: 위쪽 메뉴에는 없고 레벨 버튼(Lv.)으로 연다. 저장한 답변은 대화 기록 > 내 폴더 > 저장한 답변으로 옮겼다
+ activity:{title:'내 레벨',pageTitle:'내 레벨',open:'any',community:true,noNav:true},
  board:{title:'질문 게시판',pageTitle:'익명 질문 게시판',open:'any',staff:true,community:true},
  statistics:{title:'이용 통계',staff:true,staffOnly:true,staffNav:true},
  userstats:{title:'사용자 통계',staff:true,staffOnly:true,staffNav:true},
@@ -35,10 +37,10 @@ export const viewOf=name=>Object.hasOwn(VIEWS,name)?VIEWS[name]:null;
 export const pageTitleOf=name=>viewOf(name)?.pageTitle??viewOf(name)?.title;
 const navOf=name=>viewOf(name)?.nav??name;
 /** 모든 메뉴 버튼 이름(화면 순서, 중복 없이) */
-export const NAV_NAMES=[...new Set(names.map(navOf))];
+export const NAV_NAMES=[...new Set(names.filter(name=>!VIEWS[name].noNav).map(navOf))];
 /** 이 메뉴 버튼이 켜지는 화면들 (예: schedule → calendar·todos) */
 export const navViews=nav=>names.filter(name=>navOf(name)===nav);
 /** 담당자에게만 보이는 메뉴 버튼 */
 export const STAFF_NAVS=names.filter(name=>VIEWS[name].staffNav);
 /** 담당자에게는 숨기는(직원 전용) 메뉴 버튼: 누구나 여는 화면 중 담당자가 머무를 수 없는 화면의 메뉴 */
-export const EMPLOYEE_NAVS=[...new Set(names.filter(name=>VIEWS[name].open==='any'&&!VIEWS[name].staff).map(navOf))];
+export const EMPLOYEE_NAVS=[...new Set(names.filter(name=>VIEWS[name].open==='any'&&!VIEWS[name].staff&&!VIEWS[name].noNav).map(navOf))];
