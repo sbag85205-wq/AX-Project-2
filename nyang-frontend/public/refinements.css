@@ -175,7 +175,7 @@ html[data-theme=dark] body .chat-room .answer-tools>button.answer-save-button[ar
 .board-row-helpful.on{color:var(--ui-accent,#0071e3);font-weight:600}
 .helpful-icon{width:15px;height:15px;flex:none}
 .board-row-chevron{grid-column:2;grid-row:1/span 3;align-self:center;width:18px;height:18px;color:var(--ui-sub,var(--sub))}
-.board-row.deleted-question{display:flex;align-items:center;gap:16px;cursor:default}
+.board-row.deleted-question{display:flex;align-items:center;gap:16px;cursor:var(--nyang-cursor)}
 .board-row.deleted-question .board-row-body{flex:1;min-width:0;display:grid;row-gap:7px}
 /* 상세 창 */
 .board-post .board-row-tags{margin-bottom:12px}
@@ -184,8 +184,8 @@ html[data-theme=dark] body .chat-room .answer-tools>button.answer-save-button[ar
 .board-helpful{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin:20px 0 4px;padding:14px 16px;border-radius:12px;background:var(--ui-fill,#f5f6f8)}
 .helpful-button{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:7px 16px;border:1px solid var(--ui-accent,#0071e3);border-radius:999px;background:var(--ui-panel,#fff);color:var(--ui-accent,#0071e3);font-size:14px;font-weight:600;cursor:pointer}
 .helpful-button:hover:not(:disabled){background:color-mix(in srgb,var(--ui-accent,#0071e3) 10%,var(--ui-panel,#fff))}
-.helpful-button.on,.helpful-button.on:disabled{background:var(--ui-accent,#0071e3);color:#fff;opacity:1;cursor:default}
-.helpful-button:disabled:not(.on){opacity:.55;cursor:default}
+.helpful-button.on,.helpful-button.on:disabled{background:var(--ui-accent,#0071e3);color:#fff;opacity:1;cursor:var(--nyang-cursor)}
+.helpful-button:disabled:not(.on){opacity:.55;cursor:var(--nyang-cursor)}
 .helpful-count{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600}
 .board-helpful-note{font-size:12px;color:var(--ui-sub,var(--sub))}
 .board-answers>h3{display:flex;align-items:center;gap:6px;margin:22px 0 0;font-size:14px}

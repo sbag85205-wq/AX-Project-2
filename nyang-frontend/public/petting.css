@@ -28,5 +28,5 @@
 .motion-paused .pet-body.pet-engaged,.motion-paused .pet-wag-tail{animation:none!important}
 @media(prefers-reduced-motion:reduce){.pet-body.pet-engaged,.pet-wag-tail,.pet-feedback,.pet-point-pop{animation:none!important}}
 /* 답을 찾는 중(책 읽는 모습)에는 쓰다듬기를 막는다: 손 모양·밝아짐 없음 */
-.pet-touch:disabled{cursor:default}
+.pet-touch:disabled{cursor:var(--nyang-cursor)}
 .pet-touch:disabled:hover~.pet-body,html[data-theme=dark] .pet-touch:disabled:hover~.pet-body{filter:none}
