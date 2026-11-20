@@ -40,6 +40,8 @@ paths.cat='M5 9 4 3l6 4h4l6-4-1 6a8 8 0 1 1-14 0ZM8 12h.01M16 12h.01m-6 4 2 1 2-
 paths.activity='M4 20h16M7 16V9m5 7V4m5 12v-5';
 paths.shirt='m8 3-5 4 3 4 2-1v11h8V10l2 1 3-4-5-4a4 4 0 0 1-8 0Z';
 paths.copy='M9 8h11v13H9zM5 16V3h11';
+// 사이드바 접기 버튼: 둥근 사각형 안에 왼쪽 세로줄(사이드바 패널)
+paths.panel='M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM9 4v16';
 let activeAccount=null;
 const personalKeys=new Set(['om-docs','om-tasks','om-question-history','om-seen-replies','om-chat-sessions','om-chat-active','om-personality']);
 const storageKey=key=>personalKeys.has(key)||key.startsWith('om-bg-')?'nyang-account:'+(activeAccount||'signed-out')+':'+key:key;
@@ -135,8 +137,8 @@ const tone=text=>personalityText(text,personality);
 
 function shell(){
  $('#app').innerHTML=`<div class="app-shell studio-shell desktop-workspace">
-  <aside class="app-sidebar workspace-header" aria-label="냥대리 메뉴">
-   <div class="sidebar-top header-brand"><button class="brand" data-action="reset" aria-label="냥대리 처음으로"><img class="company-logo" src="${root}assets/tilon-logo.png" width="434" height="118" alt="Tilon — Your dream starts here"><span>냥대리</span></button><button type="button" class="sidebar-toggle icon-button" data-sidebar-toggle aria-expanded="true" aria-label="사이드바 접기" title="사이드바 접기">${icon('list')}</button></div>
+  <aside class="app-sidebar" aria-label="냥대리 메뉴">
+   <div class="sidebar-top"><button class="brand" data-action="reset" aria-label="냥대리 처음으로"><img class="company-logo" src="${root}assets/tilon-logo.png" width="434" height="118" alt="Tilon — Your dream starts here"><span>냥대리</span></button><button type="button" class="sidebar-toggle icon-button" data-sidebar-toggle aria-expanded="true" aria-label="사이드바 접기" title="사이드바 접기">${icon('panel')}</button></div>
    <nav class="workspace-nav side-nav" aria-label="주 메뉴">
     <button data-action="chat" id="nav-chat">${icon('chat')}<span>물어보기</span></button>
     <button data-action="schedule" id="nav-schedule">${icon('calendar')}<span>내 일정</span><span id="task-count" class="count"></span></button>
@@ -154,7 +156,7 @@ function shell(){
     ${['test:냥대리 테스트','stats:이용통계','chat:채팅 관리','admin:관리'].map(g=>{const [id,label]=g.split(':');return `<div class="nav-group" id="nav-group-${id}" hidden><button type="button" class="nav-group-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="nav-submenu-${id}">${label}${icon('down')}</button><div class="nav-submenu" id="nav-submenu-${id}"></div></div>`;}).join('')}
    </nav>
    <div id="sidebar-history" class="sidebar-history"></div>
-   <div class="sidebar-profile header-account">
+   <div class="sidebar-profile">
     <button type="button" class="profile-card account-menu-button" id="account-button" popovertarget="profile-menu" aria-haspopup="true"></button>
     <div id="wallet" class="wallet" aria-label="보유 포인트와 하트"></div>
    </div>

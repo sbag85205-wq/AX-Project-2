@@ -27,10 +27,7 @@
   }
   function enter(first) {
     const main = document.getElementById('main'); if (!main || off()) return;
-    if (first) {
-      rise(document.querySelector('.workspace-header'), 0);
-      rise(document.querySelector('.workspace-toolbar'), 1);
-    }
+    if (first) rise(document.querySelector('.app-sidebar'), 0);
     const home = main.querySelector('.chat-home');
     if (home) {
       reveal(home.querySelector('.resident-speech h1'));
@@ -54,7 +51,7 @@
     return (nav?.id || '') + '|' + (first ? first.className.split(' ').filter(c => /home|room|board|schedule|work|docs|login|account/.test(c)).join('.') : '');
   }
 
-  /* 2. 위쪽 메뉴의 선택 표시 */
+  /* 2. 사이드바 메뉴의 선택 표시 (세로 목록: 위아래로 미끄러진다) */
   const L = S(0, 560, 34), R = S(0, 220, 21), PY = S(0, 400, 30);
   let pill = null, navEl = null, pillReady = false;
   function placePill(instant) {
@@ -78,7 +75,7 @@
   addEventListener('pointermove', e => { GX.t = e.clientX; GY.t = e.clientY; }, { passive: true });
 
   /* 4. 끌려오는 버튼 */
-  const MAG = '.send-button, .primary-button, .chat-treat-button, .workspace-utilities > button';
+  const MAG = '.send-button, .primary-button, .chat-treat-button';
   let magEl = null; const MX = S(0, 300, 20), MY = S(0, 300, 20);
   addEventListener('pointermove', e => {
     if (off()) return;
@@ -102,9 +99,44 @@
     });
   }
 
+  /* 6. 사이드바 접기
+     접기 버튼(data-sidebar-toggle)을 누르면 아이콘만 보이는 얇은 줄로 접힌다.
+     접힌 상태는 이 기기에만 기억한다(화면 밝기 설정처럼, 계정·서버에는 저장하지 않는다).
+     1100px 이하에서는 저장값과 상관없이 접힌 채로 시작하고, 거기서 누른 것은 기억하지 않는다. */
+  const SIDE_KEY = 'nyang-sidebar-collapsed';
+  const narrow = matchMedia('(max-width: 1100px)');
+  const savedCollapsed = () => { try { return localStorage.getItem(SIDE_KEY) === '1'; } catch { return false; } };
+  function applySidebar(collapsed) {
+    const shell = document.querySelector('.app-shell'), btn = document.querySelector('[data-sidebar-toggle]');
+    if (!shell || !btn) return;
+    shell.classList.toggle('sidebar-collapsed', collapsed);
+    const label = collapsed ? '사이드바 펼치기' : '사이드바 접기';
+    btn.setAttribute('aria-expanded', String(!collapsed)); btn.setAttribute('aria-label', label); btn.title = label;
+  }
+  let sideReady = false, navWatch = null;
+  function initSidebar() {
+    const shell = document.querySelector('.app-shell');
+    if (sideReady || !shell || !document.querySelector('[data-sidebar-toggle]')) return;
+    sideReady = true;
+    applySidebar(narrow.matches || savedCollapsed());
+    // 처음 모습은 움직임 없이 맞추고, 그 뒤부터 접고 펼칠 때만 부드럽게 바뀐다
+    requestAnimationFrame(() => requestAnimationFrame(() => shell.classList.add('sidebar-ready')));
+    // 사이드바 폭이 바뀌면 메뉴 선택 표시를 새 자리에 맞춘다
+    navWatch = new ResizeObserver(() => placePill(true));
+    const nav = document.querySelector('.workspace-nav'); if (nav) navWatch.observe(nav);
+  }
+  document.addEventListener('click', e => {
+    if (!e.target.closest?.('[data-sidebar-toggle]')) return;
+    const next = !document.querySelector('.app-shell')?.classList.contains('sidebar-collapsed');
+    applySidebar(next);
+    if (!narrow.matches) { try { localStorage.setItem(SIDE_KEY, next ? '1' : '0'); } catch {} }
+  });
+  narrow.addEventListener('change', () => { if (sideReady) applySidebar(narrow.matches || savedCollapsed()); });
+
   // 화면이 다시 그려질 때마다 살핀다
   let first = true;
   const mo = new MutationObserver(() => {
+    initSidebar();
     const k = keyNow();
     if (k !== viewKey) { const was = viewKey; viewKey = k; requestAnimationFrame(() => { enter(first || !was); first = false; placePill(false); }); }
     newMessages();
@@ -112,6 +144,7 @@
   function start() {
     const app = document.getElementById('app'); if (!app) return;
     mo.observe(app, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    initSidebar();
     viewKey = keyNow(); if (document.getElementById('main')) { enter(true); first = false; placePill(true); }
     // 처음 그려진 대화는 다시 움직이지 않게 표시만 해 둔다
     document.querySelectorAll('.chat-room .user-message, .chat-room .answer-content').forEach(el => { seen.add(el); el.dataset.glassSeen = '1'; });
