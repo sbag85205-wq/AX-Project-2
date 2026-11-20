@@ -2,10 +2,9 @@
 // 화면 코드(app.js)는 건드리지 않고, 이미 그려진 화면 위에 움직임만 더한다.
 // 이 파일을 빼면 움직임만 사라지고 기능은 그대로다.
 // - 화면이 바뀔 때: 제목이 아래에서 드러나고, 내용이 차례로 떠오른다
-// - 위쪽 메뉴: 선택 표시가 고무줄처럼 늘어나며 미끄러진다
-// - 배경: 마우스를 따라다니는 은은한 빛이 유리창 뒤에서 번진다
-// - 주요 버튼: 마우스가 가까이 오면 살짝 끌려온다
+// - 사이드바 메뉴: 선택 표시가 고무줄처럼 늘어나며 미끄러진다
 // - 대화: 새 말풍선이 부드럽게 들어온다
+// - 사이드바: 접기 버튼으로 아이콘만 보이는 줄로 접는다
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const off = () => reduce || !!document.querySelector('.motion-paused');
@@ -68,25 +67,7 @@
     pill.style.opacity = 1; pill.style.height = b.height + 'px';
   }
 
-  /* 3. 마우스를 따라다니는 빛 */
-  const glow = document.createElement('div'); glow.className = 'glass-glow'; glow.setAttribute('aria-hidden', 'true');
-  document.body.prepend(glow);
-  const GX = S(innerWidth * .3, 60, 14), GY = S(innerHeight * .2, 60, 14);
-  addEventListener('pointermove', e => { GX.t = e.clientX; GY.t = e.clientY; }, { passive: true });
-
-  /* 4. 끌려오는 버튼 */
-  const MAG = '.send-button, .primary-button, .chat-treat-button';
-  let magEl = null; const MX = S(0, 300, 20), MY = S(0, 300, 20);
-  addEventListener('pointermove', e => {
-    if (off()) return;
-    const el = e.target.closest?.(MAG);
-    if (el !== magEl) { if (magEl) magEl.style.translate = ''; magEl = el; MX.x = MY.x = 0; MX.v = MY.v = 0; }
-    if (!el) { MX.t = MY.t = 0; return; }
-    const r = el.getBoundingClientRect();
-    MX.t = (e.clientX - (r.left + r.width / 2)) * .22; MY.t = (e.clientY - (r.top + r.height / 2)) * .3;
-  }, { passive: true });
-
-  /* 5. 새 말풍선 */
+  /* 3. 새 말풍선 */
   const seen = new WeakSet();
   function newMessages() {
     if (off()) return;
@@ -99,7 +80,7 @@
     });
   }
 
-  /* 6. 사이드바 접기
+  /* 4. 사이드바 접기
      접기 버튼(data-sidebar-toggle)을 누르면 아이콘만 보이는 얇은 줄로 접힌다.
      접힌 상태는 이 기기에만 기억한다(화면 밝기 설정처럼, 계정·서버에는 저장하지 않는다).
      1100px 이하에서는 저장값과 상관없이 접힌 채로 시작하고, 거기서 누른 것은 기억하지 않는다. */
@@ -155,12 +136,9 @@
   let last = performance.now();
   (function frame(now) {
     const dt = Math.min((now - last) / 1000, 1 / 30); last = now;
-    for (let i = 0; i < 4; i++) [L, R, PY, GX, GY, MX, MY].forEach(s => step(s, dt / 4));
+    for (let i = 0; i < 4; i++) [L, R, PY].forEach(s => step(s, dt / 4));
     if (pill && pill.isConnected) { pill.style.translate = `${L.x.toFixed(1)}px ${PY.x.toFixed(1)}px`; pill.style.width = Math.max(0, R.x - L.x).toFixed(1) + 'px'; }
     else if (document.querySelector('.workspace-nav')) placePill(true);
-    glow.style.translate = `${(GX.x - 300).toFixed(1)}px ${(GY.x - 300).toFixed(1)}px`;
-    glow.style.opacity = off() ? 0 : 1;
-    if (magEl && magEl.isConnected) magEl.style.translate = `${MX.x.toFixed(2)}px ${MY.x.toFixed(2)}px`;
     requestAnimationFrame(frame);
   })(last);
 })();
