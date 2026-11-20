@@ -5,6 +5,7 @@
 // - 사이드바 메뉴: 선택 표시가 고무줄처럼 늘어나며 미끄러진다
 // - 대화: 새 말풍선이 부드럽게 들어온다
 // - 사이드바: 접기 버튼으로 아이콘만 보이는 줄로 접는다
+// - 내 프로필: 카드 바로 위에 프로필 메뉴를 연다
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const off = () => reduce || !!document.querySelector('.motion-paused');
@@ -114,10 +115,62 @@
   });
   narrow.addEventListener('change', () => { if (sideReady) applySidebar(narrow.matches || savedCollapsed()); });
 
+  /* 5. 내 프로필 카드와 프로필 메뉴
+     - 카드의 작은 사원증에 아이디 첫 글자(이니셜)를 data-initial로 붙인다
+     - 메뉴(#profile-menu, 브라우저 popover)는 화면 가운데가 아니라 프로필 카드 바로 위에 붙여 연다
+     - 메뉴 맨 위 레벨·포인트·하트는 사이드바 카드(#wallet)에 이미 보이는 값을 그대로 옮겨 보여 준다
+     - 메뉴 항목은 모두 기존 버튼(data-action·id)이라 동작은 app.js가 그대로 처리한다. 여기서는 누른 뒤 메뉴만 닫는다 */
+  function markInitial() {
+    const card = document.getElementById('account-button'); if (!card) return;
+    const name = card.querySelector('span')?.textContent.trim() || '';
+    const initial = name ? [...name][0].toUpperCase() : '';
+    if (card.dataset.initial !== initial) card.dataset.initial = initial;
+  }
+  const menuOpen = menu => { try { return menu.matches(':popover-open'); } catch { return false; } };
+  function placeProfileMenu() {
+    const menu = document.getElementById('profile-menu'), card = document.querySelector('.sidebar-profile');
+    if (!menu || !card) return;
+    const r = card.getBoundingClientRect(), gap = 8, width = Math.max(r.width, 248);
+    menu.style.width = width + 'px';
+    menu.style.left = Math.round(Math.min(Math.max(8, r.left), innerWidth - width - 8)) + 'px';
+    menu.style.bottom = Math.round(Math.max(8, innerHeight - r.top + gap)) + 'px';
+    menu.style.maxHeight = Math.round(Math.max(180, r.top - gap - 12)) + 'px';
+  }
+  function fillProfileLevel() {
+    const box = document.getElementById('profile-level'), wallet = document.getElementById('wallet');
+    if (!box) return;
+    box.hidden = !wallet || wallet.hidden || !wallet.querySelector('.wallet-level');
+    if (box.hidden) { box.replaceChildren(); return; }
+    const text = sel => wallet.querySelector(sel)?.textContent.trim() || '0';
+    const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
+    // 레벨 줄은 기존 '내 레벨' 동작(data-action="activity")을 그대로 쓴다
+    const head = el('button', 'profile-level-head'); head.type = 'button'; head.dataset.action = 'activity';
+    head.append(el('strong', '', text('.wallet-level')), el('span', '', '내 레벨 보기'));
+    const stat = (cls, label, value) => { const d = el('div', cls); d.append(el('small', '', label), el('b', '', value)); return d; };
+    const stats = el('div', 'profile-level-stats');
+    stats.append(stat('is-point', '포인트', text('#points-balance') + ' P'), stat('is-heart', '하트', text('#hearts-balance')));
+    box.replaceChildren(head, stats);
+  }
+  function onProfileToggle(e) {
+    if (e.target?.id !== 'profile-menu' || e.newState !== 'open') return;
+    fillProfileLevel(); placeProfileMenu();
+  }
+  // popover의 열림 알림은 위로 전달되지 않아서 capture로 받는다(beforetoggle을 모르는 브라우저는 toggle로 맞춘다)
+  document.addEventListener('beforetoggle', onProfileToggle, true);
+  document.addEventListener('toggle', onProfileToggle, true);
+  addEventListener('resize', () => { const m = document.getElementById('profile-menu'); if (m && menuOpen(m)) placeProfileMenu(); });
+  document.addEventListener('click', e => {
+    const b = e.target.closest?.('#profile-menu button'), menu = document.getElementById('profile-menu');
+    // 화면 밝기·출석은 바뀐 결과를 메뉴에서 바로 보이게 열어 둔다
+    if (!b || !menu || b.matches('.theme-toggle, #attendance-button')) return;
+    try { menu.hidePopover(); } catch {}
+  });
+
   // 화면이 다시 그려질 때마다 살핀다
   let first = true;
   const mo = new MutationObserver(() => {
     initSidebar();
+    markInitial();
     const k = keyNow();
     if (k !== viewKey) { const was = viewKey; viewKey = k; requestAnimationFrame(() => { enter(first || !was); first = false; placePill(false); }); }
     newMessages();
@@ -125,7 +178,7 @@
   function start() {
     const app = document.getElementById('app'); if (!app) return;
     mo.observe(app, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
-    initSidebar();
+    initSidebar(); markInitial();
     viewKey = keyNow(); if (document.getElementById('main')) { enter(true); first = false; placePill(true); }
     // 처음 그려진 대화는 다시 움직이지 않게 표시만 해 둔다
     document.querySelectorAll('.chat-room .user-message, .chat-room .answer-content').forEach(el => { seen.add(el); el.dataset.glassSeen = '1'; });

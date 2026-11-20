@@ -137,15 +137,82 @@ html[data-theme=dark] .app-sidebar .workspace-nav .nav-submenu{box-shadow:none}
 /* 대화 기록 자리(2단계에서 채운다)와 맨 아래 내 프로필 */
 .sidebar-history{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .sidebar-history:empty{flex:1 1 auto}
-.sidebar-profile{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border-radius:18px;background:var(--ui-panel);box-shadow:var(--glass-card-shadow)}
-.sidebar-profile .profile-card{display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%;padding:2px 0;border:0;background:transparent;font-size:14px;font-weight:600;color:var(--ui-ink)}
-.sidebar-profile .profile-card small{display:inline;font-weight:400;color:var(--ui-sub)}
-.sidebar-profile .wallet{display:flex;align-items:center;gap:12px;font-size:11px;color:var(--ui-sub)}
+/* 6단계. 내 프로필 카드: 작은 사원증(파란 띠 + 이니셜) · 아이디 · Lv·P·♥ 한 줄 · 위로 열리는 표시
+   카드 전체가 프로필 메뉴 버튼(#account-button, popovertarget)이고, Lv·P·♥(#wallet)는 그 위에 겹쳐 둔다.
+   이니셜은 glass-motion.js가 아이디 첫 글자를 data-initial로 붙인다. */
+.sidebar-profile{position:relative;flex:none;border-radius:18px;background:var(--ui-panel);box-shadow:var(--glass-card-shadow);border:1px solid var(--glass-edge)}
+.sidebar-profile .profile-card{position:relative;display:flex;align-items:center;gap:6px;width:100%;min-height:64px;margin:0;padding:12px 34px 30px 64px;border:0;border-radius:18px;background:transparent;color:var(--ui-ink);font-size:14px;font-weight:650;line-height:1.3;text-align:left;white-space:nowrap}
+.sidebar-profile .profile-card:hover{background:var(--ui-fill)}
+.sidebar-profile .profile-card>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.sidebar-profile .profile-card small{display:inline;flex:none;font-size:11px;font-weight:400;color:var(--ui-faint)}
+.sidebar-profile .profile-card::before{content:attr(data-initial);position:absolute;left:12px;top:50%;translate:0 -50%;box-sizing:border-box;display:grid;place-items:center;width:40px;height:46px;padding-top:10px;border-radius:9px;border:1px solid var(--ui-line);
+  background:linear-gradient(#3467eb,#3467eb) top/100% 9px no-repeat,linear-gradient(135deg,#6f7cf5,#9a6ff0) center 14px/26px 26px no-repeat,#fff;
+  color:#fff;font-size:13px;font-weight:700;box-shadow:0 4px 10px -6px rgba(40,50,140,.5)}
+.sidebar-profile .profile-card::after{content:'';position:absolute;right:16px;top:50%;width:7px;height:7px;margin-top:-2px;border-right:1.6px solid var(--ui-sub);border-bottom:1.6px solid var(--ui-sub);rotate:-135deg;transition:rotate .2s}
+.sidebar-profile:has(+ #profile-menu:popover-open) .profile-card::after{rotate:45deg;margin-top:-6px}
+.sidebar-profile .wallet{position:absolute;left:64px;right:30px;bottom:11px;display:flex;align-items:center;gap:6px;padding:0;border:0;font-size:11.5px;color:var(--ui-sub);white-space:nowrap;overflow:hidden}
 .sidebar-profile .wallet[hidden]{display:none}
-.sidebar-profile .wallet>span{display:inline-flex;align-items:center;gap:3px}
-.sidebar-profile .wallet strong{color:var(--ui-ink);font-size:12px;font-variant-numeric:tabular-nums}
-.sidebar-profile .wallet i{font-style:normal;font-size:10px;color:var(--ui-sub);background:transparent}
-.sidebar-profile .wallet-level{padding:3px 8px;border-radius:999px;background:var(--ui-fill);color:var(--ui-ink);font-size:11px}
+.sidebar-profile:has(.wallet[hidden]) .profile-card{padding-bottom:12px;min-height:58px}
+.sidebar-profile .wallet>span{display:inline-flex;align-items:center;gap:2px}
+.sidebar-profile .wallet>span::before{content:'·';margin-right:4px;color:var(--ui-faint)}
+.sidebar-profile .wallet strong{color:var(--ui-sub);font-size:11.5px;font-weight:500;font-variant-numeric:tabular-nums}
+.sidebar-profile .wallet i{order:2;width:auto;height:auto;font-style:normal;font-size:11px;color:var(--ui-sub);background:transparent}
+.sidebar-profile .wallet .heart-mark{order:0;color:var(--ui-sub)}
+html[data-theme=dark] .sidebar-profile .wallet i{background:transparent;color:var(--ui-sub)}
+html[data-theme=dark] .sidebar-profile .wallet strong{color:var(--ui-sub)}
+.sidebar-profile .wallet-level{padding:0;border:0;border-radius:4px;background:transparent;color:var(--ui-sub);font-size:11.5px}
+.sidebar-profile .wallet-level:hover{color:var(--ui-ink);text-decoration:underline}
+
+/* 6단계. 프로필 메뉴(popover): 프로필 카드 바로 위에 붙어 열린다(자리는 glass-motion.js가 맞춘다) */
+#profile-menu{position:fixed;inset:auto auto 96px 16px;margin:0;width:260px;max-height:min(72vh,540px);overflow:auto;box-sizing:border-box;padding:8px;border:1px solid var(--glass-edge);border-radius:20px;background:var(--ui-panel);color:var(--ui-ink);box-shadow:0 24px 60px -22px rgba(40,30,110,.45);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+#profile-menu:popover-open{display:flex;flex-direction:column;gap:2px;animation:profile-menu-in .18s cubic-bezier(.2,.8,.2,1)}
+@keyframes profile-menu-in{from{opacity:0;translate:0 6px}to{opacity:1;translate:0 0}}
+html[data-theme=dark] #profile-menu{background:rgba(40,42,72,.94)}
+#profile-menu .workspace-utilities{display:contents}
+#profile-menu>button,
+#profile-menu .workspace-utilities>button{display:flex;align-items:center;gap:12px;width:100%;min-width:0;height:auto;min-height:42px;margin:0;padding:9px 12px;border:0;border-radius:12px;background:transparent;color:var(--ui-ink);font-size:13.5px;font-weight:500;line-height:1.3;text-align:left;opacity:1}
+#profile-menu>button[hidden],
+#profile-menu .workspace-utilities>button[hidden]{display:none}
+#profile-menu>button:hover,
+#profile-menu .workspace-utilities>button:not(:disabled):hover{background:var(--ui-fill)}
+#profile-menu button>.icon{flex:none;width:18px;height:18px;color:var(--ui-sub)}
+/* 순서: 레벨·포인트·하트 → 화면 밝기 → 가이드 다시 보기 → 출석 → (성격·꾸미기는 4단계에서 발바닥 메뉴로) → 내 계정 → 로그아웃 */
+#profile-level{order:0}
+#profile-menu>.theme-toggle{order:1}
+#profile-menu #guide-button{order:2}
+#profile-menu #attendance-button{order:3}
+#profile-menu [data-action="personality"]{order:4}
+#profile-menu [data-action="wardrobe"]{order:5}
+#profile-menu>[data-action="account"]{order:6}
+#profile-menu>[data-action="logout"]{order:7;position:relative;margin-top:7px}
+#profile-menu>[data-action="logout"]::before{content:'';position:absolute;left:12px;right:12px;top:-4px;height:1px;background:var(--ui-line)}
+/* 화면 밝기: '화면 밝기' 글자 + 오른쪽에 지금 모드(라이트/다크) */
+#profile-menu>.theme-toggle,
+#profile-menu>.theme-toggle[aria-pressed]{background:transparent;color:var(--ui-ink);border:0;box-shadow:none}
+#profile-menu>.theme-toggle:hover{background:var(--ui-fill)}
+#profile-menu>.theme-toggle>.icon{order:0}
+#profile-menu>.theme-toggle::before{content:'화면 밝기';order:1}
+#profile-menu>.theme-toggle>span{order:2;display:inline-block;margin-left:auto;padding:3px 9px;border-radius:999px;background:var(--ui-fill);color:var(--ui-sub);font-size:11px;font-weight:500}
+/* 출석: 아직이면 강조, 했으면 흐리게 · 연속 일수는 오른쪽 */
+#profile-menu #attendance-button:not(.done):not(:disabled){color:var(--ui-accent)}
+#profile-menu #attendance-button:not(.done):not(:disabled)>.icon{color:var(--ui-accent)}
+#profile-menu #attendance-button.done,
+#profile-menu #attendance-button:disabled{color:var(--ui-sub);cursor:default}
+#profile-menu #attendance-button .attendance-streak{margin-left:auto}
+/* 레벨·포인트·하트 (진행도 막대는 7단계에서 채운다) */
+#profile-level{display:flex;flex-direction:column;gap:10px;margin:2px 2px 8px;padding:14px;border-radius:14px;background:var(--ui-fill)}
+#profile-level[hidden]{display:none}
+#profile-level .profile-level-head{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:0;border:0;background:transparent;color:var(--ui-ink);text-align:left}
+#profile-level .profile-level-head strong{font-size:16px;font-weight:700}
+#profile-level .profile-level-head span{font-size:11.5px;color:var(--ui-accent)}
+#profile-level .profile-level-head:hover span{text-decoration:underline}
+#profile-level .profile-level-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#profile-level .profile-level-stats>div{display:flex;flex-direction:column;gap:2px;padding:9px 10px;border-radius:11px;background:var(--ui-panel)}
+#profile-level .profile-level-stats small{font-size:11px;color:var(--ui-sub)}
+#profile-level .profile-level-stats b{font-size:15px;font-weight:700;color:var(--ui-ink);font-variant-numeric:tabular-nums}
+#profile-level .profile-level-stats .is-heart b::before{content:'♥ ';color:#e06a8c}
+@media (prefers-reduced-motion:reduce){#profile-menu:popover-open{animation:none}.sidebar-profile .profile-card::after{transition:none}}
+.motion-paused #profile-menu:popover-open{animation:none}
 
 /* 사이드바 안의 대화 기록(2단계): 별도 칸이 아니라 메뉴 아래 같은 판 위에 이어진다 */
 .app-sidebar .chat-history{width:auto;flex:1 1 auto;min-height:0;margin:2px -4px 0;background:transparent;border:0;border-top:1px solid var(--ui-line)}
@@ -178,11 +245,13 @@ body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav.side-na
 /* 접힌 줄의 담당자 하위 메뉴는 오른쪽으로 떠서 열린다 */
 body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav .nav-group{position:relative}
 body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav .nav-submenu{position:absolute;top:0;left:calc(100% + 10px);min-width:168px;padding:6px;background:var(--ui-panel);border:1px solid var(--ui-line);border-radius:14px;box-shadow:var(--glass-card-shadow);z-index:40}
-body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile{margin-top:auto;padding:0;background:transparent;box-shadow:none}
-body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card{justify-content:center;width:44px;height:44px;padding:0;border-radius:50%;background:var(--ui-accent);color:#fff;overflow:hidden}
-body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card span{display:block;max-width:1.05em;overflow:hidden;white-space:nowrap;text-transform:uppercase}
-body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card small{display:none}
-html[data-theme=dark] body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card{color:#14163a}
+/* 접힌 줄의 프로필: 작은 사원증(이니셜)만 */
+body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile{margin-top:auto;border-color:transparent;background:transparent;box-shadow:none}
+body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card{width:52px;min-height:56px;padding:0;border-radius:14px}
+body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card>span,
+body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card small,
+body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card::after{display:none}
+body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card::before{left:6px}
 
 /* 로그인 화면: 사이드바 없이 로고만 있는 위쪽 줄 */
 body[data-authenticated="false"] .app-shell.desktop-workspace{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
