@@ -137,7 +137,7 @@ html[data-theme=dark] .app-sidebar .workspace-nav .nav-submenu{box-shadow:none}
 /* 대화 기록 자리(2단계에서 채운다)와 맨 아래 내 프로필 */
 .sidebar-history{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .sidebar-history:empty{flex:1 1 auto}
-/* 6단계. 내 프로필 카드: 작은 사원증(파란 띠 + 이니셜) · 아이디 · Lv·P·♥ 한 줄 · 위로 열리는 표시
+/* 6단계. 내 프로필 카드: 동그라미 아바타(이니셜) · 아이디 · Lv·P·♥ 한 줄 · 위로 열리는 표시
    카드 전체가 프로필 메뉴 버튼(#account-button, popovertarget)이고, Lv·P·♥(#wallet)는 그 위에 겹쳐 둔다.
    이니셜은 glass-motion.js가 아이디 첫 글자를 data-initial로 붙인다. */
 .sidebar-profile{position:relative;flex:none;border-radius:18px;background:var(--ui-panel);box-shadow:var(--glass-card-shadow);border:1px solid var(--glass-edge)}
@@ -145,9 +145,9 @@ html[data-theme=dark] .app-sidebar .workspace-nav .nav-submenu{box-shadow:none}
 .sidebar-profile .profile-card:hover{background:var(--ui-fill)}
 .sidebar-profile .profile-card>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .sidebar-profile .profile-card small{display:inline;flex:none;font-size:11px;font-weight:400;color:var(--ui-faint)}
-.sidebar-profile .profile-card::before{content:attr(data-initial);position:absolute;left:12px;top:50%;translate:0 -50%;box-sizing:border-box;display:grid;place-items:center;width:40px;height:46px;padding-top:10px;border-radius:9px;border:1px solid var(--ui-line);
-  background:linear-gradient(#3467eb,#3467eb) top/100% 9px no-repeat,linear-gradient(135deg,#6f7cf5,#9a6ff0) center 14px/26px 26px no-repeat,#fff;
-  color:#fff;font-size:13px;font-weight:700;box-shadow:0 4px 10px -6px rgba(40,50,140,.5)}
+.sidebar-profile .profile-card::before{content:attr(data-initial);position:absolute;left:12px;top:50%;translate:0 -50%;box-sizing:border-box;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--ui-accent);color:#fff;font-size:15px;font-weight:700;line-height:1;box-shadow:0 4px 10px -6px rgba(40,50,140,.55)}
+/* 다크 모드의 강조색은 밝은 보라라서 글자는 어둡게 */
+html[data-theme=dark] .sidebar-profile .profile-card::before{color:#14163a}
 .sidebar-profile .profile-card::after{content:'';position:absolute;right:16px;top:50%;width:7px;height:7px;margin-top:-2px;border-right:1.6px solid var(--ui-sub);border-bottom:1.6px solid var(--ui-sub);rotate:-135deg;transition:rotate .2s}
 .sidebar-profile:has(+ #profile-menu:popover-open) .profile-card::after{rotate:45deg;margin-top:-6px}
 .sidebar-profile .wallet{position:absolute;left:64px;right:30px;bottom:11px;display:flex;align-items:center;gap:6px;padding:0;border:0;font-size:11.5px;color:var(--ui-sub);white-space:nowrap;overflow:hidden}
@@ -245,9 +245,9 @@ body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav.side-na
 /* 접힌 줄의 담당자 하위 메뉴는 오른쪽으로 떠서 열린다 */
 body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav .nav-group{position:relative}
 body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav .nav-submenu{position:absolute;top:0;left:calc(100% + 10px);min-width:168px;padding:6px;background:var(--ui-panel);border:1px solid var(--ui-line);border-radius:14px;box-shadow:var(--glass-card-shadow);z-index:40}
-/* 접힌 줄의 프로필: 작은 사원증(이니셜)만 */
+/* 접힌 줄의 프로필: 동그라미 아바타만 */
 body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile{margin-top:auto;border-color:transparent;background:transparent;box-shadow:none}
-body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card{width:52px;min-height:56px;padding:0;border-radius:14px}
+body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card{width:52px;height:52px;min-height:52px;padding:0;border-radius:50%}
 body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card>span,
 body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card small,
 body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card::after{display:none}
