@@ -130,3 +130,5 @@ html[data-theme=dark] .chat-collect-heart{background:#482d3a;color:#f0a9bd}
 @media(max-height:760px){.chat-home-below{gap:8px}.chat-home .cat-resident-stage{height:calc(var(--room-center) + var(--resident-size)/2 + 8px)}.chat-home .chat-composer .input-row{padding-top:13px;padding-bottom:8px}.chat-home .composer-meta{padding-bottom:12px}.chat-starters>span{display:none}.chat-starters>button{padding:8px 11px}.chat-room-header{min-height:72px}.chat-compose-dock{padding-top:10px}}
 @media(max-width:900px){.chat-room-header{padding-left:20px;padding-right:20px}.chat-room-tools{gap:12px}.chat-transcript{padding-left:18px;padding-right:18px}.chat-compose-dock{padding-left:18px;padding-right:18px}.chat-room .chat-message-body{padding-right:0}.chat-room .resident-portrait,.chat-room .message-avatar{width:72px;height:72px;flex-basis:72px}.chat-composer .composer-meta>span{display:none}.chat-room .user-message{max-width:90%}}
 @media(prefers-reduced-motion:reduce){.chat-room .pet-body,.typing-bubble i{animation:none!important}}
+/* 담당자 '냥대리 테스트' 화면: 앞 대화를 보고 바꾼 검색용 질문 */
+.answer-search-question{margin:-6px 0 10px;font-size:11px;line-height:1.5;color:var(--muted)}

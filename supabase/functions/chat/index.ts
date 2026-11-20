@@ -3,11 +3,12 @@ import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.118.0';
 import { adminClient, corsHeaders, errorResponse, getCaller, json, loadSettings, type Caller } from '../_shared/http.ts';
 import { CANDIDATE_COUNT, EVIDENCE_COUNT, coreQuestion, mergeEvidence, rankEvidence, searchTerms, similarity, termSimilarity } from '../_shared/text.ts';
 import {
-  REWRITE_PROMPT, SYSTEM_PROMPT, buildUserPrompt, noEvidenceAnswer, noMatchingRuleAnswer, parseAttachments, parseModelAnswer,
-  parseRewrite, searchOnlyAnswer,
+  REWRITE_PROMPT, buildUserPrompt, noEvidenceAnswer, noMatchingRuleAnswer, parseAttachments, parseModelAnswer,
+  parseRewrite, searchOnlyAnswer, systemPromptFor,
   type Answer, type AttachmentInput, type AttachmentNote, type Evidence
 } from '../_shared/answer.ts';
 import { chatCompletion, describeImage, embed, llmConfigured, visionModel } from '../_shared/providers.ts';
+import { CONTEXT_REWRITE_PROMPT, buildRewriteInput, historyBlock, parseContextRewrite, parseHistory } from '../_shared/context.ts';
 
 const MAX_QUESTION = 2000;
 // FAQ는 핵심 검색어끼리 비교해 이 이상 비슷하면 쓴다 (말투·부연 설명이 달라도 같은 질문이면 걸린다)
@@ -52,6 +53,8 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
   const selectedCategory = typeof body.category === 'string' && body.category.trim().length <= MAX_CATEGORY
     ? body.category.trim() || null
     : null;
+  // 같은 대화의 최근 3턴(화면이 보낸다). 새 대화면 비어 있어 지금까지처럼 이번 질문만으로 답한다.
+  const history = parseHistory(body.history);
   let attachments: AttachmentInput[];
   try {
     attachments = parseAttachments(body.attachments);
@@ -128,28 +131,49 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
     };
     category = best.category;
   };
-  if (!attachments.length) {
+  // 앞 대화가 있으면 원래 질문("그럼 S2는?")만으로는 대상이 빠져 있을 수 있어, FAQ는 질문을 정리한 뒤에 찾는다.
+  if (!attachments.length && !history.length) {
     const best = await findFaq(queries);
     if (best) useFaq(best);
   }
 
   // AI 질문 정리: 인사·배경 설명·높임 표현을 걷어 내고 규정 용어로 바꾼다. 실패하면 건너뛴다.
-  if (!answer && llmConfigured() && question.length >= REWRITE_MIN_CHARS) {
+  // 앞 대화가 있으면 짧은 질문도 정리한다(후속 질문을 혼자서도 뜻이 통하는 질문으로 바꾼다).
+  let searchQuestion: string | null = null;
+  if (!answer && llmConfigured() && (history.length || question.length >= REWRITE_MIN_CHARS)) {
     try {
-      const r = await chatCompletion(REWRITE_PROMPT, question.slice(0, 1000), settings.llm_model, REWRITE_TIMEOUT_MS);
-      addTokens(r);
-      const parsed = parseRewrite(r.text);
-      const rewritten = parsed ? [parsed.query, ...parsed.keywords].join(' ').trim() : '';
-      if (rewritten && !queries.includes(rewritten)) {
-        queries.push(rewritten);
-        if (!attachments.length) {
-          const best = await findFaq([rewritten]);
-          if (best) useFaq(best);
+      if (history.length) {
+        const r = await chatCompletion(CONTEXT_REWRITE_PROMPT, buildRewriteInput(history, question), settings.llm_model, REWRITE_TIMEOUT_MS);
+        addTokens(r);
+        const parsed = parseContextRewrite(r.text);
+        const rewritten = parsed ? [parsed.query, ...parsed.keywords].join(' ').trim() : '';
+        if (parsed?.usesContext) {
+          // 후속 질문: 대상이 빠진 원래 질문은 검색에 섞지 않고, 바꾼 질문으로만 찾는다
+          searchQuestion = parsed.query;
+          queries.splice(0, queries.length, parsed.query, ...(rewritten !== parsed.query ? [rewritten] : []));
+        } else if (rewritten && !queries.includes(rewritten)) {
+          queries.push(rewritten);
+        }
+      } else {
+        const r = await chatCompletion(REWRITE_PROMPT, question.slice(0, 1000), settings.llm_model, REWRITE_TIMEOUT_MS);
+        addTokens(r);
+        const parsed = parseRewrite(r.text);
+        const rewritten = parsed ? [parsed.query, ...parsed.keywords].join(' ').trim() : '';
+        if (rewritten && !queries.includes(rewritten)) {
+          queries.push(rewritten);
+          if (!attachments.length) {
+            const best = await findFaq([rewritten]);
+            if (best) useFaq(best);
+          }
         }
       }
     } catch (e) {
       console.error('rewrite failed', (e as Error).message);
     }
+  }
+  if (history.length && !answer && !attachments.length) {
+    const best = await findFaq(queries);
+    if (best) useFaq(best);
   }
 
   // 2) 문서 검색 → LLM 요약
@@ -201,8 +225,10 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
       category = doc?.category ?? null;
       if (!llmConfigured()) return searchOnlyAnswer(evidence);
       try {
-        const prompt = buildUserPrompt(question, evidence, attached);
-        let result = await chatCompletion(SYSTEM_PROMPT, prompt, settings.llm_model);
+        const context = history.length ? { conversation: historyBlock(history), searchQuestion: searchQuestion ?? undefined } : undefined;
+        const prompt = buildUserPrompt(question, evidence, attached, context);
+        const system = systemPromptFor(!!context);
+        let result = await chatCompletion(system, prompt, settings.llm_model);
         model = result.model;
         inputTokens = (inputTokens ?? 0) + (result.input_tokens ?? 0);
         outputTokens = (outputTokens ?? 0) + (result.output_tokens ?? 0);
@@ -211,7 +237,7 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
           parsed = parseModelAnswer(result.text, evidence);
         } catch (parseError) {
           // 형식이 깨지면 1회만 다시 요청
-          result = await chatCompletion(SYSTEM_PROMPT,
+          result = await chatCompletion(system,
             `${prompt}\n\n이전 출력이 규칙에 맞지 않았습니다(${(parseError as Error).message}). 지정한 JSON 형식으로만 다시 답하세요.`,
             settings.llm_model);
           inputTokens = (inputTokens ?? 0) + (result.input_tokens ?? 0);
@@ -253,13 +279,18 @@ async function ask(db: SupabaseClient, caller: Caller, body: Record<string, unkn
   }
 
   if (outsideCategory) answer = { ...answer, outside_category: true };
+  // 원래 질문과 앞 대화를 보고 바꾼 질문: 답변 기록(messages.answer)과 서버 로그에 함께 남긴다(담당자 확인용)
+  if (searchQuestion && searchQuestion !== question) answer = { ...answer, search_question: searchQuestion };
+  if (history.length) console.log('question context', JSON.stringify({ conversation_id: conversationId, turns: history.length, original: question, search_question: searchQuestion }));
 
   // 담당자(관리자)가 냥대리 테스트·관리 화면에서 한 질문은 이용 통계와 미등록 질문에 넣지 않는다.
   // 대화 기록(messages)은 그대로 남겨 담당자 화면의 대화 이어 보기에는 영향이 없다.
   const countable = countsInStats(caller);
 
   if (countable && answer.status === 'insufficient_evidence') {
-    await recordUnanswered(db, question, category ?? selectedCategory ?? '기타', 'no_answer');
+    // 후속 질문은 바꾼 질문을 앞에 두어 담당자가 무엇을 물었는지 알 수 있게 한다(원래 질문도 함께)
+    const unansweredText = answer.search_question ? `${answer.search_question} (원래 질문: ${question})` : question;
+    await recordUnanswered(db, unansweredText, category ?? selectedCategory ?? '기타', 'no_answer');
   }
 
   const { data: message, error: msgError } = await db.from('messages').insert({
