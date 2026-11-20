@@ -1,0 +1,105 @@
+/* 몽글 글래스 디자인 (시안 D)
+   기능 코드는 건드리지 않고 색·모양만 덮어쓴다. cat/index.html에서 이 파일 한 줄을 빼면 원래 디자인으로 돌아간다.
+   맨 마지막에 불러와야 다른 CSS를 덮어쓸 수 있다. */
+
+/* 1. 색: 공용 변수(--ui-*)만 바꾸면 화면 대부분이 따라온다 */
+:root{
+  --glass-ground:radial-gradient(60% 70% at 8% 0%,#a9c6ff 0%,rgba(169,198,255,0) 70%),radial-gradient(55% 65% at 100% 100%,#e4b9f0 0%,rgba(228,185,240,0) 70%),linear-gradient(135deg,#cfdcff 0%,#e2dcfb 50%,#f1d6f2 100%);
+  --glass-window:rgba(255,255,255,.42);
+  --glass-edge:rgba(255,255,255,.85);
+  --glass-shadow:0 30px 80px -30px rgba(70,60,140,.35);
+  --glass-card-shadow:0 10px 30px -16px rgba(70,60,140,.4);
+  --ui-bg:transparent;
+  --ui-side:rgba(255,255,255,.5);
+  --ui-panel:rgba(255,255,255,.82);
+  --ui-fill:rgba(255,255,255,.66);
+  --ui-line:rgba(80,80,150,.14);
+  --ui-ink:#1f2340;
+  --ui-sub:#454a6e;
+  --ui-faint:#5d6187;
+  --ui-selection:rgba(74,91,216,.12);
+  --ui-accent:#4a5bd8;
+  --ui-accent-fill:rgba(74,91,216,.12);
+  --glass-dark-button:#1f2340;
+}
+html[data-theme=dark]{
+  --glass-ground:radial-gradient(60% 70% at 8% 0%,#26346b 0%,rgba(38,52,107,0) 70%),radial-gradient(55% 65% at 100% 100%,#4a2a5e 0%,rgba(74,42,94,0) 70%),linear-gradient(135deg,#151832 0%,#1d1a35 50%,#251a33 100%);
+  --glass-window:rgba(26,28,52,.55);
+  --glass-edge:rgba(255,255,255,.12);
+  --glass-shadow:0 30px 80px -30px rgba(0,0,0,.6);
+  --glass-card-shadow:0 10px 30px -16px rgba(0,0,0,.6);
+  --ui-bg:transparent;
+  --ui-side:rgba(34,36,64,.55);
+  --ui-panel:rgba(44,46,78,.82);
+  --ui-fill:rgba(255,255,255,.08);
+  --ui-line:rgba(255,255,255,.12);
+  --ui-ink:#eef0ff;
+  --ui-sub:#bfc3e4;
+  --ui-faint:#a3a8cf;
+  --ui-selection:rgba(143,156,255,.18);
+  --ui-accent:#9aa6ff;
+  --ui-accent-fill:rgba(143,156,255,.18);
+  --glass-dark-button:#eef0ff;
+}
+
+/* 2. 바탕과 둥근 창 */
+html{background:#dfe2fb}
+html body{background:var(--glass-ground)!important;background-attachment:fixed!important;min-height:100dvh}
+html[data-theme=dark]{background:#171830}
+#app{padding:16px;box-sizing:border-box;height:100dvh}
+.app-shell.desktop-workspace{
+  margin:0;height:100%;min-height:528px;box-sizing:border-box;
+  border-radius:28px;overflow:hidden;background:var(--glass-window);
+  border:1.5px solid var(--glass-edge);box-shadow:var(--glass-shadow);
+  -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
+}
+html body .desktop-workspace .workspace-header,
+html body .desktop-workspace .workspace-toolbar,
+html body .desktop-workspace #main,
+html body .desktop-workspace .chat-room,
+html body .desktop-workspace .chat-compose-dock{background:transparent!important}
+html body .desktop-workspace .chat-transcript{background:transparent!important}
+.desktop-workspace .workspace-header{border-bottom:1px solid var(--ui-line)}
+.desktop-workspace .workspace-toolbar{border-bottom:1px solid var(--ui-line)}
+
+/* 3. 위쪽 메뉴: 알약 모양 */
+.desktop-workspace .workspace-nav button,
+.desktop-workspace .workspace-nav a{border-radius:999px}
+.desktop-workspace .workspace-nav .active,
+.desktop-workspace .workspace-nav [aria-current="page"]{background:var(--ui-panel);box-shadow:0 4px 14px -6px rgba(70,60,140,.35);color:var(--ui-ink)}
+
+/* 4. 왼쪽 대화 기록 */
+.desktop-workspace .chat-history{background:var(--ui-side);border-right:1px solid var(--ui-line)}
+.desktop-workspace .chat-history select{border-radius:999px;background:var(--ui-panel);border-color:transparent}
+.desktop-workspace .chat-history-item{border-radius:14px}
+.desktop-workspace .chat-history-item.selected{background:var(--ui-panel);box-shadow:var(--glass-card-shadow)}
+
+/* 5. 입력창과 추천 질문: 둥글게 떠 있는 느낌 */
+.desktop-workspace .chat-composer{border-radius:26px;background:var(--ui-panel);border:1.5px solid var(--glass-edge);box-shadow:var(--glass-card-shadow)}
+.desktop-workspace .chat-starters button,
+.desktop-workspace .chat-starter{border-radius:999px;background:var(--ui-fill);border-color:transparent}
+.desktop-workspace .chat-composer button[type=submit],
+.desktop-workspace .send-button{border-radius:50%}
+
+/* 6. 카드·버튼 전반 */
+.desktop-workspace .secondary-button,
+.desktop-workspace .primary-button{border-radius:999px}
+.desktop-workspace .chat-treat-button{border-radius:999px;background:var(--ui-panel);border-color:transparent;box-shadow:var(--glass-card-shadow)}
+
+/* 7. 색이 직접 적혀 있던 곳들 */
+html body .desktop-workspace .chat-composer .send-button,
+html body .desktop-workspace .send-button{background:var(--ui-accent)!important;color:#fff}
+html[data-theme=dark] body .desktop-workspace .chat-composer .send-button{color:#14163a}
+html body .desktop-workspace .chat-home-below>.chat-composer{background:var(--ui-panel)!important;border:1.5px solid var(--glass-edge)!important}
+html body .desktop-workspace .chat-room .user-message{background:var(--ui-accent)!important;color:#fff!important;box-shadow:0 10px 24px -14px rgba(74,91,216,.8)}
+html[data-theme=dark] body .desktop-workspace .chat-room .user-message{color:#14163a!important}
+html body .desktop-workspace .chat-composer .composer-scope{background:transparent!important}
+html[data-theme=dark] body .desktop-workspace .chat-composer:focus-within{border-color:var(--ui-accent)!important;box-shadow:0 0 0 4px var(--ui-accent-fill)!important}
+html:not([data-theme=dark]) body .desktop-workspace .chat-composer:focus-within{box-shadow:0 0 0 4px var(--ui-accent-fill),var(--glass-card-shadow)!important}
+html body[data-mode=cat] .primary-button{background:var(--ui-accent)!important;border-color:var(--ui-accent)!important;border-radius:999px;box-shadow:0 12px 26px -14px rgba(74,91,216,.8)}
+html[data-theme=dark] body[data-mode=cat] .primary-button{color:#14163a}
+html body .desktop-workspace .task-row input[type=checkbox]:checked{background:var(--ui-accent)!important;border-color:var(--ui-accent)!important}
+html[data-theme=dark] body .desktop-workspace .chat-composer{background:var(--ui-panel)!important;border-color:var(--glass-edge)!important}
+html body .desktop-workspace input.field,
+html body .desktop-workspace #account-login input{border-radius:14px}
+html body .desktop-workspace #account-login input:focus{outline-color:var(--ui-accent)}
