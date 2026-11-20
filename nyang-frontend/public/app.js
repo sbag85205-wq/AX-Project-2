@@ -135,8 +135,8 @@ const tone=text=>personalityText(text,personality);
 
 function shell(){
  $('#app').innerHTML=`<div class="app-shell studio-shell desktop-workspace">
-  <header class="workspace-header">
-   <div class="header-brand"><button class="brand" data-action="reset" aria-label="냥대리 처음으로"><img class="company-logo" src="${root}assets/tilon-logo.png" width="434" height="118" alt="Tilon — Your dream starts here"><span>냥대리</span></button><button class="account-menu-button" data-action="account" id="account-button"></button></div>
+  <aside class="app-sidebar workspace-header" aria-label="냥대리 메뉴">
+   <div class="sidebar-top header-brand"><button class="brand" data-action="reset" aria-label="냥대리 처음으로"><img class="company-logo" src="${root}assets/tilon-logo.png" width="434" height="118" alt="Tilon — Your dream starts here"><span>냥대리</span></button><button type="button" class="sidebar-toggle icon-button" data-sidebar-toggle aria-expanded="true" aria-label="사이드바 접기" title="사이드바 접기">${icon('list')}</button></div>
    <nav class="workspace-nav side-nav" aria-label="주 메뉴">
     <button data-action="chat" id="nav-chat">${icon('chat')}<span>물어보기</span></button>
     <button data-action="schedule" id="nav-schedule">${icon('calendar')}<span>내 일정</span><span id="task-count" class="count"></span></button>
@@ -153,11 +153,22 @@ function shell(){
     <button data-action="manage" id="nav-manage" hidden>냥대리 관리</button>
     ${['test:냥대리 테스트','stats:이용통계','chat:채팅 관리','admin:관리'].map(g=>{const [id,label]=g.split(':');return `<div class="nav-group" id="nav-group-${id}" hidden><button type="button" class="nav-group-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="nav-submenu-${id}">${label}${icon('down')}</button><div class="nav-submenu" id="nav-submenu-${id}"></div></div>`;}).join('')}
    </nav>
-   <div class="header-account"><div id="wallet" class="wallet" aria-label="보유 포인트와 하트"></div></div>
-  </header>
+   <div id="sidebar-history" class="sidebar-history"></div>
+   <div class="sidebar-profile header-account">
+    <button type="button" class="profile-card account-menu-button" id="account-button" popovertarget="profile-menu" aria-haspopup="true"></button>
+    <div id="wallet" class="wallet" aria-label="보유 포인트와 하트"></div>
+   </div>
+   <div id="profile-menu" class="profile-menu" popover aria-label="내 프로필 메뉴">
+    <div id="profile-level" class="profile-level"></div>
+    <div class="workspace-utilities"><button data-action="personality" id="personality-button" aria-label="냥대리 성격 설정">${icon('snow')}<span>차가운 모드</span></button><button data-action="guide" id="guide-button" aria-label="냥대리 사용 가이드 다시 보기" title="냥대리 사용법을 처음부터 다시 봐요" hidden>${icon('book')}<span>가이드 다시 보기</span></button><button data-action="wardrobe">${icon('shirt')}<span>꾸미기</span></button><button class="attendance-quick" id="attendance-button" data-community="attendance" data-busy-label="출석 중…">${icon('calendar')}<span>출석체크</span></button></div>
+    <button class="appearance-button theme-toggle" data-action="toggle-theme" aria-label="다크 모드" aria-pressed="false" title="다크 모드로 전환">${icon('moon')}</button>
+    <button type="button" data-action="account">${icon('settings')}<span>내 계정</span></button>
+    <button type="button" data-action="logout">${icon('logout')}<span>로그아웃</span></button>
+   </div>
+  </aside>
   <div class="main-shell">
-   <header class="topbar workspace-toolbar"><div class="workspace-context"><span id="workspace-title">물어보기</span></div><div class="top-actions"><div class="workspace-utilities"><button data-action="personality" id="personality-button" aria-label="냥대리 성격 설정">${icon('snow')}<span>차가운 모드</span></button><button data-action="guide" id="guide-button" aria-label="냥대리 사용 가이드 다시 보기" title="냥대리 사용법을 처음부터 다시 봐요" hidden>${icon('book')}<span>가이드</span></button><button data-action="wardrobe">${icon('shirt')}<span>꾸미기</span></button><button class="attendance-quick" id="attendance-button" data-community="attendance" data-busy-label="출석 중…">${icon('calendar')}<span>출석체크</span></button></div><button class="appearance-button theme-toggle" data-action="toggle-theme" aria-label="다크 모드" aria-pressed="false" title="다크 모드로 전환">${icon('moon')}</button></div></header>
    <main class="main-content cat-mode" id="main"></main>
+   <span id="workspace-title" class="visually-hidden">물어보기</span>
    <span id="page-title" class="visually-hidden"></span>
   </div>
  </div><dialog id="modal" aria-labelledby="modal-title"></dialog>`;
