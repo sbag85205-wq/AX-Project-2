@@ -214,7 +214,7 @@ function render(){
  for(const name of STAFF_NAVS)$('#nav-'+name).hidden=!staff;
  $('#nav-model').hidden=true; // 검색·모델 설정은 '냥대리 테스트' 화면 아래로 옮겼다
  $('#nav-unanswered').hidden=!staff;$('#nav-library').hidden=staff;
- if(!session.member){$('#wallet').innerHTML='';$('#account-button').textContent='';$('#workspace-title').textContent='로그인';$('#main').classList.add('work-view');$('#main').innerHTML=accountGateHTML();return;}
+ if(!session.member){$('#sidebar-history').replaceChildren();$('#wallet').innerHTML='';$('#account-button').textContent='';$('#workspace-title').textContent='로그인';$('#main').classList.add('work-view');$('#main').innerHTML=accountGateHTML();return;}
  if(viewOf(view)?.staffOnly&&!staff)view='chat';
  $('#account-button').innerHTML='<span>'+esc(session.me.username)+'</span><small>'+(session.me.role==='staff'?'담당자':'직원')+'</small>';
  $('#account-button').setAttribute('aria-label',session.me.username+' 내 계정');
@@ -226,6 +226,7 @@ function render(){
  $('#page-title').textContent=pageTitleOf(view);
  if(staff&&view==='chat')$('#workspace-title').textContent='냥대리 테스트';
  $('#main').classList.toggle('work-view',view!=='chat');updateWallet();
+ if(view!=='chat')$('#sidebar-history').replaceChildren(); // 대화 기록은 물어보기 화면에서만 보인다
  if(viewOf(view)?.route){mountKnowly(view);}else if(view==='manage')$('#main').innerHTML=nyangManagePageHTML();else if(view==='statistics')$('#main').innerHTML=knowlyStatsHTML();else if(view==='userstats')$('#main').innerHTML=statsHTML();else if(view==='activity')$('#main').innerHTML=activityHTML(`<section class="activity-work" aria-label="내 레벨">${myLevelHTML()}</section>`,true);else if(view==='board')$('#main').innerHTML=boardHTML();else if(view==='calendar')renderCalendar(scheduleState());else if(view==='todos')renderTodos(scheduleState());else renderCat();
 }
 async function commitReward(event){
@@ -525,7 +526,9 @@ function renderCat(){
  }else{
   content=`<section class="chat-room" aria-label="냥대리 채팅방"><div class="chat-transcript" tabindex="0" aria-label="대화 내역"><div class="chat-transcript-inner">${conversation()}</div></div><div class="chat-compose-dock">${composer()}${staffSettingsHTML()}<p class="chat-dock-note">중요한 내용은 답변의 출처에서 확인하세요.</p></div></section>`;
  }
- $('#main').innerHTML=`<div class="chat-layout">${chatHistoryHTML()}<div class="chat-workspace">${content}</div></div>`;
+ // 대화 기록은 왼쪽 사이드바(#sidebar-history) 안, 메뉴 바로 아래에 그린다
+ $('#main').innerHTML=`<div class="chat-layout"><div class="chat-workspace">${content}</div></div>`;
+ $('#sidebar-history').innerHTML=chatHistoryHTML();
  const pet=previousPet||document.createElement('div');pet.className='resident-portrait';
  if(!previousPet)pet.innerHTML=petHTML();
  $('.active-cat-slot').replaceWith(pet);

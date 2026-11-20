@@ -33,7 +33,7 @@
       rise(home.querySelector('.resident-speech p'), 1, 120);
       rise(home.querySelector('.resident-portrait'), 2, 120);
       [...home.querySelectorAll('.chat-home-below > *')].forEach((el, i) => rise(el, i + 3, 120));
-      rise(main.querySelector('.chat-history'), 0);
+      rise(document.querySelector('#sidebar-history .chat-history'), 0);
       return;
     }
     const root = main.firstElementChild; if (!root) return;
