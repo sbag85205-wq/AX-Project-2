@@ -3,7 +3,7 @@
 //
 // 저장: 다 보았거나 건너뛰었다는 기록은 계정(Supabase 로그인 계정 정보)에 남긴다(transport.ts의 /api/guide).
 //  그래서 다른 PC로 로그인해도 다시 뜨지 않는다. 저장에 실패하면 이 브라우저에 임시로 적어 두고 다음 로그인 때 다시 저장한다.
-import {GUIDE_STEPS,GUIDE_VERSION,guideText} from './guide-steps.js?v=bc5760e3fc07';
+import {GUIDE_STEPS,GUIDE_VERSION,guideText} from './guide-steps.js?v=38acc8aec5ac';
 import {esc} from './shared.js?v=b4248c4d9fbf';
 
 const LOCAL_PREFIX='nyang-guide:';
