@@ -358,3 +358,27 @@ html[data-theme=dark] #history-menu,html[data-theme=dark] #history-menu .hm-sub{
 .history-tip>span:first-child:not(:only-child){color:var(--ui-ink)}
 html[data-theme=dark] .history-tip{background:rgb(40,42,72)}
 @media (prefers-reduced-motion:reduce){.history-tip,.app-sidebar .chat-history-row>.icon-button{transition:none}}
+
+/* 첫 화면 정리 3단계: 입력창을 한 줄로.
+   [+ 첨부] [분야 알약 ▾] [질문 예시 전구] [입력칸] [보내기] (app.js composer()의 한 줄 .input-row)
+   분야 알약은 기존 분야 변경(data-action="choose-category"), 전구는 기존 질문 예시(data-action="chat-examples") 그대로.
+   첨부 파일 칩이 있으면 그 줄 위에 따로 보인다. 입력이 길어지면 입력칸만 높아지고 버튼은 아래쪽에 맞춘다. */
+html body .desktop-workspace .chat-composer{padding:0}
+html body .desktop-workspace .chat-composer .composer-attachments{margin:0;padding:10px 14px 0}
+html body .desktop-workspace .chat-composer .input-row{display:flex;align-items:flex-end;gap:8px;padding:9px 9px 9px 10px}
+html body .desktop-workspace .chat-composer .input-row textarea{flex:1;min-width:0;align-self:center;min-height:36px;padding:6px 4px;line-height:1.6}
+html body .desktop-workspace .chat-composer .attach-button{flex:none;margin:0 0 3px}
+html body .desktop-workspace .chat-composer .send-button{flex:none;margin:0 0 2px}
+/* 분야 알약: 연한 강조색 배경 + 굵은 글씨, 긴 이름은 … */
+html body .desktop-workspace .chat-composer .scope-pill{flex:none;display:inline-flex;align-items:center;gap:4px;max-width:180px;height:32px;margin:0 0 4px;padding:0 10px 0 12px;border:0;border-radius:999px;background:var(--ui-accent-fill);color:var(--ui-accent);font-size:12.5px;font-weight:700;line-height:1;white-space:nowrap;cursor:pointer;transition:background-color .15s}
+html body .desktop-workspace .chat-composer .scope-pill:hover{background:color-mix(in srgb,var(--ui-accent) 20%,transparent)}
+html body .desktop-workspace .chat-composer .scope-pill #scope-name{min-width:0;overflow:hidden;text-overflow:ellipsis;font-weight:700;color:inherit}
+html body .desktop-workspace .chat-composer .scope-pill .icon{flex:none;width:14px;height:14px}
+/* 질문 예시: 알약 바로 오른쪽 전구 버튼(마우스를 올리면 유리 말풍선 "질문 예시") */
+html body .desktop-workspace .chat-composer .examples-button{flex:none;display:grid;place-items:center;width:32px;height:32px;margin:0 0 4px -2px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--ui-sub);cursor:pointer}
+html body .desktop-workspace .chat-composer .examples-button:hover{background:var(--ui-fill);color:var(--ui-accent)}
+html body .desktop-workspace .chat-composer .examples-button .icon{width:18px;height:18px}
+html[data-theme=dark] body .desktop-workspace .chat-composer .scope-pill{color:#c3caff}
+html[data-theme=dark] body .desktop-workspace .chat-composer .examples-button{color:#bfc3e4}
+/* 다크 모드: 옛 규칙(refinements.css)이 분야 이름에 따로 씌우던 작은 알약 배경을 알약 안에서는 없앤다(알약 하나로 보이게) */
+html[data-theme=dark] body .desktop-workspace .chat-composer .scope-pill #scope-name{display:block;margin:0;padding:0;border-radius:0;background:transparent;color:inherit;font-weight:700}

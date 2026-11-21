@@ -341,20 +341,32 @@
     t.style.left = Math.round((side ? side.right : r.right) + 10) + 'px';
     t.style.top = Math.round(Math.max(8, Math.min(innerHeight - h - 8, r.top + r.height / 2 - h / 2))) + 'px';
   }
-  const ITEM = '#sidebar-history .chat-history-item', ROW = '#sidebar-history .chat-history-row';
+  // 이름표 말풍선: data-glass-tip이 있는 버튼(예: 입력창 전구 '질문 예시')은 버튼 바로 위에 유리 말풍선을 띄운다
+  function showGlassTip(btn) {
+    const t = tipEl(); t.replaceChildren(el('span', '', btn.dataset.glassTip)); tipFor = btn;
+    t.classList.add('show');
+    const r = btn.getBoundingClientRect(), w = t.offsetWidth, h = t.offsetHeight;
+    t.style.left = Math.round(Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2))) + 'px';
+    t.style.top = Math.round(r.top - h - 8 >= 8 ? r.top - h - 8 : r.bottom + 8) + 'px';
+  }
+  const ITEM = '#sidebar-history .chat-history-item', ROW = '#sidebar-history .chat-history-row', GTIP = '[data-glass-tip]';
   document.addEventListener('pointerover', e => {
     if (e.pointerType === 'touch') return;
     const item = e.target.closest?.(ITEM);
     if (item) { if (item !== tipFor) showTip(item); return; }
+    const g = e.target.closest?.(GTIP);
+    if (g) { if (g !== tipFor) showGlassTip(g); return; }
     if (tipFor && !e.target.closest?.(ROW)) hideTip();
   });
   document.documentElement.addEventListener('pointerleave', hideTip);
   document.addEventListener('focusin', e => {
-    const item = e.target.closest?.(ITEM);
-    if (item && e.target.matches(':focus-visible')) showTip(item); else if (!e.target.closest?.(ROW)) hideTip();
+    const item = e.target.closest?.(ITEM), g = e.target.closest?.(GTIP);
+    if (item && e.target.matches(':focus-visible')) showTip(item);
+    else if (g && e.target.matches(':focus-visible')) showGlassTip(g);
+    else if (!e.target.closest?.(ROW)) hideTip();
   });
   document.addEventListener('scroll', hideTip, true);
-  document.addEventListener('click', e => { if (e.target.closest?.(ROW)) hideTip(); });
+  document.addEventListener('click', e => { if (e.target.closest?.(ROW) || e.target.closest?.(GTIP)) hideTip(); });
 
   // 화면이 다시 그려질 때마다 살핀다
   let first = true;
