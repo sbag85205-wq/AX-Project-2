@@ -114,11 +114,11 @@ body[data-mode=cat] .app-sidebar .brand{display:flex;align-items:center;gap:10px
 .sidebar-toggle.icon-button:hover{background:var(--ui-fill);color:var(--ui-ink)}
 .sidebar-toggle .icon{width:20px;height:20px}
 
-/* 메뉴: 세로 목록 */
-.app-sidebar .workspace-nav.side-nav{flex-direction:column;align-items:stretch;justify-content:flex-start;gap:4px!important}
+/* 메뉴: 세로 목록 (글씨·줄 높이를 조금 작게 해서 아래 대화 기록에 공간을 더 준다) */
+.app-sidebar .workspace-nav.side-nav{flex-direction:column;align-items:stretch;justify-content:flex-start;gap:2px!important}
 .app-sidebar .workspace-nav.side-nav>button,
-.app-sidebar .workspace-nav.side-nav .nav-group-toggle{justify-content:flex-start;gap:12px;width:100%;min-height:44px;padding:10px 14px!important;font-size:14px;text-align:left;color:var(--ui-ink);border-radius:999px}
-.app-sidebar .workspace-nav.side-nav>button>.icon{display:block;flex:none;width:18px;height:18px;color:var(--ui-sub)}
+.app-sidebar .workspace-nav.side-nav .nav-group-toggle{justify-content:flex-start;gap:11px;width:100%;min-height:38px;padding:8px 14px!important;font-size:13.5px;line-height:1.35;text-align:left;color:var(--ui-ink);border-radius:999px}
+.app-sidebar .workspace-nav.side-nav>button>.icon{display:block;flex:none;width:17px;height:17px;color:var(--ui-sub)}
 .app-sidebar .workspace-nav.side-nav>button.active>.icon{color:var(--ui-ink)}
 .app-sidebar .workspace-nav .count,
 .app-sidebar .workspace-nav .activity-unread{margin-left:auto}
@@ -127,7 +127,7 @@ body[data-mode=cat] .app-sidebar .brand{display:flex;align-items:center;gap:10px
 .app-sidebar .workspace-nav.side-nav .nav-group-toggle .icon{margin-left:auto}
 .app-sidebar .workspace-nav .nav-submenu{position:static;min-width:0;padding:2px 0 6px 18px;background:transparent;border:0;box-shadow:none}
 html[data-theme=dark] .app-sidebar .workspace-nav .nav-submenu{box-shadow:none}
-.app-sidebar .workspace-nav.side-nav .nav-submenu>button{border-radius:999px;padding:8px 14px!important}
+.app-sidebar .workspace-nav.side-nav .nav-submenu>button{border-radius:999px;min-height:34px;padding:7px 14px!important;font-size:13px}
 
 /* 대화 기록 자리(물어보기 화면에서만 채워진다. 비어 있어도 프로필을 맨 아래로 밀어 둔다)와 맨 아래 내 프로필 */
 .sidebar-history{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
@@ -215,10 +215,12 @@ html:not([data-theme=dark]) #profile-level .profile-level-stats>div{background:#
 
 /* 사이드바 안의 대화 기록(2단계): 별도 칸이 아니라 메뉴 아래 같은 판 위에 이어진다 */
 .app-sidebar .chat-history{width:auto;flex:1 1 auto;min-height:0;margin:2px -4px 0;background:transparent;border:0;border-top:1px solid var(--ui-line)}
-.app-sidebar .chat-history-heading{padding:16px 10px 10px}
-.app-sidebar .chat-history-filter{padding:0 10px 8px}
-.app-sidebar .chat-history-list{padding:0 4px 12px}
-.app-sidebar .chat-history-note{padding:12px 10px 2px}
+.app-sidebar .chat-history-heading{gap:2px;padding:14px 6px 6px 10px}
+.app-sidebar .chat-history-heading h2{margin-right:auto}
+/* 7단계: 내 폴더·분야별로 찾기 선택 상자와 안내 문구는 ⋯ 메뉴로 옮겼다(선택 상자 자체는 id·기능 그대로 두고 화면에서만 숨긴다) */
+.app-sidebar .chat-history-filter{display:none}
+.app-sidebar .chat-history-list{flex:1 1 auto;min-height:0;overflow-y:auto;padding:0 4px 12px}
+.app-sidebar .chat-history-note{display:none}
 /* 대화 기록 접기: 제목만 남기고 아래로 접는다(화살표는 위·아래 방향으로 돌려 보인다) */
 .app-sidebar .chat-history.is-collapsed{width:auto;flex:0 0 auto}
 .app-sidebar .chat-history.is-collapsed .chat-history-heading{padding:16px 10px 4px}
@@ -258,26 +260,31 @@ body[data-authenticated="false"] .app-sidebar{flex-direction:row;align-items:cen
 body[data-authenticated="false"] .app-sidebar>:not(.sidebar-top),
 body[data-authenticated="false"] .app-sidebar .sidebar-toggle{display:none!important}
 
-/* 4단계. 발바닥 냥대리 메뉴: 첫 화면 고양이 오른쪽 아래의 흰 동그라미(54px) + 검은 발바닥
+/* 4단계. 발바닥 냥대리 메뉴: 첫 화면 고양이 오른쪽 아래의 흰 동그라미(34px, 첫 화면 정리 4단계에서 줄임) + 검은 발바닥
    고양이 그림 상자(.resident-portrait) 밖, 고양이 칸과 오른쪽 칸 사이 여백에 둬서 쓰다듬기(.pet-touch)와 겹치지 않는다.
    열고 닫기는 glass-motion.js. 담당자에게는 account.css의 .workspace-utilities 숨김으로 보이지 않는다. */
-.desktop-workspace .chat-home .cat-resident-stage>[data-paw]{grid-column:2;grid-row:2;justify-self:end;align-self:end;position:relative;z-index:6;display:block;margin:0 -66px 10px 0;padding:0;border:0}
+.desktop-workspace .chat-home .cat-resident-stage>[data-paw]{grid-column:2;grid-row:1;justify-self:end;align-self:end;position:relative;z-index:6;display:block;margin:0 -40px 8px 0;padding:0;border:0}
 /* 담당자: 위 위치 규칙이 account.css의 담당자 숨김(.workspace-utilities)을 덮지 않게 여기서도 숨긴다 */
 body[data-role="staff"] .desktop-workspace .chat-home .cat-resident-stage>[data-paw]{display:none}
-[data-paw]>.paw-button{display:grid;place-items:center;width:54px;height:54px;padding:0;border:1px solid rgba(31,35,64,.08);border-radius:50%;background:#fff;color:#15172a;box-shadow:0 12px 26px -14px rgba(40,30,110,.6);cursor:pointer;transition:translate .18s,box-shadow .18s}
-[data-paw]>.paw-button:hover{background:#fff;color:#15172a;translate:0 -2px;box-shadow:0 16px 30px -14px rgba(40,30,110,.7)}
-[data-paw]>.paw-button[aria-expanded="true"]{box-shadow:0 0 0 4px var(--ui-accent-fill),0 12px 26px -14px rgba(40,30,110,.6)}
-[data-paw]>.paw-button .icon{width:26px;height:26px;fill:currentColor;stroke:none}
-/* 말풍선 메뉴: 냥대리 말풍선을 가리지 않게 발바닥 아래쪽으로 연다.
-   화면 아래 공간이 모자라면 glass-motion.js가 .is-up을 붙여 위로 연다. */
-[data-paw]>.paw-menu{position:absolute;left:0;top:calc(100% + 10px);z-index:30;display:flex;flex-direction:column;gap:2px;width:236px;box-sizing:border-box;padding:14px 10px 10px;border:1px solid var(--glass-edge);border-radius:22px;background:#fff;box-shadow:0 24px 50px -22px rgba(40,30,110,.5);animation:paw-menu-in .18s cubic-bezier(.2,.8,.2,1)}
-[data-paw]>.paw-menu.is-up{top:auto;bottom:calc(100% + 10px);animation-name:paw-menu-up}
+[data-paw]>.paw-button{display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid rgba(31,35,64,.08);border-radius:50%;background:#fff;color:#15172a;box-shadow:0 8px 18px -10px rgba(40,30,110,.6);cursor:pointer;transition:translate .18s,box-shadow .18s}
+[data-paw]>.paw-button:hover{background:#fff;color:#15172a;translate:0 -2px;box-shadow:0 12px 22px -10px rgba(40,30,110,.7)}
+[data-paw]>.paw-button[aria-expanded="true"]{box-shadow:0 0 0 3px var(--ui-accent-fill),0 8px 18px -10px rgba(40,30,110,.6)}
+[data-paw]>.paw-button .icon{width:18px;height:18px;fill:currentColor;stroke:none}
+/* 첫 화면 정리 4단계: 발바닥 버튼 34px로 줄이고 고양이 상자 오른쪽 아래에 6px 간격으로 붙인다(쓰다듬기 영역과는 겹치지 않음).
+   다크 모드: 발바닥은 흰색, 동그라미는 어두운 유리색 */
+html[data-theme=dark] [data-paw]>.paw-button,
+html[data-theme=dark] [data-paw]>.paw-button:hover{border-color:var(--glass-edge);background:rgba(40,42,72,.72);color:#fff;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 8px 18px -10px rgba(0,0,0,.7)}
+html[data-theme=dark] [data-paw]>.paw-button[aria-expanded="true"]{box-shadow:0 0 0 3px var(--ui-accent-fill),0 8px 18px -10px rgba(0,0,0,.7)}
+/* 말풍선 메뉴: 발바닥 버튼 오른쪽에, 버튼 윗선에 맞춰 연다(아래 제목·소개 글과 위쪽 반응 글을 가리지 않게).
+   화면 아래 공간이 모자라면 glass-motion.js가 .is-up을 붙여 버튼 아랫선에 맞춰 위로 연다. */
+[data-paw]>.paw-menu{position:absolute;left:calc(100% + 12px);top:0;z-index:30;display:flex;flex-direction:column;gap:2px;width:236px;box-sizing:border-box;padding:14px 10px 10px;border:1px solid var(--glass-edge);border-radius:22px;background:#fff;box-shadow:0 24px 50px -22px rgba(40,30,110,.5);animation:paw-menu-in .18s cubic-bezier(.2,.8,.2,1)}
+[data-paw]>.paw-menu.is-up{top:auto;bottom:0;animation-name:paw-menu-up}
 [data-paw]>.paw-menu[hidden]{display:none}
 /* 화면이 다시 그려져 메뉴를 다시 열 때는 등장 움직임을 되풀이하지 않는다 */
 [data-paw]>.paw-menu.is-restored{animation:none}
 html[data-theme=dark] [data-paw]>.paw-menu{background:rgb(40,42,72)}
-@keyframes paw-menu-in{from{opacity:0;translate:0 -6px}to{opacity:1;translate:0 0}}
-@keyframes paw-menu-up{from{opacity:0;translate:0 6px}to{opacity:1;translate:0 0}}
+@keyframes paw-menu-in{from{opacity:0;translate:-6px 0}to{opacity:1;translate:0 0}}
+@keyframes paw-menu-up{from{opacity:0;translate:-6px 0}to{opacity:1;translate:0 0}}
 .paw-menu-title{margin:0 8px 6px;font-size:12px;font-weight:650;color:var(--ui-sub)}
 .paw-menu .paw-treat{display:block;margin:0;padding:0}
 .paw-menu .paw-treat .chat-collect-heart{display:none}
@@ -302,3 +309,81 @@ html[data-theme=dark] [data-paw] .paw-menu .paw-treat .chat-treat-button small{c
 
 @media (prefers-reduced-motion:reduce){.app-shell.desktop-workspace.sidebar-ready{transition:none}[data-paw]>.paw-menu{animation:none}[data-paw]>.paw-button{transition:none}}
 .motion-paused [data-paw]>.paw-menu{animation:none}
+
+/* 첫 화면 정리 2단계: 고양이 → 제목·소개 글 → 입력창 → 추천 질문 순서로, 전체 묶음을 본문 세로 가운데에 둔다.
+   화면이 낮아 다 들어가지 않으면 위에서부터 보이고 스크롤된다(safe center). 담당자 냥대리 테스트 화면도 같은 순서. */
+html body .desktop-workspace .chat-home{justify-content:safe center}
+html body .desktop-workspace .chat-home .cat-resident-stage{padding:8px 0 20px;row-gap:28px}
+html body .desktop-workspace .chat-home .cat-resident-stage>.resident-portrait,
+html body .desktop-workspace .chat-home .cat-resident-stage>.home-cat-aside{grid-row:1}
+html body .desktop-workspace .chat-home .cat-resident-stage>.resident-speech{grid-row:2}
+
+/* 7단계. 대화 기록 ⋯ 버튼과 메뉴(폴더 ▸ · 분야 ▸ · 안내). 열고 닫기와 내용은 glass-motion.js가 만든다. */
+.app-sidebar .chat-history-heading .history-more .icon{rotate:0deg;width:18px;height:18px;fill:currentColor;stroke:none}
+.app-sidebar .chat-history-heading .icon-button{display:grid;place-items:center;width:30px;height:30px;border-radius:9px}
+.app-sidebar .chat-history-heading .icon-button:hover,.app-sidebar .chat-history-heading .history-more[aria-expanded="true"]{background:var(--ui-fill);color:var(--ui-ink)}
+#history-menu{position:fixed;inset:auto;margin:0;width:212px;box-sizing:border-box;padding:6px;overflow:visible;border:1px solid var(--glass-edge);border-radius:16px;background:rgba(255,255,255,.97);color:var(--ui-ink);box-shadow:0 24px 50px -22px rgba(40,30,110,.5);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+#history-menu:popover-open{display:flex;flex-direction:column;gap:2px;animation:profile-menu-in .16s cubic-bezier(.2,.8,.2,1)}
+html[data-theme=dark] #history-menu,html[data-theme=dark] #history-menu .hm-sub{background:rgb(40,42,72)}
+#history-menu .hm-row{position:relative}
+#history-menu .hm-item{display:flex;align-items:center;gap:8px;width:100%;min-height:36px;margin:0;padding:7px 8px 7px 10px;border:0;border-radius:10px;background:transparent;color:var(--ui-ink);font-size:13px;font-weight:500;text-align:left;cursor:pointer}
+#history-menu .hm-item:hover,#history-menu .hm-item[aria-expanded="true"],#history-menu .hm-option:hover{background:var(--ui-fill)}
+#history-menu .hm-value{margin-left:auto;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:400;color:var(--ui-sub)}
+#history-menu .hm-chev{flex:none;width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;color:var(--ui-sub)}
+#history-menu .hm-sub{position:absolute;left:calc(100% + 12px);top:-6px;z-index:1;display:flex;flex-direction:column;gap:2px;width:184px;max-height:min(60vh,360px);overflow-y:auto;box-sizing:border-box;padding:6px;border:1px solid var(--glass-edge);border-radius:14px;background:rgba(255,255,255,.97);box-shadow:0 20px 44px -22px rgba(40,30,110,.5)}
+#history-menu .hm-sub[hidden]{display:none}
+#history-menu .hm-option{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:34px;margin:0;padding:7px 10px;border:0;border-radius:9px;background:transparent;color:var(--ui-ink);font-size:13px;text-align:left;cursor:pointer}
+#history-menu .hm-option[aria-checked="true"]{font-weight:600}
+#history-menu .hm-check{flex:none;width:15px;height:15px;fill:none;stroke:var(--ui-accent);stroke-width:2.2}
+#history-menu .hm-divider{margin:4px 6px;border:0;border-top:1px solid var(--ui-line)}
+#history-menu .hm-note{margin:2px 10px 4px;font-size:11.5px;line-height:1.5;color:var(--ui-sub);word-break:keep-all}
+@media (prefers-reduced-motion:reduce){#history-menu:popover-open{animation:none}}
+.motion-paused #history-menu:popover-open{animation:none}
+
+/* 6단계(첫 화면 정리). 대화 항목 = ↗ 아이콘 + 제목 한 줄.
+   "폴더 · N개 질문 · 분야" 줄은 화면에서만 숨기고(화면 읽기 프로그램은 그대로 읽음), 마우스·키보드로 가면 유리 말풍선(glass-motion.js)으로 보인다.
+   설정·삭제 버튼은 마우스를 올렸을 때, 키보드로 갔을 때, 선택된 항목에서만 보인다. 터치 화면에서는 항상 보인다. */
+.app-sidebar .chat-history-row{position:relative;gap:0;border-radius:12px}
+.app-sidebar .chat-history-row .chat-history-item{display:flex;align-items:center;gap:9px;min-height:36px;margin:1px 0;padding:8px 10px;border-radius:12px}
+.app-sidebar .chat-history-item::before{content:'';flex:none;width:13px;height:13px;background:currentColor;opacity:.6;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 17 17 7M9 7h8v8'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 17 17 7M9 7h8v8'/%3E%3C/svg%3E") center/contain no-repeat}
+.app-sidebar .chat-history-item>span{flex:1;min-width:0;font-size:13px;font-weight:500;line-height:1.4}
+.app-sidebar .chat-history-item small{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.app-sidebar .chat-history-row>.icon-button{position:absolute;top:50%;translate:0 -50%;width:26px;height:28px;opacity:0;pointer-events:none;transition:opacity .15s}
+.app-sidebar .chat-history-row>.chat-history-delete{right:4px}
+.app-sidebar .chat-history-row>.chat-history-settings{right:30px}
+.app-sidebar .chat-history-row:is(:hover,:focus-within,:has(.chat-history-item.selected))>.icon-button{opacity:1;pointer-events:auto}
+.app-sidebar .chat-history-row:has(>.icon-button):is(:hover,:focus-within,:has(.chat-history-item.selected)) .chat-history-item{padding-right:62px}
+@media (hover:none){
+  .app-sidebar .chat-history-row>.icon-button{opacity:1;pointer-events:auto}
+  .app-sidebar .chat-history-row:has(>.icon-button) .chat-history-item{padding-right:62px}
+}
+/* 대화 항목 말풍선 */
+.history-tip{position:fixed;left:0;top:0;z-index:1000;display:flex;flex-direction:column;gap:2px;max-width:260px;box-sizing:border-box;padding:8px 12px;border:1px solid var(--glass-edge);border-radius:12px;background:rgba(255,255,255,.97);color:var(--ui-sub);font-size:12px;line-height:1.5;word-break:keep-all;box-shadow:0 16px 36px -18px rgba(40,30,110,.5);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);pointer-events:none;opacity:0;visibility:hidden;translate:-4px 0;transition:opacity .12s,translate .12s,visibility .12s}
+.history-tip.show{opacity:1;visibility:visible;translate:0 0}
+.history-tip>span:first-child:not(:only-child){color:var(--ui-ink)}
+html[data-theme=dark] .history-tip{background:rgb(40,42,72)}
+@media (prefers-reduced-motion:reduce){.history-tip,.app-sidebar .chat-history-row>.icon-button{transition:none}}
+
+/* 첫 화면 정리 3단계: 입력창을 한 줄로.
+   [+ 첨부] [분야 알약 ▾] [질문 예시 전구] [입력칸] [보내기] (app.js composer()의 한 줄 .input-row)
+   분야 알약은 기존 분야 변경(data-action="choose-category"), 전구는 기존 질문 예시(data-action="chat-examples") 그대로.
+   첨부 파일 칩이 있으면 그 줄 위에 따로 보인다. 입력이 길어지면 입력칸만 높아지고 버튼은 아래쪽에 맞춘다. */
+html body .desktop-workspace .chat-composer{padding:0}
+html body .desktop-workspace .chat-composer .composer-attachments{margin:0;padding:10px 14px 0}
+html body .desktop-workspace .chat-composer .input-row{display:flex;align-items:flex-end;gap:8px;padding:9px 9px 9px 10px}
+html body .desktop-workspace .chat-composer .input-row textarea{flex:1;min-width:0;align-self:center;min-height:36px;padding:6px 4px;line-height:1.6}
+html body .desktop-workspace .chat-composer .attach-button{flex:none;margin:0 0 3px}
+html body .desktop-workspace .chat-composer .send-button{flex:none;margin:0 0 2px}
+/* 분야 알약: 연한 강조색 배경 + 굵은 글씨, 긴 이름은 … */
+html body .desktop-workspace .chat-composer .scope-pill{flex:none;display:inline-flex;align-items:center;gap:4px;max-width:180px;height:32px;margin:0 0 4px;padding:0 10px 0 12px;border:0;border-radius:999px;background:var(--ui-accent-fill);color:var(--ui-accent);font-size:12.5px;font-weight:700;line-height:1;white-space:nowrap;cursor:pointer;transition:background-color .15s}
+html body .desktop-workspace .chat-composer .scope-pill:hover{background:color-mix(in srgb,var(--ui-accent) 20%,transparent)}
+html body .desktop-workspace .chat-composer .scope-pill #scope-name{min-width:0;overflow:hidden;text-overflow:ellipsis;font-weight:700;color:inherit}
+html body .desktop-workspace .chat-composer .scope-pill .icon{flex:none;width:14px;height:14px}
+/* 질문 예시: 알약 바로 오른쪽 전구 버튼(마우스를 올리면 유리 말풍선 "질문 예시") */
+html body .desktop-workspace .chat-composer .examples-button{flex:none;display:grid;place-items:center;width:32px;height:32px;margin:0 0 4px -2px;padding:0;border:0;border-radius:50%;background:transparent;color:var(--ui-sub);cursor:pointer}
+html body .desktop-workspace .chat-composer .examples-button:hover{background:var(--ui-fill);color:var(--ui-accent)}
+html body .desktop-workspace .chat-composer .examples-button .icon{width:18px;height:18px}
+html[data-theme=dark] body .desktop-workspace .chat-composer .scope-pill{color:#c3caff}
+html[data-theme=dark] body .desktop-workspace .chat-composer .examples-button{color:#bfc3e4}
+/* 다크 모드: 옛 규칙(refinements.css)이 분야 이름에 따로 씌우던 작은 알약 배경을 알약 안에서는 없앤다(알약 하나로 보이게) */
+html[data-theme=dark] body .desktop-workspace .chat-composer .scope-pill #scope-name{display:block;margin:0;padding:0;border-radius:0;background:transparent;color:inherit;font-weight:700}

@@ -17,9 +17,9 @@ import {createAccountSync} from './account-sync.js?v=422e8ba71441';
 import {esc,loadingHTML} from './shared.js?v=b4248c4d9fbf';
 import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=149d7dd11f7d';
 import {orderNav,installNavLayout} from './nav-layout.js?v=2a33659a9a7a';
-import {createGuide} from './guide.js?v=c6d8476e52b3';
+import {createGuide} from './guide.js?v=54186151e6e0';
 import {recentTurns} from './chat-context.js?v=e6c82dc547ad';
-import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=4a544c8cbd91';
+import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=1e8abeb5efed';
 import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=89231fc15ea9';
 const mode=document.body.dataset.mode;
 const isCat=mode==='cat';
@@ -43,6 +43,8 @@ paths.copy='M9 8h11v13H9zM5 16V3h11';
 // 사이드바 접기 버튼: 둥근 사각형 안에 왼쪽 세로줄(사이드바 패널)
 paths.panel='M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM9 4v16';
 // 발바닥 냥대리 메뉴 버튼: 발가락 네 개 + 발바닥(채워서 그린다)
+// 입력창 질문 예시 버튼: 전구
+paths.bulb='M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V17h5.2v-1.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3Z';
 paths.paw='M4.4 10.6a1.7 2.1 0 1 0 3.4 0a1.7 2.1 0 1 0-3.4 0ZM7.8 6.6a1.8 2.2 0 1 0 3.6 0a1.8 2.2 0 1 0-3.6 0ZM12.6 6.6a1.8 2.2 0 1 0 3.6 0a1.8 2.2 0 1 0-3.6 0ZM16.2 10.6a1.7 2.1 0 1 0 3.4 0a1.7 2.1 0 1 0-3.4 0ZM12 12.2c-2.6 0-5.2 3-5.2 5.3 0 1.6 1.3 2.3 2.7 2.3 1 0 1.6-.5 2.5-.5s1.5.5 2.5.5c1.4 0 2.7-.7 2.7-2.3 0-2.3-2.6-5.3-5.2-5.3Z';
 let activeAccount=null;
 const personalKeys=new Set(['om-docs','om-tasks','om-question-history','om-seen-replies','om-chat-sessions','om-chat-active','om-personality']);
@@ -556,7 +558,7 @@ function renderCat(){
   });
  }
 }
-function composer(home=false){const current=categoryOf(category);return `<form class="composer chat-composer" id="question-form"><div class="composer-scope"><span>${icon(current.icon)}<strong id="scope-name">${esc(current.label)}</strong>에 질문 중</span><div class="composer-scope-actions"><button type="button" class="text-button" data-action="chat-examples">질문 예시 ${icon('chevron')}</button><button type="button" class="text-button" data-action="choose-category">분야 변경 ${icon('down')}</button></div></div>${attachmentChips()}<div class="input-row"><button type="button" class="attach-button" data-action="attach" aria-label="${attachBusy?'첨부 파일을 읽는 중':'사진·파일 첨부'}" title="${attachBusy?'읽는 중…':'사진·파일 첨부'}" ${attachBusy?'disabled':''}>${icon('plus')}</button><input type="file" id="knowly-attach" hidden multiple accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.xlsx,.xls,.csv,.txt,.md"><textarea name="question" rows="1" maxlength="1000" aria-label="질문 입력" placeholder="${home?'회사 생활에서 궁금한 점을 물어보세요.':'이어서 질문해 보세요…'}" required>${esc(chatDraft)}</textarea><button class="send-button" aria-label="질문 보내기" title="질문 보내기" type="submit" ${pendingReply?'disabled':''}>${icon('send')}</button></div></form>`;}
+function composer(home=false){const current=categoryOf(category);return `<form class="composer chat-composer" id="question-form">${attachmentChips()}<div class="input-row"><button type="button" class="attach-button" data-action="attach" aria-label="${attachBusy?'첨부 파일을 읽는 중':'사진·파일 첨부'}" title="${attachBusy?'읽는 중…':'사진·파일 첨부'}" ${attachBusy?'disabled':''}>${icon('plus')}</button><input type="file" id="knowly-attach" hidden multiple accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.xlsx,.xls,.csv,.txt,.md"><button type="button" class="scope-pill" data-action="choose-category" aria-label="분야 변경 (지금 ${esc(current.label)}에 질문 중)"><strong id="scope-name">${esc(current.label)}</strong>${icon('down')}</button><button type="button" class="examples-button" data-action="chat-examples" aria-label="질문 예시" data-glass-tip="질문 예시">${icon('bulb')}</button><textarea name="question" rows="1" maxlength="1000" aria-label="질문 입력" placeholder="${home?'회사 생활에서 궁금한 점을 물어보세요.':'이어서 질문해 보세요…'}" required>${esc(chatDraft)}</textarea><button class="send-button" aria-label="질문 보내기" title="질문 보내기" type="submit" ${pendingReply?'disabled':''}>${icon('send')}</button></div></form>`;}
 // 분야 변경: 지금 목록으로 바로 열고, 분야 관리에서 바뀐 목록을 받아 오면 다시 그린다.
 function showCategories(refresh=true){openModal(`<h2 id="modal-title">어떤 분야가 궁금하세요?</h2><p class="modal-sub">고른 분야의 문서에서 먼저 찾고, 없으면 전체 자료에서 찾아요.${categories.some(c=>c.searchAll)?' 어느 분야인지 모르면 기타를 고르세요.':''} 작성 중인 질문은 유지됩니다.</p><div class="category-options">${categories.map(c=>`<button data-select-category="${esc(c.id)}" aria-pressed="${c.id===categoryOf(category).id}">${icon(c.icon)}<span><strong>${esc(c.label)}</strong><small>${esc(c.detail)}</small></span>${icon(c.id===categoryOf(category).id?'check':'chevron')}</button>`).join('')}</div>`);if(refresh)refreshCategories().then(changed=>{if(changed&&$('#modal').open&&$('#modal .category-options'))showCategories(false);});}
 // 분야 관리에서 정한 분야 목록을 받아 채팅 분야에 반영한다. 못 받으면 지금 목록을 그대로 쓴다.
@@ -685,7 +687,7 @@ const clickByData=[
  [b=>b.dataset.openPlan,(b,e)=>{calendarDay=b.dataset.openPlan;calendarMonth=calendarDay.slice(0,7);view='calendar';scheduleView='calendar';render();return;}],
  [b=>b.dataset.month,(b,e)=>{const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=localDate(new Date(y,m-1+Number(b.dataset.month),1,12)).slice(0,7);render();return;}],
  [b=>b.dataset.calendarDay,(b,e)=>{calendarDay=b.dataset.calendarDay;render();return;}],
- [b=>b.dataset.bgDelete,(b,e)=>{const id=b.dataset.bgDelete,inUse=backgroundState().id==='upload:'+id;if(save('om-bg-uploads-'+mode,backgroundUploads().filter(x=>x.id!==id))){if(inUse)save('om-bg-theme-'+mode,isCat?'cafe':'white');applyBackground();showBackground();toast(inUse?'사용 중이던 이미지를 지워 기본 배경으로 바꿨어요.':'이미지를 삭제했어요.');}return;}],
+ [b=>b.dataset.bgDelete,(b,e)=>{const id=b.dataset.bgDelete,inUse=backgroundState().id==='upload:'+id;if(save('om-bg-uploads-'+mode,backgroundUploads().filter(x=>x.id!==id))){if(inUse)save('om-bg-theme-'+mode,'white');applyBackground();showBackground();toast(inUse?'사용 중이던 이미지를 지워 기본 배경으로 바꿨어요.':'이미지를 삭제했어요.');}return;}],
  [b=>b.dataset.background,(b,e)=>{if(save('om-bg-theme-'+mode,b.dataset.background)){applyBackground();closeModal();toast(backgroundState().label+' 배경으로 바꿨어요.');}return;}],
  [b=>b.dataset.source,(b,e)=>{openSource(b.dataset.source);return;}],
  [b=>b.dataset.question,(b,e)=>{if($('#modal').open)closeModal();category=b.dataset.cat;ask(b.dataset.question);return;}],

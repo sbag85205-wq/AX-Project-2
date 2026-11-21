@@ -7,6 +7,8 @@
 // - 사이드바: 접기 버튼으로 아이콘만 보이는 줄로 접는다
 // - 내 프로필: 카드 바로 위에 프로필 메뉴를 연다
 // - 첫 화면 발바닥 냥대리 메뉴: 츄르 주기·성격 모드·꾸미기를 여닫는다
+// - 대화 기록 ⋯ 메뉴: 폴더·분야 고르기
+// - 대화 항목 말풍선: 폴더·질문 수·분야를 마우스·키보드로 갔을 때만
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const off = () => reduce || !!document.querySelector('.motion-paused');
@@ -171,12 +173,13 @@
      발바닥 버튼(data-paw-toggle)으로 말풍선 메뉴(#paw-menu)를 열고 닫는다. 바깥을 누르거나 Esc면 닫힌다.
      메뉴 항목(츄르 주기·성격 모드·꾸미기)은 기존 data-action 그대로라 동작은 app.js가 처리하고, 여기서는 메뉴만 닫는다.
      - 화면이 다시 그려져도(15초 새로고침 등) 열려 있던 메뉴는 다시 연다. 닫히는 건 Esc·바깥 클릭·버튼 다시 누르기·항목 선택뿐.
-     - 메뉴는 발바닥 아래로 열고, 화면 아래 공간이 모자라면 위로 연다(.is-up). */
+     - 메뉴는 발바닥 오른쪽에 버튼 윗선에 맞춰 열고, 화면 아래 공간이 모자라면 버튼 아랫선에 맞춰 위로 연다(.is-up). */
   let pawOpen = false;
   function placePaw(menu) {
     menu.classList.remove('is-up');
     const r = menu.getBoundingClientRect(), btn = menu.parentElement.getBoundingClientRect();
-    if (r.bottom > innerHeight - 8 && btn.top - r.height - 10 >= 8) menu.classList.add('is-up');
+    // 아래로 넘치면 버튼 아랫선에 맞춰 위로 연다(위로도 들어갈 자리가 있을 때만)
+    if (r.bottom > innerHeight - 8 && btn.bottom - r.height >= 8) menu.classList.add('is-up');
   }
   function setPaw(open, focusFirst = false, restored = false) {
     const btn = document.querySelector('[data-paw-toggle]'), menu = document.getElementById('paw-menu');
@@ -208,12 +211,171 @@
     setPaw(false); document.querySelector('[data-paw-toggle]')?.focus({ preventScroll: true });
   });
 
+  /* 7. 대화 기록 ⋯ 메뉴
+     "대화 기록" 제목 옆 점 세 개(⋯) 버튼을 누르면 메뉴가 열린다: 폴더 ▸ · 분야 ▸ · 안내.
+     기능은 그대로 기존 선택 상자(#chat-history-folder, #chat-history-category)가 맡는다. 화면에서는 숨기고,
+     메뉴에서 고르면 그 선택 상자의 값을 바꾸고 change를 보내 app.js가 원래대로 목록을 다시 그린다.
+     '폴더 이름 변경'은 기존 버튼(data-action="rename-chat-folder")을 그대로 누른다. */
+  const DOTS = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>';
+  const CHEV = '<svg class="icon hm-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+  let histMenu = null;
+  function ensureHistoryButton() {
+    const head = document.querySelector('#sidebar-history .chat-history-heading');
+    if (!head || head.querySelector('[data-history-menu]')) return;
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'icon-button history-more'; b.dataset.historyMenu = '';
+    b.setAttribute('aria-haspopup', 'menu'); b.setAttribute('aria-expanded', 'false');
+    b.setAttribute('aria-label', '대화 기록 보기 설정 (폴더 · 분야)'); b.title = '폴더 · 분야'; b.innerHTML = DOTS;
+    const collapse = head.querySelector('[data-action="toggle-chat-history"]');
+    if (collapse) collapse.before(b); else head.append(b);
+  }
+  function historyMenuEl() {
+    if (histMenu?.isConnected) return histMenu;
+    histMenu = document.createElement('div');
+    histMenu.id = 'history-menu'; histMenu.className = 'history-menu'; histMenu.setAttribute('popover', '');
+    histMenu.setAttribute('role', 'menu'); histMenu.setAttribute('aria-label', '대화 기록 보기 설정');
+    document.body.append(histMenu);
+    return histMenu;
+  }
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+  // 폴더·분야 한 줄 + 옆으로 펼치는 목록. 목록은 지금 선택 상자의 항목을 그대로 쓴다.
+  function historyRow(label, selectId) {
+    const select = document.getElementById(selectId); if (!select) return null;
+    const row = el('div', 'hm-row');
+    const btn = el('button', 'hm-item'); btn.type = 'button';
+    btn.setAttribute('role', 'menuitem'); btn.setAttribute('aria-haspopup', 'menu'); btn.setAttribute('aria-expanded', 'false');
+    btn.append(el('span', 'hm-label', label), el('small', 'hm-value', select.selectedOptions[0]?.textContent.trim() || ''));
+    btn.insertAdjacentHTML('beforeend', CHEV);
+    const sub = el('div', 'hm-sub'); sub.setAttribute('role', 'menu'); sub.setAttribute('aria-label', label); sub.hidden = true;
+    for (const opt of select.options) {
+      const o = el('button', 'hm-option'); o.type = 'button';
+      o.setAttribute('role', 'menuitemradio'); o.setAttribute('aria-checked', String(opt.selected));
+      o.dataset.selectId = selectId; o.dataset.value = opt.value;
+      o.append(el('span', '', opt.textContent.trim()));
+      if (opt.selected) o.insertAdjacentHTML('beforeend', '<svg class="icon hm-check" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>');
+      sub.append(o);
+    }
+    row.append(btn, sub);
+    return row;
+  }
+  function buildHistoryMenu(menu) {
+    const parts = [historyRow('폴더', 'chat-history-folder'), historyRow('분야', 'chat-history-category')].filter(Boolean);
+    const rename = document.querySelector('#sidebar-history [data-action="rename-chat-folder"]');
+    if (rename) { const r = el('button', 'hm-item hm-plain', '폴더 이름 변경'); r.type = 'button'; r.setAttribute('role', 'menuitem'); r.dataset.hmRename = ''; parts.push(r); }
+    const count = document.querySelector('#sidebar-history .chat-history-filter p[role="status"]')?.textContent.trim();
+    const note = el('p', 'hm-note');
+    note.textContent = (count ? count + ' · ' : '') + '최근 100개 대화 · 이 브라우저에 저장';
+    menu.replaceChildren(...parts, el('hr', 'hm-divider'), note);
+  }
+  function openSub(row, open) {
+    const btn = row.querySelector('.hm-item'), sub = row.querySelector('.hm-sub'); if (!sub) return;
+    sub.hidden = !open; btn.setAttribute('aria-expanded', String(open));
+  }
+  function closeSubs(menu, except = null) { menu.querySelectorAll('.hm-row').forEach(r => { if (r !== except) openSub(r, false); }); }
+  function placeHistoryMenu(menu, btn) {
+    const r = btn.getBoundingClientRect(), w = menu.offsetWidth || 210;
+    menu.style.left = Math.round(Math.min(r.right + 8, innerWidth - w - 8)) + 'px';
+    menu.style.top = Math.round(Math.max(8, Math.min(r.top - 6, innerHeight - menu.offsetHeight - 8))) + 'px';
+  }
+  const histOpen = m => { try { return m.matches(':popover-open'); } catch { return false; } };
+  function closeHistoryMenu() {
+    const m = histMenu; if (!m || !histOpen(m)) return;
+    try { m.hidePopover(); } catch {}
+  }
+  document.addEventListener('click', e => {
+    const toggle = e.target.closest?.('[data-history-menu]');
+    if (toggle) {
+      const menu = historyMenuEl();
+      if (histOpen(menu)) { closeHistoryMenu(); return; }
+      buildHistoryMenu(menu);
+      try { menu.showPopover(); } catch { return; }
+      placeHistoryMenu(menu, toggle); toggle.setAttribute('aria-expanded', 'true');
+      if (e.detail === 0) menu.querySelector('.hm-item')?.focus({ preventScroll: true });
+      return;
+    }
+    const menu = histMenu; if (!menu || !e.target.closest?.('#history-menu')) return;
+    const item = e.target.closest('.hm-item');
+    const isRename = !!item && 'hmRename' in item.dataset;
+    // 폴더·분야 줄을 누르면 옆 목록을 펼친다(마우스를 올려 이미 펼쳐졌어도 닫지 않는다). 키보드로 열면 첫 항목으로 포커스
+    if (item && !isRename) { const row = item.closest('.hm-row'); closeSubs(menu, row); openSub(row, true); if (e.detail === 0) row.querySelector('.hm-option')?.focus({ preventScroll: true }); return; }
+    // 지금 클릭이 끝난 뒤에 누른다(같은 클릭 안에서 창을 열면 '창 바깥 클릭'으로 보고 바로 닫히기 때문)
+    if (isRename) { closeHistoryMenu(); setTimeout(() => document.querySelector('#sidebar-history [data-action="rename-chat-folder"]')?.click(), 0); return; }
+    const opt = e.target.closest('.hm-option');
+    if (opt) {
+      closeHistoryMenu();
+      const select = document.getElementById(opt.dataset.selectId);
+      if (select && select.value !== opt.dataset.value) { select.value = opt.dataset.value; select.dispatchEvent(new Event('change', { bubbles: true })); }
+    }
+  });
+  // 마우스를 올리면 옆 목록을 펼친다(클릭으로도 열고 닫힌다)
+  document.addEventListener('pointerover', e => {
+    const row = e.target.closest?.('#history-menu .hm-row'); if (!row || e.pointerType === 'touch') return;
+    closeSubs(histMenu, row); openSub(row, true);
+  });
+  // 메뉴가 닫히면 ⋯ 버튼 상태를 되돌린다
+  document.addEventListener('toggle', e => {
+    if (e.target?.id !== 'history-menu' || e.newState !== 'closed') return;
+    closeSubs(e.target);
+    document.querySelector('[data-history-menu]')?.setAttribute('aria-expanded', 'false');
+  }, true);
+  addEventListener('resize', closeHistoryMenu);
+
+  /* 8. 대화 항목 말풍선
+     대화 항목은 ↗ + 제목 한 줄만 보이고, "폴더 · N개 질문 · 분야" 줄(항목 안의 small)은 화면에서만 숨긴다(화면 읽기 프로그램은 그대로 읽음).
+     마우스를 올리거나 키보드로 항목에 가면 그 내용을 사이드바 오른쪽의 유리 말풍선으로 보여 준다.
+     목록이 스크롤되는 상자 안이라 잘리지 않게, 말풍선은 화면 위(body)에 따로 띄운다. 터치 화면에서는 띄우지 않는다. */
+  let tip = null, tipFor = null;
+  function tipEl() {
+    if (tip?.isConnected) return tip;
+    tip = document.createElement('div'); tip.className = 'history-tip'; tip.setAttribute('aria-hidden', 'true');
+    document.body.append(tip); return tip;
+  }
+  function hideTip() { tipFor = null; tip?.classList.remove('show'); }
+  function showTip(item) {
+    const lines = [...item.querySelectorAll('small')].map(s => s.textContent.trim()).filter(Boolean);
+    if (!lines.length) { hideTip(); return; }
+    const t = tipEl(); t.replaceChildren(...lines.map(l => el('span', '', l))); tipFor = item;
+    const r = item.getBoundingClientRect(), side = document.querySelector('.app-sidebar')?.getBoundingClientRect();
+    t.classList.add('show');
+    const h = t.offsetHeight;
+    t.style.left = Math.round((side ? side.right : r.right) + 10) + 'px';
+    t.style.top = Math.round(Math.max(8, Math.min(innerHeight - h - 8, r.top + r.height / 2 - h / 2))) + 'px';
+  }
+  // 이름표 말풍선: data-glass-tip이 있는 버튼(예: 입력창 전구 '질문 예시')은 버튼 바로 위에 유리 말풍선을 띄운다
+  function showGlassTip(btn) {
+    const t = tipEl(); t.replaceChildren(el('span', '', btn.dataset.glassTip)); tipFor = btn;
+    t.classList.add('show');
+    const r = btn.getBoundingClientRect(), w = t.offsetWidth, h = t.offsetHeight;
+    t.style.left = Math.round(Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2))) + 'px';
+    t.style.top = Math.round(r.top - h - 8 >= 8 ? r.top - h - 8 : r.bottom + 8) + 'px';
+  }
+  const ITEM = '#sidebar-history .chat-history-item', ROW = '#sidebar-history .chat-history-row', GTIP = '[data-glass-tip]';
+  document.addEventListener('pointerover', e => {
+    if (e.pointerType === 'touch') return;
+    const item = e.target.closest?.(ITEM);
+    if (item) { if (item !== tipFor) showTip(item); return; }
+    const g = e.target.closest?.(GTIP);
+    if (g) { if (g !== tipFor) showGlassTip(g); return; }
+    if (tipFor && !e.target.closest?.(ROW)) hideTip();
+  });
+  document.documentElement.addEventListener('pointerleave', hideTip);
+  document.addEventListener('focusin', e => {
+    const item = e.target.closest?.(ITEM), g = e.target.closest?.(GTIP);
+    if (item && e.target.matches(':focus-visible')) showTip(item);
+    else if (g && e.target.matches(':focus-visible')) showGlassTip(g);
+    else if (!e.target.closest?.(ROW)) hideTip();
+  });
+  document.addEventListener('scroll', hideTip, true);
+  document.addEventListener('click', e => { if (e.target.closest?.(ROW) || e.target.closest?.(GTIP)) hideTip(); });
+
   // 화면이 다시 그려질 때마다 살핀다
   let first = true;
   const mo = new MutationObserver(() => {
     initSidebar();
     markInitial();
     syncPaw();
+    ensureHistoryButton();
+    if (tipFor && !tipFor.isConnected) hideTip();
     const k = keyNow();
     if (k !== viewKey) { const was = viewKey; viewKey = k; requestAnimationFrame(() => { enter(first || !was); first = false; placePill(false); }); }
     newMessages();
