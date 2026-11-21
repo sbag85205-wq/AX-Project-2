@@ -6,6 +6,7 @@ import { notifyParent, reportHeight } from './bridge';
 import { startBusyReporting } from '../components/Loading';
 import '../styles.css';
 import './embed.css';
+import './glass.css'; // 몽글 글래스 디자인. 이 줄을 빼면 원래 디자인으로 돌아간다
 
 const root = createRoot(document.getElementById('root')!);
 reportHeight();
