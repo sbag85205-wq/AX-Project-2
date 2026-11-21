@@ -114,11 +114,11 @@ body[data-mode=cat] .app-sidebar .brand{display:flex;align-items:center;gap:10px
 .sidebar-toggle.icon-button:hover{background:var(--ui-fill);color:var(--ui-ink)}
 .sidebar-toggle .icon{width:20px;height:20px}
 
-/* 메뉴: 세로 목록 */
-.app-sidebar .workspace-nav.side-nav{flex-direction:column;align-items:stretch;justify-content:flex-start;gap:4px!important}
+/* 메뉴: 세로 목록 (글씨·줄 높이를 조금 작게 해서 아래 대화 기록에 공간을 더 준다) */
+.app-sidebar .workspace-nav.side-nav{flex-direction:column;align-items:stretch;justify-content:flex-start;gap:2px!important}
 .app-sidebar .workspace-nav.side-nav>button,
-.app-sidebar .workspace-nav.side-nav .nav-group-toggle{justify-content:flex-start;gap:12px;width:100%;min-height:44px;padding:10px 14px!important;font-size:14px;text-align:left;color:var(--ui-ink);border-radius:999px}
-.app-sidebar .workspace-nav.side-nav>button>.icon{display:block;flex:none;width:18px;height:18px;color:var(--ui-sub)}
+.app-sidebar .workspace-nav.side-nav .nav-group-toggle{justify-content:flex-start;gap:11px;width:100%;min-height:38px;padding:8px 14px!important;font-size:13.5px;line-height:1.35;text-align:left;color:var(--ui-ink);border-radius:999px}
+.app-sidebar .workspace-nav.side-nav>button>.icon{display:block;flex:none;width:17px;height:17px;color:var(--ui-sub)}
 .app-sidebar .workspace-nav.side-nav>button.active>.icon{color:var(--ui-ink)}
 .app-sidebar .workspace-nav .count,
 .app-sidebar .workspace-nav .activity-unread{margin-left:auto}
@@ -127,7 +127,7 @@ body[data-mode=cat] .app-sidebar .brand{display:flex;align-items:center;gap:10px
 .app-sidebar .workspace-nav.side-nav .nav-group-toggle .icon{margin-left:auto}
 .app-sidebar .workspace-nav .nav-submenu{position:static;min-width:0;padding:2px 0 6px 18px;background:transparent;border:0;box-shadow:none}
 html[data-theme=dark] .app-sidebar .workspace-nav .nav-submenu{box-shadow:none}
-.app-sidebar .workspace-nav.side-nav .nav-submenu>button{border-radius:999px;padding:8px 14px!important}
+.app-sidebar .workspace-nav.side-nav .nav-submenu>button{border-radius:999px;min-height:34px;padding:7px 14px!important;font-size:13px}
 
 /* 대화 기록 자리(물어보기 화면에서만 채워진다. 비어 있어도 프로필을 맨 아래로 밀어 둔다)와 맨 아래 내 프로필 */
 .sidebar-history{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
