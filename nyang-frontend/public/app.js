@@ -19,7 +19,7 @@ import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staf
 import {orderNav,installNavLayout} from './nav-layout.js?v=2a33659a9a7a';
 import {createGuide} from './guide.js?v=c6d8476e52b3';
 import {recentTurns} from './chat-context.js?v=e6c82dc547ad';
-import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=4a544c8cbd91';
+import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=1e8abeb5efed';
 import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=89231fc15ea9';
 const mode=document.body.dataset.mode;
 const isCat=mode==='cat';
@@ -685,7 +685,7 @@ const clickByData=[
  [b=>b.dataset.openPlan,(b,e)=>{calendarDay=b.dataset.openPlan;calendarMonth=calendarDay.slice(0,7);view='calendar';scheduleView='calendar';render();return;}],
  [b=>b.dataset.month,(b,e)=>{const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=localDate(new Date(y,m-1+Number(b.dataset.month),1,12)).slice(0,7);render();return;}],
  [b=>b.dataset.calendarDay,(b,e)=>{calendarDay=b.dataset.calendarDay;render();return;}],
- [b=>b.dataset.bgDelete,(b,e)=>{const id=b.dataset.bgDelete,inUse=backgroundState().id==='upload:'+id;if(save('om-bg-uploads-'+mode,backgroundUploads().filter(x=>x.id!==id))){if(inUse)save('om-bg-theme-'+mode,isCat?'cafe':'white');applyBackground();showBackground();toast(inUse?'사용 중이던 이미지를 지워 기본 배경으로 바꿨어요.':'이미지를 삭제했어요.');}return;}],
+ [b=>b.dataset.bgDelete,(b,e)=>{const id=b.dataset.bgDelete,inUse=backgroundState().id==='upload:'+id;if(save('om-bg-uploads-'+mode,backgroundUploads().filter(x=>x.id!==id))){if(inUse)save('om-bg-theme-'+mode,'white');applyBackground();showBackground();toast(inUse?'사용 중이던 이미지를 지워 기본 배경으로 바꿨어요.':'이미지를 삭제했어요.');}return;}],
  [b=>b.dataset.background,(b,e)=>{if(save('om-bg-theme-'+mode,b.dataset.background)){applyBackground();closeModal();toast(backgroundState().label+' 배경으로 바꿨어요.');}return;}],
  [b=>b.dataset.source,(b,e)=>{openSource(b.dataset.source);return;}],
  [b=>b.dataset.question,(b,e)=>{if($('#modal').open)closeModal();category=b.dataset.cat;ask(b.dataset.question);return;}],
