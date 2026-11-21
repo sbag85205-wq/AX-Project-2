@@ -168,7 +168,11 @@ html[data-theme=dark] .sidebar-profile .wallet strong{color:var(--ui-sub)}
 #profile-menu:popover-open{display:flex;flex-direction:column;gap:2px;animation:profile-menu-in .18s cubic-bezier(.2,.8,.2,1)}
 @keyframes profile-menu-in{from{opacity:0;translate:0 6px}to{opacity:1;translate:0 0}}
 html[data-theme=dark] #profile-menu{background:rgba(40,42,72,.94)}
+/* 라이트 모드: 뒤의 대화 기록 글자가 비치지 않게 거의 불투명한 흰 판 */
+html:not([data-theme=dark]) #profile-menu{background:rgba(255,255,255,.97)}
 #profile-menu .workspace-utilities{display:contents}
+/* 담당자: 출석·성격 모드·꾸미기 묶음은 원래처럼 숨긴다(account.css의 담당자 숨김을 프로필 메뉴에서도 지킨다) */
+body[data-role="staff"] #profile-menu .workspace-utilities{display:none}
 #profile-menu>button,
 #profile-menu .workspace-utilities>button{display:flex;align-items:center;gap:12px;width:100%;min-width:0;height:auto;min-height:42px;margin:0;padding:9px 12px;border:0;border-radius:12px;background:transparent;color:var(--ui-ink);font-size:13.5px;font-weight:500;line-height:1.3;text-align:left;opacity:1}
 #profile-menu>button[hidden],
@@ -208,6 +212,9 @@ html[data-theme=dark] #profile-menu{background:rgba(40,42,72,.94)}
 #profile-level .profile-level-head:hover span{text-decoration:underline}
 #profile-level .profile-level-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #profile-level .profile-level-stats>div{display:flex;flex-direction:column;gap:2px;padding:9px 10px;border-radius:11px;background:var(--ui-panel)}
+/* 라이트 모드: 흰 메뉴 위에서 레벨 칸(연한 강조색)과 포인트·하트 칸(흰 칸 + 테두리)이 구분되게 */
+html:not([data-theme=dark]) #profile-level{background:var(--ui-accent-fill)}
+html:not([data-theme=dark]) #profile-level .profile-level-stats>div{background:#fff;border:1px solid var(--ui-line)}
 #profile-level .profile-level-stats small{font-size:11px;color:var(--ui-sub)}
 #profile-level .profile-level-stats b{font-size:15px;font-weight:700;color:var(--ui-ink);font-variant-numeric:tabular-nums}
 #profile-level .profile-level-stats .is-heart b::before{content:'♥ ';color:#e06a8c}
