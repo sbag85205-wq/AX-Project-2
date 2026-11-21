@@ -53,23 +53,18 @@ html[data-theme=dark]{background:#171830}
   border:1.5px solid var(--glass-edge);box-shadow:var(--glass-shadow);
   -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
 }
-html body .desktop-workspace .workspace-header,
-html body .desktop-workspace .workspace-toolbar,
 html body .desktop-workspace #main,
 html body .desktop-workspace .chat-room,
 html body .desktop-workspace .chat-compose-dock{background:transparent!important}
 html body .desktop-workspace .chat-transcript{background:transparent!important}
-.desktop-workspace .workspace-header{border-bottom:1px solid var(--ui-line)}
-.desktop-workspace .workspace-toolbar{border-bottom:1px solid var(--ui-line)}
 
-/* 3. 위쪽 메뉴: 알약 모양 */
+/* 3. 사이드바 메뉴: 알약 모양 */
 .desktop-workspace .workspace-nav button,
 .desktop-workspace .workspace-nav a{border-radius:999px}
 .desktop-workspace .workspace-nav .active,
 .desktop-workspace .workspace-nav [aria-current="page"]{background:var(--ui-panel);box-shadow:0 4px 14px -6px rgba(70,60,140,.35);color:var(--ui-ink)}
 
-/* 4. 왼쪽 대화 기록 */
-.desktop-workspace .chat-history{background:var(--ui-side);border-right:1px solid var(--ui-line)}
+/* 4. 대화 기록(사이드바 안 배치는 8번) */
 .desktop-workspace .chat-history select{border-radius:999px;background:var(--ui-panel);border-color:transparent}
 .desktop-workspace .chat-history-item{border-radius:14px}
 .desktop-workspace .chat-history-item.selected{background:var(--ui-panel);box-shadow:var(--glass-card-shadow)}
@@ -134,9 +129,8 @@ body[data-mode=cat] .app-sidebar .brand{display:flex;align-items:center;gap:10px
 html[data-theme=dark] .app-sidebar .workspace-nav .nav-submenu{box-shadow:none}
 .app-sidebar .workspace-nav.side-nav .nav-submenu>button{border-radius:999px;padding:8px 14px!important}
 
-/* 대화 기록 자리(2단계에서 채운다)와 맨 아래 내 프로필 */
+/* 대화 기록 자리(물어보기 화면에서만 채워진다. 비어 있어도 프로필을 맨 아래로 밀어 둔다)와 맨 아래 내 프로필 */
 .sidebar-history{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
-.sidebar-history:empty{flex:1 1 auto}
 /* 6단계. 내 프로필 카드: 동그라미 아바타(이니셜) · 아이디 · Lv·P·♥ 한 줄 · 위로 열리는 표시
    카드 전체가 프로필 메뉴 버튼(#account-button, popovertarget)이고, Lv·P·♥(#wallet)는 그 위에 겹쳐 둔다.
    이니셜은 glass-motion.js가 아이디 첫 글자를 data-initial로 붙인다. */
@@ -303,6 +297,8 @@ html[data-theme=dark] [data-paw]>.paw-menu{background:rgb(40,42,72)}
 html[data-theme=dark] [data-paw] .paw-menu>#personality-button>.icon{background:#2b3a5c;color:#9cc2ff}
 html[data-theme=dark] [data-paw] .paw-menu>.paw-wardrobe>.icon{background:#4a2b3c;color:#f2a0bd}
 html[data-theme=dark] [data-paw] .paw-menu .paw-treat .chat-treat-button::before{background:#4a3a28}
+/* 다크 모드 10 P 배지: 작은 글자라 명암비 4.5:1을 넘게 조금 더 밝게 */
+html[data-theme=dark] [data-paw] .paw-menu .paw-treat .chat-treat-button small{color:#c3caff}
 
 @media (prefers-reduced-motion:reduce){.app-shell.desktop-workspace.sidebar-ready{transition:none}[data-paw]>.paw-menu{animation:none}[data-paw]>.paw-button{transition:none}}
 .motion-paused [data-paw]>.paw-menu{animation:none}
