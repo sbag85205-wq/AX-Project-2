@@ -171,12 +171,13 @@
      발바닥 버튼(data-paw-toggle)으로 말풍선 메뉴(#paw-menu)를 열고 닫는다. 바깥을 누르거나 Esc면 닫힌다.
      메뉴 항목(츄르 주기·성격 모드·꾸미기)은 기존 data-action 그대로라 동작은 app.js가 처리하고, 여기서는 메뉴만 닫는다.
      - 화면이 다시 그려져도(15초 새로고침 등) 열려 있던 메뉴는 다시 연다. 닫히는 건 Esc·바깥 클릭·버튼 다시 누르기·항목 선택뿐.
-     - 메뉴는 발바닥 아래로 열고, 화면 아래 공간이 모자라면 위로 연다(.is-up). */
+     - 메뉴는 발바닥 오른쪽에 버튼 윗선에 맞춰 열고, 화면 아래 공간이 모자라면 버튼 아랫선에 맞춰 위로 연다(.is-up). */
   let pawOpen = false;
   function placePaw(menu) {
     menu.classList.remove('is-up');
     const r = menu.getBoundingClientRect(), btn = menu.parentElement.getBoundingClientRect();
-    if (r.bottom > innerHeight - 8 && btn.top - r.height - 10 >= 8) menu.classList.add('is-up');
+    // 아래로 넘치면 버튼 아랫선에 맞춰 위로 연다(위로도 들어갈 자리가 있을 때만)
+    if (r.bottom > innerHeight - 8 && btn.bottom - r.height >= 8) menu.classList.add('is-up');
   }
   function setPaw(open, focusFirst = false, restored = false) {
     const btn = document.querySelector('[data-paw-toggle]'), menu = document.getElementById('paw-menu');

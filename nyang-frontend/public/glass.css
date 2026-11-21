@@ -261,23 +261,23 @@ body[data-authenticated="false"] .app-sidebar .sidebar-toggle{display:none!impor
 /* 4단계. 발바닥 냥대리 메뉴: 첫 화면 고양이 오른쪽 아래의 흰 동그라미(54px) + 검은 발바닥
    고양이 그림 상자(.resident-portrait) 밖, 고양이 칸과 오른쪽 칸 사이 여백에 둬서 쓰다듬기(.pet-touch)와 겹치지 않는다.
    열고 닫기는 glass-motion.js. 담당자에게는 account.css의 .workspace-utilities 숨김으로 보이지 않는다. */
-.desktop-workspace .chat-home .cat-resident-stage>[data-paw]{grid-column:2;grid-row:2;justify-self:end;align-self:end;position:relative;z-index:6;display:block;margin:0 -66px 10px 0;padding:0;border:0}
+.desktop-workspace .chat-home .cat-resident-stage>[data-paw]{grid-column:2;grid-row:1;justify-self:end;align-self:end;position:relative;z-index:6;display:block;margin:0 -66px 10px 0;padding:0;border:0}
 /* 담당자: 위 위치 규칙이 account.css의 담당자 숨김(.workspace-utilities)을 덮지 않게 여기서도 숨긴다 */
 body[data-role="staff"] .desktop-workspace .chat-home .cat-resident-stage>[data-paw]{display:none}
 [data-paw]>.paw-button{display:grid;place-items:center;width:54px;height:54px;padding:0;border:1px solid rgba(31,35,64,.08);border-radius:50%;background:#fff;color:#15172a;box-shadow:0 12px 26px -14px rgba(40,30,110,.6);cursor:pointer;transition:translate .18s,box-shadow .18s}
 [data-paw]>.paw-button:hover{background:#fff;color:#15172a;translate:0 -2px;box-shadow:0 16px 30px -14px rgba(40,30,110,.7)}
 [data-paw]>.paw-button[aria-expanded="true"]{box-shadow:0 0 0 4px var(--ui-accent-fill),0 12px 26px -14px rgba(40,30,110,.6)}
 [data-paw]>.paw-button .icon{width:26px;height:26px;fill:currentColor;stroke:none}
-/* 말풍선 메뉴: 냥대리 말풍선을 가리지 않게 발바닥 아래쪽으로 연다.
-   화면 아래 공간이 모자라면 glass-motion.js가 .is-up을 붙여 위로 연다. */
-[data-paw]>.paw-menu{position:absolute;left:0;top:calc(100% + 10px);z-index:30;display:flex;flex-direction:column;gap:2px;width:236px;box-sizing:border-box;padding:14px 10px 10px;border:1px solid var(--glass-edge);border-radius:22px;background:#fff;box-shadow:0 24px 50px -22px rgba(40,30,110,.5);animation:paw-menu-in .18s cubic-bezier(.2,.8,.2,1)}
-[data-paw]>.paw-menu.is-up{top:auto;bottom:calc(100% + 10px);animation-name:paw-menu-up}
+/* 말풍선 메뉴: 발바닥 버튼 오른쪽에, 버튼 윗선에 맞춰 연다(아래 제목·소개 글과 위쪽 반응 글을 가리지 않게).
+   화면 아래 공간이 모자라면 glass-motion.js가 .is-up을 붙여 버튼 아랫선에 맞춰 위로 연다. */
+[data-paw]>.paw-menu{position:absolute;left:calc(100% + 12px);top:0;z-index:30;display:flex;flex-direction:column;gap:2px;width:236px;box-sizing:border-box;padding:14px 10px 10px;border:1px solid var(--glass-edge);border-radius:22px;background:#fff;box-shadow:0 24px 50px -22px rgba(40,30,110,.5);animation:paw-menu-in .18s cubic-bezier(.2,.8,.2,1)}
+[data-paw]>.paw-menu.is-up{top:auto;bottom:0;animation-name:paw-menu-up}
 [data-paw]>.paw-menu[hidden]{display:none}
 /* 화면이 다시 그려져 메뉴를 다시 열 때는 등장 움직임을 되풀이하지 않는다 */
 [data-paw]>.paw-menu.is-restored{animation:none}
 html[data-theme=dark] [data-paw]>.paw-menu{background:rgb(40,42,72)}
-@keyframes paw-menu-in{from{opacity:0;translate:0 -6px}to{opacity:1;translate:0 0}}
-@keyframes paw-menu-up{from{opacity:0;translate:0 6px}to{opacity:1;translate:0 0}}
+@keyframes paw-menu-in{from{opacity:0;translate:-6px 0}to{opacity:1;translate:0 0}}
+@keyframes paw-menu-up{from{opacity:0;translate:-6px 0}to{opacity:1;translate:0 0}}
 .paw-menu-title{margin:0 8px 6px;font-size:12px;font-weight:650;color:var(--ui-sub)}
 .paw-menu .paw-treat{display:block;margin:0;padding:0}
 .paw-menu .paw-treat .chat-collect-heart{display:none}
@@ -302,3 +302,11 @@ html[data-theme=dark] [data-paw] .paw-menu .paw-treat .chat-treat-button small{c
 
 @media (prefers-reduced-motion:reduce){.app-shell.desktop-workspace.sidebar-ready{transition:none}[data-paw]>.paw-menu{animation:none}[data-paw]>.paw-button{transition:none}}
 .motion-paused [data-paw]>.paw-menu{animation:none}
+
+/* 첫 화면 정리 2단계: 고양이 → 제목·소개 글 → 입력창 → 추천 질문 순서로, 전체 묶음을 본문 세로 가운데에 둔다.
+   화면이 낮아 다 들어가지 않으면 위에서부터 보이고 스크롤된다(safe center). 담당자 냥대리 테스트 화면도 같은 순서. */
+html body .desktop-workspace .chat-home{justify-content:safe center}
+html body .desktop-workspace .chat-home .cat-resident-stage{padding:8px 0 20px;row-gap:28px}
+html body .desktop-workspace .chat-home .cat-resident-stage>.resident-portrait,
+html body .desktop-workspace .chat-home .cat-resident-stage>.home-cat-aside{grid-row:1}
+html body .desktop-workspace .chat-home .cat-resident-stage>.resident-speech{grid-row:2}
