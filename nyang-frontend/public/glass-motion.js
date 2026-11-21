@@ -8,6 +8,7 @@
 // - 내 프로필: 카드 바로 위에 프로필 메뉴를 연다
 // - 첫 화면 발바닥 냥대리 메뉴: 츄르 주기·성격 모드·꾸미기를 여닫는다
 // - 대화 기록 ⋯ 메뉴: 폴더·분야 고르기
+// - 대화 항목 말풍선: 폴더·질문 수·분야를 마우스·키보드로 갔을 때만
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const off = () => reduce || !!document.querySelector('.motion-paused');
@@ -319,6 +320,42 @@
   }, true);
   addEventListener('resize', closeHistoryMenu);
 
+  /* 8. 대화 항목 말풍선
+     대화 항목은 ↗ + 제목 한 줄만 보이고, "폴더 · N개 질문 · 분야" 줄(항목 안의 small)은 화면에서만 숨긴다(화면 읽기 프로그램은 그대로 읽음).
+     마우스를 올리거나 키보드로 항목에 가면 그 내용을 사이드바 오른쪽의 유리 말풍선으로 보여 준다.
+     목록이 스크롤되는 상자 안이라 잘리지 않게, 말풍선은 화면 위(body)에 따로 띄운다. 터치 화면에서는 띄우지 않는다. */
+  let tip = null, tipFor = null;
+  function tipEl() {
+    if (tip?.isConnected) return tip;
+    tip = document.createElement('div'); tip.className = 'history-tip'; tip.setAttribute('aria-hidden', 'true');
+    document.body.append(tip); return tip;
+  }
+  function hideTip() { tipFor = null; tip?.classList.remove('show'); }
+  function showTip(item) {
+    const lines = [...item.querySelectorAll('small')].map(s => s.textContent.trim()).filter(Boolean);
+    if (!lines.length) { hideTip(); return; }
+    const t = tipEl(); t.replaceChildren(...lines.map(l => el('span', '', l))); tipFor = item;
+    const r = item.getBoundingClientRect(), side = document.querySelector('.app-sidebar')?.getBoundingClientRect();
+    t.classList.add('show');
+    const h = t.offsetHeight;
+    t.style.left = Math.round((side ? side.right : r.right) + 10) + 'px';
+    t.style.top = Math.round(Math.max(8, Math.min(innerHeight - h - 8, r.top + r.height / 2 - h / 2))) + 'px';
+  }
+  const ITEM = '#sidebar-history .chat-history-item', ROW = '#sidebar-history .chat-history-row';
+  document.addEventListener('pointerover', e => {
+    if (e.pointerType === 'touch') return;
+    const item = e.target.closest?.(ITEM);
+    if (item) { if (item !== tipFor) showTip(item); return; }
+    if (tipFor && !e.target.closest?.(ROW)) hideTip();
+  });
+  document.documentElement.addEventListener('pointerleave', hideTip);
+  document.addEventListener('focusin', e => {
+    const item = e.target.closest?.(ITEM);
+    if (item && e.target.matches(':focus-visible')) showTip(item); else if (!e.target.closest?.(ROW)) hideTip();
+  });
+  document.addEventListener('scroll', hideTip, true);
+  document.addEventListener('click', e => { if (e.target.closest?.(ROW)) hideTip(); });
+
   // 화면이 다시 그려질 때마다 살핀다
   let first = true;
   const mo = new MutationObserver(() => {
@@ -326,6 +363,7 @@
     markInitial();
     syncPaw();
     ensureHistoryButton();
+    if (tipFor && !tipFor.isConnected) hideTip();
     const k = keyNow();
     if (k !== viewKey) { const was = viewKey; viewKey = k; requestAnimationFrame(() => { enter(first || !was); first = false; placePill(false); }); }
     newMessages();
