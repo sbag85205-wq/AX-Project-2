@@ -170,23 +170,21 @@ html[data-theme=dark] .sidebar-profile .wallet strong{color:var(--ui-sub)}
 html[data-theme=dark] #profile-menu{background:rgba(40,42,72,.94)}
 /* 라이트 모드: 뒤의 대화 기록 글자가 비치지 않게 거의 불투명한 흰 판 */
 html:not([data-theme=dark]) #profile-menu{background:rgba(255,255,255,.97)}
-#profile-menu .workspace-utilities{display:contents}
+#profile-menu .profile-utilities{display:contents}
 /* 담당자: 출석·성격 모드·꾸미기 묶음은 원래처럼 숨긴다(account.css의 담당자 숨김을 프로필 메뉴에서도 지킨다) */
-body[data-role="staff"] #profile-menu .workspace-utilities{display:none}
+body[data-role="staff"] #profile-menu .profile-utilities{display:none}
 #profile-menu>button,
-#profile-menu .workspace-utilities>button{display:flex;align-items:center;gap:12px;width:100%;min-width:0;height:auto;min-height:42px;margin:0;padding:9px 12px;border:0;border-radius:12px;background:transparent;color:var(--ui-ink);font-size:13.5px;font-weight:500;line-height:1.3;text-align:left;opacity:1}
+#profile-menu .profile-utilities>button{display:flex;align-items:center;gap:12px;width:100%;min-width:0;height:auto;min-height:42px;margin:0;padding:9px 12px;border:0;border-radius:12px;background:transparent;color:var(--ui-ink);font-size:13.5px;font-weight:500;line-height:1.3;text-align:left;opacity:1}
 #profile-menu>button[hidden],
-#profile-menu .workspace-utilities>button[hidden]{display:none}
+#profile-menu .profile-utilities>button[hidden]{display:none}
 #profile-menu>button:hover,
-#profile-menu .workspace-utilities>button:not(:disabled):hover{background:var(--ui-fill)}
+#profile-menu .profile-utilities>button:not(:disabled):hover{background:var(--ui-fill)}
 #profile-menu button>.icon{flex:none;width:18px;height:18px;color:var(--ui-sub)}
-/* 순서: 레벨·포인트·하트 → 화면 밝기 → 가이드 다시 보기 → 출석 → (성격·꾸미기는 4단계에서 발바닥 메뉴로) → 내 계정 → 로그아웃 */
+/* 순서: 레벨·포인트·하트 → 화면 밝기 → 가이드 다시 보기 → 출석 → 내 계정 → 로그아웃 (성격 모드·꾸미기는 발바닥 메뉴로 옮겼다) */
 #profile-level{order:0}
 #profile-menu>.theme-toggle{order:1}
 #profile-menu #guide-button{order:2}
 #profile-menu #attendance-button{order:3}
-#profile-menu [data-action="personality"]{order:4}
-#profile-menu [data-action="wardrobe"]{order:5}
 #profile-menu>[data-action="account"]{order:6}
 #profile-menu>[data-action="logout"]{order:7;position:relative;margin-top:7px}
 #profile-menu>[data-action="logout"]::before{content:'';position:absolute;left:12px;right:12px;top:-4px;height:1px;background:var(--ui-line)}
@@ -266,4 +264,45 @@ body[data-authenticated="false"] .app-sidebar{flex-direction:row;align-items:cen
 body[data-authenticated="false"] .app-sidebar>:not(.sidebar-top),
 body[data-authenticated="false"] .app-sidebar .sidebar-toggle{display:none!important}
 
-@media (prefers-reduced-motion:reduce){.app-shell.desktop-workspace.sidebar-ready{transition:none}}
+/* 4단계. 발바닥 냥대리 메뉴: 첫 화면 고양이 오른쪽 아래의 흰 동그라미(54px) + 검은 발바닥
+   고양이 그림 상자(.resident-portrait) 밖, 고양이 칸과 오른쪽 칸 사이 여백에 둬서 쓰다듬기(.pet-touch)와 겹치지 않는다.
+   열고 닫기는 glass-motion.js. 담당자에게는 account.css의 .workspace-utilities 숨김으로 보이지 않는다. */
+.desktop-workspace .chat-home .cat-resident-stage>[data-paw]{grid-column:2;grid-row:2;justify-self:end;align-self:end;position:relative;z-index:6;display:block;margin:0 -66px 10px 0;padding:0;border:0}
+/* 담당자: 위 위치 규칙이 account.css의 담당자 숨김(.workspace-utilities)을 덮지 않게 여기서도 숨긴다 */
+body[data-role="staff"] .desktop-workspace .chat-home .cat-resident-stage>[data-paw]{display:none}
+[data-paw]>.paw-button{display:grid;place-items:center;width:54px;height:54px;padding:0;border:1px solid rgba(31,35,64,.08);border-radius:50%;background:#fff;color:#15172a;box-shadow:0 12px 26px -14px rgba(40,30,110,.6);cursor:pointer;transition:translate .18s,box-shadow .18s}
+[data-paw]>.paw-button:hover{background:#fff;color:#15172a;translate:0 -2px;box-shadow:0 16px 30px -14px rgba(40,30,110,.7)}
+[data-paw]>.paw-button[aria-expanded="true"]{box-shadow:0 0 0 4px var(--ui-accent-fill),0 12px 26px -14px rgba(40,30,110,.6)}
+[data-paw]>.paw-button .icon{width:26px;height:26px;fill:currentColor;stroke:none}
+/* 말풍선 메뉴: 냥대리 말풍선을 가리지 않게 발바닥 아래쪽으로 연다.
+   화면 아래 공간이 모자라면 glass-motion.js가 .is-up을 붙여 위로 연다. */
+[data-paw]>.paw-menu{position:absolute;left:0;top:calc(100% + 10px);z-index:30;display:flex;flex-direction:column;gap:2px;width:236px;box-sizing:border-box;padding:14px 10px 10px;border:1px solid var(--glass-edge);border-radius:22px;background:#fff;box-shadow:0 24px 50px -22px rgba(40,30,110,.5);animation:paw-menu-in .18s cubic-bezier(.2,.8,.2,1)}
+[data-paw]>.paw-menu.is-up{top:auto;bottom:calc(100% + 10px);animation-name:paw-menu-up}
+[data-paw]>.paw-menu[hidden]{display:none}
+/* 화면이 다시 그려져 메뉴를 다시 열 때는 등장 움직임을 되풀이하지 않는다 */
+[data-paw]>.paw-menu.is-restored{animation:none}
+html[data-theme=dark] [data-paw]>.paw-menu{background:rgb(40,42,72)}
+@keyframes paw-menu-in{from{opacity:0;translate:0 -6px}to{opacity:1;translate:0 0}}
+@keyframes paw-menu-up{from{opacity:0;translate:0 6px}to{opacity:1;translate:0 0}}
+.paw-menu-title{margin:0 8px 6px;font-size:12px;font-weight:650;color:var(--ui-sub)}
+.paw-menu .paw-treat{display:block;margin:0;padding:0}
+.paw-menu .paw-treat .chat-collect-heart{display:none}
+[data-paw] .paw-menu .paw-treat .chat-treat-button,
+[data-paw] .paw-menu>button{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:50px;margin:0;padding:7px 8px;border:0;border-radius:14px;background:transparent;box-shadow:none;color:var(--ui-ink);font-size:14px;font-weight:600;line-height:1.3;text-align:left;white-space:nowrap}
+[data-paw] .paw-menu .paw-treat .chat-treat-button:not(:disabled):hover,
+[data-paw] .paw-menu>button:hover{background:var(--ui-fill);color:var(--ui-ink)}
+[data-paw] .paw-menu .paw-treat .chat-treat-button:disabled{opacity:.5;cursor:default}
+/* 색 있는 작은 아이콘 타일: 츄르 주황 · 모드 하늘 · 꾸미기 분홍 */
+[data-paw] .paw-menu>button>.icon{box-sizing:border-box;flex:none;width:36px;height:36px;padding:8px;border-radius:11px}
+[data-paw] .paw-menu>#personality-button>.icon{background:#e3efff;color:#3b7be0}
+[data-paw] .paw-menu>.paw-wardrobe>.icon{background:#ffe3ec;color:#e0578a}
+[data-paw] .paw-menu .paw-treat .chat-treat-button{padding-left:56px}
+[data-paw] .paw-menu .paw-treat .chat-treat-button::before{content:'';position:absolute;left:8px;top:50%;width:36px;height:36px;translate:0 -50%;border-radius:11px;background:#fff1dc}
+[data-paw] .paw-menu .paw-treat .treat-stick{position:absolute;left:22px;top:50%;width:7px;height:20px;margin:0;translate:0 -50%;opacity:1;z-index:1}
+[data-paw] .paw-menu .paw-treat .chat-treat-button small{margin-left:auto;padding:3px 9px;border-radius:999px;background:var(--ui-accent-fill);color:var(--ui-accent);font-size:11.5px;font-weight:650}
+html[data-theme=dark] [data-paw] .paw-menu>#personality-button>.icon{background:#2b3a5c;color:#9cc2ff}
+html[data-theme=dark] [data-paw] .paw-menu>.paw-wardrobe>.icon{background:#4a2b3c;color:#f2a0bd}
+html[data-theme=dark] [data-paw] .paw-menu .paw-treat .chat-treat-button::before{background:#4a3a28}
+
+@media (prefers-reduced-motion:reduce){.app-shell.desktop-workspace.sidebar-ready{transition:none}[data-paw]>.paw-menu{animation:none}[data-paw]>.paw-button{transition:none}}
+.motion-paused [data-paw]>.paw-menu{animation:none}

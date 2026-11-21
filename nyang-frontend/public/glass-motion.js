@@ -6,6 +6,7 @@
 // - 대화: 새 말풍선이 부드럽게 들어온다
 // - 사이드바: 접기 버튼으로 아이콘만 보이는 줄로 접는다
 // - 내 프로필: 카드 바로 위에 프로필 메뉴를 연다
+// - 첫 화면 발바닥 냥대리 메뉴: 츄르 주기·성격 모드·꾸미기를 여닫는다
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const off = () => reduce || !!document.querySelector('.motion-paused');
@@ -166,11 +167,53 @@
     try { menu.hidePopover(); } catch {}
   });
 
+  /* 6. 발바닥 냥대리 메뉴 (첫 화면)
+     발바닥 버튼(data-paw-toggle)으로 말풍선 메뉴(#paw-menu)를 열고 닫는다. 바깥을 누르거나 Esc면 닫힌다.
+     메뉴 항목(츄르 주기·성격 모드·꾸미기)은 기존 data-action 그대로라 동작은 app.js가 처리하고, 여기서는 메뉴만 닫는다.
+     - 화면이 다시 그려져도(15초 새로고침 등) 열려 있던 메뉴는 다시 연다. 닫히는 건 Esc·바깥 클릭·버튼 다시 누르기·항목 선택뿐.
+     - 메뉴는 발바닥 아래로 열고, 화면 아래 공간이 모자라면 위로 연다(.is-up). */
+  let pawOpen = false;
+  function placePaw(menu) {
+    menu.classList.remove('is-up');
+    const r = menu.getBoundingClientRect(), btn = menu.parentElement.getBoundingClientRect();
+    if (r.bottom > innerHeight - 8 && btn.top - r.height - 10 >= 8) menu.classList.add('is-up');
+  }
+  function setPaw(open, focusFirst = false, restored = false) {
+    const btn = document.querySelector('[data-paw-toggle]'), menu = document.getElementById('paw-menu');
+    if (!btn || !menu) return;
+    pawOpen = open;
+    menu.classList.toggle('is-restored', restored);
+    menu.hidden = !open; btn.setAttribute('aria-expanded', String(open));
+    if (open) placePaw(menu);
+    if (open && focusFirst) menu.querySelector('button:not(:disabled)')?.focus({ preventScroll: true });
+  }
+  // 다시 그려진 뒤: 열려 있던 메뉴는 다시 열고, 발바닥 버튼이 없는 화면(대화 중·다른 메뉴)으로 가면 열림 기억을 지운다
+  function syncPaw() {
+    if (!pawOpen) return;
+    const menu = document.getElementById('paw-menu');
+    if (!menu) { pawOpen = false; return; }
+    if (menu.hidden) setPaw(true, false, true);
+  }
+  addEventListener('resize', () => { const m = document.getElementById('paw-menu'); if (m && !m.hidden) placePaw(m); });
+  document.addEventListener('click', e => {
+    const toggle = e.target.closest?.('[data-paw-toggle]'), menu = document.getElementById('paw-menu');
+    // 키보드(Enter·Space)로 열면 첫 항목으로 포커스를 옮긴다
+    if (toggle) { setPaw(!!menu?.hidden, e.detail === 0); return; }
+    if (!menu || menu.hidden) return;
+    if (e.target.closest?.('#paw-menu button') || !e.target.closest?.('#paw-menu')) setPaw(false);
+  });
+  document.addEventListener('keydown', e => {
+    const menu = document.getElementById('paw-menu');
+    if (e.key !== 'Escape' || !menu || menu.hidden) return;
+    setPaw(false); document.querySelector('[data-paw-toggle]')?.focus({ preventScroll: true });
+  });
+
   // 화면이 다시 그려질 때마다 살핀다
   let first = true;
   const mo = new MutationObserver(() => {
     initSidebar();
     markInitial();
+    syncPaw();
     const k = keyNow();
     if (k !== viewKey) { const was = viewKey; viewKey = k; requestAnimationFrame(() => { enter(first || !was); first = false; placePill(false); }); }
     newMessages();

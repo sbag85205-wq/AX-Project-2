@@ -30,8 +30,9 @@ test('가리키는 화면 요소가 실제 냥대리 화면(app.js)에 있다',(
  const app=fs.readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
  const exists={'.cat-art.resident':/cat\(\s*[^)]*'resident'|resident/,'#question-form':/id="question-form"/,'.workspace-nav':/class="workspace-nav/,'.workspace-utilities':/class="workspace-utilities"/};
  for(const s of GUIDE_STEPS.filter(s=>s.target))assert.match(app,exists[s.target],s.target);
- // 가이드 버튼은 따뜻한/차가운 모드 버튼 바로 옆에 있다
- assert.match(app,/id="personality-button"[^>]*>[^]*?<\/button><button data-action="guide" id="guide-button" aria-label="[^"]+"/);
+ // 따뜻한/차가운 모드 버튼은 첫 화면 발바닥 메뉴 안에, 가이드 다시 보기 버튼은 프로필 메뉴 안에 있다
+ assert.match(app,/id="paw-menu"[^`]*?id="personality-button"/);
+ assert.match(app,/id="profile-menu"[^`]*?<button data-action="guide" id="guide-button" aria-label="[^"]+"/);
 });
 
 test('guideText는 **굵게**만 살리고 나머지 HTML은 글자로 보여 준다',()=>{
