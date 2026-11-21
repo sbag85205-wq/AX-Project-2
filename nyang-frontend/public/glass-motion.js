@@ -7,6 +7,7 @@
 // - 사이드바: 접기 버튼으로 아이콘만 보이는 줄로 접는다
 // - 내 프로필: 카드 바로 위에 프로필 메뉴를 연다
 // - 첫 화면 발바닥 냥대리 메뉴: 츄르 주기·성격 모드·꾸미기를 여닫는다
+// - 대화 기록 ⋯ 메뉴: 폴더·분야 고르기
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const off = () => reduce || !!document.querySelector('.motion-paused');
@@ -209,12 +210,122 @@
     setPaw(false); document.querySelector('[data-paw-toggle]')?.focus({ preventScroll: true });
   });
 
+  /* 7. 대화 기록 ⋯ 메뉴
+     "대화 기록" 제목 옆 점 세 개(⋯) 버튼을 누르면 메뉴가 열린다: 폴더 ▸ · 분야 ▸ · 안내.
+     기능은 그대로 기존 선택 상자(#chat-history-folder, #chat-history-category)가 맡는다. 화면에서는 숨기고,
+     메뉴에서 고르면 그 선택 상자의 값을 바꾸고 change를 보내 app.js가 원래대로 목록을 다시 그린다.
+     '폴더 이름 변경'은 기존 버튼(data-action="rename-chat-folder")을 그대로 누른다. */
+  const DOTS = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>';
+  const CHEV = '<svg class="icon hm-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+  let histMenu = null;
+  function ensureHistoryButton() {
+    const head = document.querySelector('#sidebar-history .chat-history-heading');
+    if (!head || head.querySelector('[data-history-menu]')) return;
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'icon-button history-more'; b.dataset.historyMenu = '';
+    b.setAttribute('aria-haspopup', 'menu'); b.setAttribute('aria-expanded', 'false');
+    b.setAttribute('aria-label', '대화 기록 보기 설정 (폴더 · 분야)'); b.title = '폴더 · 분야'; b.innerHTML = DOTS;
+    const collapse = head.querySelector('[data-action="toggle-chat-history"]');
+    if (collapse) collapse.before(b); else head.append(b);
+  }
+  function historyMenuEl() {
+    if (histMenu?.isConnected) return histMenu;
+    histMenu = document.createElement('div');
+    histMenu.id = 'history-menu'; histMenu.className = 'history-menu'; histMenu.setAttribute('popover', '');
+    histMenu.setAttribute('role', 'menu'); histMenu.setAttribute('aria-label', '대화 기록 보기 설정');
+    document.body.append(histMenu);
+    return histMenu;
+  }
+  const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+  // 폴더·분야 한 줄 + 옆으로 펼치는 목록. 목록은 지금 선택 상자의 항목을 그대로 쓴다.
+  function historyRow(label, selectId) {
+    const select = document.getElementById(selectId); if (!select) return null;
+    const row = el('div', 'hm-row');
+    const btn = el('button', 'hm-item'); btn.type = 'button';
+    btn.setAttribute('role', 'menuitem'); btn.setAttribute('aria-haspopup', 'menu'); btn.setAttribute('aria-expanded', 'false');
+    btn.append(el('span', 'hm-label', label), el('small', 'hm-value', select.selectedOptions[0]?.textContent.trim() || ''));
+    btn.insertAdjacentHTML('beforeend', CHEV);
+    const sub = el('div', 'hm-sub'); sub.setAttribute('role', 'menu'); sub.setAttribute('aria-label', label); sub.hidden = true;
+    for (const opt of select.options) {
+      const o = el('button', 'hm-option'); o.type = 'button';
+      o.setAttribute('role', 'menuitemradio'); o.setAttribute('aria-checked', String(opt.selected));
+      o.dataset.selectId = selectId; o.dataset.value = opt.value;
+      o.append(el('span', '', opt.textContent.trim()));
+      if (opt.selected) o.insertAdjacentHTML('beforeend', '<svg class="icon hm-check" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>');
+      sub.append(o);
+    }
+    row.append(btn, sub);
+    return row;
+  }
+  function buildHistoryMenu(menu) {
+    const parts = [historyRow('폴더', 'chat-history-folder'), historyRow('분야', 'chat-history-category')].filter(Boolean);
+    const rename = document.querySelector('#sidebar-history [data-action="rename-chat-folder"]');
+    if (rename) { const r = el('button', 'hm-item hm-plain', '폴더 이름 변경'); r.type = 'button'; r.setAttribute('role', 'menuitem'); r.dataset.hmRename = ''; parts.push(r); }
+    const count = document.querySelector('#sidebar-history .chat-history-filter p[role="status"]')?.textContent.trim();
+    const note = el('p', 'hm-note');
+    note.textContent = (count ? count + ' · ' : '') + '최근 100개 대화 · 이 브라우저에 저장';
+    menu.replaceChildren(...parts, el('hr', 'hm-divider'), note);
+  }
+  function openSub(row, open) {
+    const btn = row.querySelector('.hm-item'), sub = row.querySelector('.hm-sub'); if (!sub) return;
+    sub.hidden = !open; btn.setAttribute('aria-expanded', String(open));
+  }
+  function closeSubs(menu, except = null) { menu.querySelectorAll('.hm-row').forEach(r => { if (r !== except) openSub(r, false); }); }
+  function placeHistoryMenu(menu, btn) {
+    const r = btn.getBoundingClientRect(), w = menu.offsetWidth || 210;
+    menu.style.left = Math.round(Math.min(r.right + 8, innerWidth - w - 8)) + 'px';
+    menu.style.top = Math.round(Math.max(8, Math.min(r.top - 6, innerHeight - menu.offsetHeight - 8))) + 'px';
+  }
+  const histOpen = m => { try { return m.matches(':popover-open'); } catch { return false; } };
+  function closeHistoryMenu() {
+    const m = histMenu; if (!m || !histOpen(m)) return;
+    try { m.hidePopover(); } catch {}
+  }
+  document.addEventListener('click', e => {
+    const toggle = e.target.closest?.('[data-history-menu]');
+    if (toggle) {
+      const menu = historyMenuEl();
+      if (histOpen(menu)) { closeHistoryMenu(); return; }
+      buildHistoryMenu(menu);
+      try { menu.showPopover(); } catch { return; }
+      placeHistoryMenu(menu, toggle); toggle.setAttribute('aria-expanded', 'true');
+      if (e.detail === 0) menu.querySelector('.hm-item')?.focus({ preventScroll: true });
+      return;
+    }
+    const menu = histMenu; if (!menu || !e.target.closest?.('#history-menu')) return;
+    const item = e.target.closest('.hm-item');
+    const isRename = !!item && 'hmRename' in item.dataset;
+    // 폴더·분야 줄을 누르면 옆 목록을 펼친다(마우스를 올려 이미 펼쳐졌어도 닫지 않는다). 키보드로 열면 첫 항목으로 포커스
+    if (item && !isRename) { const row = item.closest('.hm-row'); closeSubs(menu, row); openSub(row, true); if (e.detail === 0) row.querySelector('.hm-option')?.focus({ preventScroll: true }); return; }
+    // 지금 클릭이 끝난 뒤에 누른다(같은 클릭 안에서 창을 열면 '창 바깥 클릭'으로 보고 바로 닫히기 때문)
+    if (isRename) { closeHistoryMenu(); setTimeout(() => document.querySelector('#sidebar-history [data-action="rename-chat-folder"]')?.click(), 0); return; }
+    const opt = e.target.closest('.hm-option');
+    if (opt) {
+      closeHistoryMenu();
+      const select = document.getElementById(opt.dataset.selectId);
+      if (select && select.value !== opt.dataset.value) { select.value = opt.dataset.value; select.dispatchEvent(new Event('change', { bubbles: true })); }
+    }
+  });
+  // 마우스를 올리면 옆 목록을 펼친다(클릭으로도 열고 닫힌다)
+  document.addEventListener('pointerover', e => {
+    const row = e.target.closest?.('#history-menu .hm-row'); if (!row || e.pointerType === 'touch') return;
+    closeSubs(histMenu, row); openSub(row, true);
+  });
+  // 메뉴가 닫히면 ⋯ 버튼 상태를 되돌린다
+  document.addEventListener('toggle', e => {
+    if (e.target?.id !== 'history-menu' || e.newState !== 'closed') return;
+    closeSubs(e.target);
+    document.querySelector('[data-history-menu]')?.setAttribute('aria-expanded', 'false');
+  }, true);
+  addEventListener('resize', closeHistoryMenu);
+
   // 화면이 다시 그려질 때마다 살핀다
   let first = true;
   const mo = new MutationObserver(() => {
     initSidebar();
     markInitial();
     syncPaw();
+    ensureHistoryButton();
     const k = keyNow();
     if (k !== viewKey) { const was = viewKey; viewKey = k; requestAnimationFrame(() => { enter(first || !was); first = false; placePill(false); }); }
     newMessages();

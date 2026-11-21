@@ -215,10 +215,12 @@ html:not([data-theme=dark]) #profile-level .profile-level-stats>div{background:#
 
 /* 사이드바 안의 대화 기록(2단계): 별도 칸이 아니라 메뉴 아래 같은 판 위에 이어진다 */
 .app-sidebar .chat-history{width:auto;flex:1 1 auto;min-height:0;margin:2px -4px 0;background:transparent;border:0;border-top:1px solid var(--ui-line)}
-.app-sidebar .chat-history-heading{padding:16px 10px 10px}
-.app-sidebar .chat-history-filter{padding:0 10px 8px}
-.app-sidebar .chat-history-list{padding:0 4px 12px}
-.app-sidebar .chat-history-note{padding:12px 10px 2px}
+.app-sidebar .chat-history-heading{gap:2px;padding:14px 6px 6px 10px}
+.app-sidebar .chat-history-heading h2{margin-right:auto}
+/* 7단계: 내 폴더·분야별로 찾기 선택 상자와 안내 문구는 ⋯ 메뉴로 옮겼다(선택 상자 자체는 id·기능 그대로 두고 화면에서만 숨긴다) */
+.app-sidebar .chat-history-filter{display:none}
+.app-sidebar .chat-history-list{flex:1 1 auto;min-height:0;overflow-y:auto;padding:0 4px 12px}
+.app-sidebar .chat-history-note{display:none}
 /* 대화 기록 접기: 제목만 남기고 아래로 접는다(화살표는 위·아래 방향으로 돌려 보인다) */
 .app-sidebar .chat-history.is-collapsed{width:auto;flex:0 0 auto}
 .app-sidebar .chat-history.is-collapsed .chat-history-heading{padding:16px 10px 4px}
@@ -310,3 +312,25 @@ html body .desktop-workspace .chat-home .cat-resident-stage{padding:8px 0 20px;r
 html body .desktop-workspace .chat-home .cat-resident-stage>.resident-portrait,
 html body .desktop-workspace .chat-home .cat-resident-stage>.home-cat-aside{grid-row:1}
 html body .desktop-workspace .chat-home .cat-resident-stage>.resident-speech{grid-row:2}
+
+/* 7단계. 대화 기록 ⋯ 버튼과 메뉴(폴더 ▸ · 분야 ▸ · 안내). 열고 닫기와 내용은 glass-motion.js가 만든다. */
+.app-sidebar .chat-history-heading .history-more .icon{rotate:0deg;width:18px;height:18px;fill:currentColor;stroke:none}
+.app-sidebar .chat-history-heading .icon-button{display:grid;place-items:center;width:30px;height:30px;border-radius:9px}
+.app-sidebar .chat-history-heading .icon-button:hover,.app-sidebar .chat-history-heading .history-more[aria-expanded="true"]{background:var(--ui-fill);color:var(--ui-ink)}
+#history-menu{position:fixed;inset:auto;margin:0;width:212px;box-sizing:border-box;padding:6px;overflow:visible;border:1px solid var(--glass-edge);border-radius:16px;background:rgba(255,255,255,.97);color:var(--ui-ink);box-shadow:0 24px 50px -22px rgba(40,30,110,.5);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+#history-menu:popover-open{display:flex;flex-direction:column;gap:2px;animation:profile-menu-in .16s cubic-bezier(.2,.8,.2,1)}
+html[data-theme=dark] #history-menu,html[data-theme=dark] #history-menu .hm-sub{background:rgb(40,42,72)}
+#history-menu .hm-row{position:relative}
+#history-menu .hm-item{display:flex;align-items:center;gap:8px;width:100%;min-height:36px;margin:0;padding:7px 8px 7px 10px;border:0;border-radius:10px;background:transparent;color:var(--ui-ink);font-size:13px;font-weight:500;text-align:left;cursor:pointer}
+#history-menu .hm-item:hover,#history-menu .hm-item[aria-expanded="true"],#history-menu .hm-option:hover{background:var(--ui-fill)}
+#history-menu .hm-value{margin-left:auto;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:400;color:var(--ui-sub)}
+#history-menu .hm-chev{flex:none;width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;color:var(--ui-sub)}
+#history-menu .hm-sub{position:absolute;left:calc(100% + 12px);top:-6px;z-index:1;display:flex;flex-direction:column;gap:2px;width:184px;max-height:min(60vh,360px);overflow-y:auto;box-sizing:border-box;padding:6px;border:1px solid var(--glass-edge);border-radius:14px;background:rgba(255,255,255,.97);box-shadow:0 20px 44px -22px rgba(40,30,110,.5)}
+#history-menu .hm-sub[hidden]{display:none}
+#history-menu .hm-option{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:34px;margin:0;padding:7px 10px;border:0;border-radius:9px;background:transparent;color:var(--ui-ink);font-size:13px;text-align:left;cursor:pointer}
+#history-menu .hm-option[aria-checked="true"]{font-weight:600}
+#history-menu .hm-check{flex:none;width:15px;height:15px;fill:none;stroke:var(--ui-accent);stroke-width:2.2}
+#history-menu .hm-divider{margin:4px 6px;border:0;border-top:1px solid var(--ui-line)}
+#history-menu .hm-note{margin:2px 10px 4px;font-size:11.5px;line-height:1.5;color:var(--ui-sub);word-break:keep-all}
+@media (prefers-reduced-motion:reduce){#history-menu:popover-open{animation:none}}
+.motion-paused #history-menu:popover-open{animation:none}
