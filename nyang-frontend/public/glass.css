@@ -260,16 +260,21 @@ body[data-authenticated="false"] .app-sidebar{flex-direction:row;align-items:cen
 body[data-authenticated="false"] .app-sidebar>:not(.sidebar-top),
 body[data-authenticated="false"] .app-sidebar .sidebar-toggle{display:none!important}
 
-/* 4단계. 발바닥 냥대리 메뉴: 첫 화면 고양이 오른쪽 아래의 흰 동그라미(54px) + 검은 발바닥
+/* 4단계. 발바닥 냥대리 메뉴: 첫 화면 고양이 오른쪽 아래의 흰 동그라미(34px, 첫 화면 정리 4단계에서 줄임) + 검은 발바닥
    고양이 그림 상자(.resident-portrait) 밖, 고양이 칸과 오른쪽 칸 사이 여백에 둬서 쓰다듬기(.pet-touch)와 겹치지 않는다.
    열고 닫기는 glass-motion.js. 담당자에게는 account.css의 .workspace-utilities 숨김으로 보이지 않는다. */
-.desktop-workspace .chat-home .cat-resident-stage>[data-paw]{grid-column:2;grid-row:1;justify-self:end;align-self:end;position:relative;z-index:6;display:block;margin:0 -66px 10px 0;padding:0;border:0}
+.desktop-workspace .chat-home .cat-resident-stage>[data-paw]{grid-column:2;grid-row:1;justify-self:end;align-self:end;position:relative;z-index:6;display:block;margin:0 -40px 8px 0;padding:0;border:0}
 /* 담당자: 위 위치 규칙이 account.css의 담당자 숨김(.workspace-utilities)을 덮지 않게 여기서도 숨긴다 */
 body[data-role="staff"] .desktop-workspace .chat-home .cat-resident-stage>[data-paw]{display:none}
-[data-paw]>.paw-button{display:grid;place-items:center;width:54px;height:54px;padding:0;border:1px solid rgba(31,35,64,.08);border-radius:50%;background:#fff;color:#15172a;box-shadow:0 12px 26px -14px rgba(40,30,110,.6);cursor:pointer;transition:translate .18s,box-shadow .18s}
-[data-paw]>.paw-button:hover{background:#fff;color:#15172a;translate:0 -2px;box-shadow:0 16px 30px -14px rgba(40,30,110,.7)}
-[data-paw]>.paw-button[aria-expanded="true"]{box-shadow:0 0 0 4px var(--ui-accent-fill),0 12px 26px -14px rgba(40,30,110,.6)}
-[data-paw]>.paw-button .icon{width:26px;height:26px;fill:currentColor;stroke:none}
+[data-paw]>.paw-button{display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid rgba(31,35,64,.08);border-radius:50%;background:#fff;color:#15172a;box-shadow:0 8px 18px -10px rgba(40,30,110,.6);cursor:pointer;transition:translate .18s,box-shadow .18s}
+[data-paw]>.paw-button:hover{background:#fff;color:#15172a;translate:0 -2px;box-shadow:0 12px 22px -10px rgba(40,30,110,.7)}
+[data-paw]>.paw-button[aria-expanded="true"]{box-shadow:0 0 0 3px var(--ui-accent-fill),0 8px 18px -10px rgba(40,30,110,.6)}
+[data-paw]>.paw-button .icon{width:18px;height:18px;fill:currentColor;stroke:none}
+/* 첫 화면 정리 4단계: 발바닥 버튼 34px로 줄이고 고양이 상자 오른쪽 아래에 6px 간격으로 붙인다(쓰다듬기 영역과는 겹치지 않음).
+   다크 모드: 발바닥은 흰색, 동그라미는 어두운 유리색 */
+html[data-theme=dark] [data-paw]>.paw-button,
+html[data-theme=dark] [data-paw]>.paw-button:hover{border-color:var(--glass-edge);background:rgba(40,42,72,.72);color:#fff;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 8px 18px -10px rgba(0,0,0,.7)}
+html[data-theme=dark] [data-paw]>.paw-button[aria-expanded="true"]{box-shadow:0 0 0 3px var(--ui-accent-fill),0 8px 18px -10px rgba(0,0,0,.7)}
 /* 말풍선 메뉴: 발바닥 버튼 오른쪽에, 버튼 윗선에 맞춰 연다(아래 제목·소개 글과 위쪽 반응 글을 가리지 않게).
    화면 아래 공간이 모자라면 glass-motion.js가 .is-up을 붙여 버튼 아랫선에 맞춰 위로 연다. */
 [data-paw]>.paw-menu{position:absolute;left:calc(100% + 12px);top:0;z-index:30;display:flex;flex-direction:column;gap:2px;width:236px;box-sizing:border-box;padding:14px 10px 10px;border:1px solid var(--glass-edge);border-radius:22px;background:#fff;box-shadow:0 24px 50px -22px rgba(40,30,110,.5);animation:paw-menu-in .18s cubic-bezier(.2,.8,.2,1)}
