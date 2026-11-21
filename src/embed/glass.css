@@ -1,0 +1,102 @@
+/* 냥대리 화면 안 Knowly 관리 화면(문서·분야·사용자·FAQ 관리, 챗봇 미답변, 이용 통계)의 몽글 글래스 디자인.
+   냥대리 쪽 nyang-frontend/public/glass.css의 색·모양 값을 그대로 옮겼다.
+   기능은 건드리지 않고 겉모습만 덮어쓴다. src/embed/main.tsx에서 이 파일 import 한 줄을 빼면 원래 디자인으로 돌아간다.
+   body가 투명이라 바깥 냥대리의 그라데이션 바탕이 비쳐 보인다. 그 위에 반투명 흰 판(카드)을 띄운다. */
+
+/* 1. 색: 공용 변수만 바꾸면 화면 대부분이 따라온다 (값은 glass.css의 --ui-*와 같다) */
+:root {
+  --bg: rgba(74, 91, 216, .05);          /* 카드 안 옅은 칸(작은 숫자·원문 보기) */
+  --surface: rgba(255, 255, 255, .82);   /* 카드·버튼·입력칸 (= --ui-panel) */
+  --surface-2: rgba(74, 91, 216, .07);   /* 마우스를 올렸을 때·표 머리줄 */
+  --selection: rgba(74, 91, 216, .12);   /* 고른 칩 (= --ui-selection) */
+  --text: #1f2340;                       /* = --ui-ink */
+  --text-2: #454a6e;                     /* = --ui-sub */
+  --muted: #5d6187;                      /* = --ui-faint */
+  --faint: #6a6e93;
+  --line: rgba(80, 80, 150, .14);        /* = --ui-line */
+  --line-soft: rgba(80, 80, 150, .09);
+  --input: rgba(80, 80, 150, .2);
+  --primary: #4a5bd8;                    /* = --ui-accent */
+  --primary-ink: #3a4ac4;
+  --primary-soft: rgba(74, 91, 216, .12);
+  --primary-tint: rgba(74, 91, 216, .35);
+  --info-soft: rgba(74, 91, 216, .12);
+  --neutral-soft: rgba(80, 80, 150, .08);
+  --shadow: 0 10px 30px -16px rgba(70, 60, 140, .4); /* = --glass-card-shadow */
+  --radius: 18px;
+  --glass-edge: rgba(255, 255, 255, .85);
+  --glass-dialog: rgba(255, 255, 255, .97);
+  --on-primary: #fff;
+}
+html[data-theme=dark] {
+  --bg: rgba(255, 255, 255, .05);
+  --surface: rgba(44, 46, 78, .82);
+  --surface-2: rgba(255, 255, 255, .08);
+  --selection: rgba(143, 156, 255, .18);
+  --text: #eef0ff;
+  --text-2: #bfc3e4;
+  --muted: #a3a8cf;
+  --faint: #9599c2;
+  --line: rgba(255, 255, 255, .12);
+  --line-soft: rgba(255, 255, 255, .08);
+  --input: rgba(255, 255, 255, .16);
+  --primary: #9aa6ff;
+  --primary-ink: #c3caff;
+  --primary-soft: rgba(143, 156, 255, .18);
+  --primary-tint: rgba(143, 156, 255, .45);
+  --info-soft: rgba(143, 156, 255, .18);
+  --neutral-soft: rgba(255, 255, 255, .08);
+  --shadow: 0 10px 30px -16px rgba(0, 0, 0, .6);
+  --glass-edge: rgba(255, 255, 255, .12);
+  --glass-dialog: rgba(40, 42, 72, .97);
+  --on-primary: #14163a; /* 다크 모드의 강조색은 밝은 보라라서 글자는 어둡게 (glass.css와 같다) */
+}
+
+:focus-visible { outline: 3px solid var(--primary-tint); }
+
+/* 2. 카드: 둥근 반투명 판 + 흰 테두리 + 옅은 그림자 */
+/* (backdrop-filter는 쓰지 않는다: iframe 안에서는 뒤 그림이 없어 흐림 효과가 없고, 카드 안 창(position:fixed)의 자리를 어긋나게 한다) */
+.card { border: 1.5px solid var(--glass-edge); border-radius: var(--radius); box-shadow: var(--shadow); }
+/* 숫자 요약 줄은 상자 없이 구분선으로 나눈다(embed.css): 판·그림자를 다시 걷는다 */
+.card.stat { border: 0; border-right: 1px solid var(--line); border-radius: 0; box-shadow: none; }
+.card.stat:last-child { border-right: 0; }
+.mini-stat { border-radius: 12px; }
+
+/* 3. 버튼·칩·이름표: 알약 모양 */
+.btn, .chip, .pill, .badge, .vote { border-radius: 999px; }
+.btn { border-color: var(--input); }
+/* 반투명 판 위의 버튼이 비쳐 보이지 않게, 판 색에 강조색을 조금 섞는다 */
+.btn:hover { background: color-mix(in srgb, var(--primary) 9%, var(--surface)); }
+.btn-ghost { border-color: transparent; background: transparent; }
+.btn-primary, .send { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.btn-primary { box-shadow: 0 10px 22px -14px rgba(74, 91, 216, .8); }
+.btn-primary:hover { background: var(--primary-ink); border-color: var(--primary-ink); color: var(--on-primary); box-shadow: 0 12px 24px -12px rgba(74, 91, 216, .85); }
+html[data-theme=dark] .btn-primary, html[data-theme=dark] .btn-primary:hover { box-shadow: none; }
+.chip[aria-pressed='true'] { background: var(--selection); color: var(--primary-ink); }
+.chip[aria-pressed='true'] .chip-count { color: var(--primary-ink); }
+
+/* 4. 입력칸 */
+.input, .select, .textarea { border-color: var(--input); border-radius: 14px; }
+.textarea { border-radius: 16px; }
+.input:focus, .select:focus, .textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-soft); }
+.dropzone { border-radius: 18px; background: var(--bg); }
+
+/* 5. 탭·목록·표: 고른 것은 강조색 */
+.tab[aria-pressed='true'] { border-bottom-color: var(--primary); color: var(--text); }
+button.grid-row[aria-pressed='true'] { background: var(--primary-soft); box-shadow: inset 3px 0 0 var(--primary); }
+.grid-head { background: transparent; }
+.bar-track { background: var(--line); }
+.variant { border-radius: 12px; }
+
+/* 6. 창·알림 */
+.dialog { background: var(--glass-dialog); border: 1.5px solid var(--glass-edge); border-radius: 24px; box-shadow: 0 24px 60px -22px rgba(40, 30, 110, .45); }
+.source-text { border-radius: 14px; }
+.backdrop { background: rgba(31, 35, 64, .4); }
+.toast { border-radius: 999px; background: var(--text); color: var(--glass-dialog); }
+html[data-theme=dark] .toast { background: #eef0ff; color: #14163a; }
+.error-box, .status-ok, .status-warn, .answer-warn { border-radius: 14px; }
+
+/* 7. 사내 문서 보기(/docs)·대화 기록(/history)도 같은 판 위에 놓인다 */
+.doc-card { border-radius: var(--radius); }
+.doc-card:hover { background: var(--surface); border-color: var(--primary-tint); }
+.topbar { background: color-mix(in srgb, var(--surface) 70%, transparent); border-bottom-color: var(--line); }
