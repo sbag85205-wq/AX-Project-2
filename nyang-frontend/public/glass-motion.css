@@ -4,9 +4,7 @@ html.glass-motion .workspace-nav{position:relative}
 html.glass-motion .workspace-nav>button{position:relative;z-index:1}
 html.glass-motion body .desktop-workspace .workspace-nav .active{background:transparent!important;box-shadow:none!important}
 .glass-nav-pill{position:absolute;left:0;top:0;width:0;border-radius:999px;background:var(--ui-panel);box-shadow:0 4px 14px -6px rgba(70,60,140,.35);pointer-events:none;z-index:0}
-.glass-glow{position:fixed;left:0;top:0;width:600px;height:600px;border-radius:50%;pointer-events:none;z-index:0;background:radial-gradient(closest-side,rgba(255,255,255,.95),rgba(255,255,255,.35) 45%,rgba(255,255,255,0));transition:opacity .4s}
-html[data-theme=dark] .glass-glow{background:radial-gradient(closest-side,rgba(150,160,255,.55),rgba(150,160,255,0));mix-blend-mode:screen}
 html.glass-motion .desktop-workspace :is(.chat-starters button,.secondary-button,.chat-history-item){transition:translate .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,background-color .2s}
 html.glass-motion .desktop-workspace :is(.chat-starters button,.secondary-button):hover{translate:0 -2px;box-shadow:0 10px 20px -12px rgba(70,60,140,.45)}
 html.glass-motion .desktop-workspace .chat-history-item:hover{translate:2px 0}
-@media (prefers-reduced-motion:reduce){.glass-glow{display:none}html.glass-motion .desktop-workspace :is(.chat-starters button,.secondary-button,.chat-history-item){transition:none}}
+@media (prefers-reduced-motion:reduce){html.glass-motion .desktop-workspace :is(.chat-starters button,.secondary-button,.chat-history-item){transition:none}}

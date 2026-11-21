@@ -17,7 +17,7 @@ import {createAccountSync} from './account-sync.js?v=422e8ba71441';
 import {esc,loadingHTML} from './shared.js?v=b4248c4d9fbf';
 import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=149d7dd11f7d';
 import {orderNav,installNavLayout} from './nav-layout.js?v=2a33659a9a7a';
-import {createGuide} from './guide.js?v=1fee1bbda06f';
+import {createGuide} from './guide.js?v=c6d8476e52b3';
 import {recentTurns} from './chat-context.js?v=e6c82dc547ad';
 import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=4a544c8cbd91';
 import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=89231fc15ea9';
@@ -40,6 +40,10 @@ paths.cat='M5 9 4 3l6 4h4l6-4-1 6a8 8 0 1 1-14 0ZM8 12h.01M16 12h.01m-6 4 2 1 2-
 paths.activity='M4 20h16M7 16V9m5 7V4m5 12v-5';
 paths.shirt='m8 3-5 4 3 4 2-1v11h8V10l2 1 3-4-5-4a4 4 0 0 1-8 0Z';
 paths.copy='M9 8h11v13H9zM5 16V3h11';
+// 사이드바 접기 버튼: 둥근 사각형 안에 왼쪽 세로줄(사이드바 패널)
+paths.panel='M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2ZM9 4v16';
+// 발바닥 냥대리 메뉴 버튼: 발가락 네 개 + 발바닥(채워서 그린다)
+paths.paw='M4.4 10.6a1.7 2.1 0 1 0 3.4 0a1.7 2.1 0 1 0-3.4 0ZM7.8 6.6a1.8 2.2 0 1 0 3.6 0a1.8 2.2 0 1 0-3.6 0ZM12.6 6.6a1.8 2.2 0 1 0 3.6 0a1.8 2.2 0 1 0-3.6 0ZM16.2 10.6a1.7 2.1 0 1 0 3.4 0a1.7 2.1 0 1 0-3.4 0ZM12 12.2c-2.6 0-5.2 3-5.2 5.3 0 1.6 1.3 2.3 2.7 2.3 1 0 1.6-.5 2.5-.5s1.5.5 2.5.5c1.4 0 2.7-.7 2.7-2.3 0-2.3-2.6-5.3-5.2-5.3Z';
 let activeAccount=null;
 const personalKeys=new Set(['om-docs','om-tasks','om-question-history','om-seen-replies','om-chat-sessions','om-chat-active','om-personality']);
 const storageKey=key=>personalKeys.has(key)||key.startsWith('om-bg-')?'nyang-account:'+(activeAccount||'signed-out')+':'+key:key;
@@ -135,8 +139,8 @@ const tone=text=>personalityText(text,personality);
 
 function shell(){
  $('#app').innerHTML=`<div class="app-shell studio-shell desktop-workspace">
-  <header class="workspace-header">
-   <div class="header-brand"><button class="brand" data-action="reset" aria-label="냥대리 처음으로"><img class="company-logo" src="${root}assets/tilon-logo.png" width="434" height="118" alt="Tilon — Your dream starts here"><span>냥대리</span></button><button class="account-menu-button" data-action="account" id="account-button"></button></div>
+  <aside class="app-sidebar" aria-label="냥대리 메뉴">
+   <div class="sidebar-top"><button class="brand" data-action="reset" aria-label="냥대리 처음으로"><img class="company-logo" src="${root}assets/tilon-logo.png" width="434" height="118" alt="Tilon — Your dream starts here"><span>냥대리</span></button><button type="button" class="sidebar-toggle icon-button" data-sidebar-toggle aria-expanded="true" aria-label="사이드바 접기" title="사이드바 접기">${icon('panel')}</button></div>
    <nav class="workspace-nav side-nav" aria-label="주 메뉴">
     <button data-action="chat" id="nav-chat">${icon('chat')}<span>물어보기</span></button>
     <button data-action="schedule" id="nav-schedule">${icon('calendar')}<span>내 일정</span><span id="task-count" class="count"></span></button>
@@ -153,11 +157,22 @@ function shell(){
     <button data-action="manage" id="nav-manage" hidden>냥대리 관리</button>
     ${['test:냥대리 테스트','stats:이용통계','chat:채팅 관리','admin:관리'].map(g=>{const [id,label]=g.split(':');return `<div class="nav-group" id="nav-group-${id}" hidden><button type="button" class="nav-group-toggle" aria-haspopup="true" aria-expanded="false" aria-controls="nav-submenu-${id}">${label}${icon('down')}</button><div class="nav-submenu" id="nav-submenu-${id}"></div></div>`;}).join('')}
    </nav>
-   <div class="header-account"><div id="wallet" class="wallet" aria-label="보유 포인트와 하트"></div></div>
-  </header>
+   <div id="sidebar-history" class="sidebar-history"></div>
+   <div class="sidebar-profile">
+    <button type="button" class="profile-card account-menu-button" id="account-button" popovertarget="profile-menu" aria-haspopup="true"></button>
+    <div id="wallet" class="wallet" aria-label="보유 포인트와 하트"></div>
+   </div>
+   <div id="profile-menu" class="profile-menu" popover aria-label="내 프로필 메뉴">
+    <div id="profile-level" class="profile-level"></div>
+    <div class="profile-utilities"><button data-action="guide" id="guide-button" aria-label="냥대리 사용 가이드 다시 보기" title="냥대리 사용법을 처음부터 다시 봐요" hidden>${icon('book')}<span>가이드 다시 보기</span></button><button class="attendance-quick" id="attendance-button" data-community="attendance" data-busy-label="출석 중…">${icon('calendar')}<span>출석체크</span></button></div>
+    <button class="appearance-button theme-toggle" data-action="toggle-theme" aria-label="다크 모드" aria-pressed="false" title="다크 모드로 전환">${icon('moon')}</button>
+    <button type="button" data-action="account">${icon('settings')}<span>내 계정</span></button>
+    <button type="button" data-action="logout">${icon('logout')}<span>로그아웃</span></button>
+   </div>
+  </aside>
   <div class="main-shell">
-   <header class="topbar workspace-toolbar"><div class="workspace-context"><span id="workspace-title">물어보기</span></div><div class="top-actions"><div class="workspace-utilities"><button data-action="personality" id="personality-button" aria-label="냥대리 성격 설정">${icon('snow')}<span>차가운 모드</span></button><button data-action="guide" id="guide-button" aria-label="냥대리 사용 가이드 다시 보기" title="냥대리 사용법을 처음부터 다시 봐요" hidden>${icon('book')}<span>가이드</span></button><button data-action="wardrobe">${icon('shirt')}<span>꾸미기</span></button><button class="attendance-quick" id="attendance-button" data-community="attendance" data-busy-label="출석 중…">${icon('calendar')}<span>출석체크</span></button></div><button class="appearance-button theme-toggle" data-action="toggle-theme" aria-label="다크 모드" aria-pressed="false" title="다크 모드로 전환">${icon('moon')}</button></div></header>
    <main class="main-content cat-mode" id="main"></main>
+   <span id="workspace-title" class="visually-hidden">물어보기</span>
    <span id="page-title" class="visually-hidden"></span>
   </div>
  </div><dialog id="modal" aria-labelledby="modal-title"></dialog>`;
@@ -201,7 +216,7 @@ function render(){
  for(const name of STAFF_NAVS)$('#nav-'+name).hidden=!staff;
  $('#nav-model').hidden=true; // 검색·모델 설정은 '냥대리 테스트' 화면 아래로 옮겼다
  $('#nav-unanswered').hidden=!staff;$('#nav-library').hidden=staff;
- if(!session.member){$('#wallet').innerHTML='';$('#account-button').textContent='';$('#workspace-title').textContent='로그인';$('#main').classList.add('work-view');$('#main').innerHTML=accountGateHTML();return;}
+ if(!session.member){$('#sidebar-history').replaceChildren();$('#wallet').innerHTML='';$('#account-button').textContent='';$('#workspace-title').textContent='로그인';$('#main').classList.add('work-view');$('#main').innerHTML=accountGateHTML();return;}
  if(viewOf(view)?.staffOnly&&!staff)view='chat';
  $('#account-button').innerHTML='<span>'+esc(session.me.username)+'</span><small>'+(session.me.role==='staff'?'담당자':'직원')+'</small>';
  $('#account-button').setAttribute('aria-label',session.me.username+' 내 계정');
@@ -213,6 +228,7 @@ function render(){
  $('#page-title').textContent=pageTitleOf(view);
  if(staff&&view==='chat')$('#workspace-title').textContent='냥대리 테스트';
  $('#main').classList.toggle('work-view',view!=='chat');updateWallet();
+ if(view!=='chat')$('#sidebar-history').replaceChildren(); // 대화 기록은 물어보기 화면에서만 보인다
  if(viewOf(view)?.route){mountKnowly(view);}else if(view==='manage')$('#main').innerHTML=nyangManagePageHTML();else if(view==='statistics')$('#main').innerHTML=knowlyStatsHTML();else if(view==='userstats')$('#main').innerHTML=statsHTML();else if(view==='activity')$('#main').innerHTML=activityHTML(`<section class="activity-work" aria-label="내 레벨">${myLevelHTML()}</section>`,true);else if(view==='board')$('#main').innerHTML=boardHTML();else if(view==='calendar')renderCalendar(scheduleState());else if(view==='todos')renderTodos(scheduleState());else renderCat();
 }
 async function commitReward(event){
@@ -429,6 +445,9 @@ function conversation(){
  const markup=messages.map((m,i)=>{const day=!i||localDate(new Date(m.at))!==localDate(new Date(messages[i-1].at))?`<div class="chat-day-divider"><span>${new Date(m.at).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'long'})}</span></div>`:'';return day+(m.role==='user'?`<article class="chat-row from-me"><div class="user-message">${esc(m.text)}${Array.isArray(m.files)&&m.files.length?`<small class="user-attachments">첨부 · ${m.files.map(esc).join(', ')}</small>`:''}</div><time>${messageTime(m.at)}</time></article>`:`<article class="chat-row from-nyang assistant-message" data-reply="${m.result.messageId}">${i===lastAssistant&&!pendingReply?'<div class="active-cat-slot"></div>':miniCat()}<div class="chat-message-body"><div class="assistant-name">냥대리 <span>업무 메이트</span>${i===lastAssistant&&!pendingReply?`<div class="chat-rewards inline-cat-rewards">${chatRewards()}</div>`:''}</div><div class="answer-wrap">${resultHTML(m.result)}${scheduleOffer(m.result)}</div><time>${messageTime(m.at)}</time></div></article>`);}).join('');
  return `<div class="conversation" role="log" aria-label="냥대리와의 대화" aria-live="polite" aria-relevant="additions text">${markup}${pendingReply?`<article class="chat-row from-nyang assistant-message typing-message"><div class="active-cat-slot"></div><div class="chat-message-body"><div class="assistant-name">냥대리 <span>업무 메이트</span></div><div class="typing-bubble" role="status" aria-label="냥대리가 답변을 준비하고 있어요"><i></i><i></i><i></i></div></div></article>`:''}</div>`;
 }
+// 첫 화면 발바닥 냥대리 메뉴: 츄르 주기·성격 모드·꾸미기를 한곳에 모은다(동작은 기존 data-action 그대로).
+// 열고 닫기는 glass-motion.js가 맡는다. workspace-utilities: 담당자에게는 숨기고(account.css), 가이드 'fun' 단계가 가리킨다.
+function pawMenuHTML(){return `<div class="workspace-utilities" data-paw><button type="button" class="paw-button" data-paw-toggle aria-haspopup="true" aria-expanded="false" aria-controls="paw-menu" aria-label="냥대리에게 (츄르 주기 · 모드 · 꾸미기)" title="냥대리에게">${icon('paw')}</button><div id="paw-menu" class="paw-menu" role="group" aria-label="냥대리에게" hidden><p class="paw-menu-title">냥대리에게</p><div class="chat-rewards paw-treat">${chatRewards()}</div><button type="button" id="personality-button" data-action="personality" aria-label="냥대리 성격 설정">${icon(personality==='warm'?'heart':'snow')}<span>${voice().label}</span></button><button type="button" class="paw-wardrobe" data-action="wardrobe">${icon('shirt')}<span>꾸미기</span></button></div></div>`;}
 function chatRewards(){return `<button class="chat-treat-button" data-action="feed" ${(rewards.points<TREAT_COST&&!rewards.treatTokens)||rewards.pending.length?'disabled':''}><span class="treat-stick" aria-hidden="true"></span> 츄르 주기 <small>${rewards.treatTokens?`보유 ${rewards.treatTokens}개`:'10 P'}</small></button>${rewards.pending.map((id,i)=>`<button class="chat-collect-heart" data-heart="${id}" aria-label="하트 ${i+1} 모으기">♥ <small>+1</small></button>`).join('')}`;}
 function refreshChatRewards(){document.querySelectorAll('.chat-rewards').forEach(area=>area.innerHTML=chatRewards());}
 function motionButton(){const moving=read('om-cat-motion',true);return `<button class="motion-control" data-action="toggle-motion" aria-pressed="${moving}" aria-label="${moving?'고양이 움직임 끄기':'고양이 움직임 켜기'}"><span class="motion-mark">${moving?'Ⅱ':'▷'}</span><span>${moving?'움직임 끄기':'움직임 켜기'}</span></button>`;}
@@ -508,11 +527,13 @@ function renderCat(){
  document.body.classList.toggle('motion-paused',!read('om-cat-motion',true));
  let content;
  if(home){
-  content=`<section class="cat-room home-scene chat-home"><div class="cat-resident-stage"><div class="scene-window" aria-hidden="true"></div><div class="active-cat-slot"></div><div class="home-cat-aside"></div><div class="chat-rewards home-cat-rewards" aria-label="냥대리에게 츄르 주기">${chatRewards()}</div><div class="resident-speech"><h1>${voice().greeting}</h1><p>${voice().intro}</p></div></div><div class="cat-below chat-home-below">${starterQuestions()}${composer(true)}${staffSettingsHTML()}</div></section>`;
+  content=`<section class="cat-room home-scene chat-home"><div class="cat-resident-stage"><div class="scene-window" aria-hidden="true"></div><div class="active-cat-slot"></div><div class="home-cat-aside"></div>${pawMenuHTML()}<div class="resident-speech"><h1>${voice().greeting}</h1><p>${voice().intro}</p></div></div><div class="cat-below chat-home-below">${composer(true)}${starterQuestions()}${staffSettingsHTML()}</div></section>`;
  }else{
   content=`<section class="chat-room" aria-label="냥대리 채팅방"><div class="chat-transcript" tabindex="0" aria-label="대화 내역"><div class="chat-transcript-inner">${conversation()}</div></div><div class="chat-compose-dock">${composer()}${staffSettingsHTML()}<p class="chat-dock-note">중요한 내용은 답변의 출처에서 확인하세요.</p></div></section>`;
  }
- $('#main').innerHTML=`<div class="chat-layout">${chatHistoryHTML()}<div class="chat-workspace">${content}</div></div>`;
+ // 대화 기록은 왼쪽 사이드바(#sidebar-history) 안, 메뉴 바로 아래에 그린다
+ $('#main').innerHTML=`<div class="chat-layout"><div class="chat-workspace">${content}</div></div>`;
+ $('#sidebar-history').innerHTML=chatHistoryHTML();
  const pet=previousPet||document.createElement('div');pet.className='resident-portrait';
  if(!previousPet)pet.innerHTML=petHTML();
  $('.active-cat-slot').replaceWith(pet);

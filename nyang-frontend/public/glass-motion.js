@@ -2,10 +2,11 @@
 // 화면 코드(app.js)는 건드리지 않고, 이미 그려진 화면 위에 움직임만 더한다.
 // 이 파일을 빼면 움직임만 사라지고 기능은 그대로다.
 // - 화면이 바뀔 때: 제목이 아래에서 드러나고, 내용이 차례로 떠오른다
-// - 위쪽 메뉴: 선택 표시가 고무줄처럼 늘어나며 미끄러진다
-// - 배경: 마우스를 따라다니는 은은한 빛이 유리창 뒤에서 번진다
-// - 주요 버튼: 마우스가 가까이 오면 살짝 끌려온다
+// - 사이드바 메뉴: 선택 표시가 고무줄처럼 늘어나며 미끄러진다
 // - 대화: 새 말풍선이 부드럽게 들어온다
+// - 사이드바: 접기 버튼으로 아이콘만 보이는 줄로 접는다
+// - 내 프로필: 카드 바로 위에 프로필 메뉴를 연다
+// - 첫 화면 발바닥 냥대리 메뉴: 츄르 주기·성격 모드·꾸미기를 여닫는다
 (() => {
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const off = () => reduce || !!document.querySelector('.motion-paused');
@@ -27,17 +28,14 @@
   }
   function enter(first) {
     const main = document.getElementById('main'); if (!main || off()) return;
-    if (first) {
-      rise(document.querySelector('.workspace-header'), 0);
-      rise(document.querySelector('.workspace-toolbar'), 1);
-    }
+    if (first) rise(document.querySelector('.app-sidebar'), 0);
     const home = main.querySelector('.chat-home');
     if (home) {
       reveal(home.querySelector('.resident-speech h1'));
       rise(home.querySelector('.resident-speech p'), 1, 120);
       rise(home.querySelector('.resident-portrait'), 2, 120);
       [...home.querySelectorAll('.chat-home-below > *')].forEach((el, i) => rise(el, i + 3, 120));
-      rise(main.querySelector('.chat-history'), 0);
+      rise(document.querySelector('#sidebar-history .chat-history'), 0);
       return;
     }
     const root = main.firstElementChild; if (!root) return;
@@ -54,7 +52,7 @@
     return (nav?.id || '') + '|' + (first ? first.className.split(' ').filter(c => /home|room|board|schedule|work|docs|login|account/.test(c)).join('.') : '');
   }
 
-  /* 2. 위쪽 메뉴의 선택 표시 */
+  /* 2. 사이드바 메뉴의 선택 표시 (세로 목록: 위아래로 미끄러진다) */
   const L = S(0, 560, 34), R = S(0, 220, 21), PY = S(0, 400, 30);
   let pill = null, navEl = null, pillReady = false;
   function placePill(instant) {
@@ -71,25 +69,7 @@
     pill.style.opacity = 1; pill.style.height = b.height + 'px';
   }
 
-  /* 3. 마우스를 따라다니는 빛 */
-  const glow = document.createElement('div'); glow.className = 'glass-glow'; glow.setAttribute('aria-hidden', 'true');
-  document.body.prepend(glow);
-  const GX = S(innerWidth * .3, 60, 14), GY = S(innerHeight * .2, 60, 14);
-  addEventListener('pointermove', e => { GX.t = e.clientX; GY.t = e.clientY; }, { passive: true });
-
-  /* 4. 끌려오는 버튼 */
-  const MAG = '.send-button, .primary-button, .chat-treat-button, .workspace-utilities > button';
-  let magEl = null; const MX = S(0, 300, 20), MY = S(0, 300, 20);
-  addEventListener('pointermove', e => {
-    if (off()) return;
-    const el = e.target.closest?.(MAG);
-    if (el !== magEl) { if (magEl) magEl.style.translate = ''; magEl = el; MX.x = MY.x = 0; MX.v = MY.v = 0; }
-    if (!el) { MX.t = MY.t = 0; return; }
-    const r = el.getBoundingClientRect();
-    MX.t = (e.clientX - (r.left + r.width / 2)) * .22; MY.t = (e.clientY - (r.top + r.height / 2)) * .3;
-  }, { passive: true });
-
-  /* 5. 새 말풍선 */
+  /* 3. 새 말풍선 */
   const seen = new WeakSet();
   function newMessages() {
     if (off()) return;
@@ -102,9 +82,138 @@
     });
   }
 
+  /* 4. 사이드바 접기
+     접기 버튼(data-sidebar-toggle)을 누르면 아이콘만 보이는 얇은 줄로 접힌다.
+     접힌 상태는 이 기기에만 기억한다(화면 밝기 설정처럼, 계정·서버에는 저장하지 않는다).
+     1100px 이하에서는 저장값과 상관없이 접힌 채로 시작하고, 거기서 누른 것은 기억하지 않는다. */
+  const SIDE_KEY = 'nyang-sidebar-collapsed';
+  const narrow = matchMedia('(max-width: 1100px)');
+  const savedCollapsed = () => { try { return localStorage.getItem(SIDE_KEY) === '1'; } catch { return false; } };
+  function applySidebar(collapsed) {
+    const shell = document.querySelector('.app-shell'), btn = document.querySelector('[data-sidebar-toggle]');
+    if (!shell || !btn) return;
+    shell.classList.toggle('sidebar-collapsed', collapsed);
+    const label = collapsed ? '사이드바 펼치기' : '사이드바 접기';
+    btn.setAttribute('aria-expanded', String(!collapsed)); btn.setAttribute('aria-label', label); btn.title = label;
+  }
+  let sideReady = false, navWatch = null;
+  function initSidebar() {
+    const shell = document.querySelector('.app-shell');
+    if (sideReady || !shell || !document.querySelector('[data-sidebar-toggle]')) return;
+    sideReady = true;
+    applySidebar(narrow.matches || savedCollapsed());
+    // 처음 모습은 움직임 없이 맞추고, 그 뒤부터 접고 펼칠 때만 부드럽게 바뀐다
+    requestAnimationFrame(() => requestAnimationFrame(() => shell.classList.add('sidebar-ready')));
+    // 사이드바 폭이 바뀌면 메뉴 선택 표시를 새 자리에 맞춘다
+    navWatch = new ResizeObserver(() => placePill(true));
+    const nav = document.querySelector('.workspace-nav'); if (nav) navWatch.observe(nav);
+  }
+  document.addEventListener('click', e => {
+    if (!e.target.closest?.('[data-sidebar-toggle]')) return;
+    const next = !document.querySelector('.app-shell')?.classList.contains('sidebar-collapsed');
+    applySidebar(next);
+    if (!narrow.matches) { try { localStorage.setItem(SIDE_KEY, next ? '1' : '0'); } catch {} }
+  });
+  narrow.addEventListener('change', () => { if (sideReady) applySidebar(narrow.matches || savedCollapsed()); });
+
+  /* 5. 내 프로필 카드와 프로필 메뉴
+     - 카드의 작은 사원증에 아이디 첫 글자(이니셜)를 data-initial로 붙인다
+     - 메뉴(#profile-menu, 브라우저 popover)는 화면 가운데가 아니라 프로필 카드 바로 위에 붙여 연다
+     - 메뉴 맨 위 레벨·포인트·하트는 사이드바 카드(#wallet)에 이미 보이는 값을 그대로 옮겨 보여 준다
+     - 메뉴 항목은 모두 기존 버튼(data-action·id)이라 동작은 app.js가 그대로 처리한다. 여기서는 누른 뒤 메뉴만 닫는다 */
+  function markInitial() {
+    const card = document.getElementById('account-button'); if (!card) return;
+    const name = card.querySelector('span')?.textContent.trim() || '';
+    const initial = name ? [...name][0].toUpperCase() : '';
+    if (card.dataset.initial !== initial) card.dataset.initial = initial;
+  }
+  const menuOpen = menu => { try { return menu.matches(':popover-open'); } catch { return false; } };
+  function placeProfileMenu() {
+    const menu = document.getElementById('profile-menu'), card = document.querySelector('.sidebar-profile');
+    if (!menu || !card) return;
+    const r = card.getBoundingClientRect(), gap = 8, width = Math.max(r.width, 248);
+    menu.style.width = width + 'px';
+    menu.style.left = Math.round(Math.min(Math.max(8, r.left), innerWidth - width - 8)) + 'px';
+    menu.style.bottom = Math.round(Math.max(8, innerHeight - r.top + gap)) + 'px';
+    menu.style.maxHeight = Math.round(Math.max(180, r.top - gap - 12)) + 'px';
+  }
+  function fillProfileLevel() {
+    const box = document.getElementById('profile-level'), wallet = document.getElementById('wallet');
+    if (!box) return;
+    box.hidden = !wallet || wallet.hidden || !wallet.querySelector('.wallet-level');
+    if (box.hidden) { box.replaceChildren(); return; }
+    const text = sel => wallet.querySelector(sel)?.textContent.trim() || '0';
+    const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
+    // 레벨 줄은 기존 '내 레벨' 동작(data-action="activity")을 그대로 쓴다
+    const head = el('button', 'profile-level-head'); head.type = 'button'; head.dataset.action = 'activity';
+    head.append(el('strong', '', text('.wallet-level')), el('span', '', '내 레벨 보기'));
+    const stat = (cls, label, value) => { const d = el('div', cls); d.append(el('small', '', label), el('b', '', value)); return d; };
+    const stats = el('div', 'profile-level-stats');
+    stats.append(stat('is-point', '포인트', text('#points-balance') + ' P'), stat('is-heart', '하트', text('#hearts-balance')));
+    box.replaceChildren(head, stats);
+  }
+  function onProfileToggle(e) {
+    if (e.target?.id !== 'profile-menu' || e.newState !== 'open') return;
+    fillProfileLevel(); placeProfileMenu();
+  }
+  // popover의 열림 알림은 위로 전달되지 않아서 capture로 받는다(beforetoggle을 모르는 브라우저는 toggle로 맞춘다)
+  document.addEventListener('beforetoggle', onProfileToggle, true);
+  document.addEventListener('toggle', onProfileToggle, true);
+  addEventListener('resize', () => { const m = document.getElementById('profile-menu'); if (m && menuOpen(m)) placeProfileMenu(); });
+  document.addEventListener('click', e => {
+    const b = e.target.closest?.('#profile-menu button'), menu = document.getElementById('profile-menu');
+    // 화면 밝기·출석은 바뀐 결과를 메뉴에서 바로 보이게 열어 둔다
+    if (!b || !menu || b.matches('.theme-toggle, #attendance-button')) return;
+    try { menu.hidePopover(); } catch {}
+  });
+
+  /* 6. 발바닥 냥대리 메뉴 (첫 화면)
+     발바닥 버튼(data-paw-toggle)으로 말풍선 메뉴(#paw-menu)를 열고 닫는다. 바깥을 누르거나 Esc면 닫힌다.
+     메뉴 항목(츄르 주기·성격 모드·꾸미기)은 기존 data-action 그대로라 동작은 app.js가 처리하고, 여기서는 메뉴만 닫는다.
+     - 화면이 다시 그려져도(15초 새로고침 등) 열려 있던 메뉴는 다시 연다. 닫히는 건 Esc·바깥 클릭·버튼 다시 누르기·항목 선택뿐.
+     - 메뉴는 발바닥 아래로 열고, 화면 아래 공간이 모자라면 위로 연다(.is-up). */
+  let pawOpen = false;
+  function placePaw(menu) {
+    menu.classList.remove('is-up');
+    const r = menu.getBoundingClientRect(), btn = menu.parentElement.getBoundingClientRect();
+    if (r.bottom > innerHeight - 8 && btn.top - r.height - 10 >= 8) menu.classList.add('is-up');
+  }
+  function setPaw(open, focusFirst = false, restored = false) {
+    const btn = document.querySelector('[data-paw-toggle]'), menu = document.getElementById('paw-menu');
+    if (!btn || !menu) return;
+    pawOpen = open;
+    menu.classList.toggle('is-restored', restored);
+    menu.hidden = !open; btn.setAttribute('aria-expanded', String(open));
+    if (open) placePaw(menu);
+    if (open && focusFirst) menu.querySelector('button:not(:disabled)')?.focus({ preventScroll: true });
+  }
+  // 다시 그려진 뒤: 열려 있던 메뉴는 다시 열고, 발바닥 버튼이 없는 화면(대화 중·다른 메뉴)으로 가면 열림 기억을 지운다
+  function syncPaw() {
+    if (!pawOpen) return;
+    const menu = document.getElementById('paw-menu');
+    if (!menu) { pawOpen = false; return; }
+    if (menu.hidden) setPaw(true, false, true);
+  }
+  addEventListener('resize', () => { const m = document.getElementById('paw-menu'); if (m && !m.hidden) placePaw(m); });
+  document.addEventListener('click', e => {
+    const toggle = e.target.closest?.('[data-paw-toggle]'), menu = document.getElementById('paw-menu');
+    // 키보드(Enter·Space)로 열면 첫 항목으로 포커스를 옮긴다
+    if (toggle) { setPaw(!!menu?.hidden, e.detail === 0); return; }
+    if (!menu || menu.hidden) return;
+    if (e.target.closest?.('#paw-menu button') || !e.target.closest?.('#paw-menu')) setPaw(false);
+  });
+  document.addEventListener('keydown', e => {
+    const menu = document.getElementById('paw-menu');
+    if (e.key !== 'Escape' || !menu || menu.hidden) return;
+    setPaw(false); document.querySelector('[data-paw-toggle]')?.focus({ preventScroll: true });
+  });
+
   // 화면이 다시 그려질 때마다 살핀다
   let first = true;
   const mo = new MutationObserver(() => {
+    initSidebar();
+    markInitial();
+    syncPaw();
     const k = keyNow();
     if (k !== viewKey) { const was = viewKey; viewKey = k; requestAnimationFrame(() => { enter(first || !was); first = false; placePill(false); }); }
     newMessages();
@@ -112,6 +221,7 @@
   function start() {
     const app = document.getElementById('app'); if (!app) return;
     mo.observe(app, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    initSidebar(); markInitial();
     viewKey = keyNow(); if (document.getElementById('main')) { enter(true); first = false; placePill(true); }
     // 처음 그려진 대화는 다시 움직이지 않게 표시만 해 둔다
     document.querySelectorAll('.chat-room .user-message, .chat-room .answer-content').forEach(el => { seen.add(el); el.dataset.glassSeen = '1'; });
@@ -122,12 +232,9 @@
   let last = performance.now();
   (function frame(now) {
     const dt = Math.min((now - last) / 1000, 1 / 30); last = now;
-    for (let i = 0; i < 4; i++) [L, R, PY, GX, GY, MX, MY].forEach(s => step(s, dt / 4));
+    for (let i = 0; i < 4; i++) [L, R, PY].forEach(s => step(s, dt / 4));
     if (pill && pill.isConnected) { pill.style.translate = `${L.x.toFixed(1)}px ${PY.x.toFixed(1)}px`; pill.style.width = Math.max(0, R.x - L.x).toFixed(1) + 'px'; }
     else if (document.querySelector('.workspace-nav')) placePill(true);
-    glow.style.translate = `${(GX.x - 300).toFixed(1)}px ${(GY.x - 300).toFixed(1)}px`;
-    glow.style.opacity = off() ? 0 : 1;
-    if (magEl && magEl.isConnected) magEl.style.translate = `${MX.x.toFixed(2)}px ${MY.x.toFixed(2)}px`;
     requestAnimationFrame(frame);
   })(last);
 })();

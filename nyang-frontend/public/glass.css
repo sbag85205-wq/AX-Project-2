@@ -53,23 +53,18 @@ html[data-theme=dark]{background:#171830}
   border:1.5px solid var(--glass-edge);box-shadow:var(--glass-shadow);
   -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);
 }
-html body .desktop-workspace .workspace-header,
-html body .desktop-workspace .workspace-toolbar,
 html body .desktop-workspace #main,
 html body .desktop-workspace .chat-room,
 html body .desktop-workspace .chat-compose-dock{background:transparent!important}
 html body .desktop-workspace .chat-transcript{background:transparent!important}
-.desktop-workspace .workspace-header{border-bottom:1px solid var(--ui-line)}
-.desktop-workspace .workspace-toolbar{border-bottom:1px solid var(--ui-line)}
 
-/* 3. 위쪽 메뉴: 알약 모양 */
+/* 3. 사이드바 메뉴: 알약 모양 */
 .desktop-workspace .workspace-nav button,
 .desktop-workspace .workspace-nav a{border-radius:999px}
 .desktop-workspace .workspace-nav .active,
 .desktop-workspace .workspace-nav [aria-current="page"]{background:var(--ui-panel);box-shadow:0 4px 14px -6px rgba(70,60,140,.35);color:var(--ui-ink)}
 
-/* 4. 왼쪽 대화 기록 */
-.desktop-workspace .chat-history{background:var(--ui-side);border-right:1px solid var(--ui-line)}
+/* 4. 대화 기록(사이드바 안 배치는 8번) */
 .desktop-workspace .chat-history select{border-radius:999px;background:var(--ui-panel);border-color:transparent}
 .desktop-workspace .chat-history-item{border-radius:14px}
 .desktop-workspace .chat-history-item.selected{background:var(--ui-panel);box-shadow:var(--glass-card-shadow)}
@@ -103,3 +98,207 @@ html[data-theme=dark] body .desktop-workspace .chat-composer{background:var(--ui
 html body .desktop-workspace input.field,
 html body .desktop-workspace #account-login input{border-radius:14px}
 html body .desktop-workspace #account-login input:focus{outline-color:var(--ui-accent)}
+
+/* 8. 한 사이드바 (app.js shell의 aside.app-sidebar)
+   펼침: 로고·접기 버튼 / 메뉴 / 대화 기록 자리 / 맨 아래 내 프로필
+   접힘(.sidebar-collapsed, glass-motion.js가 붙임): 아이콘만 보이는 얇은 줄. 1100px 이하에서는 자동으로 접힌다. */
+.app-shell.desktop-workspace{display:grid;grid-template-columns:var(--sidebar-w,252px) minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+.app-shell.desktop-workspace.sidebar-ready{transition:grid-template-columns .28s cubic-bezier(.2,.8,.2,1)}
+.app-shell.desktop-workspace.sidebar-collapsed{--sidebar-w:76px}
+body[data-mode=cat] .desktop-workspace .main-shell{height:100%;min-width:0}
+.app-sidebar{position:relative;z-index:20;display:flex;flex-direction:column;gap:14px;min-width:0;min-height:0;padding:20px 16px 16px;background:var(--ui-side);border-right:1px solid var(--ui-line)}
+.sidebar-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:40px;padding:0 4px}
+body[data-mode=cat] .app-sidebar .brand{display:flex;align-items:center;gap:10px;min-width:0;padding:0;font-size:19px;line-height:1.5;font-weight:650;letter-spacing:-.7px;color:var(--ui-ink);white-space:nowrap}
+.app-sidebar .company-logo{width:76px}
+.sidebar-toggle.icon-button{display:grid;place-items:center;flex:none;width:36px;height:36px;border-radius:12px;color:var(--ui-sub)}
+.sidebar-toggle.icon-button:hover{background:var(--ui-fill);color:var(--ui-ink)}
+.sidebar-toggle .icon{width:20px;height:20px}
+
+/* 메뉴: 세로 목록 */
+.app-sidebar .workspace-nav.side-nav{flex-direction:column;align-items:stretch;justify-content:flex-start;gap:4px!important}
+.app-sidebar .workspace-nav.side-nav>button,
+.app-sidebar .workspace-nav.side-nav .nav-group-toggle{justify-content:flex-start;gap:12px;width:100%;min-height:44px;padding:10px 14px!important;font-size:14px;text-align:left;color:var(--ui-ink);border-radius:999px}
+.app-sidebar .workspace-nav.side-nav>button>.icon{display:block;flex:none;width:18px;height:18px;color:var(--ui-sub)}
+.app-sidebar .workspace-nav.side-nav>button.active>.icon{color:var(--ui-ink)}
+.app-sidebar .workspace-nav .count,
+.app-sidebar .workspace-nav .activity-unread{margin-left:auto}
+/* 담당자 묶음 메뉴: 떠 있는 드롭다운 대신 사이드바 안에서 아래로 펼친다 */
+.app-sidebar .workspace-nav .nav-group{flex-direction:column}
+.app-sidebar .workspace-nav.side-nav .nav-group-toggle .icon{margin-left:auto}
+.app-sidebar .workspace-nav .nav-submenu{position:static;min-width:0;padding:2px 0 6px 18px;background:transparent;border:0;box-shadow:none}
+html[data-theme=dark] .app-sidebar .workspace-nav .nav-submenu{box-shadow:none}
+.app-sidebar .workspace-nav.side-nav .nav-submenu>button{border-radius:999px;padding:8px 14px!important}
+
+/* 대화 기록 자리(물어보기 화면에서만 채워진다. 비어 있어도 프로필을 맨 아래로 밀어 둔다)와 맨 아래 내 프로필 */
+.sidebar-history{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+/* 6단계. 내 프로필 카드: 동그라미 아바타(이니셜) · 아이디 · Lv·P·♥ 한 줄 · 위로 열리는 표시
+   카드 전체가 프로필 메뉴 버튼(#account-button, popovertarget)이고, Lv·P·♥(#wallet)는 그 위에 겹쳐 둔다.
+   이니셜은 glass-motion.js가 아이디 첫 글자를 data-initial로 붙인다. */
+.sidebar-profile{position:relative;flex:none;border-radius:18px;background:var(--ui-panel);box-shadow:var(--glass-card-shadow);border:1px solid var(--glass-edge)}
+.sidebar-profile .profile-card{position:relative;display:flex;align-items:center;gap:6px;width:100%;min-height:64px;margin:0;padding:12px 34px 30px 64px;border:0;border-radius:18px;background:transparent;color:var(--ui-ink);font-size:14px;font-weight:650;line-height:1.3;text-align:left;white-space:nowrap}
+.sidebar-profile .profile-card:hover{background:var(--ui-fill)}
+.sidebar-profile .profile-card>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.sidebar-profile .profile-card small{display:inline;flex:none;font-size:11px;font-weight:400;color:var(--ui-faint)}
+.sidebar-profile .profile-card::before{content:attr(data-initial);position:absolute;left:12px;top:50%;translate:0 -50%;box-sizing:border-box;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:var(--ui-accent);color:#fff;font-size:15px;font-weight:700;line-height:1;box-shadow:0 4px 10px -6px rgba(40,50,140,.55)}
+/* 다크 모드의 강조색은 밝은 보라라서 글자는 어둡게 */
+html[data-theme=dark] .sidebar-profile .profile-card::before{color:#14163a}
+.sidebar-profile .profile-card::after{content:'';position:absolute;right:16px;top:50%;width:7px;height:7px;margin-top:-2px;border-right:1.6px solid var(--ui-sub);border-bottom:1.6px solid var(--ui-sub);rotate:-135deg;transition:rotate .2s}
+.sidebar-profile:has(+ #profile-menu:popover-open) .profile-card::after{rotate:45deg;margin-top:-6px}
+.sidebar-profile .wallet{position:absolute;left:64px;right:30px;bottom:11px;display:flex;align-items:center;gap:6px;padding:0;border:0;font-size:11.5px;color:var(--ui-sub);white-space:nowrap;overflow:hidden}
+.sidebar-profile .wallet[hidden]{display:none}
+.sidebar-profile:has(.wallet[hidden]) .profile-card{padding-bottom:12px;min-height:58px}
+.sidebar-profile .wallet>span{display:inline-flex;align-items:center;gap:2px}
+.sidebar-profile .wallet>span::before{content:'·';margin-right:4px;color:var(--ui-faint)}
+.sidebar-profile .wallet strong{color:var(--ui-sub);font-size:11.5px;font-weight:500;font-variant-numeric:tabular-nums}
+.sidebar-profile .wallet i{order:2;width:auto;height:auto;font-style:normal;font-size:11px;color:var(--ui-sub);background:transparent}
+.sidebar-profile .wallet .heart-mark{order:0;color:var(--ui-sub)}
+html[data-theme=dark] .sidebar-profile .wallet i{background:transparent;color:var(--ui-sub)}
+html[data-theme=dark] .sidebar-profile .wallet strong{color:var(--ui-sub)}
+.sidebar-profile .wallet-level{padding:0;border:0;border-radius:4px;background:transparent;color:var(--ui-sub);font-size:11.5px}
+.sidebar-profile .wallet-level:hover{color:var(--ui-ink);text-decoration:underline}
+
+/* 6단계. 프로필 메뉴(popover): 프로필 카드 바로 위에 붙어 열린다(자리는 glass-motion.js가 맞춘다) */
+#profile-menu{position:fixed;inset:auto auto 96px 16px;margin:0;width:260px;max-height:min(72vh,540px);overflow:auto;box-sizing:border-box;padding:8px;border:1px solid var(--glass-edge);border-radius:20px;background:var(--ui-panel);color:var(--ui-ink);box-shadow:0 24px 60px -22px rgba(40,30,110,.45);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+#profile-menu:popover-open{display:flex;flex-direction:column;gap:2px;animation:profile-menu-in .18s cubic-bezier(.2,.8,.2,1)}
+@keyframes profile-menu-in{from{opacity:0;translate:0 6px}to{opacity:1;translate:0 0}}
+html[data-theme=dark] #profile-menu{background:rgba(40,42,72,.94)}
+/* 라이트 모드: 뒤의 대화 기록 글자가 비치지 않게 거의 불투명한 흰 판 */
+html:not([data-theme=dark]) #profile-menu{background:rgba(255,255,255,.97)}
+#profile-menu .profile-utilities{display:contents}
+/* 담당자: 출석·성격 모드·꾸미기 묶음은 원래처럼 숨긴다(account.css의 담당자 숨김을 프로필 메뉴에서도 지킨다) */
+body[data-role="staff"] #profile-menu .profile-utilities{display:none}
+#profile-menu>button,
+#profile-menu .profile-utilities>button{display:flex;align-items:center;gap:12px;width:100%;min-width:0;height:auto;min-height:42px;margin:0;padding:9px 12px;border:0;border-radius:12px;background:transparent;color:var(--ui-ink);font-size:13.5px;font-weight:500;line-height:1.3;text-align:left;opacity:1}
+#profile-menu>button[hidden],
+#profile-menu .profile-utilities>button[hidden]{display:none}
+#profile-menu>button:hover,
+#profile-menu .profile-utilities>button:not(:disabled):hover{background:var(--ui-fill)}
+#profile-menu button>.icon{flex:none;width:18px;height:18px;color:var(--ui-sub)}
+/* 순서: 레벨·포인트·하트 → 화면 밝기 → 가이드 다시 보기 → 출석 → 내 계정 → 로그아웃 (성격 모드·꾸미기는 발바닥 메뉴로 옮겼다) */
+#profile-level{order:0}
+#profile-menu>.theme-toggle{order:1}
+#profile-menu #guide-button{order:2}
+#profile-menu #attendance-button{order:3}
+#profile-menu>[data-action="account"]{order:6}
+#profile-menu>[data-action="logout"]{order:7;position:relative;margin-top:7px}
+#profile-menu>[data-action="logout"]::before{content:'';position:absolute;left:12px;right:12px;top:-4px;height:1px;background:var(--ui-line)}
+/* 화면 밝기: '화면 밝기' 글자 + 오른쪽에 지금 모드(라이트/다크) */
+#profile-menu>.theme-toggle,
+#profile-menu>.theme-toggle[aria-pressed]{background:transparent;color:var(--ui-ink);border:0;box-shadow:none}
+#profile-menu>.theme-toggle:hover{background:var(--ui-fill)}
+#profile-menu>.theme-toggle>.icon{order:0}
+#profile-menu>.theme-toggle::before{content:'화면 밝기';order:1}
+#profile-menu>.theme-toggle>span{order:2;display:inline-block;margin-left:auto;padding:3px 9px;border-radius:999px;background:var(--ui-fill);color:var(--ui-sub);font-size:11px;font-weight:500}
+/* 출석: 아직이면 강조, 했으면 흐리게 · 연속 일수는 오른쪽 */
+#profile-menu #attendance-button:not(.done):not(:disabled){color:var(--ui-accent)}
+#profile-menu #attendance-button:not(.done):not(:disabled)>.icon{color:var(--ui-accent)}
+#profile-menu #attendance-button.done,
+#profile-menu #attendance-button:disabled{color:var(--ui-sub);cursor:default}
+#profile-menu #attendance-button .attendance-streak{margin-left:auto}
+/* 레벨·포인트·하트 (진행도 막대는 7단계에서 채운다) */
+#profile-level{display:flex;flex-direction:column;gap:10px;margin:2px 2px 8px;padding:14px;border-radius:14px;background:var(--ui-fill)}
+#profile-level[hidden]{display:none}
+#profile-level .profile-level-head{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:0;border:0;background:transparent;color:var(--ui-ink);text-align:left}
+#profile-level .profile-level-head strong{font-size:16px;font-weight:700}
+#profile-level .profile-level-head span{font-size:11.5px;color:var(--ui-accent)}
+#profile-level .profile-level-head:hover span{text-decoration:underline}
+#profile-level .profile-level-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#profile-level .profile-level-stats>div{display:flex;flex-direction:column;gap:2px;padding:9px 10px;border-radius:11px;background:var(--ui-panel)}
+/* 라이트 모드: 흰 메뉴 위에서 레벨 칸(연한 강조색)과 포인트·하트 칸(흰 칸 + 테두리)이 구분되게 */
+html:not([data-theme=dark]) #profile-level{background:var(--ui-accent-fill)}
+html:not([data-theme=dark]) #profile-level .profile-level-stats>div{background:#fff;border:1px solid var(--ui-line)}
+#profile-level .profile-level-stats small{font-size:11px;color:var(--ui-sub)}
+#profile-level .profile-level-stats b{font-size:15px;font-weight:700;color:var(--ui-ink);font-variant-numeric:tabular-nums}
+#profile-level .profile-level-stats .is-heart b::before{content:'♥ ';color:#e06a8c}
+@media (prefers-reduced-motion:reduce){#profile-menu:popover-open{animation:none}.sidebar-profile .profile-card::after{transition:none}}
+.motion-paused #profile-menu:popover-open{animation:none}
+
+/* 사이드바 안의 대화 기록(2단계): 별도 칸이 아니라 메뉴 아래 같은 판 위에 이어진다 */
+.app-sidebar .chat-history{width:auto;flex:1 1 auto;min-height:0;margin:2px -4px 0;background:transparent;border:0;border-top:1px solid var(--ui-line)}
+.app-sidebar .chat-history-heading{padding:16px 10px 10px}
+.app-sidebar .chat-history-filter{padding:0 10px 8px}
+.app-sidebar .chat-history-list{padding:0 4px 12px}
+.app-sidebar .chat-history-note{padding:12px 10px 2px}
+/* 대화 기록 접기: 제목만 남기고 아래로 접는다(화살표는 위·아래 방향으로 돌려 보인다) */
+.app-sidebar .chat-history.is-collapsed{width:auto;flex:0 0 auto}
+.app-sidebar .chat-history.is-collapsed .chat-history-heading{padding:16px 10px 4px}
+.app-sidebar .chat-history.is-collapsed h2{display:block}
+.app-sidebar .chat-history-heading .icon-button .icon{rotate:90deg}
+
+/* 접힌 사이드바: 아이콘만 (로그인 화면에는 적용하지 않는다) */
+body:not([data-authenticated="false"]) .sidebar-collapsed .app-sidebar{align-items:center;padding:18px 10px 14px}
+body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-top{padding:0}
+body:not([data-authenticated="false"]) .sidebar-collapsed .app-sidebar .brand,
+body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-history,
+body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .wallet{display:none}
+body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav.side-nav{width:100%;align-items:center}
+body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav.side-nav>button{justify-content:center;width:52px;min-height:44px;padding:0!important;position:relative}
+body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav.side-nav>button>span:not(.count):not(.activity-unread){position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav .count{display:none}
+body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav .activity-unread{position:absolute;top:4px;right:4px;min-width:16px;height:16px;font-size:10px}
+/* 아이콘이 없는 담당자 메뉴는 글자를 작게 줄여 보여 준다 */
+body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav.side-nav>button:not(:has(>.icon)),
+body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav.side-nav .nav-group-toggle{justify-content:center;width:56px;min-height:40px;padding:4px!important;font-size:10.5px;line-height:1.25;text-align:center;white-space:normal;word-break:keep-all;overflow:hidden}
+body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav.side-nav>button:not(:has(>.icon))>span{position:static;width:auto;height:auto;clip:auto;white-space:normal}
+body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav.side-nav .nav-group-toggle .icon{display:none}
+/* 접힌 줄의 담당자 하위 메뉴는 오른쪽으로 떠서 열린다 */
+body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav .nav-group{position:relative}
+body:not([data-authenticated="false"]) .sidebar-collapsed .workspace-nav .nav-submenu{position:absolute;top:0;left:calc(100% + 10px);min-width:168px;padding:6px;background:var(--ui-panel);border:1px solid var(--ui-line);border-radius:14px;box-shadow:var(--glass-card-shadow);z-index:40}
+/* 접힌 줄의 프로필: 동그라미 아바타만 */
+body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile{margin-top:auto;border-color:transparent;background:transparent;box-shadow:none}
+body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card{width:52px;height:52px;min-height:52px;padding:0;border-radius:50%}
+body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card>span,
+body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card small,
+body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card::after{display:none}
+body:not([data-authenticated="false"]) .sidebar-collapsed .sidebar-profile .profile-card::before{left:6px}
+
+/* 로그인 화면: 사이드바 없이 로고만 있는 위쪽 줄 */
+body[data-authenticated="false"] .app-shell.desktop-workspace{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+body[data-authenticated="false"] .app-sidebar{flex-direction:row;align-items:center;padding:18px 28px;border-right:0;border-bottom:1px solid var(--ui-line);background:transparent}
+body[data-authenticated="false"] .app-sidebar>:not(.sidebar-top),
+body[data-authenticated="false"] .app-sidebar .sidebar-toggle{display:none!important}
+
+/* 4단계. 발바닥 냥대리 메뉴: 첫 화면 고양이 오른쪽 아래의 흰 동그라미(54px) + 검은 발바닥
+   고양이 그림 상자(.resident-portrait) 밖, 고양이 칸과 오른쪽 칸 사이 여백에 둬서 쓰다듬기(.pet-touch)와 겹치지 않는다.
+   열고 닫기는 glass-motion.js. 담당자에게는 account.css의 .workspace-utilities 숨김으로 보이지 않는다. */
+.desktop-workspace .chat-home .cat-resident-stage>[data-paw]{grid-column:2;grid-row:2;justify-self:end;align-self:end;position:relative;z-index:6;display:block;margin:0 -66px 10px 0;padding:0;border:0}
+/* 담당자: 위 위치 규칙이 account.css의 담당자 숨김(.workspace-utilities)을 덮지 않게 여기서도 숨긴다 */
+body[data-role="staff"] .desktop-workspace .chat-home .cat-resident-stage>[data-paw]{display:none}
+[data-paw]>.paw-button{display:grid;place-items:center;width:54px;height:54px;padding:0;border:1px solid rgba(31,35,64,.08);border-radius:50%;background:#fff;color:#15172a;box-shadow:0 12px 26px -14px rgba(40,30,110,.6);cursor:pointer;transition:translate .18s,box-shadow .18s}
+[data-paw]>.paw-button:hover{background:#fff;color:#15172a;translate:0 -2px;box-shadow:0 16px 30px -14px rgba(40,30,110,.7)}
+[data-paw]>.paw-button[aria-expanded="true"]{box-shadow:0 0 0 4px var(--ui-accent-fill),0 12px 26px -14px rgba(40,30,110,.6)}
+[data-paw]>.paw-button .icon{width:26px;height:26px;fill:currentColor;stroke:none}
+/* 말풍선 메뉴: 냥대리 말풍선을 가리지 않게 발바닥 아래쪽으로 연다.
+   화면 아래 공간이 모자라면 glass-motion.js가 .is-up을 붙여 위로 연다. */
+[data-paw]>.paw-menu{position:absolute;left:0;top:calc(100% + 10px);z-index:30;display:flex;flex-direction:column;gap:2px;width:236px;box-sizing:border-box;padding:14px 10px 10px;border:1px solid var(--glass-edge);border-radius:22px;background:#fff;box-shadow:0 24px 50px -22px rgba(40,30,110,.5);animation:paw-menu-in .18s cubic-bezier(.2,.8,.2,1)}
+[data-paw]>.paw-menu.is-up{top:auto;bottom:calc(100% + 10px);animation-name:paw-menu-up}
+[data-paw]>.paw-menu[hidden]{display:none}
+/* 화면이 다시 그려져 메뉴를 다시 열 때는 등장 움직임을 되풀이하지 않는다 */
+[data-paw]>.paw-menu.is-restored{animation:none}
+html[data-theme=dark] [data-paw]>.paw-menu{background:rgb(40,42,72)}
+@keyframes paw-menu-in{from{opacity:0;translate:0 -6px}to{opacity:1;translate:0 0}}
+@keyframes paw-menu-up{from{opacity:0;translate:0 6px}to{opacity:1;translate:0 0}}
+.paw-menu-title{margin:0 8px 6px;font-size:12px;font-weight:650;color:var(--ui-sub)}
+.paw-menu .paw-treat{display:block;margin:0;padding:0}
+.paw-menu .paw-treat .chat-collect-heart{display:none}
+[data-paw] .paw-menu .paw-treat .chat-treat-button,
+[data-paw] .paw-menu>button{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:50px;margin:0;padding:7px 8px;border:0;border-radius:14px;background:transparent;box-shadow:none;color:var(--ui-ink);font-size:14px;font-weight:600;line-height:1.3;text-align:left;white-space:nowrap}
+[data-paw] .paw-menu .paw-treat .chat-treat-button:not(:disabled):hover,
+[data-paw] .paw-menu>button:hover{background:var(--ui-fill);color:var(--ui-ink)}
+[data-paw] .paw-menu .paw-treat .chat-treat-button:disabled{opacity:.5;cursor:default}
+/* 색 있는 작은 아이콘 타일: 츄르 주황 · 모드 하늘 · 꾸미기 분홍 */
+[data-paw] .paw-menu>button>.icon{box-sizing:border-box;flex:none;width:36px;height:36px;padding:8px;border-radius:11px}
+[data-paw] .paw-menu>#personality-button>.icon{background:#e3efff;color:#3b7be0}
+[data-paw] .paw-menu>.paw-wardrobe>.icon{background:#ffe3ec;color:#e0578a}
+[data-paw] .paw-menu .paw-treat .chat-treat-button{padding-left:56px}
+[data-paw] .paw-menu .paw-treat .chat-treat-button::before{content:'';position:absolute;left:8px;top:50%;width:36px;height:36px;translate:0 -50%;border-radius:11px;background:#fff1dc}
+[data-paw] .paw-menu .paw-treat .treat-stick{position:absolute;left:22px;top:50%;width:7px;height:20px;margin:0;translate:0 -50%;opacity:1;z-index:1}
+[data-paw] .paw-menu .paw-treat .chat-treat-button small{margin-left:auto;padding:3px 9px;border-radius:999px;background:var(--ui-accent-fill);color:var(--ui-accent);font-size:11.5px;font-weight:650}
+html[data-theme=dark] [data-paw] .paw-menu>#personality-button>.icon{background:#2b3a5c;color:#9cc2ff}
+html[data-theme=dark] [data-paw] .paw-menu>.paw-wardrobe>.icon{background:#4a2b3c;color:#f2a0bd}
+html[data-theme=dark] [data-paw] .paw-menu .paw-treat .chat-treat-button::before{background:#4a3a28}
+/* 다크 모드 10 P 배지: 작은 글자라 명암비 4.5:1을 넘게 조금 더 밝게 */
+html[data-theme=dark] [data-paw] .paw-menu .paw-treat .chat-treat-button small{color:#c3caff}
+
+@media (prefers-reduced-motion:reduce){.app-shell.desktop-workspace.sidebar-ready{transition:none}[data-paw]>.paw-menu{animation:none}[data-paw]>.paw-button{transition:none}}
+.motion-paused [data-paw]>.paw-menu{animation:none}
