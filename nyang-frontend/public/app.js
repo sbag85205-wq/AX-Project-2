@@ -76,7 +76,9 @@ function toast(text){
  const same=[...stack.children].find(x=>x.textContent===message&&x.classList.contains('show'));
  if(same){clearTimeout(same._timer);same._timer=setTimeout(()=>leave(same),TOAST_MS);return;}
  const item=document.createElement('div');item.className='toast-item';item.textContent=message;stack.append(item);
- requestAnimationFrame(()=>item.classList.add('show'));item._timer=setTimeout(()=>leave(item),TOAST_MS);
+ // 화면 아래에 붙은 질문 입력창이 있으면 알림을 그 위에 띄워 입력창을 가리지 않는다.
+ const lift=()=>{const box=$('.chat-composer')?.getBoundingClientRect(),docked=box&&box.height&&box.bottom>innerHeight-120;stack.style.bottom=docked?`${Math.round(innerHeight-box.top+12)}px`:'';};
+ lift();requestAnimationFrame(()=>{lift();item.classList.add('show');});item._timer=setTimeout(()=>leave(item),TOAST_MS);
  const live=[...stack.children].filter(x=>x.classList.contains('show')||x===item);
  for(const old of live.slice(0,Math.max(0,live.length-TOAST_LIMIT)))leave(old);
 }
