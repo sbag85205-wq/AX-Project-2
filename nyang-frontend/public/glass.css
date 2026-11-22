@@ -437,3 +437,9 @@ html[data-theme=dark] #toast,html[data-theme=dark] .toast-item{background:rgba(4
 /* 14. 본문 영역 스크롤바 숨기기: 내용이 긴 화면(챗봇 미답변 등)에서 오른쪽에 긴 막대가 생기지 않게. 휠·터치패드로 내리는 것은 그대로 */
 body[data-mode=cat] .desktop-workspace .main-content.work-view{scrollbar-width:none}
 body[data-mode=cat] .desktop-workspace .main-content.work-view::-webkit-scrollbar{display:none}
+
+/* 15. 로그인 직원·담당자 선택: 고른 쪽이 바로 보이게 강조색 바탕 + 굵은 글자(전에는 흰 판 위 흰 판이라 구분이 안 됐다) */
+.login-types button{transition:background .15s,color .15s}
+.login-types button:not([aria-pressed="true"]):hover{background:var(--ui-selection);color:var(--ui-ink)}
+.login-types button[aria-pressed="true"]{background:var(--ui-accent);color:#fff;font-weight:700;box-shadow:0 6px 16px -8px rgba(74,91,216,.8)}
+html[data-theme=dark] .login-types button[aria-pressed="true"]{color:#14163a;box-shadow:none}
