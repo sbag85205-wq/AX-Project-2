@@ -113,7 +113,7 @@ export default function DocumentView() {
           ? <Loading text="원본을 불러오는 중" boot />
           : type === 'sheet'
             ? <SheetViewer url={fileUrl} path={doc.file_path ?? ''} sheet={focusPage ?? 1} title={doc.title} />
-            : <PdfViewer url={fileUrl} page={focusPage ?? 1} title={doc.title} />
+            : <PdfViewer url={fileUrl} page={focusPage} title={doc.title} />
       ) : (
         <div className="doc-layout">
           {sections.length > 1 && (

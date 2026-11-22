@@ -6,7 +6,8 @@ import Loading from './Loading';
  * 원본 PDF를 pdf.js로 직접 그린다. 브라우저 내장 뷰어(iframe)는 휴대폰에서 열리지 않거나
  * 다운로드로 넘어가는 경우가 많아서 쓰지 않는다. 화면에 보이는 페이지만 그려 메모리를 아낀다.
  */
-export function PdfViewer({ url, page = 1, title }: { url: string; page?: number; title: string }) {
+// page: 출처(근거)에서 들어와 특정 쪽을 보여 줄 때만 넘긴다. 없으면 맨 위(제목·다운로드 버튼)부터 보인다.
+export function PdfViewer({ url, page, title }: { url: string; page?: number; title: string }) {
   const [doc, setDoc] = useState<PdfDocument | null>(null);
   const [ratio, setRatio] = useState(1.414);
   const [error, setError] = useState('');
