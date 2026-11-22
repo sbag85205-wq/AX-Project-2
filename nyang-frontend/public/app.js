@@ -15,7 +15,7 @@ const $=s=>document.querySelector(s);
 import {passwordProblem,passwordInputHTML,passwordEye} from './account-view.js?v=fbdeceff715b';
 import {createAccountSync} from './account-sync.js?v=422e8ba71441';
 import {esc,loadingHTML} from './shared.js?v=b4248c4d9fbf';
-import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=a173ddd64916';
+import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=30ada1c0769d';
 import {orderNav,installNavLayout} from './nav-layout.js?v=2a33659a9a7a';
 import {createGuide} from './guide.js?v=a94d3106cc42';
 import {recentTurns} from './chat-context.js?v=e6c82dc547ad';

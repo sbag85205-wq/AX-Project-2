@@ -14,7 +14,10 @@ export function notifyParent(message: EmbedMessage) {
 export function reportHeight() {
   let last = 0;
   const send = () => {
-    const height = Math.ceil(document.documentElement.scrollHeight);
+    // documentElement.scrollHeight는 iframe 자신의 높이보다 작아지지 않아, 한 번 길어지면(목록이 많을 때) 내용이 줄어도
+    // 높이가 그대로 남아 아래로 빈 공간만 길게 스크롤됐다. 실제 내용(body) 높이에 위아래 여백을 더해 잰다.
+    const body = document.body, cs = getComputedStyle(body);
+    const height = Math.ceil(body.getBoundingClientRect().height + parseFloat(cs.marginTop) + parseFloat(cs.marginBottom));
     if (Math.abs(height - last) > 2) { last = height; notifyParent({ type: 'knowly-embed-height', height }); }
   };
   new ResizeObserver(send).observe(document.body);
