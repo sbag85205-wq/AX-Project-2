@@ -115,7 +115,7 @@ export default function Settings() {
   };
 
   if (error) return <main className="admin-main"><div className="error-box">{error}</div></main>;
-  if (!info || !draft) return <main className="admin-main"><Loading text="설정을 불러오는 중" /></main>;
+  if (!info || !draft) return <main className="admin-main"><Loading text="설정을 불러오는 중" boot /></main>;
 
   const passed = preview?.results.filter((r) => r.used ?? r.passed).length ?? 0;
 

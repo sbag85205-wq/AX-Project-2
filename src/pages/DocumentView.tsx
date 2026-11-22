@@ -85,7 +85,7 @@ export default function DocumentView() {
       </main>
     );
   }
-  if (!doc) return <Loading text="문서를 불러오는 중" />;
+  if (!doc) return <Loading text="문서를 불러오는 중" boot />;
 
   return (
     <main className="admin-main">
