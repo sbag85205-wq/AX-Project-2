@@ -366,8 +366,8 @@ function knowlyHTML(r){
 let libraryRoute='/docs',attachments=[],attachBusy=false;
 // 받침이 있으면 '을', 없으면 '를'(예: 사내 문서를, 검색 모델 설정을)
 const objectParticle=word=>{const c=String(word).trim().slice(-1).charCodeAt(0);return c>=0xAC00&&c<=0xD7A3&&(c-0xAC00)%28?'을':'를';};
-// 냥대리 로딩을 띄우지 않는 Knowly 화면(챗봇 미답변: 화면이 먼저 뜨고 로딩이 뒤늦게 보여 어색하다)
-const NO_LOADING_CAT=new Set(['unanswered']);
+// 냥대리 로딩을 띄우지 않는 Knowly 화면(챗봇 미답변·분야 관리: 화면이 먼저 뜨고 로딩이 뒤늦게 보여 어색하다)
+const NO_LOADING_CAT=new Set(['unanswered','categories']);
 function knowlyFrameHTML(key,route){const name=viewOf(view)?.title||'화면';return `<div class="knowly-frame-wrap" data-knowly-key="${esc(key)}">${NO_LOADING_CAT.has(key)?'':loadingHTML(`${name}${objectParticle(name)} 불러오는 중`)}<iframe class="knowly-frame" title="Knowly ${esc(key)}" src="/knowly/index.html#${esc(route)}"></iframe></div>`;}
 // 같은 화면을 다시 그릴 때 iframe을 새로 불러오지 않도록, 이미 떠 있으면 그대로 둔다.
 function mountKnowly(name){
