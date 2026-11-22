@@ -433,3 +433,7 @@ html[data-theme=dark] .week-strip>button i.has-task,html[data-theme=dark] .task-
 html[data-theme=dark] .desktop-workspace .calendar-cell.today .date-number{background:#ff453a;color:#fff}
 /* 알림: 라이트는 흰 유리판이므로 다크는 어두운 유리판 */
 html[data-theme=dark] #toast,html[data-theme=dark] .toast-item{background:rgba(40,42,72,.94);color:var(--ui-ink);border-color:var(--glass-edge)}
+
+/* 14. 본문 영역 스크롤바 숨기기: 내용이 긴 화면(챗봇 미답변 등)에서 오른쪽에 긴 막대가 생기지 않게. 휠·터치패드로 내리는 것은 그대로 */
+body[data-mode=cat] .desktop-workspace .main-content.work-view{scrollbar-width:none}
+body[data-mode=cat] .desktop-workspace .main-content.work-view::-webkit-scrollbar{display:none}
