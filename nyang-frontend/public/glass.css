@@ -386,3 +386,36 @@ html[data-theme=dark] #app .top-icons>button:not(:disabled):hover{background:rgb
 body[data-role="staff"] #app .top-icons>#attendance-button,
 body[data-authenticated="false"] #app .top-icons>#attendance-button,
 body[data-authenticated="false"] #app .top-icons>#guide-button{display:none}
+
+/* 13. 다크 모드 정리: 글래스 디자인 전에 만든 회색 다크 색(theme.css 등)이 남아 있던 곳을 글래스 다크 색으로 맞춘다 */
+/* 예전 다크 팔레트 변수를 글래스 값으로 (이 변수를 쓰는 판·칸이 한꺼번에 따라온다) */
+html[data-theme=dark]{
+  --night:transparent;
+  --surface:var(--ui-panel);
+  --raised:rgba(255,255,255,.1);
+  --soft:var(--ui-fill);
+  --line:var(--ui-line);
+  --pale:var(--ui-accent-fill);
+  --accent-bg:var(--ui-accent-fill);
+}
+/* 색을 직접 적어 둔 곳 */
+html[data-theme=dark] .segmented,
+html[data-theme=dark] .source-document,
+html[data-theme=dark] .background-option-name em,
+html[data-theme=dark] .week-strip>button i{background:var(--ui-fill)}
+html[data-theme=dark] .segmented>button.selected{background:rgba(255,255,255,.16)}
+html[data-theme=dark] .modal-close,
+html[data-theme=dark] .category-icon,
+html[data-theme=dark] .doc-icon{background:rgba(255,255,255,.1)!important}
+html[data-theme=dark] .secondary-button:hover,
+html[data-theme=dark] .cat-choice-panel .choices>button:hover,
+html[data-theme=dark] .docs-list>button:hover,
+html[data-theme=dark] .background-option:hover{background:rgba(255,255,255,.14)}
+html[data-theme=dark] .calendar-event.done{background:rgba(255,255,255,.06)}
+html[data-theme=dark] .schedule-offer.registered{background:rgba(79,200,150,.14)}
+html[data-theme=dark] .wardrobe-preview{background:radial-gradient(ellipse,rgba(143,156,255,.22),rgba(255,255,255,.04))}
+html[data-theme=dark] .calendar-legend>span:nth-child(2) i{background:rgba(255,255,255,.28)}
+html[data-theme=dark] .activity-page .activity-attendance>.primary-button:disabled{background:var(--ui-fill);color:var(--ui-sub)}
+html[data-theme=dark] .ss-model-row input,html[data-theme=dark] .ss-model-row input:disabled{background:var(--ui-fill);color:var(--ui-ink)}
+html[data-theme=dark] body[data-mode=cat] .activity-page .activity-attendance>.primary-button:disabled{background:var(--ui-fill)!important;border-color:var(--ui-line)!important;color:var(--ui-sub);box-shadow:none}
+html[data-theme=dark] .ss-range input{background:transparent}
