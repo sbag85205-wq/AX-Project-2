@@ -62,7 +62,7 @@ export async function communityAction(action,body={}){
   // 지갑만 바뀐 응답(쓰다듬기)에는 화면 불러오기 때 받은 개인 기록 묶음을 다시 싣지 않는다(옛 기록으로 되돌리지 않게)
   const {personalState:_ps,personalLarge:_pl,...kept}=state;
   state=data.partial==='wallet'?{...kept,wallet:data.wallet,level:data.level,...(state.earned&&gained?{earned:{total:state.earned.total+gained,recent:state.earned.recent+gained}}:{})}:data;
-  hooks.update(state);if(data.notice)hooks.toast(data.notice);return data;
+  hooks.update(state);if(data.notice&&action!=='attendance')hooks.toast(data.notice);return data; // 출석 완료는 알림 대신 오른쪽 위 달력 아이콘(체크·말풍선)으로 보여 준다
  }catch(e){hooks.toast(e.message||'연결을 확인하고 다시 시도해 주세요.');return null;}
 }
 function gate(){
@@ -153,7 +153,7 @@ document.addEventListener('click',async e=>{
  try{
   if(action==='attendance'){
    b.textContent=b.dataset.busyLabel||'오늘의 선물을 여는 중…';
-   const result=await communityAction('attendance');hooks.render();if(result)hooks.toast(result.notice); // 실패해도 버튼 글자를 되돌린다
+   await communityAction('attendance');hooks.render(); // 성공 알림은 띄우지 않는다(실패 알림은 communityAction이 띄운다). 실패해도 버튼 글자를 되돌린다
   }
   if(b.dataset.like){if(await communityAction('like',{post:b.dataset.like})){hooks.render();refreshOpenPost();}}
  }finally{busy=false;b.disabled=action==='attendance'&&!!state.today;} // 출석했으면 버튼을 다시 풀지 않는다

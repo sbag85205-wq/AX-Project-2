@@ -2,11 +2,11 @@ import {parseEventRequest,timeLabel,eventTask} from './event-request.js?v=7dffe9
 import {viewOf,pageTitleOf,NAV_NAMES,navViews,STAFF_NAVS,EMPLOYEE_NAVS} from './views.js?v=df74efb0e3fe';
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {emptyCatalog,normalizeCatalog,createCatalogPicker,idleLook,shopItems,neededImages} from './nyang-catalog.js?v=514ab761f254';
-import {installNyangManage,nyangManagePageHTML} from './nyang-manage.js?v=ea36f8a07d76';
+import {installNyangManage,nyangManagePageHTML} from './nyang-manage.js?v=71b254e8df1d';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=291139f9595c';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=2b1060400411';
-import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=201c584ff5a2';
+import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=066aa53baea5';
 import {categories,applyManagedCategories,defaultCategory,categoryOf,documents,faq,startersFor,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=4dc923f4c7f7';
 import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=80ab82355587';
 import {createPetInteraction} from './pet-interaction.js?v=25ddd542a513';
@@ -15,11 +15,11 @@ const $=s=>document.querySelector(s);
 import {passwordProblem,passwordInputHTML,passwordEye} from './account-view.js?v=bbfa33131ccf';
 import {createAccountSync} from './account-sync.js?v=422e8ba71441';
 import {esc,loadingHTML} from './shared.js?v=b4248c4d9fbf';
-import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=149d7dd11f7d';
+import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=cf53ff226030';
 import {orderNav,installNavLayout} from './nav-layout.js?v=2a33659a9a7a';
-import {createGuide} from './guide.js?v=54186151e6e0';
+import {createGuide} from './guide.js?v=a94d3106cc42';
 import {recentTurns} from './chat-context.js?v=e6c82dc547ad';
-import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=1e8abeb5efed';
+import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=89554636a3c5';
 import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=89231fc15ea9';
 const mode=document.body.dataset.mode;
 const isCat=mode==='cat';
@@ -33,6 +33,7 @@ const cat=(mood='',extra='',style='',inner='')=>`<div class="cat-art ${mood} ${e
 paths.edit='M4 20h4L19 9l-4-4L4 16v4ZM14 6l4 4';
 paths.settings='M9 3h6l1 3 3 1v6l-3 1-1 3H9l-1-3-3-1V7l3-1 1-3ZM15 10a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z';
 paths.moon='M20.9 13.1A9 9 0 0 1 10.9 3a9 9 0 1 0 10 10.1Z';
+paths.help='M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3m.1 4h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z';
 // 냥대리 성격 버튼 전용(해·달은 화면 밝기 버튼이 쓴다): 따뜻한 모드 하트, 차가운 모드 눈송이
 paths.heart='M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20Z';
 paths.snow='M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M10 4.5 12 6.5l2-2M10 19.5l2-2 2 2';
@@ -92,7 +93,7 @@ function applyColorTheme(theme){
  document.documentElement.dataset.theme=dark?'dark':'light';
  $('meta[name="theme-color"]')?.setAttribute('content',dark?'#111214':'#ffffff');
  const button=$('[data-action="toggle-theme"]');
- if(button){button.setAttribute('aria-pressed',String(dark));button.title=dark?'라이트 모드로 전환':'다크 모드로 전환';button.innerHTML=icon(dark?'moon':'sun')+`<span aria-hidden="true">${dark?'다크':'라이트'}</span>`;}
+ if(button){button.setAttribute('aria-pressed',String(dark));button.dataset.glassTip=dark?'라이트 모드로':'다크 모드로';button.setAttribute('aria-label',`화면 밝기 (지금 ${dark?'다크':'라이트'} 모드)`);button.innerHTML=icon(dark?'moon':'sun')+`<span aria-hidden="true">${dark?'다크':'라이트'}</span>`;}
 }
 function preferredColorTheme(){
  const saved=read('nyang-color-theme',null);
@@ -166,12 +167,15 @@ function shell(){
    </div>
    <div id="profile-menu" class="profile-menu" popover aria-label="내 프로필 메뉴">
     <div id="profile-level" class="profile-level"></div>
-    <div class="profile-utilities"><button data-action="guide" id="guide-button" aria-label="냥대리 사용 가이드 다시 보기" title="냥대리 사용법을 처음부터 다시 봐요" hidden>${icon('book')}<span>가이드 다시 보기</span></button><button class="attendance-quick" id="attendance-button" data-community="attendance" data-busy-label="출석 중…">${icon('calendar')}<span>출석체크</span></button></div>
-    <button class="appearance-button theme-toggle" data-action="toggle-theme" aria-label="다크 모드" aria-pressed="false" title="다크 모드로 전환">${icon('moon')}</button>
     <button type="button" data-action="account">${icon('settings')}<span>내 계정</span></button>
     <button type="button" data-action="logout">${icon('logout')}<span>로그아웃</span></button>
    </div>
   </aside>
+  <div class="top-icons" role="group" aria-label="빠른 도구">
+   <button data-action="guide" id="guide-button" aria-label="냥대리 사용 가이드 다시 보기" data-glass-tip="가이드" hidden>${icon('help')}<span>가이드 다시 보기</span></button>
+   <button class="attendance-quick" id="attendance-button" data-community="attendance" data-busy-label="출석 중…" data-glass-tip="출석체크">${icon('calendar')}<span>출석체크</span></button>
+   <button class="appearance-button theme-toggle" data-action="toggle-theme" aria-label="화면 밝기" aria-pressed="false" data-glass-tip="다크 모드로">${icon('moon')}</button>
+  </div>
   <div class="main-shell">
    <main class="main-content cat-mode" id="main"></main>
    <span id="workspace-title" class="visually-hidden">물어보기</span>
@@ -186,8 +190,8 @@ function updateWallet(){
  const attendance=$('#attendance-button'),attended=!!communityState().today;
  if(attendance){attendance.disabled=attended;attendance.classList.toggle('done',attended);const streak=Number(communityState().streak)||0;
   attendance.innerHTML=icon(attended?'check':'calendar')+`<span>${attended?'출석 완료':'출석체크'}</span>`+(streak?`<b class="attendance-streak">${streak}일째</b>`:'');
-  attendance.title=attended?`오늘 출석했어요. ${streak}일 연속 출석 중! 내일 또 만나요.`:streak?`어제까지 ${streak}일 연속 출석했어요. 오늘도 출석하면 ${streak+1}일째!`:'하루 한 번, 포인트 또는 츄르 선물';
-  attendance.setAttribute('aria-label',attendance.title);}
+  attendance.setAttribute('aria-label',attended?`오늘 출석했어요. ${streak}일 연속 출석 중! 내일 또 만나요.`:streak?`어제까지 ${streak}일 연속 출석했어요. 오늘도 출석하면 ${streak+1}일째!`:'하루 한 번, 포인트 또는 츄르 선물');
+  attendance.dataset.glassTip=attended?`출석 완료${streak?` (${streak}일째)`:''}`:'출석체크 (오늘 아직 안 했어요)';}
  $('#wallet').innerHTML=`<button class="wallet-level" data-action="activity">${communityState().member?'Lv. '+communityState().level.level:'내 레벨'}</button><span title="새 질문 +10 P · 하루 최대 20개"><i>P</i><strong id="points-balance">${rewards.points}</strong></span><span title="츄르를 주고 하트를 눌러 모아요"><i class="heart-mark">♥</i><strong id="hearts-balance">${rewards.hearts}</strong></span>`;
  const count=tasks.filter(t=>!t.done).length;$('#task-count').textContent=count||'';
  const unread=unseenReplies(communityState().posts,seenReplies).length,indicator=$('#activity-unread');
@@ -202,7 +206,7 @@ installNyangManage({icon,toast,cat,catalog:()=>nyangCatalog,images:catalogImages
 // ── 주 메뉴 배치 (nav-layout.js) ─────────────────────────────────────
 installNavLayout();
 // ── 첫 사용자 가이드 (guide.js · guide-steps.js) ─────────────────────
-// 직원에게 첫 로그인 때 한 번 띄우고, 도구 줄의 '가이드' 버튼으로 다시 본다. 담당자에게는 띄우지 않는다.
+// 직원에게 첫 로그인 때 한 번 띄우고, 오른쪽 위 '가이드'(?) 아이콘으로 다시 본다. 담당자에게는 띄우지 않는다.
 const guide=createGuide({request:fetch,busy:()=>$('#modal').open,returnFocus:()=>$('#guide-button'),beforeStart(){if(view!=='chat'){view='chat';petInteraction.reset();render();$('#main').scrollTop=0;}}});
 function render(){
  document.body.dataset.personality=personality;
