@@ -175,7 +175,7 @@ export default function Categories() {
 
       <section className="card" aria-label="분야 목록" style={{ overflow: 'hidden' }}>
         {loadError && <div className="error-box" role="alert" style={{ margin: 16 }}>{loadError}</div>}
-        {!loaded && <Loading text="분야를 불러오는 중" compact />}
+        {!loaded && <Loading text="분야를 불러오는 중" />}
         {loaded && categories.map((c, i) => (
           <div key={c} className="list-row category-row">
             <div className="category-order" role="group" aria-label={`${c} 순서`} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

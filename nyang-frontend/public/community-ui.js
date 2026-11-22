@@ -1,7 +1,7 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {categories as chatCategories} from './core.js?v=4dc923f4c7f7';
 import {boardView,boardPostHTML} from './board-view.js?v=20e5fec3aa08';
-import {loginHTML as loginView,statisticsHTML,periodLabel,rankingCSV} from './account-view.js?v=bbfa33131ccf';
+import {loginHTML as loginView,statisticsHTML,periodLabel,rankingCSV} from './account-view.js?v=fbdeceff715b';
 import {esc,loadingHTML} from './shared.js?v=b4248c4d9fbf';
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 let state={loading:true},hooks,filter='all',query='',boardCategory='all',boardSort='new',openPostId=null,busy=false,connecting=null,authEpoch=0,loginRole='employee',stats=null;
@@ -66,7 +66,7 @@ export async function communityAction(action,body={}){
  }catch(e){hooks.toast(e.message||'연결을 확인하고 다시 시도해 주세요.');return null;}
 }
 function gate(){
- if(state.loading)return loadingHTML('불러오는 중',{compact:true}); // 제목은 이미 보이는 화면이라 글만
+ if(state.loading)return loadingHTML('불러오는 중');
  if(state.error)return `<div class="community-empty"><h2>잠시 연결이 끊겼어요.</h2><p>${esc(state.error)}</p><button class="primary-button" data-community="refresh">다시 연결</button></div>`;
  if(!state.member)return accountGateHTML();
  return '';

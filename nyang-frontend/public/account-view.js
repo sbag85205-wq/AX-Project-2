@@ -36,7 +36,7 @@ const rankNo=i=>`<span class="rank-no ${i<3?'top':''}">${i+1}</span>`;
  */
 export function statisticsHTML(state,ui={}){
  const header='<header class="activity-heading"><div><h1>사용자 통계</h1></div><button class="secondary-button" data-community="statistics">새로고침</button></header>';
- if(state?.loading)return `<section class="stats-page">${header}${loadingHTML('통계를 불러오는 중',{compact:true})}</section>`;
+ if(state?.loading)return `<section class="stats-page">${header}${loadingHTML('통계를 불러오는 중')}</section>`;
  if(!state||state.error)return `<section class="stats-page">${header}<p role="alert">${esc(state?.error||'담당자만 통계를 볼 수 있어요.')}</p></section>`;
  const s=state,period=STATS_PERIODS.some(p=>p[0]===ui.period)?ui.period:'quarter',label=periodLabel(period,s.periods?.[period]??s.rankingSince);
  const ranking=s.rankings?.[period]||s.ranking||[],helpful=s.helpful?.[period]||[],shown=ui.expanded?ranking:ranking.slice(0,RANK_PREVIEW);

@@ -174,7 +174,7 @@ export default function Unanswered() {
               <div className="grid-row grid-head" style={{ gridTemplateColumns: COLS }}>
                 <div>순위</div><div>질문</div><div>카테고리</div><div>질문 횟수</div><div>최근</div><div>상태</div>
               </div>
-              {loading && <Loading text="질문을 불러오는 중" compact />}
+              {loading && <Loading text="질문을 불러오는 중" />}
               {!loading && filtered.length === 0 && <div className="empty">조건에 맞는 질문이 없어요.</div>}
               {filtered.map((i, idx) => (
                 <button key={i.id} type="button" className="grid-row" style={{ gridTemplateColumns: COLS }} aria-pressed={selected?.id === i.id} onClick={() => setSelectedId(i.id)}>
