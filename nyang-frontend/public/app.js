@@ -145,7 +145,7 @@ const tone=text=>personalityText(text,personality);
 function shell(){
  $('#app').innerHTML=`<div class="app-shell studio-shell desktop-workspace">
   <aside class="app-sidebar" aria-label="냥대리 메뉴">
-   <div class="sidebar-top"><button class="brand" data-action="reset" aria-label="냥대리 처음으로"><img class="company-logo" src="${root}assets/tilon-logo.png" width="434" height="118" alt="Tilon — Your dream starts here"><span>냥대리</span></button><button type="button" class="sidebar-toggle icon-button" data-sidebar-toggle aria-expanded="true" aria-label="사이드바 접기" title="사이드바 접기">${icon('panel')}</button></div>
+   <div class="sidebar-top"><button class="brand" data-action="reset" aria-label="냥대리 처음으로"><img class="company-logo company-logo-light" src="${root}assets/tilon-logo.png" width="434" height="118" alt="Tilon — Your dream starts here"><img class="company-logo company-logo-dark" src="${root}assets/tilon-logo-dark.png" width="434" height="118" alt="Tilon — Your dream starts here"><span>냥대리</span></button><button type="button" class="sidebar-toggle icon-button" data-sidebar-toggle aria-expanded="true" aria-label="사이드바 접기" title="사이드바 접기">${icon('panel')}</button></div>
    <nav class="workspace-nav side-nav" aria-label="주 메뉴">
     <button data-action="chat" id="nav-chat">${icon('chat')}<span>물어보기</span></button>
     <button data-action="schedule" id="nav-schedule">${icon('calendar')}<span>내 일정</span><span id="task-count" class="count"></span></button>
