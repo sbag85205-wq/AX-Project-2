@@ -285,6 +285,8 @@ function petHTML(){
 }
 function refreshPet(){
  refreshChatRewards();
+ const minis=document.querySelectorAll('.mini-cat');
+ if(minis.length){const look=miniLook(),stale=[...minis].filter(el=>el.dataset.look!==look);if(stale.length){const mini=miniCat();for(const el of stale)el.outerHTML=mini;}}
  const pet=$('.resident-portrait');if(!pet)return;
  const template=document.createElement('template');template.innerHTML=petHTML();
  const next=template.content,body=pet.querySelector('.pet-body'),touch=pet.querySelector('.pet-touch');
@@ -463,7 +465,13 @@ function schedulePreview(r){
  try{return makeSchedule(r.scheduleType,r.start,r.end).map(t=>`<div><span class="${t.date<localDate()?'overdue':''}">${displayDate(t.date)}${t.date<localDate()?' · 지난 날짜':''}</span><strong>${esc(t.title)}</strong><small>${t.type}${t.deadline?' · 마감 '+displayDate(t.deadline):''}</small></div>`).join('');}catch(err){return `<p role="alert">${esc(err.message)}</p>`;}
 }
 function messageTime(value){return new Date(value||Date.now()).toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'});}
-function miniCat(){return `<div class="message-avatar mini-cat" aria-hidden="true"><div class="pet-body"><div class="pet-resolution">${cat('','resident')}${outfitHTML()}</div></div></div>`;}
+// 지난 답변 옆 작은 냥대리도 맨 아래 냥대리처럼 지금 계절의 기본 모습(관리에서 고른 것)을 입힌다
+// (계절을 바꾸거나 올린 그림을 늦게 받으면 refreshPet이 data-look을 보고 다시 그린다)
+const miniSeason=()=>{const idle=idleLook(nyangCatalog);return idle&&idle.id!=='base'&&(idle.builtin||catalogImages.has(idle.image))?idle:null;};
+const miniLook=()=>`${miniSeason()?.id||'base'}|${rewards.equipped||''}`;
+function miniCat(){const seasonal=miniSeason();
+ const art=seasonal?cat(seasonal.builtin?seasonal.id:'custom-art','resident reaction-art',seasonal.builtin?'':artStyle(seasonal.image)):cat('','resident');
+ return `<div class="message-avatar mini-cat" aria-hidden="true" data-look="${esc(miniLook())}"><div class="pet-body"><div class="pet-resolution">${art}${outfitHTML()}</div></div></div>`;}
 function conversation(){
  const lastAssistant=messages.findLastIndex(m=>m.role==='assistant');
  const markup=messages.map((m,i)=>{const day=!i||localDate(new Date(m.at))!==localDate(new Date(messages[i-1].at))?`<div class="chat-day-divider"><span>${new Date(m.at).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'long'})}</span></div>`:'';return day+(m.role==='user'?`<article class="chat-row from-me"><div class="user-message">${esc(m.text)}${Array.isArray(m.files)&&m.files.length?`<small class="user-attachments">첨부 · ${m.files.map(esc).join(', ')}</small>`:''}</div><time>${messageTime(m.at)}</time></article>`:`<article class="chat-row from-nyang assistant-message" data-reply="${m.result.messageId}">${i===lastAssistant&&!pendingReply?'<div class="active-cat-slot"></div>':miniCat()}<div class="chat-message-body"><div class="assistant-name">냥대리 <span>업무 메이트</span>${i===lastAssistant&&!pendingReply?`<div class="chat-rewards inline-cat-rewards">${chatRewards()}</div>`:''}</div><div class="answer-wrap">${resultHTML(m.result)}${scheduleOffer(m.result)}</div><time>${messageTime(m.at)}</time></div></article>`);}).join('');
