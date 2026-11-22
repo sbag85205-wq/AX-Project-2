@@ -446,3 +446,6 @@ html[data-theme=dark] .login-types button[aria-pressed="true"]{color:#14163a;box
 
 /* 16. 오른쪽 위 둥근 버튼(가이드·출석·테마)이 화면 맨 위 버튼(대화에서 추가·새로고침·검색창 등)을 덮지 않게, 일하는 화면 내용을 둥근 버튼 아래에서 시작한다 */
 body[data-mode=cat] .desktop-workspace .main-content.work-view{padding-top:26px}
+
+/* 17. 다크 모드에서 Tilon 로고의 초록 글자가 어두운 배경에 묻히지 않게, 로고 뒤에 밝은 바탕을 깐다(로고 색은 그대로) */
+html[data-theme=dark] .company-logo{box-sizing:content-box;padding:3px 6px;background:#f3f4f8;border-radius:7px}
