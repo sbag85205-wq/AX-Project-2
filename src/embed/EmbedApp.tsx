@@ -23,7 +23,7 @@ function RouteReporter() {
 
 function Routed() {
   const { session, profile, loading } = useAuth();
-  if (loading) return <Loading />;
+  if (loading) return <Loading boot />;
   if (!session || !profile) return <div className="empty">연결된 Knowly 계정 정보를 찾을 수 없어요. 관리자에게 연결 계정을 확인해 달라고 알려 주세요.</div>;
   const admin = profile.role === 'admin';
   return (

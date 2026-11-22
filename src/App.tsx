@@ -23,7 +23,7 @@ function Shell({ children }: { children: ReactNode }) {
 function Routed() {
   const { session, profile, loading, verifying } = useAuth();
   if (verifying) return <Login />;
-  if (loading) return <Loading />;
+  if (loading) return <Loading boot />;
   if (!session) return <Login />;
   if (!profile) return <div className="empty">계정 정보를 찾을 수 없어요. 관리자에게 문의해 주세요.</div>;
   return (

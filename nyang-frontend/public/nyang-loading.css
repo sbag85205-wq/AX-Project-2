@@ -34,5 +34,7 @@
 .knowly-frame-wrap.ready:not(.busy)>.nyang-loading{opacity:0;pointer-events:none}
 /* 안에 끼운 Knowly 화면 안쪽의 불러오는 중 자리: 바깥 표시 하나만 보이게 비워 둔다 */
 .nyang-loading-slot{min-height:120px}
+/* 끼운 Knowly 화면 안에서 목록·문서 등 일부를 불러오는 중: 화면 가운데가 아니라 그 자리에(바깥 표시는 화면이 뜨면 사라진다) */
+.nyang-loading.nyang-loading-inline{position:static;left:auto;top:auto;transform:none;z-index:auto;width:auto;max-width:none;margin:0 auto;padding:22px 16px}
 html[data-theme=dark] .cat-rig{filter:drop-shadow(0 0 1px #ffffff40)}
 @media (prefers-reduced-motion:reduce){.nyang-loading-walker,.nyang-loading-shadow,.cat-rig>i{animation:none!important}}
