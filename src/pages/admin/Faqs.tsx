@@ -49,7 +49,6 @@ export default function Faqs() {
       <div className="page-head">
         <div>
           <h1>FAQ 관리</h1>
-          <p>등록한 FAQ와 거의 같은 질문이 들어오면 문서 검색보다 먼저 이 답변을 보여줘요.</p>
         </div>
         <button type="button" className="btn btn-primary" onClick={() => setDraft({ question: '', answer: '', category: managed[0], active: true })}>FAQ 추가</button>
       </div>

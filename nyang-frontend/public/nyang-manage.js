@@ -5,7 +5,7 @@
 //  - 계절을 고르면 그 계절의 기본 모습이 평소 모습이 되고, 그 계절 반응이 자동으로 '사용'이 된다.
 // 목록과 올린 그림은 서버(server.mjs의 catalog-*)에 저장되어 모든 직원에게 똑같이 보인다.
 import {fetch} from './transport.js?v=fd4b994ba12d';
-import {communityState} from './community-ui.js?v=6715fe45762d';
+import {communityState} from './community-ui.js?v=875803c52c83';
 import {esc} from './shared.js?v=b4248c4d9fbf';
 import {SEASONS,KINDS,MODES,allReactions,bucketReactions,suggestLine,seasonImages,seasonDefault,shopItems,selectSeason,normalizeCatalog} from './nyang-catalog.js?v=514ab761f254';
 
@@ -114,7 +114,7 @@ function itemsHTML(c){
 const TABS=[...SEASONS.map(([id])=>[id,tabLabel(id)]),['items','꾸미기 아이템']];
 function pageHTML(){
  const c=deps.catalog(),tab=TABS.find(([id])=>id===ui.tab)||TABS[0];
- return `<section class="admin-page nyang-manage"><header class="admin-heading"><h1>냥대리 관리</h1><div>바꾼 내용은 바로 저장되고 모든 직원의 냥대리에 적용돼요.</div></header>
+ return `<section class="admin-page nyang-manage"><header class="admin-heading"><h1>냥대리 관리</h1></header>
  <div class="nm-tabs" role="tablist" aria-label="냥대리 관리">${TABS.map(([id,label])=>`<button type="button" role="tab" class="nm-tab ${tab[0]===id?'on':''}" aria-selected="${tab[0]===id}" data-nm="tab" data-tab="${id}">${label}${c.season===id?'<i class="nm-tab-dot" title="지금 쓰는 칸"></i>':''}</button>`).join('')}</div>
  <p class="nm-lead">${tab[0]==='items'?'직원이 하트로 열고 착용하는 아이템이에요. 새 아이템을 추가하고 판매를 켜고 끌 수 있어요.':tab[0]==='none'?'계절을 정하지 않았을 때(기본값) 냥대리의 평소 모습과 쓰다듬기 반응이에요.':`${tab[1]}에 쓸 평소 모습과 쓰다듬기 반응이에요. 지금 계절을 ${tab[1]}로 바꾸면 이 칸이 쓰여요.`}</p>
  <div class="nm-body">${tab[0]==='items'?itemsHTML(c):bucketHTML(c,tab[0])}</div></section>`;

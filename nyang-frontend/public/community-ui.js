@@ -1,6 +1,6 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {categories as chatCategories} from './core.js?v=4dc923f4c7f7';
-import {boardView,boardPostHTML} from './board-view.js?v=20e5fec3aa08';
+import {boardView,boardPostHTML} from './board-view.js?v=3fb5f84fbe69';
 import {loginHTML as loginView,statisticsHTML,periodLabel,rankingCSV} from './account-view.js?v=fbdeceff715b';
 import {esc,loadingHTML} from './shared.js?v=b4248c4d9fbf';
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
