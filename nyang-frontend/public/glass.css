@@ -416,6 +416,20 @@ html[data-theme=dark] .schedule-offer.registered{background:rgba(79,200,150,.14)
 html[data-theme=dark] .wardrobe-preview{background:radial-gradient(ellipse,rgba(143,156,255,.22),rgba(255,255,255,.04))}
 html[data-theme=dark] .calendar-legend>span:nth-child(2) i{background:rgba(255,255,255,.28)}
 html[data-theme=dark] .activity-page .activity-attendance>.primary-button:disabled{background:var(--ui-fill);color:var(--ui-sub)}
-html[data-theme=dark] .ss-model-row input,html[data-theme=dark] .ss-model-row input:disabled{background:var(--ui-fill);color:var(--ui-ink)}
+html[data-theme=dark] .ss-model-row input,html[data-theme=dark] .ss-model-row input:disabled{background:transparent;color:var(--ui-ink)}
 html[data-theme=dark] body[data-mode=cat] .activity-page .activity-attendance>.primary-button:disabled{background:var(--ui-fill)!important;border-color:var(--ui-line)!important;color:var(--ui-sub);box-shadow:none}
 html[data-theme=dark] .ss-range input{background:transparent}
+/* 라이트 모드와 같은 모양으로: 라이트에서 바탕 없이 창에 녹아 있는 칸은 다크에서도 바탕 없이(네모 상자가 생기지 않게) */
+html[data-theme=dark] :is(.calendar-board,.day-agenda,.todo-stats,.week-strip,.task-list),
+html[data-theme=dark] .white-background-option{background:transparent}
+html[data-theme=dark] .wardrobe-preview{background:var(--ui-fill)}
+html[data-theme=dark] :is(.plan-form input,.agenda-edit input,.task-date input,.upload-doc select){background:var(--ui-fill)}
+html[data-theme=dark] body .chat-room .answer-tools>button.answer-copy-button{background:var(--ui-panel)}
+html[data-theme=dark] body .desktop-workspace .chat-composer .attach-button{border:1px solid var(--ui-line)}
+html[data-theme=dark] .segmented>button.selected{box-shadow:0 1px 3px rgba(0,0,0,.35)}
+/* 예전 다크 모드의 불투명한 파랑을 라이트와 같은 옅은 강조색으로 */
+html[data-theme=dark] :is(.calendar-cell.selected,.calendar-event,.week-strip>button.selected,.badge.blue,.wardrobe-item.equipped,.source-document section.highlight){background:var(--ui-accent-fill)}
+html[data-theme=dark] .week-strip>button i.has-task,html[data-theme=dark] .task-row input[type=checkbox]:checked{background:var(--ui-accent)}
+html[data-theme=dark] .desktop-workspace .calendar-cell.today .date-number{background:#ff453a;color:#fff}
+/* 알림: 라이트는 흰 유리판이므로 다크는 어두운 유리판 */
+html[data-theme=dark] #toast,html[data-theme=dark] .toast-item{background:rgba(40,42,72,.94);color:var(--ui-ink);border-color:var(--glass-edge)}
