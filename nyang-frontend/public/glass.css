@@ -443,3 +443,6 @@ body[data-mode=cat] .desktop-workspace .main-content.work-view::-webkit-scrollba
 .login-types button:not([aria-pressed="true"]):hover{background:var(--ui-selection);color:var(--ui-ink)}
 .login-types button[aria-pressed="true"]{background:var(--ui-accent);color:#fff;font-weight:700;box-shadow:0 6px 16px -8px rgba(74,91,216,.8)}
 html[data-theme=dark] .login-types button[aria-pressed="true"]{color:#14163a;box-shadow:none}
+
+/* 16. 오른쪽 위 둥근 버튼(가이드·출석·테마)이 화면 맨 위 버튼(대화에서 추가·새로고침·검색창 등)을 덮지 않게, 일하는 화면 내용을 둥근 버튼 아래에서 시작한다 */
+body[data-mode=cat] .desktop-workspace .main-content.work-view{padding-top:26px}
