@@ -40,8 +40,9 @@
       rise(document.querySelector('#sidebar-history .chat-history'), 0);
       return;
     }
-    const root = main.firstElementChild; if (!root) return;
-    const blocks = [...root.children].slice(0, 12);
+    // '불러오는 중' 표시(.nyang-loading)는 움직이지 않는다: 나타나기 애니메이션이 걸리면 다 불러온 뒤에도 0.6초쯤 다시 보여 잔상이 남는다
+    const root = main.firstElementChild; if (!root || root.matches('.nyang-loading')) return;
+    const blocks = [...root.children].slice(0, 12).filter(el => !el.matches('.nyang-loading'));
     const title = root.querySelector('h1, h2');
     reveal(title);
     blocks.forEach((el, i) => { if (!el.contains(title)) rise(el, i, 80); });
