@@ -15,18 +15,25 @@ export function Modal({ title, onClose, children, actions }: { title: string; on
 
     const ancestors: Element[] = [];
     for (let element = frame.parentElement; element; element = element.parentElement) ancestors.push(element);
+    // 내용이 짧으면 iframe도 짧아서(예: FAQ가 몇 개뿐) 창 아래 저장·취소 버튼이 잘렸다.
+    // 창이 열려 있는 동안은 iframe을 보이는 화면 끝까지 늘려 창과 어두운 배경이 다 들어가게 한다.
+    const body = document.body;
+    const prevMinHeight = body.style.minHeight;
     const position = () => {
       const rect = frame.getBoundingClientRect();
       const frameTop = rect.top + frame.clientTop;
       let top = Math.max(0, frameTop);
-      let bottom = Math.min(parentWindow.innerHeight, frameTop + frame.clientHeight);
+      let viewBottom = parentWindow.innerHeight;
       for (const ancestor of ancestors) {
         if (!/(auto|scroll|hidden|clip)/.test(parentWindow.getComputedStyle(ancestor).overflowY)) continue;
         const bounds = ancestor.getBoundingClientRect();
         const contentTop = bounds.top + ancestor.clientTop;
         top = Math.max(top, contentTop);
-        bottom = Math.min(bottom, contentTop + ancestor.clientHeight);
+        viewBottom = Math.min(viewBottom, contentTop + ancestor.clientHeight);
       }
+      const fill = Math.ceil(viewBottom - frameTop);
+      if (fill > frame.clientHeight) body.style.minHeight = `${fill}px`;
+      const bottom = Math.min(viewBottom, frameTop + frame.clientHeight);
       const height = Math.max(0, bottom - top);
       Object.assign(backdrop.style, {
         top: `${Math.max(0, top - frameTop)}px`,
@@ -45,6 +52,7 @@ export function Modal({ title, onClose, children, actions }: { title: string; on
       parentWindow.removeEventListener('scroll', position, true);
       parentWindow.removeEventListener('resize', position);
       observer.disconnect();
+      body.style.minHeight = prevMinHeight;
     };
   }, []);
   useEffect(() => {
