@@ -372,6 +372,18 @@ function mountKnowly(name){
  const key=name==='library'?'library:'+libraryRoute:name,route=name==='library'?libraryRoute:viewOf(name)?.route;
  const current=$('#main > .knowly-frame-wrap');
  if(current?.dataset.knowlyKey===key)return;
+ // 이미 다 뜬 Knowly 화면이 있으면 새로 만들지 않고 안쪽 주소(#)만 바꾼다: 앱을 다시 시작·로그인 확인하지 않아 훨씬 빠르다.
+ // 새 화면이 데이터를 불러오는 동안은 안쪽이 '불러오는 중'을 알려 바깥 냥대리가 다시 보인다.
+ const frame=current?.querySelector('iframe.knowly-frame');
+ if(frame&&current.classList.contains('ready')){
+  try{
+   frame.contentWindow.location.hash='#'+route;
+   current.dataset.knowlyKey=key;frame.title='Knowly '+key;
+   const name=viewOf(view)?.title||'화면',loading=current.querySelector(':scope > .nyang-loading');
+   if(loading)loading.outerHTML=loadingHTML(`${name}${objectParticle(name)} 불러오는 중`);
+   return;
+  }catch{}
+ }
  $('#main').innerHTML=knowlyFrameHTML(key,route);
 }
 function knowlyStatsHTML(){return `<section class="admin-page knowly-stats"><header class="admin-heading"><h1>문서 검색 이용 통계</h1></header>${knowlyFrameHTML('stats','/admin/stats')}</section>`;}

@@ -10,7 +10,8 @@ import Loading from '../../components/Loading';
 
 const STATUSES: ('전체' | GroupStatus)[] = ['전체', '신규', '검토 중', 'FAQ 등록 완료', '보류'];
 const PILL: Record<GroupStatus, string> = { 신규: 'pill-new', '검토 중': 'pill-review', 'FAQ 등록 완료': 'pill-done', 보류: 'pill-hold' };
-const COLS = '48px minmax(0, 1fr) 96px 150px 80px 124px';
+// 노트북 화면처럼 목록 칸이 좁아도 표가 넘쳐 아래에 가로 스크롤바가 생기지 않게 열 폭을 줄였다
+const COLS = '40px minmax(140px, 1fr) 96px 100px 56px 92px';
 
 type Group = QuestionGroup & { faqs: { answer: string; created_at: string } | null };
 
@@ -170,7 +171,7 @@ export default function Unanswered() {
             </div>
           </div>
           <div className="table-scroll">
-            <div className="grid-table">
+            <div className="grid-table" style={{ minWidth: 0 }}>
               <div className="grid-row grid-head" style={{ gridTemplateColumns: COLS }}>
                 <div>순위</div><div>질문</div><div>카테고리</div><div>질문 횟수</div><div>최근</div><div>상태</div>
               </div>
