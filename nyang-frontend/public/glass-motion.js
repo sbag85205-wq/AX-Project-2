@@ -164,8 +164,8 @@
   addEventListener('resize', () => { const m = document.getElementById('profile-menu'); if (m && menuOpen(m)) placeProfileMenu(); });
   document.addEventListener('click', e => {
     const b = e.target.closest?.('#profile-menu button'), menu = document.getElementById('profile-menu');
-    // 화면 밝기·출석은 바뀐 결과를 메뉴에서 바로 보이게 열어 둔다
-    if (!b || !menu || b.matches('.theme-toggle, #attendance-button')) return;
+    // (화면 밝기·출석·가이드는 오른쪽 위 아이콘(.top-icons)으로 옮겨서 메뉴에는 없다)
+    if (!b || !menu) return;
     try { menu.hidePopover(); } catch {}
   });
 
