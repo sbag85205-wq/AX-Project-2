@@ -70,8 +70,10 @@ const badge=(text,cls='')=>`<span class="badge ${cls}">${text}</span>`;
 const TOAST_LIMIT=3,TOAST_MS=3500;
 function toast(text){
  let stack=$('#toast-stack');
- if(!stack){stack=document.createElement('div');stack.id='toast-stack';stack.setAttribute('role','status');stack.setAttribute('aria-live','polite');document.body.append(stack);}
+ if(!stack){stack=document.createElement('div');stack.id='toast-stack';stack.setAttribute('role','status');stack.setAttribute('aria-live','polite');stack.popover='manual';document.body.append(stack);}
  const message=String(text??'');if(!message)return;
+ // 알림은 브라우저 맨 위 층(popover)에 띄운다. 꾸미기 같은 창(모달)이 열려 있어도 그 위에 보이도록 띄울 때마다 맨 위로 올린다
+ try{if(stack.matches(':popover-open'))stack.hidePopover();stack.showPopover();}catch{}
  const leave=item=>{clearTimeout(item._timer);item.classList.remove('show');setTimeout(()=>item.remove(),220);};
  const same=[...stack.children].find(x=>x.textContent===message&&x.classList.contains('show'));
  if(same){clearTimeout(same._timer);same._timer=setTimeout(()=>leave(same),TOAST_MS);return;}
