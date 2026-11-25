@@ -415,9 +415,10 @@ html[data-theme=dark] .calendar-event.done{background:rgba(255,255,255,.06)}
 html[data-theme=dark] .schedule-offer.registered{background:rgba(79,200,150,.14)}
 html[data-theme=dark] .wardrobe-preview{background:radial-gradient(ellipse,rgba(143,156,255,.22),rgba(255,255,255,.04))}
 html[data-theme=dark] .calendar-legend>span:nth-child(2) i{background:rgba(255,255,255,.28)}
-html[data-theme=dark] .activity-page .activity-attendance>.primary-button:disabled{background:var(--ui-fill);color:var(--ui-sub)}
+/* 다크 모드 '내 레벨'의 '출석 완료': 라이트 모드처럼 강조색으로 채운 버튼에 어두운 글자로 눈에 띄게 */
+html[data-theme=dark] .activity-page .activity-attendance>.primary-button:disabled{background:var(--ui-accent);color:#14163a}
 html[data-theme=dark] .ss-model-row input,html[data-theme=dark] .ss-model-row input:disabled{background:transparent;color:var(--ui-ink)}
-html[data-theme=dark] body[data-mode=cat] .activity-page .activity-attendance>.primary-button:disabled{background:var(--ui-fill)!important;border-color:var(--ui-line)!important;color:var(--ui-sub);box-shadow:none}
+html[data-theme=dark] body[data-mode=cat] .activity-page .activity-attendance>.primary-button:disabled{background:var(--ui-accent)!important;border-color:var(--ui-accent)!important;color:#14163a;font-weight:700;box-shadow:0 10px 24px -14px rgba(154,166,255,.9)}
 html[data-theme=dark] .ss-range input{background:transparent}
 /* 라이트 모드와 같은 모양으로: 라이트에서 바탕 없이 창에 녹아 있는 칸은 다크에서도 바탕 없이(네모 상자가 생기지 않게) */
 html[data-theme=dark] :is(.calendar-board,.day-agenda,.todo-stats,.week-strip,.task-list),
