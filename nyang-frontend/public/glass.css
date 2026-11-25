@@ -496,17 +496,25 @@ html[data-theme=dark] #app .top-icons>#attendance-button.done{background:#4ade80
 .chat-room .schedule-offer.schedule-done .schedule-done-dates{margin:4px 0 12px;font-size:12px;color:var(--ui-sub)}
 .chat-room .schedule-offer.schedule-done .answer-tools{border-top:0;margin-top:12px;padding-top:0}
 
-/* 25. 대화에서 만든 일정의 '일정 상세' 창 */
-#modal .schedule-detail-list{display:flex;flex-direction:column;gap:10px;margin:14px 0 4px;max-height:min(60vh,520px);overflow:auto}
-#modal .schedule-detail-list .agenda-item{padding:12px 14px;border:1px solid var(--ui-line);border-radius:12px;background:var(--ui-fill)}
-#modal .schedule-detail-list .agenda-item>label{display:flex;align-items:center;gap:8px}
-#modal .schedule-detail-list .agenda-item strong{font-size:14px;color:var(--ui-ink)}
-#modal .schedule-detail-list .agenda-item.done strong{text-decoration:line-through;color:var(--ui-sub)}
-#modal .schedule-detail-list .agenda-item small{display:block;margin:4px 0 0 26px;font-size:12px;color:var(--ui-sub)}
-#modal .schedule-detail-list .agenda-item p{margin:6px 0 0 26px;font-size:12px;line-height:1.6;color:var(--ui-ink)}
-#modal .schedule-detail-list .agenda-item p.agenda-deadline{color:var(--ui-sub)}
-#modal .schedule-detail-list .agenda-item p.agenda-deadline.overdue{color:#dc2626}
-html[data-theme=dark] #modal .schedule-detail-list .agenda-item p.agenda-deadline.overdue{color:#ff8a8a}
+/* 25. 대화에서 만든 일정의 '일정 상세': 카드 아래에 기본으로 펼쳐 두고 제목 줄을 눌러 접는다 */
+.chat-room .schedule-inline{margin:14px 0 4px;border-top:1px solid var(--ui-line);padding-top:10px}
+.chat-room .schedule-inline>summary{display:flex;align-items:center;gap:6px;cursor:pointer;list-style:none;font-size:13px;font-weight:600;color:var(--ui-ink);padding:4px 0;user-select:none}
+.chat-room .schedule-inline>summary::-webkit-details-marker{display:none}
+.chat-room .schedule-inline>summary .icon{width:15px;height:15px}
+.chat-room .schedule-inline>summary small{font-weight:500;font-size:12px;color:var(--ui-sub)}
+.chat-room .schedule-inline>summary::after{content:'';width:7px;height:7px;margin-left:auto;border-right:1.5px solid currentColor;border-bottom:1.5px solid currentColor;transform:rotate(45deg) translate(-2px,-2px);transition:transform .15s;opacity:.7}
+.chat-room .schedule-inline:not([open])>summary::after{transform:rotate(-45deg)}
+.chat-room .schedule-inline>summary:focus-visible{outline:2px solid var(--ui-accent);outline-offset:3px;border-radius:6px}
+.chat-room .schedule-inline .schedule-detail-list{display:flex;flex-direction:column;gap:8px;margin:8px 0 0}
+.chat-room .schedule-inline .agenda-item{padding:11px 13px;border:1px solid var(--ui-line);border-radius:12px;background:var(--ui-panel)}
+.chat-room .schedule-inline .agenda-item>label{display:flex;align-items:center;gap:8px}
+.chat-room .schedule-inline .agenda-item strong{font-size:13px;color:var(--ui-ink)}
+.chat-room .schedule-inline .agenda-item.done strong{text-decoration:line-through;color:var(--ui-sub)}
+.chat-room .schedule-inline .agenda-item small{display:block;margin:4px 0 0 26px;font-size:12px;color:var(--ui-sub)}
+.chat-room .schedule-inline .agenda-item p{margin:5px 0 0 26px;font-size:12px;line-height:1.6;color:var(--ui-ink)}
+.chat-room .schedule-inline .agenda-item p.agenda-deadline{color:var(--ui-sub)}
+.chat-room .schedule-inline .agenda-item p.agenda-deadline.overdue{color:#dc2626}
+html[data-theme=dark] .chat-room .schedule-inline .agenda-item p.agenda-deadline.overdue{color:#ff8a8a}
 
 /* 23. 내 일정 '+ 일정 추가' 버튼: 목록·달력 보기에서 크기를 똑같이(목록 쪽 style.css의 아이콘 14px 규칙을 달력에도) */
 .calendar-heading>.secondary-button .icon{width:14px;height:14px}
