@@ -9,6 +9,8 @@ import { supabase } from '../lib/supabase';
 import type { DocumentRow } from '../lib/types';
 import Loading from '../components/Loading';
 import { PageJump } from '../components/PageJump';
+import { DocFind, showHit } from '../components/DocFind';
+import { splitHits } from '../lib/docSearch';
 
 interface ChunkRow {
   id: string;
@@ -23,6 +25,8 @@ export default function DocumentView() {
   const { id } = useParams();
   const [params] = useSearchParams();
   const focusChunk = params.get('chunk');
+  // 문서 목록 내용 검색에서 들어왔으면 그 말로 '문서 안에서 찾기'를 시작한다
+  const initialQuery = params.get('q') ?? '';
   const { profile } = useAuth();
   const [doc, setDoc] = useState<DocumentRow | null>(null);
   const [chunks, setChunks] = useState<ChunkRow[]>([]);
@@ -47,6 +51,22 @@ export default function DocumentView() {
       }
     });
   }, [id]);
+
+  // 텍스트 문서 안에서 찾기(PDF는 PdfViewer가 따로 한다): 입력 → 잠시 뒤 찾을 말 → 본문 <mark> 중 지금 보는 곳
+  const [find, setFind] = useState(initialQuery);
+  const [term, setTerm] = useState(initialQuery.trim());
+  const [hitCount, setHitCount] = useState(0);
+  const [hitIndex, setHitIndex] = useState(0);
+  useEffect(() => { const t = setTimeout(() => setTerm(find.trim()), 250); return () => clearTimeout(t); }, [find]);
+  useEffect(() => { setFind(initialQuery); }, [initialQuery, id]);
+  useEffect(() => {
+    const body = document.querySelector('.doc-body');
+    setHitCount(term && body ? body.querySelectorAll('mark.find-hit').length : 0);
+    setHitIndex(0);
+  }, [term, chunks]);
+  useEffect(() => {
+    if (term && hitCount) showHit(document.querySelector('.doc-body'), hitIndex);
+  }, [term, hitCount, hitIndex]);
 
   // 원본이 없는 문서(텍스트 문서)에서 인용으로 들어왔으면 해당 조각으로 스크롤
   useEffect(() => {
@@ -114,12 +134,15 @@ export default function DocumentView() {
           ? <Loading text="원본을 불러오는 중" boot />
           : type === 'sheet'
             ? <SheetViewer url={fileUrl} path={doc.file_path ?? ''} sheet={focusPage ?? 1} title={doc.title} />
-            : <PdfViewer url={fileUrl} page={focusPage} title={doc.title} />
+            : <PdfViewer url={fileUrl} page={focusPage} title={doc.title} query={initialQuery} />
       ) : (
         <>
         {/* 원본 없는(텍스트) 문서도 쪽 번호로 바로가기: 그 쪽(또는 그 뒤 첫 쪽)이 시작되는 조각으로 */}
         {type !== 'sheet' && blocks.length > 0 && (
           <div className="doc-tools">
+            <DocFind value={find} onChange={setFind} count={hitCount} index={hitIndex} busy={false}
+              onPrev={() => setHitIndex((i) => (i - 1 + hitCount) % hitCount)}
+              onNext={() => setHitIndex((i) => (i + 1) % hitCount)} />
             <PageJump
               total={Math.max(...blocks.map((b) => b.page_end || b.page_start || 1))}
               onJump={(n) => {
@@ -148,7 +171,7 @@ export default function DocumentView() {
             {blocks.map((b) => (
               <section key={b.id} id={`chunk-${b.id}`} className={`doc-chunk${b.id === focusChunk ? ' focused' : ''}`}>
                 {b.newPage && <div className="doc-page">{pageLabel(b.page_start, b.page_end, doc.file_path)}</div>}
-                <div className="doc-text">{b.text}</div>
+                <div className="doc-text">{term ? splitHits(b.text, term).map((p, i) => (i % 2 ? <mark key={i} className="find-hit">{p}</mark> : p)) : b.text}</div>
               </section>
             ))}
           </article>

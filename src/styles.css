@@ -330,6 +330,15 @@ button.grid-row[aria-pressed='true'] { background: #f2f5fe; box-shadow: inset 4p
 .page-jump label { font-weight: 600; color: var(--text); }
 .page-jump .input { width: 72px; padding: 6px 8px; text-align: center; }
 .page-jump .btn { padding: 6px 12px; }
+.doc-tools { justify-content: space-between; }
+.doc-find { display: flex; align-items: center; gap: 6px; flex: 1 1 320px; min-width: 0; font-size: 13px; }
+.doc-find .input { flex: 1 1 auto; min-width: 120px; max-width: 280px; padding: 6px 10px; }
+.doc-find .btn { padding: 6px 10px; }
+.doc-find-count { min-width: 52px; text-align: center; white-space: nowrap; }
+/* 문서 안에서 찾은 곳: 노랑, 지금 보는 곳: 주황. PDF 글자 층은 글자가 투명하므로 배경만 보인다 */
+mark.find-hit { background: rgba(255, 196, 0, .45); color: inherit; border-radius: 2px; padding: 0; }
+mark.find-hit.current { background: rgba(255, 120, 0, .65); box-shadow: 0 0 0 2px rgba(255, 120, 0, .35); }
+.pdf-page .textLayer mark.find-hit { color: transparent; }
 .pdf-page { position: relative; width: 100%; max-width: 900px; margin: 0 auto; background: #fff; box-shadow: var(--shadow); scroll-margin-top: 16px; }
 .pdf-page canvas { display: block; width: 100%; height: auto; }
 /* PDF 글자 선택: pdf.js 글자 층(TextLayer)을 그림 위에 투명하게 겹친다(pdfjs-dist web/pdf_viewer.css의 .textLayer 규칙에서 필요한 것만) */
