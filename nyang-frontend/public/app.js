@@ -1,14 +1,14 @@
 import {parseEventRequest,timeLabel,eventTask} from './event-request.js?v=7dffe9d847bc';
 import {viewOf,pageTitleOf,NAV_NAMES,navViews,STAFF_NAVS,EMPLOYEE_NAVS} from './views.js?v=df74efb0e3fe';
 import {fetch} from './transport.js?v=fd4b994ba12d';
-import {emptyCatalog,normalizeCatalog,createCatalogPicker,idleLook,shopItems,neededImages} from './nyang-catalog.js?v=514ab761f254';
-import {installNyangManage,nyangManagePageHTML} from './nyang-manage.js?v=321e543bb7d7';
+import {emptyCatalog,normalizeCatalog,createCatalogPicker,idleLook,shopItems,neededImages} from './nyang-catalog.js?v=3a88ea59d01b';
+import {installNyangManage,nyangManagePageHTML} from './nyang-manage.js?v=1e551f285dca';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=291139f9595c';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=2b1060400411';
 import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=875803c52c83';
 import {categories,applyManagedCategories,defaultCategory,categoryOf,documents,faq,startersFor,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=4dc923f4c7f7';
-import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=80ab82355587';
+import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=be0125e6c23b';
 import {createPetInteraction} from './pet-interaction.js?v=25ddd542a513';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=20d8b9f9b46b';
 const $=s=>document.querySelector(s);
@@ -458,8 +458,8 @@ function resultHTML(r){
 function scheduleOffer(r){
  if(!r.scheduleType)return '';
  const meta=scheduleTypes[r.scheduleType];
- if(r.decision==='added')return `<div class="schedule-saved" role="status">${icon('check')} ${r.items.length}개의 할 일을 내 일정에 ${personality==='warm'?'넣었어요.':'넣었어.'} <span>${displayDate(r.start)}${meta.endLabel?' — '+displayDate(r.end):''}</span></div>`;
- if(r.decision==='yes')return `<div class="schedule-offer" id="schedule-${r.messageId}"><h3>${voice().schedule}</h3><form class="plan-form" data-plan-form="${r.messageId}"><label>${meta.startLabel}<input type="date" name="start" required value="${r.start}"></label>${meta.endLabel?`<label>${meta.endLabel}<input type="date" name="end" required min="${r.start}" value="${r.end}"></label>`:''}<div class="schedule-preview" data-preview="${r.messageId}">${schedulePreview(r)}</div><button type="submit" class="primary-button">내 일정에 추가 ${icon('calendar')}</button><button type="button" class="text-button" data-consent="no" data-message="${r.messageId}">닫기</button></form><p class="caption">샘플 일정 템플릿입니다. 실제 기한은 답변의 사내 문서와 비교해 조정하세요. 영업일은 주말만 제외해요.<br>이 사이트의 내 일정에 저장됩니다.</p></div>`;
+ if(r.decision==='added')return `<div class="schedule-saved" role="status">${icon('check')} ${r.title?`'${esc(r.title)}' `:''}${r.items.length}개의 할 일을 내 일정에 ${personality==='warm'?'넣었어요.':'넣었어.'} <span>${displayDate(r.start)}${meta.endLabel?' — '+displayDate(r.end):''}</span></div>`;
+ if(r.decision==='yes')return `<div class="schedule-offer" id="schedule-${r.messageId}"><h3>${voice().schedule}</h3><form class="plan-form" data-plan-form="${r.messageId}"><label class="plan-title-field">일정 제목<input name="title" maxlength="40" required value="${esc(r.title??meta.title)}" placeholder="${esc(meta.title)}" autocomplete="off"></label><label>${meta.startLabel}<input type="date" name="start" required value="${r.start}"></label>${meta.endLabel?`<label>${meta.endLabel}<input type="date" name="end" required min="${r.start}" value="${r.end}"></label>`:''}<div class="schedule-preview" data-preview="${r.messageId}">${schedulePreview(r)}</div><button type="submit" class="primary-button">내 일정에 추가 ${icon('calendar')}</button><button type="button" class="text-button" data-consent="no" data-message="${r.messageId}">닫기</button></form><p class="caption">샘플 일정 템플릿입니다. 실제 기한은 답변의 사내 문서와 비교해 조정하세요. 영업일은 주말만 제외해요.<br>이 사이트의 내 일정에 저장됩니다.</p></div>`;
  return `<div id="schedule-${r.messageId}" hidden></div>`;
 }
 function schedulePreview(r){
@@ -825,13 +825,15 @@ document.addEventListener('submit',e=>{
  if(e.target.dataset.planForm){
   e.preventDefault();const r=messages.find(m=>m.result?.messageId===e.target.dataset.planForm)?.result;
   if(!r||r.decision!=='yes')return;
-  const fd=new FormData(e.target),start=fd.get('start'),end=fd.get('end')||start;
-  try{const items=makeSchedule(r.scheduleType,start,end),result=mergeSchedule(tasks,{type:r.scheduleType,start,end,items},()=>crypto.randomUUID());
-   if(save('om-tasks',result.tasks)){tasks=result.tasks;r.start=start;r.end=end;r.items=items;r.decision='added';render();toast(result.added?`${result.added}개의 할 일을 내 일정에 넣었어.`:'이미 캘린더에 챙겨 둔 일정이야.');}
+  const fd=new FormData(e.target),start=fd.get('start'),end=fd.get('end')||start,title=String(fd.get('title')||'').trim().slice(0,40)||scheduleTypes[r.scheduleType].title;
+  try{const items=makeSchedule(r.scheduleType,start,end),result=mergeSchedule(tasks,{type:r.scheduleType,start,end,items,label:title},()=>crypto.randomUUID());
+   if(save('om-tasks',result.tasks)){tasks=result.tasks;r.start=start;r.end=end;r.items=items;r.title=title;r.decision='added';render();toast(result.added?`${result.added}개의 할 일을 내 일정에 넣었어.`:'이미 캘린더에 챙겨 둔 일정이야.');}
   }catch(err){toast(err.message);}
  }
 });
-document.addEventListener('input',e=>{if(e.target.matches('#question-form textarea')){chatDraft=e.target.value;resizeComposer();}});
+document.addEventListener('input',e=>{if(e.target.matches('#question-form textarea')){chatDraft=e.target.value;resizeComposer();}
+ // 일정 잡기 창의 제목은 입력하는 동안 기억해 둔다(화면이 다시 그려져도 남는다)
+ if(e.target.matches('[data-plan-form] input[name=title]')){const r=messages.find(m=>m.result?.messageId===e.target.form.dataset.planForm)?.result;if(r)r.title=e.target.value;}});
 document.addEventListener('keydown',e=>{if(e.target.matches('#question-form textarea')&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();e.target.form.requestSubmit();}});
 // '+' 버튼 말고도 사진·파일을 질문 입력창에 끌어다 놓거나(화면 어디에 놓아도 된다) 입력창에 붙여넣으면(Ctrl+V) 첨부한다.
 // 첨부 개수·크기·종류 확인은 '+' 버튼과 같은 addAttachments가 한다.
