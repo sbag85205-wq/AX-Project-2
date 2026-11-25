@@ -449,3 +449,10 @@ body[data-mode=cat] .desktop-workspace .main-content.work-view{padding-top:26px}
 
 /* 17. 다크 모드에서는 Tilon 로고를 글자가 밝은 다크용 로고(tilon-logo-dark.png, 색 점은 그대로)로 바꿔 보여 준다 */
 html:not([data-theme=dark]) .company-logo-dark,html[data-theme=dark] .company-logo-light{display:none}
+
+/* 18. 질문 입력창 첨부 사진 미리보기: 칩 앞 작은 사진(누르면 크게 보기 창) */
+.composer-attachments{align-items:center}
+.composer-attachments .admin-tag.has-thumb{display:inline-flex;align-items:center;gap:8px;padding-left:4px}
+.composer-attachments .attach-thumb{flex:none;width:36px;height:36px;padding:0;border-radius:8px;overflow:hidden;border:1px solid var(--ui-line,#e5e5e8);background:var(--ui-fill,#f3f4f8);cursor:zoom-in}
+.composer-attachments .attach-thumb img{display:block;width:100%;height:100%;object-fit:cover}
+#modal .attach-preview-large{display:block;max-width:100%;max-height:70vh;margin:14px auto 0;border-radius:12px;object-fit:contain;background:var(--ui-fill,#f3f4f8)}
