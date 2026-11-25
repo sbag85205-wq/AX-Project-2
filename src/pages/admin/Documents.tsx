@@ -188,7 +188,7 @@ export default function Documents() {
               {d.status === 'failed' && d.error && <div className="list-meta" style={{ color: 'var(--danger)' }}>원인: {d.error}</div>}
             </div>
             <span className={`pill ${STATUS[d.status][1]}`}>{STATUS[d.status][0]}</span>
-            {d.status !== 'processing' && <Link className="btn btn-sm" to={`/docs/${d.id}`}>보기</Link>}
+            {d.status !== 'processing' && <Link className="btn btn-sm" to={`/docs/${d.id}`} state={{ from: 'admin' }}>보기</Link>}
             <button type="button" className="btn btn-sm btn-ghost doc-settings" onClick={() => setEditing({ doc: d, title: d.title, category: d.category })} aria-label={`${d.title} 문서명·카테고리 수정`} title="문서명·카테고리 수정"><GearIcon /></button>
             {d.status === 'ready' && <button type="button" className="btn btn-sm" onClick={() => setStatus(d, 'archived')}>검색 제외</button>}
             {d.status === 'archived' && <button type="button" className="btn btn-sm" onClick={() => setStatus(d, 'ready')}>다시 사용</button>}
