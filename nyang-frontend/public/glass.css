@@ -565,3 +565,9 @@ html[data-theme=dark] .chat-room .schedule-inline .agenda-item p.agenda-deadline
 
 /* 31. 꾸미기 배경을 고른 상태에서 라이트 모드 '내 일정' 목록의 할 일 줄이 흰 상자로 칠해지던 것(style.css의 .custom-bg .task-row 흰 배경)을 없애 화면과 어우러지게(다크 모드처럼 투명) */
 body.custom-bg .desktop-workspace .task-row{background:transparent}
+
+/* 32. 슬라이더·파일 고르기 버튼도 화면 색에 맞춘다(브라우저 기본 파란 슬라이더, 회색 네모 'Choose File' 버튼이 튀어 보이던 것) */
+input[type=range]{accent-color:var(--ui-accent)}
+input[type=file]:not([hidden]){color:var(--ui-sub);font-size:12px}
+input[type=file]::file-selector-button{margin-right:8px;padding:5px 11px;font-size:12px!important;border:1px solid var(--ui-line);border-radius:999px;background:var(--ui-panel);color:var(--ui-ink);font:inherit;font-weight:600;cursor:pointer}
+input[type=file]::file-selector-button:hover{background:var(--ui-fill)}
