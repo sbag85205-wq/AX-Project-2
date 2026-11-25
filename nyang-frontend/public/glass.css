@@ -459,3 +459,10 @@ html:not([data-theme=dark]) .company-logo-dark,html[data-theme=dark] .company-lo
 
 /* 19. 사진·파일을 끌어다 질문 입력창 위로 가져오면 놓을 수 있다는 표시 */
 html body .desktop-workspace .chat-composer.drag-over{border-color:var(--ui-accent)!important;box-shadow:0 0 0 4px var(--ui-accent-fill)!important;border-style:dashed!important}
+
+/* 20. 답변 평가(도움돼요·아쉬워요): 누른 쪽이 색 배경 칩으로 바뀌어 눈에 띈다(도움돼요=강조색, 아쉬워요=주황). 다시 누르면 취소되어 원래대로 */
+html body .chat-room .answer-tools>button[data-knowly-vote]{padding:4px 11px;border:1px solid transparent;border-radius:999px;transition:background .15s,color .15s,border-color .15s}
+html body .chat-room .answer-tools>button[data-knowly-vote]:first-child{margin-left:-11px}
+html body .chat-room .answer-tools>button[data-knowly-vote=up][aria-pressed=true]{color:var(--ui-accent);background:var(--ui-accent-fill);border-color:color-mix(in srgb,var(--ui-accent) 35%,transparent);font-weight:600}
+html body .chat-room .answer-tools>button[data-knowly-vote=down][aria-pressed=true]{color:#c2410c;background:rgba(234,88,12,.1);border-color:rgba(234,88,12,.32);font-weight:600}
+html[data-theme=dark] body .chat-room .answer-tools>button[data-knowly-vote=down][aria-pressed=true]{color:#ffb185;background:rgba(255,145,80,.16);border-color:rgba(255,145,80,.38)}
