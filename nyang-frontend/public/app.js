@@ -319,9 +319,9 @@ const petInteraction=createPetInteraction({
  },
  stroke(){
   petMoving=true;clearTimeout(petMotionTimer);refreshPet();
-  const motion=$('.resident-portrait .pet-body')?.getAnimations().find(a=>['pet-stroke','warm-touch','cold-touch'].includes(a.animationName));
+  // 클릭할 때마다 움직임을 처음부터 다시 시작한다(같은 반응이 또 골라지거나 한 번만 도는 움직임이 이미 끝났어도 다시 움직인다).
   // Skip the imperceptible easing-in frames: the press is visible immediately.
-  if(motion)motion.currentTime=70;
+  for(const motion of $('.resident-portrait .pet-body')?.getAnimations()||[])if(motion.animationName)motion.currentTime=70;
   petMotionTimer=setTimeout(()=>{if(!petPending&&!petReaction){petMoving=false;refreshPet();}},2200);
  },
  react(kind){

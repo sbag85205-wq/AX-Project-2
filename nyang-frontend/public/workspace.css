@@ -289,8 +289,8 @@ body[data-personality=cold] .resident-portrait .pet-body:is(.delighted,.pet-bonu
    expression must not switch/restart the body's animation on a slow network. */
 body[data-personality=warm] .resident-portrait .pet-body.pet-engaged{animation:warm-touch .72s ease-out infinite}
 body[data-personality=cold] .resident-portrait .pet-body.pet-engaged{animation:cold-touch .9s ease-out infinite}
-@keyframes warm-touch{0%,100%{transform:translateY(0)}16%,32%{transform:translateY(-2%)}65%{transform:translateY(-.5%)}}
-@keyframes cold-touch{0%,100%{transform:translateY(0)}14%,28%{transform:translateY(1.2%)}55%{transform:translateY(.3%)}}
+@keyframes warm-touch{0%,100%{transform:translateY(0)}16%,32%{transform:translateY(-4.5%)}65%{transform:translateY(-1.5%)}}
+@keyframes cold-touch{0%,100%{transform:translateY(0)}14%,28%{transform:translateY(3%)}55%{transform:translateY(1%)}}
 /* Character gestures stay inside the anchored portrait. */
 body[data-personality=warm] .resident-portrait .pet-body.behavior-welcome{animation:welcome-settle 1.1s ease-in-out 2}
 body[data-personality=cold] .resident-portrait .pet-body.behavior-sleepy{animation:cold-idle 7s ease-in-out infinite}
@@ -337,11 +337,12 @@ body[data-personality] .resident-portrait .pet-body.gesture-stretch,
 body[data-personality] .resident-portrait .pet-body.behavior-stretch{animation:gesture-stretch 2.2s ease-in-out both}
 body[data-personality] .resident-portrait .pet-body.gesture-tuck{animation:gesture-tuck 2.2s ease-in-out both}
 body[data-personality] .resident-portrait .pet-body.gesture-backstep{animation:gesture-backstep 2.2s ease-out both}
-@keyframes gesture-purr{0%,100%{transform:translateY(0) scale(1)}35%{transform:translateY(-.6%) scale(1.015,1)}65%{transform:translateY(-.3%) scale(1.005,1)}}
-@keyframes gesture-nod{0%,100%{transform:translateY(0)}25%{transform:translateY(2%)}50%{transform:translateY(0)}70%{transform:translateY(1%)}}
-@keyframes gesture-stretch{0%,100%{transform:scale(1)}35%,60%{transform:scale(.98,1.04)}}
-@keyframes gesture-tuck{0%,100%{transform:translateY(0) scale(1)}25%,75%{transform:translateY(1%) scale(1.02,.96)}}
-@keyframes gesture-backstep{0%,100%{transform:scale(1)}18%,70%{transform:scale(.94)}}
+/* 냥대리를 클릭(쓰다듬기)했을 때의 움직임: 눈에 보이도록 움직임 폭을 키웠다 */
+@keyframes gesture-purr{0%,100%{transform:translateY(0) scale(1)}35%{transform:translateY(-3%) scale(1.04,.98)}65%{transform:translateY(-1.2%) scale(1.015,.995)}}
+@keyframes gesture-nod{0%,100%{transform:translateY(0)}25%{transform:translateY(4.5%)}50%{transform:translateY(0)}70%{transform:translateY(2%)}}
+@keyframes gesture-stretch{0%,100%{transform:scale(1)}35%,60%{transform:scale(.95,1.08)}}
+@keyframes gesture-tuck{0%,100%{transform:translateY(0) scale(1)}25%,75%{transform:translateY(2.5%) scale(1.06,.9)}}
+@keyframes gesture-backstep{0%,100%{transform:scale(1)}18%,70%{transform:scale(.88)}}
 body.motion-paused .resident-portrait .pet-body{animation:none!important}
 @media(prefers-reduced-motion:reduce){body[data-personality] .resident-portrait .pet-body{animation:none!important}}
 .personality-preview{display:block;position:relative;width:110px;height:110px;align-self:center;margin:4px 0 10px;transform-origin:50% 90%}
