@@ -48,7 +48,7 @@ const EXAMPLES={
  * returnFocus: 닫을 때 돌아갈 곳이 없으면(첫 자동 표시, 누른 버튼에 포커스가 가지 않는 브라우저) 포커스를 줄 요소.
  */
 export function createGuide({request,beforeStart=()=>{},busy=()=>false,returnFocus=()=>null,storage=globalThis.localStorage,doc=globalThis.document,win=globalThis.window,steps=GUIDE_STEPS}){
- let root=null,index=0,lastFocus=null,account=null,frame=0,autoToken=0;
+ let root=null,index=0,lastFocus=null,account=null,frame=0,autoToken=0,watchTimer=0,lastRect=null;
  const localKey=id=>LOCAL_PREFIX+id;
  const readLocal=id=>{try{return JSON.parse(storage.getItem(localKey(id))||'null');}catch{return null;}};
  const writeLocal=(id,value)=>{try{storage.setItem(localKey(id),JSON.stringify(value));}catch{/* 저장소를 못 쓰면 계정 기록만 쓴다 */}};
@@ -94,12 +94,18 @@ export function createGuide({request,beforeStart=()=>{},busy=()=>false,returnFoc
   root.addEventListener('click',onClick);root.addEventListener('keydown',onKey);
   doc.body.append(root);doc.body.classList.add('guide-open');
   win.addEventListener('resize',schedule);win.addEventListener('scroll',schedule,true);
+  // 창 크기·스크롤이 그대로여도 대상이 움직일 수 있다(좁은 화면에서 사이드바가 접힘, 들어오는 움직임, 늦게 뜨는 그림).
+  // 열려 있는 동안 잠깐씩 대상 위치를 보고, 달라졌을 때만 다시 맞춘다
+  // (냥대리의 숨쉬기처럼 몇 px 흔들리는 것은 따라가지 않는다: 4px 넘게 움직였을 때만)
+  watchTimer=win.setInterval(()=>{const r=targetOf(steps[index])?.getBoundingClientRect(),now=r?[r.left,r.top,r.width,r.height]:null;
+   if(!now||!lastRect){if(!!now!==!!lastRect)schedule();return;}
+   if(now.some((v,i)=>Math.abs(v-lastRect[i])>4))schedule();},250);
   show(0);
  }
 
  function close(state=null){
   if(!root)return;
-  win.removeEventListener('resize',schedule);win.removeEventListener('scroll',schedule,true);cancelAnimationFrame(frame);
+  win.removeEventListener('resize',schedule);win.removeEventListener('scroll',schedule,true);cancelAnimationFrame(frame);win.clearInterval(watchTimer);
   root.remove();root=null;doc.body.classList.remove('guide-open');
   if(state)saveRecord(state);
   const back=lastFocus&&lastFocus!==doc.body&&doc.contains(lastFocus)?lastFocus:returnFocus();
@@ -142,6 +148,7 @@ ${last?`<span class="guide-final"><button type="button" class="guide-button" dat
   if(!root)return;
   const el=targetOf(steps[index]),spot=root.querySelector('.guide-spotlight'),bubble=root.querySelector('.guide-bubble');
   const rect=el?.getBoundingClientRect(),pad=6;
+  lastRect=rect?[rect.left,rect.top,rect.width,rect.height]:null;
   spot.hidden=!rect;root.classList.toggle('no-target',!rect);
   if(rect)Object.assign(spot.style,{top:rect.top-pad+'px',left:rect.left-pad+'px',width:rect.width+pad*2+'px',height:rect.height+pad*2+'px'});
   const place=placeBubble(rect?{top:rect.top,left:rect.left,width:rect.width,height:rect.height}:null,{width:bubble.offsetWidth,height:bubble.offsetHeight},{width:win.innerWidth,height:win.innerHeight});
