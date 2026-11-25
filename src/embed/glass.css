@@ -103,3 +103,9 @@ html[data-theme=dark] .toast { background: #eef0ff; color: #14163a; }
 
 /* 냥대리 안에 끼운 화면의 바탕은 완전히 투명하게: html에 옅은 색(--bg)이 깔리면 끼운 창 높이까지만 색이 달라 상자처럼 보인다 */
 html, html[data-theme=dark] { background: transparent !important; }
+
+/* 슬라이더·파일 고르기 버튼도 화면 색에 맞춘다(브라우저 기본 파란 슬라이더, 회색 네모 'Choose File' 버튼이 튀어 보이던 것) */
+input[type=range] { accent-color: var(--primary); }
+input[type=file] { color: var(--text-2); font-size: 13px; }
+input[type=file]::file-selector-button { margin-right: 10px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--text); font: inherit; font-weight: 600; cursor: pointer; }
+input[type=file]::file-selector-button:hover { background: var(--surface-2); }
