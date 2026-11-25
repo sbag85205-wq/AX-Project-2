@@ -198,6 +198,19 @@ html:not([data-theme=dark]) #profile-level .profile-level-stats>div{background:#
 /* 7단계: 내 폴더·분야별로 찾기 선택 상자와 안내 문구는 ⋯ 메뉴로 옮겼다(선택 상자 자체는 id·기능 그대로 두고 화면에서만 숨긴다) */
 .app-sidebar .chat-history-filter{display:none}
 .app-sidebar .chat-history-list{flex:1 1 auto;min-height:0;overflow-y:auto;padding:0 4px 12px}
+/* 8. 지금 보는 폴더·분야: 선택 상자가 ⋯ 메뉴 안에 있어, 제목 아래에 고른 조건을 칩으로 늘 보여 준다(×로 그 조건만 끈다) */
+.app-sidebar .chat-history-scope{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 10px 8px 10px;font-size:12px;color:var(--ui-sub);outline:none}
+.app-sidebar .chat-history-scope .scope-all{padding:3px 0}
+.app-sidebar .chat-history-scope .scope-count{margin-left:auto;color:var(--ui-faint);white-space:nowrap}
+.app-sidebar .chat-history-scope .scope-chip{display:inline-flex;align-items:center;gap:5px;max-width:100%;min-width:0;padding:3px 3px 3px 9px;border-radius:999px;background:var(--ui-selection,rgba(74,91,216,.12));color:var(--ui-accent);font-weight:600}
+.app-sidebar .chat-history-scope .scope-chip>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-sidebar .chat-history-scope .scope-chip>.icon{flex:none;width:14px;height:14px;margin-left:-2px}
+.app-sidebar .chat-history-scope .scope-kind{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.app-sidebar .chat-history-scope button{flex:none;display:grid;place-items:center;width:20px;height:20px;margin:0;padding:0;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer}
+.app-sidebar .chat-history-scope button:hover{background:rgba(74,91,216,.16)}
+.app-sidebar .chat-history-scope button .icon{width:12px;height:12px;stroke-width:2.2}
+html[data-theme=dark] .app-sidebar .chat-history-scope .scope-chip{color:#c3caff}
+html[data-theme=dark] .app-sidebar .chat-history-scope button:hover{background:rgba(255,255,255,.12)}
 .app-sidebar .chat-history-note{display:none}
 /* 대화 기록 접기: 제목만 남기고 아래로 접는다(화살표는 위·아래 방향으로 돌려 보인다) */
 .app-sidebar .chat-history.is-collapsed{width:auto;flex:0 0 auto}
