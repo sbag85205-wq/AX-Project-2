@@ -458,12 +458,15 @@ function resultHTML(r){
 function scheduleOffer(r){
  if(!r.scheduleType)return '';
  const meta=scheduleTypes[r.scheduleType];
- if(r.decision==='added')return `<div class="schedule-saved" role="status">${icon('check')} ${r.title?`'${esc(r.title)}' `:''}${r.items.length}개의 할 일을 내 일정에 ${personality==='warm'?'넣었어요.':'넣었어.'} <span>${displayDate(r.start)}${meta.endLabel?' — '+displayDate(r.end):''}</span></div>`;
+ // 추가한 뒤에도 일정 상세(제목·날짜·할 일 목록)를 그 자리에 남겨 둔다
+ if(r.decision==='added'){const first=(r.items||[]).map(t=>t.date).sort()[0]||r.start;return `<div class="schedule-offer schedule-done" id="schedule-${r.messageId}"><p class="schedule-saved" role="status">${icon('check')} ${r.items.length}개의 할 일을 내 일정에 ${personality==='warm'?'넣었어요.':'넣었어.'}</p><h3>${esc(r.title||meta.title)}</h3><p class="schedule-done-dates">${meta.startLabel} ${displayDate(r.start)}${meta.endLabel?` · ${meta.endLabel} ${displayDate(r.end)}`:''}</p><div class="schedule-preview">${scheduleRows(r.items||[])}</div><div class="answer-tools"><button class="answer-schedule-button" data-open-plan="${esc(first)}">${icon('calendar')} 내 일정에서 보기</button></div></div>`;}
  if(r.decision==='yes')return `<div class="schedule-offer" id="schedule-${r.messageId}"><h3>${voice().schedule}</h3><form class="plan-form" data-plan-form="${r.messageId}"><label class="plan-title-field">일정 제목<input name="title" maxlength="40" required value="${esc(r.title??meta.title)}" placeholder="${esc(meta.title)}" autocomplete="off"></label><label>${meta.startLabel}<input type="date" name="start" required value="${r.start}"></label>${meta.endLabel?`<label>${meta.endLabel}<input type="date" name="end" required min="${r.start}" value="${r.end}"></label>`:''}<div class="schedule-preview" data-preview="${r.messageId}">${schedulePreview(r)}</div><button type="submit" class="primary-button">내 일정에 추가 ${icon('calendar')}</button><button type="button" class="text-button" data-consent="no" data-message="${r.messageId}">닫기</button></form><p class="caption">샘플 일정 템플릿입니다. 실제 기한은 답변의 사내 문서와 비교해 조정하세요. 영업일은 주말만 제외해요.<br>이 사이트의 내 일정에 저장됩니다.</p></div>`;
  return `<div id="schedule-${r.messageId}" hidden></div>`;
 }
+// 일정 잡기 미리보기 줄(날짜·할 일·종류·마감). 추가한 뒤에도 같은 줄로 상세 내용을 계속 보여 준다
+function scheduleRows(items){return items.map(t=>`<div><span class="${t.date<localDate()?'overdue':''}">${displayDate(t.date)}${t.date<localDate()?' · 지난 날짜':''}</span><strong>${esc(t.title)}</strong><small>${t.type}${t.deadline?' · 마감 '+displayDate(t.deadline):''}</small></div>`).join('');}
 function schedulePreview(r){
- try{return makeSchedule(r.scheduleType,r.start,r.end).map(t=>`<div><span class="${t.date<localDate()?'overdue':''}">${displayDate(t.date)}${t.date<localDate()?' · 지난 날짜':''}</span><strong>${esc(t.title)}</strong><small>${t.type}${t.deadline?' · 마감 '+displayDate(t.deadline):''}</small></div>`).join('');}catch(err){return `<p role="alert">${esc(err.message)}</p>`;}
+ try{return scheduleRows(makeSchedule(r.scheduleType,r.start,r.end));}catch(err){return `<p role="alert">${esc(err.message)}</p>`;}
 }
 function messageTime(value){return new Date(value||Date.now()).toLocaleTimeString('ko-KR',{hour:'numeric',minute:'2-digit'});}
 // 지난 답변 옆 작은 냥대리도 맨 아래 냥대리처럼 지금 계절의 기본 모습(관리에서 고른 것)을 입힌다
