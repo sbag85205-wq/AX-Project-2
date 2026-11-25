@@ -530,12 +530,13 @@ function chatScheduleTasks(r){
  if(r.kind==='event'){const ev=r.event||{},t=tasks.find(x=>x.id===r.taskId)||tasks.find(x=>x.planType==='event'&&x.title===ev.title&&x.date===ev.date);return t?[t]:[];}
  const prefix=`${r.scheduleType}:${r.start}:${r.end}:`;return tasks.filter(t=>String(t.key||'').startsWith(prefix)).sort((a,b)=>a.date.localeCompare(b.date));
 }
-// 대화 일정 카드 아래 '일정 상세': 기본은 펼친 상태, 제목 줄을 누르면 접힌다(접은 것은 이 화면에서만 기억)
+// 대화 일정 카드 아래 '일정 상세': 기본은 펼친 상태, 제목 줄을 누르면 접힌다(접은 것은 이 화면에서만 기억).
+// 보기 전용: 완료 체크는 없고(완료한 일은 '완료' 표시만), 시간이 있으면 제목 옆에 시간을 보여 준다(내 일정과 같은 모양)
 const closedScheduleDetails=new Set();
 function scheduleDetailHTML(r){
  const list=chatScheduleTasks(r),today=localDate();
- const rows=list.map(t=>`<article class="agenda-item ${t.done?'done':''}"><label><input type="checkbox" data-complete="${esc(t.id)}" aria-label="${esc(t.title)} 완료" ${t.done?'checked':''}><strong>${esc(t.title)}</strong></label><small>${esc(displayDate(t.date))}${t.time?' · '+esc(timeLabel(t.time)):''} · ${t.planType==='event'?esc(t.planLabel||'내 일정'):`${esc(t.planLabel||'')} · ${esc(t.type)}`}</small>${t.note?`<p>${esc(t.note)}</p>`:''}${t.deadline?`<p class="agenda-deadline ${!t.done&&t.deadline<today?'overdue':''}">규정 마감 ${displayDate(t.deadline)}</p>`:''}</article>`).join('');
- return `<details class="schedule-inline" data-detail-for="${esc(r.messageId)}" ${closedScheduleDetails.has(r.messageId)?'':'open'}><summary>${icon('list')} 일정 상세 <small>${list.length?`${list.filter(t=>t.done).length}/${list.length} 완료`:''}</small></summary><div class="schedule-detail-list">${rows||'<p class="caption">내 일정에서 지웠거나 찾을 수 없는 일정이에요.</p>'}</div></details>`;
+ const rows=list.map(t=>`<article class="agenda-item ${t.done?'done':''}"><div class="schedule-detail-title"><strong>${esc(t.title)}</strong>${t.time?`<span class="task-time">${icon('clock')} ${esc(timeLabel(t.time))}</span>`:''}${t.done?'<span class="schedule-detail-done">완료</span>':''}</div><small>${esc(displayDate(t.date))} · ${t.planType==='event'?esc(t.planLabel||'내 일정'):`${esc(t.planLabel||'')} · ${esc(t.type)}`}</small>${t.note?`<p>${esc(t.note)}</p>`:''}${t.deadline?`<p class="agenda-deadline ${!t.done&&t.deadline<today?'overdue':''}">규정 마감 ${displayDate(t.deadline)}</p>`:''}</article>`).join('');
+ return `<details class="schedule-inline" data-detail-for="${esc(r.messageId)}" ${closedScheduleDetails.has(r.messageId)?'':'open'}><summary>${icon('list')} 일정 상세 <small>${list.length?`${list.length}개`:''}</small></summary><div class="schedule-detail-list">${rows||'<p class="caption">내 일정에서 지웠거나 찾을 수 없는 일정이에요.</p>'}</div></details>`;
 }
 function showChatSettings(id){
  if(!communityState().member)return;

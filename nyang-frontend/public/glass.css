@@ -507,11 +507,13 @@ html[data-theme=dark] #app .top-icons>#attendance-button.done{background:#4ade80
 .chat-room .schedule-inline>summary:focus-visible{outline:2px solid var(--ui-accent);outline-offset:3px;border-radius:6px}
 .chat-room .schedule-inline .schedule-detail-list{display:flex;flex-direction:column;gap:8px;margin:8px 0 0}
 .chat-room .schedule-inline .agenda-item{padding:11px 13px;border:1px solid var(--ui-line);border-radius:12px;background:var(--ui-panel)}
-.chat-room .schedule-inline .agenda-item>label{display:flex;align-items:center;gap:8px}
+.chat-room .schedule-inline .schedule-detail-title{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px}
+.chat-room .schedule-inline .schedule-detail-done{padding:1px 8px;border-radius:999px;font-size:11px;font-weight:600;color:#15803d;background:rgba(22,163,74,.12)}
+html[data-theme=dark] .chat-room .schedule-inline .schedule-detail-done{color:#86efac;background:rgba(74,222,128,.14)}
 .chat-room .schedule-inline .agenda-item strong{font-size:13px;color:var(--ui-ink)}
 .chat-room .schedule-inline .agenda-item.done strong{text-decoration:line-through;color:var(--ui-sub)}
-.chat-room .schedule-inline .agenda-item small{display:block;margin:4px 0 0 26px;font-size:12px;color:var(--ui-sub)}
-.chat-room .schedule-inline .agenda-item p{margin:5px 0 0 26px;font-size:12px;line-height:1.6;color:var(--ui-ink)}
+.chat-room .schedule-inline .agenda-item small{display:block;margin:4px 0 0;font-size:12px;color:var(--ui-sub)}
+.chat-room .schedule-inline .agenda-item p{margin:5px 0 0;font-size:12px;line-height:1.6;color:var(--ui-ink)}
 .chat-room .schedule-inline .agenda-item p.agenda-deadline{color:var(--ui-sub)}
 .chat-room .schedule-inline .agenda-item p.agenda-deadline.overdue{color:#dc2626}
 html[data-theme=dark] .chat-room .schedule-inline .agenda-item p.agenda-deadline.overdue{color:#ff8a8a}
