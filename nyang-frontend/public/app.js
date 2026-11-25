@@ -95,7 +95,7 @@ function applyColorTheme(theme){
  document.documentElement.dataset.theme=dark?'dark':'light';
  $('meta[name="theme-color"]')?.setAttribute('content',dark?'#111214':'#ffffff');
  const button=$('[data-action="toggle-theme"]');
- if(button){button.setAttribute('aria-pressed',String(dark));button.dataset.glassTip=dark?'라이트 모드로':'다크 모드로';button.setAttribute('aria-label',`화면 밝기 (지금 ${dark?'다크':'라이트'} 모드)`);button.innerHTML=icon(dark?'moon':'sun')+`<span aria-hidden="true">${dark?'다크':'라이트'}</span>`;}
+ if(button){button.setAttribute('aria-pressed',String(dark));button.dataset.glassTip=dark?'라이트 모드로':'다크 모드로';button.setAttribute('aria-label',`화면 밝기 (지금 ${dark?'다크':'라이트'} 모드)`);button.innerHTML=icon(dark?'moon':'sun')+`<span aria-hidden="true">${dark?'다크':'라이트'} 모드</span>`;}
 }
 function preferredColorTheme(){
  const saved=read('nyang-color-theme',null);
