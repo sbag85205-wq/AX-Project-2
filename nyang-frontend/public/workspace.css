@@ -264,6 +264,8 @@ body[data-mode=cat] #toast{background:var(--ui-panel);border:1px solid var(--ui-
 .chat-history-filter select{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--ui-line);border-radius:8px;background:var(--ui-panel);color:var(--ui-ink);font-size:12px;cursor:pointer}
 .chat-history-filter p{font-size:11px;color:var(--ui-faint);margin:10px 0 0}
 .chat-history.is-collapsed .chat-history-filter{display:none}
+/* 지금 보는 폴더·분야 칩은 선택 상자를 숨기는 글래스 디자인(glass.css)에서만 보인다 */
+.chat-history-scope{display:none}
 
 .personality-options{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:22px 0}
 .personality-option{display:flex;flex-direction:column;align-items:flex-start;gap:12px;text-align:left;padding:22px 18px;border:1px solid var(--ui-line);border-radius:14px;background:var(--ui-fill);color:var(--ui-ink)}
