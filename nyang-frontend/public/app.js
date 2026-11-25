@@ -20,7 +20,7 @@ import {orderNav,installNavLayout} from './nav-layout.js?v=2a33659a9a7a';
 import {createGuide} from './guide.js?v=a94d3106cc42';
 import {recentTurns} from './chat-context.js?v=e6c82dc547ad';
 import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=5402e774fd4a';
-import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=89231fc15ea9';
+import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=818da1a92cb1';
 const mode=document.body.dataset.mode;
 const isCat=mode==='cat';
 const root='/nyang/';
@@ -509,6 +509,12 @@ function chatHistoryHTML(){
  const empty=savedFolder?'<p>아직 저장한 답변이 없어요.</p><span>답변 아래 \'답변 저장하기\'를 누르면<br>여기에 모여요.</span>':chatHistoryFolder!=='all'?'<p>이 조건에 맞는 대화가 없어요.</p><span>다른 폴더나 분야를 선택해 보세요.</span>':filtered?'<p>이 분야의 질문이 아직 없어요.</p><span>다른 분야나 전체 대화를 선택해 보세요.</span>':'<p>아직 대화가 없어요.</p><span>냥대리에게 질문하면<br>여기에 차곡차곡 모여요.</span>';
  return `<aside class="chat-history ${chatHistoryCollapsed?'is-collapsed':''}" aria-label="대화 기록"><div class="chat-history-heading"><h2>대화 기록</h2><button class="icon-button" data-action="toggle-chat-history" aria-label="${chatHistoryCollapsed?'대화 기록 펼치기':'대화 기록 접기'}" aria-expanded="${!chatHistoryCollapsed}" aria-controls="chat-history-list">${icon(chatHistoryCollapsed?'chevron':'back')}</button></div><div class="chat-history-filter"><label for="chat-history-folder">내 폴더</label><select id="chat-history-folder"><option value="all" ${chatHistoryFolder==='all'?'selected':''}>모든 폴더</option><option value="saved" ${savedFolder?'selected':''}>저장한 답변</option><option value="folder:" ${chatHistoryFolder==='folder:'?'selected':''}>폴더 없음</option>${chatFolders(chats).map(name=>`<option value="folder:${esc(name)}" ${chatHistoryFolder==='folder:'+name?'selected':''}>${esc(name)}</option>`).join('')}</select>${chatHistoryFolder.startsWith('folder:')&&chatHistoryFolder.slice(7)?'<button class="folder-rename text-button" data-action="rename-chat-folder">폴더 이름 변경</button>':''}<label class="chat-category-label" for="chat-history-category">분야별로 찾기</label><select id="chat-history-category"><option value="all" ${!filtered?'selected':''}>전체 대화</option>${categories.map(c=>`<option value="${c.id}" ${chatHistoryCategory===c.id?'selected':''}>${esc(c.label)}</option>`).join('')}</select><p role="status">${savedFolder?'저장한 답변':filtered?'질문':'대화'} ${rows.length}개</p></div><div id="chat-history-list" class="chat-history-list" ${chatHistoryCollapsed?'hidden':''}>${list||`<div class="chat-history-empty">${empty}</div>`}</div><p class="chat-history-note">최근 100개 대화<br>이 브라우저에 계정별로 저장돼요.</p></aside>`;
 }
+// 내 일정에서 직접 일정 추가: 제목·날짜·시간(선택)을 넣으면 대화를 거치지 않고 바로 내 일정에 넣는다
+function showAddTask(){
+ const today=localDate(),date=view==='calendar'?calendarDay:filter==='day'?selectedDay:filter==='tomorrow'?addDays(today,1):today;
+ openModal(`<h2 id="modal-title">일정 추가</h2><p class="modal-sub">제목과 날짜를 넣으면 내 일정에 바로 추가돼요.</p><form id="task-add-form" class="chat-settings-form"><label for="task-add-title">제목</label><input id="task-add-title" name="title" maxlength="40" required placeholder="예: 팀 회의, 보고서 제출" autocomplete="off"><label for="task-add-date">날짜</label><input id="task-add-date" type="date" name="date" required value="${esc(date)}"><label for="task-add-time">시간 <small>(선택)</small></label><input id="task-add-time" type="time" name="time"><div class="chat-delete-actions"><button type="button" class="secondary-button" data-action="close-modal">취소</button><button class="primary-button" type="submit">추가</button></div></form>`);
+ $('#task-add-title')?.focus();
+}
 function showChatSettings(id){
  if(!communityState().member)return;
  saveCurrentChat();const thread=chats.find(x=>x.id===id);if(!thread)return;
@@ -775,6 +781,7 @@ const clickByAction=[
  if(view!==a)petInteraction.reset();view=a;render();$('#main').scrollTop=0;},false],
  [is('calendar-today'),(a,b,e)=>{calendarMonth=localDate().slice(0,7);calendarDay=localDate();render();},false],
  [is('chat-examples'),(a,b,e)=>{showChatExamples();},false],
+ [is('add-task'),(a,b,e)=>{showAddTask();},false],
  [is('sample-plan'),(a,b,e)=>{view='chat';ask('출장 준비 일정을 짜주세요','plan');},false],
  [is('feed'),(a,b,e)=>{// 바로 주지 않고 먼저 확인을 받는다. 보유한 츄르가 있으면 그것을 먼저 쓴다(포인트 차감 없음).
  if(rewards.pending.length||(rewards.points<TREAT_COST&&!rewards.treatTokens))return;
@@ -798,6 +805,14 @@ document.addEventListener('click',async e=>{
 });
 document.addEventListener('submit',e=>{
  if(e.target.id==='question-form'){e.preventDefault();const text=new FormData(e.target).get('question');ask(text);}
+ if(e.target.id==='task-add-form'){
+  e.preventDefault();const fd=new FormData(e.target),title=String(fd.get('title')||'').trim().slice(0,40),date=String(fd.get('date')||''),time=String(fd.get('time')||'');
+  if(!title){toast('제목을 입력해 주세요.');$('#task-add-title')?.focus();return;}
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){toast('날짜를 골라 주세요.');return;}
+  const task={...eventTask({title,date,time:/^\d{2}:\d{2}$/.test(time)?time:''},crypto.randomUUID()),planLabel:'직접 추가한 일정'};
+  if(save('om-tasks',[...tasks,task])){tasks=[...tasks,task];closeModal();if(view==='calendar'){calendarDay=date;calendarMonth=date.slice(0,7);}render();toast(`${displayDate(date)}${task.time?' '+timeLabel(task.time):''} '${title}' 일정을 추가했어요.`);}
+  return;
+ }
  if(e.target.dataset.eventForm){
   e.preventDefault();const r=messages.find(m=>m.result?.messageId===e.target.dataset.eventForm)?.result;
   if(!r||r.kind!=='event'||r.decision==='added')return;

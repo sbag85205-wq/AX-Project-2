@@ -490,3 +490,7 @@ body.motion-paused #app .top-icons>#attendance-button::before{animation:none;opa
 @media(prefers-reduced-motion:reduce){#app .top-icons>#attendance-button::before{animation:none;opacity:0}}
 #app .top-icons>#attendance-button.done{background:#16a34a;border-color:#16a34a;color:#fff;opacity:1}
 html[data-theme=dark] #app .top-icons>#attendance-button.done{background:#4ade80;border-color:#4ade80;color:#0b2a16}
+
+/* 23. 내 일정 달력 제목 줄의 버튼 두 개(일정 추가·일정 만들기) */
+.desktop-workspace .calendar-heading>.schedule-heading-actions{display:flex;align-items:center;gap:8px;flex:none}
+.desktop-workspace .calendar-heading>.schedule-heading-actions>button{font-size:12px;white-space:nowrap;margin:0}
