@@ -20,7 +20,7 @@ import {orderNav,installNavLayout} from './nav-layout.js?v=2a33659a9a7a';
 import {createGuide} from './guide.js?v=a94d3106cc42';
 import {recentTurns} from './chat-context.js?v=e6c82dc547ad';
 import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=5402e774fd4a';
-import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=19942646073a';
+import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=2d115165e30e';
 const mode=document.body.dataset.mode;
 const isCat=mode==='cat';
 const root='/nyang/';
@@ -538,10 +538,10 @@ function scheduleDetailHTML(r){
  const rows=list.map(t=>`<article class="agenda-item ${t.done?'done':''}"><div class="schedule-detail-title"><strong>${esc(t.title)}</strong>${t.time?`<span class="task-time">${icon('clock')} ${esc(timeLabel(t.time))}</span>`:''}${t.done?'<span class="schedule-detail-done">완료</span>':''}</div><small>${esc(displayDate(t.date))} · ${t.planType==='event'?esc(t.planLabel||'내 일정'):`${esc(t.planLabel||'')} · ${esc(t.type)}`}</small>${t.note?`<p>${esc(t.note)}</p>`:''}${t.deadline?`<p class="agenda-deadline ${!t.done&&t.deadline<today?'overdue':''}">규정 마감일 ${displayDate(t.deadline)}</p>`:''}</article>`).join('');
  return `<details class="schedule-inline" data-detail-for="${esc(r.messageId)}" ${closedScheduleDetails.has(r.messageId)?'':'open'}><summary>${icon('list')} 일정 상세 <small>${list.length?`${list.length}개`:''}</small></summary><div class="schedule-detail-list">${rows||'<p class="caption">내 일정에서 지웠거나 찾을 수 없는 일정이에요.</p>'}</div></details>`;
 }
-// 내 일정에서 일정 제목 수정
+// 내 일정에서 일정 수정: 제목과 시간(키보드 입력, 비우면 시간 없음)
 function showRenameTask(id){
  const t=tasks.find(x=>x.id===id);if(!t)return;
- openModal(`<h2 id="modal-title">제목 수정</h2><p class="modal-sub">${esc(displayDate(t.date))}${t.time?' · '+esc(timeLabel(t.time)):''} 일정의 제목을 바꿔요.</p><form id="task-rename-form" class="chat-settings-form" data-task-id="${esc(t.id)}"><label for="task-rename-title">제목</label><input id="task-rename-title" name="title" maxlength="40" required value="${esc(t.title)}" autocomplete="off"><div class="chat-delete-actions"><button type="button" class="secondary-button" data-action="close-modal">취소</button><button class="primary-button" type="submit">저장</button></div></form>`);
+ openModal(`<h2 id="modal-title">일정 수정</h2><p class="modal-sub">${esc(displayDate(t.date))} 일정의 제목과 시간을 바꿔요.</p><form id="task-rename-form" class="chat-settings-form" data-task-id="${esc(t.id)}"><label for="task-rename-title">제목</label><input id="task-rename-title" name="title" maxlength="40" required value="${esc(t.title)}" autocomplete="off"><label for="task-rename-time">시간 <small>(선택 · 키보드로 입력, 비우면 시간 없음)</small></label><input id="task-rename-time" type="text" name="time" value="${esc(t.time||'')}" inputmode="numeric" maxlength="5" placeholder="예: 14:30" autocomplete="off" data-typed-time><div class="chat-delete-actions"><button type="button" class="secondary-button" data-action="close-modal">취소</button><button class="primary-button" type="submit">저장</button></div></form>`);
  const input=$('#task-rename-title');input?.focus();input?.select();
 }
 function showChatSettings(id){
@@ -836,12 +836,13 @@ document.addEventListener('click',async e=>{
 document.addEventListener('submit',e=>{
  if(e.target.id==='question-form'){e.preventDefault();const text=new FormData(e.target).get('question');ask(text);}
  if(e.target.id==='task-rename-form'){
-  e.preventDefault();const id=e.target.dataset.taskId,title=String(new FormData(e.target).get('title')||'').trim().slice(0,40);
+  e.preventDefault();const fd=new FormData(e.target),id=e.target.dataset.taskId,title=String(fd.get('title')||'').trim().slice(0,40);
   if(!title){toast('제목을 입력해 주세요.');$('#task-rename-title')?.focus();return;}
+  const time=typedTime(fd.get('time'));if(time===null){toast('시간은 14:30처럼 0:00~23:59로 입력해 주세요.');$('#task-rename-time')?.focus();return;}
   const before=tasks.find(t=>t.id===id);if(!before){closeModal();return;}
-  if(before.title===title){closeModal();return;}
-  const next=tasks.map(t=>t.id===id?{...t,title}:t);
-  if(save('om-tasks',next)){tasks=next;closeModal();render();toast(`제목을 '${title}'(으)로 바꿨어요.`);}
+  if(before.title===title&&(before.time||'')===time){closeModal();return;}
+  const next=tasks.map(t=>t.id===id?{...t,title,time}:t);
+  if(save('om-tasks',next)){tasks=next;closeModal();render();toast(`'${title}' 일정을 수정했어요.${time?` (${timeLabel(time)})`:' (시간 없음)'}`);}
   return;
  }
  if(e.target.id==='task-add-form'){
