@@ -539,3 +539,7 @@ html[data-theme=dark] .chat-room .schedule-inline .agenda-item p.agenda-deadline
 /* 29. 첫 화면 꾸미기 배경(타원): 냥대리가 있는 격자 1행(가로 전체) 가운데, 곧 냥대리 가운데에 맞춘다.
    예전 배치 기준값(--room-center)을 그대로 써서 냥대리보다 200px쯤 아래, 입력창·질문 예시 뒤로 내려가 있었다 */
 .desktop-workspace .chat-home .cat-resident-stage>.scene-window{grid-column:1 / -1;grid-row:1;top:50%;left:50%;width:min(960px,100%);max-width:none;transform:translate(-50%,-50%);height:calc(var(--resident-size) + 120px)}
+
+/* 30. 질문 게시판 담당자 답변 '근거'의 웹 주소 링크(새 탭으로 열림) */
+.answer-basis a{color:var(--ui-accent,#4a5bd8);text-decoration:underline;text-underline-offset:2px;word-break:break-all}
+.answer-basis a:hover{text-decoration-thickness:2px}

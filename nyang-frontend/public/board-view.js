@@ -1,4 +1,5 @@
 import {esc,HELPFUL_POINTS} from './shared.js?v=b4248c4d9fbf';
+import {linkifyText} from './link-text.js?v=45cf5f7bce54';
 import {categories as chatCategories} from './core.js?v=4dc923f4c7f7';
 // 지금 고를 수 있는 분야(분야 관리 목록 = 채팅 분야). 목록에 없는 분야(예전 분야·지워진 분야)로 올라온 글은 '이전 분야'로 묶어 보여 준다.
 const current=()=>chatCategories.map(c=>c.id);
@@ -40,7 +41,7 @@ export function boardView(state,filter='all',query='',category='all',sort='new')
 export function boardPostHTML(state,id){
  const p=state.posts.find(x=>x.id===id);if(!p)return '';
  const staff=state.me.role==='staff',likes=p.likes||0;
- const answer=r=>`<section class="staff-answer named-staff-answer"><div class="staff-answer-label"><span class="verified-staff-label"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2 17 5v5c0 4-7 8-7 8s-7-4-7-8V5l7-3Z" stroke="currentColor" stroke-width="1.4"/><path d="m6.5 9.5 2.4 2.4 4.6-4.4" stroke="currentColor" stroke-width="1.6"/></svg>담당자 답변</span><strong>${esc(r.department)} · ${esc(r.authorUsername||r.name)}</strong><time>${date(r.created)}</time></div><p>${esc(r.body)}</p><div class="answer-basis"><span>근거</span>${esc(r.source)}</div></section>`;
+ const answer=r=>`<section class="staff-answer named-staff-answer"><div class="staff-answer-label"><span class="verified-staff-label"><svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2 17 5v5c0 4-7 8-7 8s-7-4-7-8V5l7-3Z" stroke="currentColor" stroke-width="1.4"/><path d="m6.5 9.5 2.4 2.4 4.6-4.4" stroke="currentColor" stroke-width="1.6"/></svg>담당자 답변</span><strong>${esc(r.department)} · ${esc(r.authorUsername||r.name)}</strong><time>${date(r.created)}</time></div><p>${esc(r.body)}</p><div class="answer-basis"><span>근거</span>${linkifyText(r.source)}</div></section>`;
  const helpful=staff
   ?`<div class="board-helpful"><span class="helpful-count">${thumb}유익해요 <strong>${likes}</strong></span><span class="board-helpful-note">직원들이 유익하다고 표시한 수예요.</span></div>`
   :`<div class="board-helpful"><button class="helpful-button ${p.liked?'on':''}" data-like="${esc(p.id)}" ${p.liked||p.mine?'disabled':''} aria-pressed="${!!p.liked}">${thumb}유익해요 <strong>${likes}</strong></button><span class="board-helpful-note">${p.mine?`다른 직원이 유익해요를 누르면 내게 +${HELPFUL_POINTS} P`:p.liked?`유익해요를 눌렀어요. 글쓴이에게 +${HELPFUL_POINTS} P를 보냈어요.`:`도움이 된 질문이면 눌러 주세요. 글쓴이에게 +${HELPFUL_POINTS} P`}</span></div>`;
