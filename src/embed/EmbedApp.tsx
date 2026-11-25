@@ -12,12 +12,15 @@ import Settings from '../pages/admin/Settings';
 import Stats from '../pages/admin/Stats';
 import Unanswered from '../pages/admin/Unanswered';
 import Users from '../pages/admin/Users';
-import { notifyParent } from './bridge';
+import { notifyParent, reportFill } from './bridge';
 import Loading from '../components/Loading';
+
+/** 문서 한 개 보기(/docs/:id): 제목 줄은 고정하고 문서만 스크롤한다 */
+const isDocView = (path: string) => /^\/docs\/[^/]+$/.test(path);
 
 function RouteReporter() {
   const location = useLocation();
-  useEffect(() => { document.body.dataset.route = location.pathname; notifyParent({ type: 'knowly-embed-route', route: location.pathname + location.search }); window.scrollTo(0, 0); }, [location]);
+  useEffect(() => { document.body.dataset.route = location.pathname; notifyParent({ type: 'knowly-embed-route', route: location.pathname + location.search }); reportFill(isDocView(location.pathname)); window.scrollTo(0, 0); }, [location]);
   return null;
 }
 

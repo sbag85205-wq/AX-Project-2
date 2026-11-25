@@ -205,3 +205,11 @@ body[data-route='/admin/unanswered'] .stat-sub { margin-top: 4px; font-size: 14p
 .doc-filters-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: flex; color: var(--faint); pointer-events: none; }
 .doc-filters .select { width: auto; flex: 0 1 150px; }
 .doc-filters-count { margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* 문서 보기(/docs/:id): 제목·다운로드·원본 열기 줄은 고정하고 문서(doc-scroll)만 스크롤한다(관리자 피드백 1-3).
+   냥대리가 iframe을 보이는 높이에 맞추므로(knowly-embed-fill) 화면 높이 = iframe 높이 */
+.admin-main.doc-view { height: 100vh; height: 100dvh; box-sizing: border-box; padding-bottom: 0; overflow: hidden; }
+.doc-view > .page-head { flex: none; }
+/* 카드 그림자가 잘리지 않게 좌우·아래 여백을 스크롤 칸 안쪽에 둔다 */
+.doc-view > .doc-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; margin: -6px -12px 0; padding: 6px 12px 28px; scrollbar-width: thin; }
+.doc-view .doc-toc { top: 0; max-height: calc(100dvh - 200px); }

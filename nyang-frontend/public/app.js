@@ -396,11 +396,19 @@ function mountKnowly(name){
  }
  $('#main').innerHTML=knowlyFrameHTML(key,route);
 }
+// 문서 보기: 안쪽이 스스로 스크롤하므로(knowly-embed-fill) iframe을 #main에 보이는 높이에 맞춘다. 제목·다운로드 줄이 고정된다(관리자 피드백 1-3)
+function fitKnowlyFrame(frame){
+ const main=$('#main');if(!main?.contains(frame))return;
+ const top=frame.getBoundingClientRect().top-main.getBoundingClientRect().top+main.scrollTop,bottom=parseFloat(getComputedStyle(main).paddingBottom)||0;
+ frame.style.height=Math.max(320,Math.floor(main.clientHeight-top-bottom))+'px';
+}
+addEventListener('resize',()=>document.querySelectorAll('.knowly-frame-wrap.fill>iframe.knowly-frame').forEach(fitKnowlyFrame));
 function knowlyStatsHTML(){return `<section class="admin-page knowly-stats"><header class="admin-heading"><h1>문서 검색 이용 통계</h1></header>${knowlyFrameHTML('stats','/admin/stats')}</section>`;}
 window.addEventListener('message',e=>{
  if(e.origin!==location.origin||!e.data||typeof e.data.type!=='string')return;
  const frame=[...document.querySelectorAll('iframe.knowly-frame')].find(f=>f.contentWindow===e.source);if(!frame)return;
- if(e.data.type==='knowly-embed-height')frame.style.height=Math.max(320,Math.min(20000,Number(e.data.height)||0))+'px';
+ if(e.data.type==='knowly-embed-fill'){frame.parentElement.classList.toggle('fill',!!e.data.fill);if(e.data.fill){$('#main').scrollTop=0;fitKnowlyFrame(frame);}}
+ if(e.data.type==='knowly-embed-height'&&!frame.parentElement.classList.contains('fill'))frame.style.height=Math.max(320,Math.min(20000,Number(e.data.height)||0))+'px';
  if(e.data.type==='knowly-embed-route'&&frame.closest('[data-knowly-key^="library"]')){libraryRoute=String(e.data.route||'/docs');frame.parentElement.dataset.knowlyKey='library:'+libraryRoute;}
  if(e.data.type==='knowly-embed-off'||e.data.type==='knowly-embed-error'){toast(String(e.data.message||'연결을 확인해 주세요.'));}
  if(e.data.type==='knowly-embed-busy'){const wrap=frame.closest('.knowly-frame-wrap');if(wrap){

@@ -113,7 +113,8 @@ export default function DocumentView() {
   if (!doc) return <Loading text="문서를 불러오는 중" boot />;
 
   return (
-    <main className="admin-main">
+    // doc-view: 냥대리 안(iframe)에서는 제목·다운로드 줄을 고정하고 doc-scroll만 스크롤한다(embed.css)
+    <main className="admin-main doc-view">
       <div className="page-head">
         <div>
           <BackLink to={profile?.role === 'admin' && (fromAdmin || doc.status !== 'ready') ? '/admin/documents' : '/docs'} />
@@ -133,6 +134,7 @@ export default function DocumentView() {
         )}
       </div>
 
+      <div className="doc-scroll">
       {originalOnly ? (
         !fileUrl
           ? <Loading text="원본을 불러오는 중" boot />
@@ -182,6 +184,7 @@ export default function DocumentView() {
         </div>
         </>
       )}
+      </div>
     </main>
   );
 }
