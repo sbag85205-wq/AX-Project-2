@@ -518,3 +518,9 @@ html[data-theme=dark] .chat-room .schedule-inline .agenda-item p.agenda-deadline
 
 /* 23. 내 일정 '+ 일정 추가' 버튼: 목록·달력 보기에서 크기를 똑같이(목록 쪽 style.css의 아이콘 14px 규칙을 달력에도) */
 .calendar-heading>.secondary-button .icon{width:14px;height:14px}
+
+/* 26. 내 일정: 시간이 있는 일정은 제목 옆에 시간 표시(목록·달력 그날 목록) */
+.task-time{display:inline-flex;align-items:center;gap:4px;flex:none;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.6;white-space:nowrap;color:var(--ui-accent,#4a5bd8);background:var(--ui-accent-fill,rgba(74,91,216,.12))}
+.task-time .icon{width:12px;height:12px}
+.done .task-time{opacity:.6}
+.day-agenda .agenda-item>label .task-time{margin-left:6px}
