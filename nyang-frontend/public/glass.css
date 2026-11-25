@@ -543,3 +543,6 @@ html[data-theme=dark] .chat-room .schedule-inline .agenda-item p.agenda-deadline
 /* 30. 질문 게시판 담당자 답변 '근거'의 웹 주소 링크(새 탭으로 열림) */
 .answer-basis a{color:var(--ui-accent,#4a5bd8);text-decoration:underline;text-underline-offset:2px;word-break:break-all}
 .answer-basis a:hover{text-decoration-thickness:2px}
+
+/* 31. 꾸미기 배경을 고른 상태에서 라이트 모드 '내 일정' 목록의 할 일 줄이 흰 상자로 칠해지던 것(style.css의 .custom-bg .task-row 흰 배경)을 없애 화면과 어우러지게(다크 모드처럼 투명) */
+body.custom-bg .desktop-workspace .task-row{background:transparent}
