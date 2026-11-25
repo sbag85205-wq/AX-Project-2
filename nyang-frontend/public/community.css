@@ -77,3 +77,24 @@
 #anonymous-post .post-category input:checked+span{background:var(--ui-accent-fill,#edf5ff);border-color:var(--ui-accent,#007aff);color:var(--ui-accent,#007aff);font-weight:600}
 #anonymous-post .post-category input:focus-visible+span{outline:3px solid #007aff70;outline-offset:2px}
 #anonymous-post .post-category>p{margin:8px 0 0;font-size:12px;color:var(--ui-sub,#6e6e73)}
+/* 답변 작성·고치기 아래 줄: 안내 문구는 왼쪽, 등록 버튼은 오른쪽 끝(입력칸 바로 아래 왼쪽에 붙어 답답해 보이던 것, 관리자 피드백 2-1) */
+.staff-composer-foot{display:flex;align-items:center;justify-content:space-between;gap:12px 20px;flex-wrap:wrap;margin-top:18px;padding-top:14px;border-top:1px solid var(--ui-line,var(--border))}
+.staff-composer-foot>p{flex:1 1 240px;margin:0;font-size:12px;line-height:1.6;color:var(--ui-sub,var(--sub))}
+.staff-composer-foot .primary-button,.staff-composer-foot .reply-edit-actions{flex:none;margin-left:auto}
+/* 내 답변 수정·삭제 (쓴 담당자 본인에게만 보인다) */
+.staff-answer-label .reply-tools{display:inline-flex;gap:2px;margin:-4px -6px -4px 2px}
+.staff-answer-label .reply-tools[hidden]{display:none}
+.reply-tool{padding:4px 10px;border:0;border-radius:999px;background:transparent;color:var(--ui-sub,var(--sub));font:inherit;font-size:12px;cursor:pointer}
+.reply-tool:hover{background:var(--ui-fill);color:var(--ui-ink,var(--text))}
+.reply-tool.danger:hover{color:#c4162a}
+.reply-tool:focus-visible{outline:2px solid var(--ui-accent);outline-offset:1px}
+.reply-view[hidden],.reply-edit[hidden],.reply-delete-confirm[hidden]{display:none}
+.reply-edit{margin-top:14px}
+.reply-edit label{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;font-size:13px;font-weight:550}
+.reply-edit textarea,.reply-edit input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--ui-line,var(--border));border-radius:10px;background:var(--ui-panel,#fff);color:var(--ui-ink,var(--text));font:inherit;font-size:14px}
+.reply-edit-actions{display:inline-flex;gap:8px}
+.reply-delete-confirm{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border-radius:10px;background:color-mix(in srgb,#c4162a 9%,transparent);font-size:13px;color:var(--ui-ink,var(--text))}
+/* 글래스 디자인의 .primary-button 색(!important)보다 앞서도록 같은 강도로 쓴다 */
+html body .reply-delete-confirm .primary-button.danger{background:#c4162a!important;border-color:#c4162a!important;color:#fff;box-shadow:none}
+html[data-theme=dark] .reply-delete-confirm{background:rgba(255,120,120,.12)}
+html[data-theme=dark] body .reply-delete-confirm .primary-button.danger{background:#ff8a80!important;border-color:#ff8a80!important;color:#2a0c0c}

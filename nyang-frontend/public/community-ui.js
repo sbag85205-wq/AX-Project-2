@@ -1,6 +1,6 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {categories as chatCategories} from './core.js?v=4dc923f4c7f7';
-import {boardView,boardPostHTML} from './board-view.js?v=3fb5f84fbe69';
+import {boardView,boardPostHTML} from './board-view.js?v=985eaf76e355';
 import {loginHTML as loginView,statisticsHTML,periodLabel,rankingCSV} from './account-view.js?v=fbdeceff715b';
 import {esc,loadingHTML} from './shared.js?v=b4248c4d9fbf';
 const date=s=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
@@ -135,6 +135,17 @@ document.addEventListener('click',async e=>{
   busy=true;b.disabled=true;
   try{const restore=!!b.dataset.restorePost,result=await communityAction(restore?'restore-post':'delete-post',{post:b.dataset.restorePost||b.dataset.confirmDelete});if(result){if(!restore)hooks.close();hooks.show('board');}}finally{busy=false;b.disabled=false;}return;
  }
+ // 내 답변 고치기·지우기: 답변 카드 안에서 고치기 칸·지우기 확인을 열고 닫는다(서버는 쓴 담당자 본인만 허용)
+ const replyBox=id=>document.querySelector(`#modal [data-reply="${CSS.escape(id)}"]`);
+ const replyMode=(id,mode)=>{const box=replyBox(id);if(!box)return;box.querySelector('.reply-view').hidden=mode==='edit';box.querySelector('[data-edit-reply-form]').hidden=mode!=='edit';box.querySelector('[data-delete-confirm-box]').hidden=mode!=='delete';box.querySelector('.reply-tools').hidden=!!mode;
+  (mode==='edit'?box.querySelector('textarea'):mode==='delete'?box.querySelector('[data-confirm-delete-reply]'):box.querySelector('[data-edit-reply]'))?.focus();};
+ if(b.dataset.editReply){replyMode(b.dataset.editReply,'edit');return;}
+ if(b.dataset.deleteReply){replyMode(b.dataset.deleteReply,'delete');return;}
+ if(b.dataset.cancelReply){replyMode(b.dataset.cancelReply,null);return;}
+ if(b.dataset.confirmDeleteReply){
+  if(busy||state.me?.role!=='staff')return;busy=true;b.disabled=true;
+  try{if(await communityAction('delete-reply',{reply:b.dataset.confirmDeleteReply})){hooks.render();refreshOpenPost();}}finally{busy=false;b.disabled=false;}return;
+ }
  if(b.dataset.loginRole){loginRole=b.dataset.loginRole;hooks.render();return;}
  if(b.dataset.community==='statistics'){await loadStatistics();return;}
  if(b.dataset.statsPeriod||'statsMore' in b.dataset||'statsCsv' in b.dataset){
@@ -171,6 +182,12 @@ document.addEventListener('submit',async e=>{
  }
 
  if(f.id==='board-search'){e.preventDefault();query=new FormData(f).get('query').trim();hooks.render();return;}
+ if(f.dataset.editReplyForm){
+  e.preventDefault();if(busy||state.me?.role!=='staff')return;busy=true;
+  const submit=f.querySelector('button.primary-button');submit.disabled=true;
+  try{const data=Object.fromEntries(new FormData(f));if(await communityAction('edit-reply',{reply:f.dataset.editReplyForm,body:data.body,source:data.source})){hooks.render();refreshOpenPost();}}
+  finally{busy=false;submit.disabled=false;}return;
+ }
  if(f.id!=='anonymous-post'&&!f.dataset.staffReply)return;
  e.preventDefault();if(busy)return;busy=true;
  const submit=f.querySelector('[type="submit"],button.primary-button');submit.disabled=true;

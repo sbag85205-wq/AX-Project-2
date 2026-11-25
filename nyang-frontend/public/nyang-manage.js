@@ -5,7 +5,7 @@
 //  - 계절을 고르면 그 계절의 기본 모습이 평소 모습이 되고, 그 계절 반응이 자동으로 '사용'이 된다.
 // 목록과 올린 그림은 서버(server.mjs의 catalog-*)에 저장되어 모든 직원에게 똑같이 보인다.
 import {fetch} from './transport.js?v=fd4b994ba12d';
-import {communityState} from './community-ui.js?v=875803c52c83';
+import {communityState} from './community-ui.js?v=66ac529c0957';
 import {esc} from './shared.js?v=b4248c4d9fbf';
 import {SEASONS,KINDS,MODES,allReactions,bucketReactions,suggestLine,seasonImages,seasonDefault,shopItems,selectSeason,normalizeCatalog} from './nyang-catalog.js?v=3a88ea59d01b';
 
