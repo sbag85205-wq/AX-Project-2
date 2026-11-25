@@ -818,6 +818,15 @@ document.addEventListener('submit',e=>{
 });
 document.addEventListener('input',e=>{if(e.target.matches('#question-form textarea')){chatDraft=e.target.value;resizeComposer();}});
 document.addEventListener('keydown',e=>{if(e.target.matches('#question-form textarea')&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();e.target.form.requestSubmit();}});
+// '+' 버튼 말고도 사진·파일을 질문 입력창에 끌어다 놓거나(화면 어디에 놓아도 된다) 입력창에 붙여넣으면(Ctrl+V) 첨부한다.
+// 첨부 개수·크기·종류 확인은 '+' 버튼과 같은 addAttachments가 한다.
+const dropTarget=()=>!$('#modal').open&&view==='chat'?$('#question-form'):null;
+const hasFiles=e=>[...(e.dataTransfer?.types||[])].includes('Files');
+const attachDropped=files=>{if(!files.length)return;if(attachBusy){toast('첨부 파일을 읽는 중이에요. 잠시 후 다시 놓아 주세요.');return;}addAttachments(files);};
+let dragTimer=null;
+document.addEventListener('dragover',e=>{const form=hasFiles(e)&&dropTarget();if(!form)return;e.preventDefault();e.dataTransfer.dropEffect='copy';form.classList.add('drag-over');clearTimeout(dragTimer);dragTimer=setTimeout(()=>form.classList.remove('drag-over'),150);});
+document.addEventListener('drop',e=>{const form=hasFiles(e)&&dropTarget();if(!form)return;e.preventDefault();clearTimeout(dragTimer);form.classList.remove('drag-over');attachDropped([...e.dataTransfer.files]);});
+document.addEventListener('paste',e=>{if(!e.target.closest?.('#question-form'))return;const files=[...(e.clipboardData?.files||[])];if(!files.length)return;e.preventDefault();attachDropped(files);});
 document.addEventListener('change',async e=>{
  if(e.target.id==='knowly-attach'){const files=[...e.target.files];e.target.value='';if(files.length)addAttachments(files);return;}
  if(e.target.id==='chat-history-folder'){chatHistoryFolder=e.target.value;$('.chat-history').outerHTML=chatHistoryHTML();$('#chat-history-folder')?.focus({preventScroll:true});return;}

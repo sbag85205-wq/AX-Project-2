@@ -456,3 +456,6 @@ html:not([data-theme=dark]) .company-logo-dark,html[data-theme=dark] .company-lo
 .composer-attachments .attach-thumb{flex:none;width:36px;height:36px;padding:0;border-radius:8px;overflow:hidden;border:1px solid var(--ui-line,#e5e5e8);background:var(--ui-fill,#f3f4f8);cursor:zoom-in}
 .composer-attachments .attach-thumb img{display:block;width:100%;height:100%;object-fit:cover}
 #modal .attach-preview-large{display:block;max-width:100%;max-height:70vh;margin:14px auto 0;border-radius:12px;object-fit:contain;background:var(--ui-fill,#f3f4f8)}
+
+/* 19. 사진·파일을 끌어다 질문 입력창 위로 가져오면 놓을 수 있다는 표시 */
+html body .desktop-workspace .chat-composer.drag-over{border-color:var(--ui-accent)!important;box-shadow:0 0 0 4px var(--ui-accent-fill)!important;border-style:dashed!important}
