@@ -212,4 +212,9 @@ body[data-route='/admin/unanswered'] .stat-sub { margin-top: 4px; font-size: 14p
 .doc-view > .page-head { flex: none; }
 /* 카드 그림자가 잘리지 않게 좌우·아래 여백을 스크롤 칸 안쪽에 둔다 */
 .doc-view > .doc-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; margin: -6px -12px 0; padding: 6px 12px 28px; scrollbar-width: thin; }
-.doc-view .doc-toc { top: 0; max-height: calc(100dvh - 200px); }
+.doc-view .doc-toc { top: 60px; max-height: calc(100dvh - 260px); }
+/* 문서 안 찾기·쪽 바로가기 줄도 문서를 내려도 위에 붙어 있게(텍스트 문서·PDF 둘 다) */
+.doc-view .doc-tools { position: sticky; top: 0; z-index: 5; max-width: none; box-sizing: border-box; padding: 8px 12px; border: 1px solid var(--glass-edge, var(--line)); border-radius: 16px; background: var(--glass-dialog, var(--surface)); box-shadow: 0 10px 24px -18px rgba(40, 30, 110, .45); }
+.doc-view .pdf-view > .doc-tools { top: -10px; margin: -6px -6px 0; width: auto; }
+/* 바로가기·목차로 옮겨 갈 때 찾기 줄에 가리지 않게 */
+.doc-view .pdf-page, .doc-view .doc-chunk { scroll-margin-top: 64px; }
