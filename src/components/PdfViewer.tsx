@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { loadPdfjs, openPdf, type PdfDocument } from '../lib/pdf';
 import Loading from './Loading';
+import { PageJump } from './PageJump';
 
 /**
  * 원본 PDF를 pdf.js로 직접 그린다. 브라우저 내장 뷰어(iframe)는 휴대폰에서 열리지 않거나
@@ -37,6 +38,7 @@ export function PdfViewer({ url, page, title }: { url: string; page?: number; ti
   if (!doc) return <Loading text="원본 PDF를 불러오는 중" boot />;
   return (
     <div className="card pdf-view" aria-label={`${title} 원본`}>
+      <div className="doc-tools"><PageJump total={doc.numPages} onJump={(n) => document.getElementById(`pdf-page-${n}`)?.scrollIntoView({ block: 'start' })} /></div>
       {Array.from({ length: doc.numPages }, (_, i) => (
         <PdfPage key={i} doc={doc} num={i + 1} ratio={ratio} focus={i + 1 === page} />
       ))}

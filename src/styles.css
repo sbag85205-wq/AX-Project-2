@@ -324,6 +324,12 @@ button.grid-row[aria-pressed='true'] { background: #f2f5fe; box-shadow: inset 4p
 .doc-chunk:first-child .doc-page { margin-top: 0; border-top: 0; padding-top: 0; }
 .doc-text { white-space: pre-wrap; line-height: 1.75; font-size: 15px; }
 .pdf-view { padding: 16px; display: flex; flex-direction: column; gap: 16px; background: var(--surface-2); }
+/* 문서 보기 위쪽 도구 줄: 페이지 바로가기(와 문서 안 찾기) */
+.doc-tools { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px 16px; max-width: 900px; width: 100%; margin: 0 auto; }
+.page-jump { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.page-jump label { font-weight: 600; color: var(--text); }
+.page-jump .input { width: 72px; padding: 6px 8px; text-align: center; }
+.page-jump .btn { padding: 6px 12px; }
 .pdf-page { position: relative; width: 100%; max-width: 900px; margin: 0 auto; background: #fff; box-shadow: var(--shadow); scroll-margin-top: 16px; }
 .pdf-page canvas { display: block; width: 100%; height: auto; }
 /* PDF 글자 선택: pdf.js 글자 층(TextLayer)을 그림 위에 투명하게 겹친다(pdfjs-dist web/pdf_viewer.css의 .textLayer 규칙에서 필요한 것만) */

@@ -8,6 +8,7 @@ import { docFileType, pageCountLabel, pageLabel } from '../lib/sheet';
 import { supabase } from '../lib/supabase';
 import type { DocumentRow } from '../lib/types';
 import Loading from '../components/Loading';
+import { PageJump } from '../components/PageJump';
 
 interface ChunkRow {
   id: string;
@@ -115,6 +116,19 @@ export default function DocumentView() {
             ? <SheetViewer url={fileUrl} path={doc.file_path ?? ''} sheet={focusPage ?? 1} title={doc.title} />
             : <PdfViewer url={fileUrl} page={focusPage} title={doc.title} />
       ) : (
+        <>
+        {/* 원본 없는(텍스트) 문서도 쪽 번호로 바로가기: 그 쪽(또는 그 뒤 첫 쪽)이 시작되는 조각으로 */}
+        {type !== 'sheet' && blocks.length > 0 && (
+          <div className="doc-tools">
+            <PageJump
+              total={Math.max(...blocks.map((b) => b.page_end || b.page_start || 1))}
+              onJump={(n) => {
+                const b = blocks.find((x) => x.page_start >= n) ?? blocks[blocks.length - 1];
+                document.getElementById(`chunk-${b.id}`)?.scrollIntoView({ block: 'start' });
+              }}
+            />
+          </div>
+        )}
         <div className="doc-layout">
           {sections.length > 1 && (
             <nav className="card doc-toc" aria-label="목차">
@@ -139,6 +153,7 @@ export default function DocumentView() {
             ))}
           </article>
         </div>
+        </>
       )}
     </main>
   );
