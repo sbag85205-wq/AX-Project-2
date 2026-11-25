@@ -20,7 +20,7 @@ import {orderNav,installNavLayout} from './nav-layout.js?v=2a33659a9a7a';
 import {createGuide} from './guide.js?v=a94d3106cc42';
 import {recentTurns} from './chat-context.js?v=e6c82dc547ad';
 import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=5402e774fd4a';
-import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=818da1a92cb1';
+import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=5edf0461cac0';
 const mode=document.body.dataset.mode;
 const isCat=mode==='cat';
 const root='/nyang/';

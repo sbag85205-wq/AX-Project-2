@@ -491,10 +491,6 @@ body.motion-paused #app .top-icons>#attendance-button::before{animation:none;opa
 #app .top-icons>#attendance-button.done{background:#16a34a;border-color:#16a34a;color:#fff;opacity:1}
 html[data-theme=dark] #app .top-icons>#attendance-button.done{background:#4ade80;border-color:#4ade80;color:#0b2a16}
 
-/* 23. 내 일정 달력 제목 줄의 버튼 두 개(일정 추가·일정 만들기) */
-.desktop-workspace .calendar-heading>.schedule-heading-actions{display:flex;align-items:center;gap:8px;flex:none}
-.desktop-workspace .calendar-heading>.schedule-heading-actions>button{font-size:12px;white-space:nowrap;margin:0}
-
 /* 24. 일정 잡기로 내 일정에 추가한 뒤에도 남는 일정 상세 카드 */
 .chat-room .schedule-offer.schedule-done .schedule-saved{margin:0 0 8px;font-weight:600}
 .chat-room .schedule-offer.schedule-done .schedule-done-dates{margin:4px 0 12px;font-size:12px;color:var(--ui-sub)}
