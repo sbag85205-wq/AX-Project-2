@@ -766,6 +766,9 @@ const clickByAction=[
  [is('board'),(a,b,e)=>{refreshCategories().then(changed=>{if(changed&&view==='board')render();});},false],
  // 분야 관리에서 바뀐 분야를 게시판에도 반영
  [(a,b)=>viewOf(a)?.open==='any',(a,b,e)=>{if(a==='chat')expandStaffSettings(); // 냥대리 테스트를 열 때마다 설정 칸은 펼친 상태로 보여 준다
+ // 이미 물어보기 화면에서 지난 대화를 보고 있을 때 왼쪽 '물어보기'를 누르면 새 질문을 시작한다(로고를 누른 것과 같다).
+ // 답변을 기다리는 중에는 그 답이 사라지지 않게 그대로 둔다.
+ if(a==='chat'&&b.id==='nav-chat'&&view==='chat'&&messages.length&&!pendingReply){resetChat();$('#main').scrollTop=0;return;}
  if(view!==a)petInteraction.reset();view=a;render();$('#main').scrollTop=0;},false],
  [is('calendar-today'),(a,b,e)=>{calendarMonth=localDate().slice(0,7);calendarDay=localDate();render();},false],
  [is('chat-examples'),(a,b,e)=>{showChatExamples();},false],
