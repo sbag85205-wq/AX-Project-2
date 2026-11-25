@@ -81,11 +81,12 @@ export function makeSchedule(type,start,end=start){
  if(type==='settle')return [item('출장비 정산 신청',businessAfter(start),'settle','영수증, 출장 승인 내역, 정산 신청서를 첨부하세요.',addDays(start,7))];
  return ['사원증 수령','업무 계정 확인','보안 서약서 제출','팀 온보딩 안내 참여'].map(title=>item(title,start,'onboarding','입사 첫날 담당 부서의 안내에 따라 진행하세요.'));
 }
-export function mergeSchedule(existing,{type,start,end,items},idFactory){
+// label: 사용자가 정한 일정 제목(없으면 계획 종류 이름). 내 일정에서 이 할 일들을 묶는 이름(planLabel)이 된다
+export function mergeSchedule(existing,{type,start,end,items,label},idFactory){
  const next=[...existing];let added=0;
  for(const item of items){const key=`${type}:${start}:${end}:${item.title}`;
   const legacy=type==='trip'&&existing.some(t=>t.key===`${start}:${end}:${item.ref}`);
   if(legacy||next.some(t=>t.key===key))continue;
-  next.push({...item,id:idFactory(),key,planType:type,planLabel:scheduleTypes[type].title,tripStart:start,done:false});added++;
+  next.push({...item,id:idFactory(),key,planType:type,planLabel:String(label||'').trim().slice(0,40)||scheduleTypes[type].title,tripStart:start,done:false});added++;
  }return {tasks:next,added};
 }
