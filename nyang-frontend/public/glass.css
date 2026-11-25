@@ -474,3 +474,18 @@ html body .chat-room .answer-tools>button[data-knowly-vote][aria-pressed=true],h
 
 /* 21. 라이트 모드 '내 레벨'의 '출석 완료' 버튼: 진한 파란 배경에 회색 글자라 안 보이던 것 → 흰 글자 */
 html:not([data-theme=dark]) body[data-mode=cat] .activity-page .activity-attendance>.primary-button:disabled{color:#fff}
+
+/* 22. 첫 화면 오른쪽 위 출석 표시를 라이트·다크 모두 눈에 띄게:
+   출석 전 = 강조색으로 채운 동그라미 + 빨간 점 + 은은하게 퍼지는 테두리(움직임 끄기·애니메이션 줄이기면 멈춤), 출석 후 = 초록 동그라미에 흰 체크 */
+#app .top-icons>#attendance-button:not(.done){background:var(--ui-accent);border-color:var(--ui-accent);color:#fff;box-shadow:0 6px 16px -6px color-mix(in srgb,var(--ui-accent) 75%,transparent)}
+html[data-theme=dark] #app .top-icons>#attendance-button:not(.done){background:var(--ui-accent);color:#14163a}
+#app .top-icons>#attendance-button:not(.done):not(:disabled):hover{background:var(--ui-accent);filter:brightness(1.1)}
+#app .top-icons>#attendance-button:not(.done):disabled{opacity:.7}
+#app .top-icons>#attendance-button:not(.done):not(:disabled)::after{top:-3px;right:-3px;width:9px;height:9px;background:#ef4444;box-shadow:0 0 0 2px #fff}
+html[data-theme=dark] #app .top-icons>#attendance-button:not(.done):not(:disabled)::after{background:#ff6b6b;box-shadow:0 0 0 2px #1d1f3a}
+#app .top-icons>#attendance-button:not(.done):not(:disabled)::before{content:'';position:absolute;inset:-1px;border-radius:50%;border:2px solid var(--ui-accent);pointer-events:none;animation:attend-pulse 1.8s ease-out infinite}
+@keyframes attend-pulse{0%{transform:scale(1);opacity:.75}100%{transform:scale(1.65);opacity:0}}
+body.motion-paused #app .top-icons>#attendance-button::before{animation:none;opacity:0}
+@media(prefers-reduced-motion:reduce){#app .top-icons>#attendance-button::before{animation:none;opacity:0}}
+#app .top-icons>#attendance-button.done{background:#16a34a;border-color:#16a34a;color:#fff;opacity:1}
+html[data-theme=dark] #app .top-icons>#attendance-button.done{background:#4ade80;border-color:#4ade80;color:#0b2a16}

@@ -377,6 +377,8 @@
     syncPaw();
     ensureHistoryButton();
     if (tipFor && !tipFor.isConnected) hideTip();
+    // 말풍선이 떠 있는 동안 버튼 이름표가 바뀌면(예: 출석체크 → 출석 완료) 말풍선 글자도 바로 바꾼다
+    else if (tipFor?.dataset.glassTip && tip?.classList.contains('show') && tip.textContent !== tipFor.dataset.glassTip) tip.replaceChildren(el('span', '', tipFor.dataset.glassTip));
     const k = keyNow();
     if (k !== viewKey) { const was = viewKey; viewKey = k; requestAnimationFrame(() => { enter(first || !was); first = false; placePill(false); }); }
     newMessages();
