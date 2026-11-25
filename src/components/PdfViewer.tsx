@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { openPdf, type PdfDocument } from '../lib/pdf';
+import { loadPdfjs, openPdf, type PdfDocument } from '../lib/pdf';
 import Loading from './Loading';
 
 /**
  * 원본 PDF를 pdf.js로 직접 그린다. 브라우저 내장 뷰어(iframe)는 휴대폰에서 열리지 않거나
  * 다운로드로 넘어가는 경우가 많아서 쓰지 않는다. 화면에 보이는 페이지만 그려 메모리를 아낀다.
+ * 그림 위에 pdf.js 글자 층(TextLayer)을 투명하게 겹쳐, 문서 글자를 마우스로 바로 선택·복사할 수 있다.
  */
 // page: 출처(근거)에서 들어와 특정 쪽을 보여 줄 때만 넘긴다. 없으면 맨 위(제목·다운로드 버튼)부터 보인다.
 export function PdfViewer({ url, page, title }: { url: string; page?: number; title: string }) {
@@ -46,8 +47,11 @@ export function PdfViewer({ url, page, title }: { url: string; page?: number; ti
 function PdfPage({ doc, num, ratio, focus }: { doc: PdfDocument; num: number; ratio: number; focus: boolean }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [drawn, setDrawn] = useState(false);
+  // 한 번만 그리기: drawn(state)을 effect 조건에 넣으면 그리기가 끝날 때 정리(cleanup)가 돌아 글자 층·크기 감시가 끊긴다
+  const started = useRef(false);
 
   useEffect(() => {
     if (focus) boxRef.current?.scrollIntoView({ block: 'start' });
@@ -62,8 +66,11 @@ function PdfPage({ doc, num, ratio, focus }: { doc: PdfDocument; num: number; ra
   }, []);
 
   useEffect(() => {
-    if (!visible || drawn) return;
+    if (!visible || started.current) return;
+    started.current = true;
     let task: { cancel: () => void; promise: Promise<void> } | null = null;
+    let text: { cancel: () => void } | null = null;
+    let resize: ResizeObserver | null = null;
     let cancelled = false;
     (async () => {
       const page = await doc.getPage(num);
@@ -76,17 +83,35 @@ function PdfPage({ doc, num, ratio, focus }: { doc: PdfDocument; num: number; ra
       canvas.height = Math.floor(viewport.height);
       task = page.render({ canvas, viewport });
       await task.promise;
-      if (!cancelled) setDrawn(true);
+      if (cancelled) return;
+      setDrawn(true);
+      // 글자 층: 화면 크기(CSS 배율)로 배치하고, 창 크기가 바뀌면 배율만 다시 맞춘다
+      const box = boxRef.current, layer = textRef.current;
+      if (!box || !layer) return;
+      const fit = () => box.style.setProperty('--scale-factor', String((box.clientWidth || width) / base.width));
+      fit();
+      const { TextLayer } = await loadPdfjs();
+      if (cancelled) return;
+      const textLayer = new TextLayer({ textContentSource: page.streamTextContent(), container: layer, viewport: page.getViewport({ scale: width / base.width }) });
+      text = textLayer;
+      await textLayer.render();
+      if (cancelled) return;
+      resize = new ResizeObserver(fit);
+      resize.observe(box);
     })().catch(() => undefined);
     return () => {
       cancelled = true;
       task?.cancel();
+      text?.cancel();
+      resize?.disconnect();
+      started.current = false;
     };
-  }, [visible, drawn, doc, num]);
+  }, [visible, doc, num]);
 
   return (
     <div ref={boxRef} className="pdf-page" id={`pdf-page-${num}`} style={drawn ? undefined : { aspectRatio: `1 / ${ratio}` }}>
       <canvas ref={canvasRef} aria-label={`${num}페이지`} />
+      <div ref={textRef} className="textLayer" />
       <span className="pdf-num">{num} / {doc.numPages}</span>
     </div>
   );
