@@ -440,7 +440,7 @@ async function addAttachments(files){
 function attachmentChips(){return attachments.length?`<div class="composer-attachments" aria-label="첨부한 파일">${attachments.map(a=>`<span class="admin-tag${a.kind==='image'&&a.dataUrl?' has-thumb':''}">${a.kind==='image'&&a.dataUrl?`<button type="button" class="attach-thumb" data-preview-attach="${esc(a.id)}" aria-label="${esc(a.name)} 크게 보기" title="크게 보기"><img src="${esc(a.dataUrl)}" alt=""></button>`:''}${esc(a.kind==='image'?'사진':'파일')} · ${esc(a.name)} <button type="button" class="text-button" data-remove-attach="${esc(a.id)}" aria-label="${esc(a.name)} 첨부 빼기">×</button></span>`).join('')}</div>`:'';}
 // 개인 일정 추가 카드: 제목·날짜·시간을 확인·수정하고 '내 일정에 추가'를 누른다
 function eventHTML(r){const e=r.event||{},when=`${displayDate(e.date)}${e.time?' · '+timeLabel(e.time):''}`;
- if(r.decision==='added')return `<div class="answer-content event-card"><span class="answer-label">${icon('check')} 내 일정에 추가했어요</span><h3>${esc(e.title)}</h3><p>${esc(when)}</p><div class="answer-tools"><button class="answer-schedule-button" data-open-plan="${esc(e.date)}">${icon('calendar')} 내 일정 보기</button></div></div>`;
+ if(r.decision==='added')return `<div class="answer-content event-card"><span class="answer-label">${icon('check')} 내 일정에 추가했어요</span><h3>${esc(e.title)}</h3><p>${esc(when)}</p><div class="answer-tools"><button class="answer-schedule-button" data-schedule-detail="${esc(r.messageId)}">${icon('list')} 일정 상세</button><button class="answer-schedule-button" data-open-plan="${esc(e.date)}">${icon('calendar')} 내 일정 보기</button></div></div>`;
  if(r.decision==='no')return `<div class="answer-content event-card"><span class="answer-label muted">${icon('calendar')} 일정 추가</span><h3>일정 추가를 취소했어요.</h3><p>필요하면 다시 말해 주세요.</p></div>`;
  return `<div class="answer-content event-card"><span class="answer-label">${icon('calendar')} 일정 추가</span><h3>이렇게 내 일정에 넣을까요?</h3><p>제목·날짜·시간을 확인하고, 필요하면 고친 뒤 추가하세요.</p><form class="event-form" data-event-form="${esc(r.messageId)}"><label>제목<input name="title" value="${esc(e.title)}" maxlength="40" required></label><label>날짜<input type="date" name="date" value="${esc(e.date)}" required></label><label>시간<input type="time" name="time" value="${esc(e.time)}"></label><div class="event-form-actions"><button type="submit" class="primary-button">${icon('calendar')} 내 일정에 추가</button><button type="button" class="text-button" data-event-cancel="${esc(r.messageId)}">취소</button></div></form></div>`;
 }
@@ -459,7 +459,7 @@ function scheduleOffer(r){
  if(!r.scheduleType)return '';
  const meta=scheduleTypes[r.scheduleType];
  // 추가한 뒤에도 일정 상세(제목·날짜·할 일 목록)를 그 자리에 남겨 둔다
- if(r.decision==='added'){const first=(r.items||[]).map(t=>t.date).sort()[0]||r.start;return `<div class="schedule-offer schedule-done" id="schedule-${r.messageId}"><p class="schedule-saved" role="status">${icon('check')} ${r.items.length}개의 할 일을 내 일정에 ${personality==='warm'?'넣었어요.':'넣었어.'}</p><h3>${esc(r.title||meta.title)}</h3><p class="schedule-done-dates">${meta.startLabel} ${displayDate(r.start)}${meta.endLabel?` · ${meta.endLabel} ${displayDate(r.end)}`:''}</p><div class="schedule-preview">${scheduleRows(r.items||[])}</div><div class="answer-tools"><button class="answer-schedule-button" data-open-plan="${esc(first)}">${icon('calendar')} 내 일정에서 보기</button></div></div>`;}
+ if(r.decision==='added'){const first=(r.items||[]).map(t=>t.date).sort()[0]||r.start;return `<div class="schedule-offer schedule-done" id="schedule-${r.messageId}"><p class="schedule-saved" role="status">${icon('check')} ${r.items.length}개의 할 일을 내 일정에 ${personality==='warm'?'넣었어요.':'넣었어.'}</p><h3>${esc(r.title||meta.title)}</h3><p class="schedule-done-dates">${meta.startLabel} ${displayDate(r.start)}${meta.endLabel?` · ${meta.endLabel} ${displayDate(r.end)}`:''}</p><div class="schedule-preview">${scheduleRows(r.items||[])}</div><div class="answer-tools"><button class="answer-schedule-button" data-schedule-detail="${esc(r.messageId)}">${icon('list')} 일정 상세</button><button class="answer-schedule-button" data-open-plan="${esc(first)}">${icon('calendar')} 내 일정에서 보기</button></div></div>`;}
  if(r.decision==='yes')return `<div class="schedule-offer" id="schedule-${r.messageId}"><h3>${voice().schedule}</h3><form class="plan-form" data-plan-form="${r.messageId}"><label class="plan-title-field">일정 제목<input name="title" maxlength="40" required value="${esc(r.title??meta.title)}" placeholder="${esc(meta.title)}" autocomplete="off"></label><label>${meta.startLabel}<input type="date" name="start" required value="${r.start}"></label>${meta.endLabel?`<label>${meta.endLabel}<input type="date" name="end" required min="${r.start}" value="${r.end}"></label>`:''}<div class="schedule-preview" data-preview="${r.messageId}">${schedulePreview(r)}</div><button type="submit" class="primary-button">내 일정에 추가 ${icon('calendar')}</button><button type="button" class="text-button" data-consent="no" data-message="${r.messageId}">닫기</button></form><p class="caption">샘플 일정 템플릿입니다. 실제 기한은 답변의 사내 문서와 비교해 조정하세요. 영업일은 주말만 제외해요.<br>이 사이트의 내 일정에 저장됩니다.</p></div>`;
  return `<div id="schedule-${r.messageId}" hidden></div>`;
 }
@@ -517,6 +517,17 @@ function showAddTask(){
  const today=localDate(),date=view==='calendar'?calendarDay:filter==='day'?selectedDay:filter==='tomorrow'?addDays(today,1):today;
  openModal(`<h2 id="modal-title">일정 추가</h2><p class="modal-sub">제목과 날짜를 넣으면 내 일정에 바로 추가돼요.</p><form id="task-add-form" class="chat-settings-form"><label for="task-add-title">제목</label><input id="task-add-title" name="title" maxlength="40" required placeholder="예: 팀 회의, 보고서 제출" autocomplete="off"><label for="task-add-date">날짜</label><input id="task-add-date" type="date" name="date" required value="${esc(date)}"><label for="task-add-time">시간 <small>(선택)</small></label><input id="task-add-time" type="time" name="time"><div class="chat-delete-actions"><button type="button" class="secondary-button" data-action="close-modal">취소</button><button class="primary-button" type="submit">추가</button></div></form>`);
  $('#task-add-title')?.focus();
+}
+// 대화에서 만든 일정을 대화 안에서 바로 확인: 내 일정에 저장된 지금 내용(날짜·시간·분류·메모·마감·완료)을 창으로 보여 준다
+function chatScheduleTasks(r){
+ if(r.kind==='event'){const ev=r.event||{},t=tasks.find(x=>x.id===r.taskId)||tasks.find(x=>x.planType==='event'&&x.title===ev.title&&x.date===ev.date);return t?[t]:[];}
+ const prefix=`${r.scheduleType}:${r.start}:${r.end}:`;return tasks.filter(t=>String(t.key||'').startsWith(prefix)).sort((a,b)=>a.date.localeCompare(b.date));
+}
+function showScheduleDetail(messageId){
+ const r=messages.find(m=>m.result?.messageId===messageId)?.result;if(!r)return;
+ const list=chatScheduleTasks(r),today=localDate(),name=r.kind==='event'?(r.event?.title||'일정'):(r.title||scheduleTypes[r.scheduleType]?.title||'일정');
+ const rows=list.map(t=>`<article class="agenda-item ${t.done?'done':''}"><label><input type="checkbox" data-complete="${esc(t.id)}" aria-label="${esc(t.title)} 완료" ${t.done?'checked':''}><strong>${esc(t.title)}</strong></label><small>${esc(displayDate(t.date))}${t.time?' · '+esc(timeLabel(t.time)):''} · ${t.planType==='event'?esc(t.planLabel||'내 일정'):`${esc(t.planLabel||'')} · ${esc(t.type)}`}</small>${t.note?`<p>${esc(t.note)}</p>`:''}${t.deadline?`<p class="agenda-deadline ${!t.done&&t.deadline<today?'overdue':''}">규정 마감 ${displayDate(t.deadline)}</p>`:''}</article>`).join('');
+ openModal(`<h2 id="modal-title">일정 상세</h2><p class="modal-sub">${esc(name)} · 내 일정에 저장된 내용이에요. 완료 표시는 내 일정에도 바로 반영돼요.</p><div class="schedule-detail-list">${rows||'<p class="modal-sub">내 일정에서 지웠거나 찾을 수 없는 일정이에요.</p>'}</div><div class="chat-delete-actions"><button type="button" class="secondary-button" data-action="close-modal">닫기</button>${list.length?`<button type="button" class="primary-button" data-open-plan="${esc(list[0].date)}">내 일정에서 보기</button>`:''}</div>`,true);
 }
 function showChatSettings(id){
  if(!communityState().member)return;
@@ -726,7 +737,8 @@ const clickByData=[
  [b=>b.dataset.answerPanel,(b,e)=>{const r=messages.find(m=>m.result?.messageId===b.dataset.message)?.result;if(r){r.expandedPanel=r.expandedPanel===b.dataset.answerPanel?null:b.dataset.answerPanel;render();$(`[data-answer-panel="${b.dataset.answerPanel}"][data-message="${r.messageId}"]`)?.focus({preventScroll:true});}return;}],
  [b=>b.dataset.consent,(b,e)=>{const r=messages.find(m=>m.result?.messageId===b.dataset.message)?.result;if(r&&r.decision!=='added'){r.decision=b.dataset.consent;render();requestAnimationFrame(()=>{const form=$(`[data-plan-form="${r.messageId}"]`);if(form){form.querySelector('input')?.focus({preventScroll:true});form.scrollIntoView({block:'nearest'});}else $(`[data-consent][data-message="${r.messageId}"]`)?.focus({preventScroll:true});});}return;}],
  [b=>b.dataset.eventCancel,(b,e)=>{const r=messages.find(m=>m.result?.messageId===b.dataset.eventCancel)?.result;if(r&&r.kind==='event'&&r.decision!=='added'){r.decision='no';saveCurrentChat();render();}return;}],
- [b=>b.dataset.openPlan,(b,e)=>{calendarDay=b.dataset.openPlan;calendarMonth=calendarDay.slice(0,7);view='calendar';scheduleView='calendar';render();return;}],
+ [b=>b.dataset.scheduleDetail,(b,e)=>{showScheduleDetail(b.dataset.scheduleDetail);return;}],
+ [b=>b.dataset.openPlan,(b,e)=>{if($('#modal').open)closeModal();calendarDay=b.dataset.openPlan;calendarMonth=calendarDay.slice(0,7);view='calendar';scheduleView='calendar';render();return;}],
  [b=>b.dataset.month,(b,e)=>{const [y,m]=calendarMonth.split('-').map(Number);calendarMonth=localDate(new Date(y,m-1+Number(b.dataset.month),1,12)).slice(0,7);render();return;}],
  [b=>b.dataset.calendarDay,(b,e)=>{calendarDay=b.dataset.calendarDay;render();return;}],
  [b=>b.dataset.bgDelete,(b,e)=>{const id=b.dataset.bgDelete,inUse=backgroundState().id==='upload:'+id;if(save('om-bg-uploads-'+mode,backgroundUploads().filter(x=>x.id!==id))){if(inUse)save('om-bg-theme-'+mode,'white');applyBackground();showBackground();toast(inUse?'사용 중이던 이미지를 지워 기본 배경으로 바꿨어요.':'이미지를 삭제했어요.');}return;}],
@@ -821,8 +833,8 @@ document.addEventListener('submit',e=>{
   if(!r||r.kind!=='event'||r.decision==='added')return;
   const fd=new FormData(e.target),title=String(fd.get('title')||'').trim().slice(0,40)||'새 일정',date=String(fd.get('date')||''),time=String(fd.get('time')||'');
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){toast('날짜를 골라 주세요.');return;}
-  const next=[...tasks,eventTask({title,date,time:/^\d{2}:\d{2}$/.test(time)?time:''},crypto.randomUUID())];
-  if(save('om-tasks',next)){tasks=next;r.event={title,date,time};r.decision='added';saveCurrentChat();render();toast(`${displayDate(date)}${time?' '+timeLabel(time):''} '${title}' 일정을 내 일정에 넣었어요.`);}
+  const taskId=crypto.randomUUID(),next=[...tasks,eventTask({title,date,time:/^\d{2}:\d{2}$/.test(time)?time:''},taskId)];
+  if(save('om-tasks',next)){tasks=next;r.event={title,date,time};r.taskId=taskId;r.decision='added';saveCurrentChat();render();toast(`${displayDate(date)}${time?' '+timeLabel(time):''} '${title}' 일정을 내 일정에 넣었어요.`);}
   return;
  }
  if(e.target.dataset.planForm){
@@ -856,7 +868,7 @@ document.addEventListener('change',async e=>{
  }
  if(e.target.closest('[data-plan-form]')){const form=e.target.closest('[data-plan-form]'),r=messages.find(m=>m.result?.messageId===form.dataset.planForm)?.result;if(r){r.start=form.elements.start.value;if(form.elements.end){form.elements.end.min=r.start;if(form.elements.end.value<r.start)form.elements.end.value=r.start;r.end=form.elements.end.value;}else r.end=r.start;form.querySelector('.schedule-preview').innerHTML=schedulePreview(r);}}
  if(e.target.id==='active-category'){category=e.target.value;toast(`${categories.find(c=>c.id===category).label} 분야로 변경했어요.`);}
- if(e.target.dataset.complete){const next=tasks.map(t=>t.id===e.target.dataset.complete?{...t,done:e.target.checked}:t);if(save('om-tasks',next)){tasks=next;render();}}
+ if(e.target.dataset.complete){const next=tasks.map(t=>t.id===e.target.dataset.complete?{...t,done:e.target.checked}:t);if(save('om-tasks',next)){tasks=next;render();e.target.closest('.schedule-detail-list .agenda-item')?.classList.toggle('done',e.target.checked);}}
  if(e.target.dataset.taskDate){if(!e.target.value)return;const next=tasks.map(t=>t.id===e.target.dataset.taskDate?{...t,date:e.target.value}:t);if(save('om-tasks',next)){tasks=next;render();toast('작업일을 바꿨어요. 규정상 마감은 유지됩니다.');}}
  if(e.target.id==='bg-upload')await loadBackground(e.target.files[0]);
  if(e.target.id==='doc-upload'){const file=e.target.files[0];if(!file)return;if(!/\.(txt|md)$/i.test(file.name)||file.size>2*1024*1024){toast('2MB 이하 TXT 또는 Markdown 파일을 선택해 주세요.');return;}const contents=await file.text();const paragraphs=contents.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean);if(!paragraphs.length){toast('내용이 있는 문서를 선택해 주세요.');return;}const id=crypto.randomUUID();const doc={id,category:$('#upload-category').value,title:file.name,version:'내가 추가한 자료',sections:paragraphs.map((text,i)=>({id:`${id}-${i}`,label:`문단 ${i+1}`,text}))};if(save('om-docs',[...uploads,doc])){uploads.push(doc);showDocs();toast('샘플 자료를 추가했어요. 같은 분야에서 검색할 수 있어요.');}}
