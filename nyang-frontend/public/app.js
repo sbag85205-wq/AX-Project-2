@@ -20,7 +20,7 @@ import {orderNav,installNavLayout} from './nav-layout.js?v=2a33659a9a7a';
 import {createGuide} from './guide.js?v=a94d3106cc42';
 import {recentTurns} from './chat-context.js?v=e6c82dc547ad';
 import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=5402e774fd4a';
-import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=f61f2f75941a';
+import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=19942646073a';
 const mode=document.body.dataset.mode;
 const isCat=mode==='cat';
 const root='/nyang/';
@@ -464,7 +464,7 @@ function scheduleOffer(r){
  return `<div id="schedule-${r.messageId}" hidden></div>`;
 }
 // 일정 잡기 미리보기 줄(날짜·할 일·종류·마감). 추가한 뒤에도 같은 줄로 상세 내용을 계속 보여 준다
-function scheduleRows(items){return items.map(t=>`<div><span class="${t.date<localDate()?'overdue':''}">${displayDate(t.date)}${t.date<localDate()?' · 지난 날짜':''}</span><strong>${esc(t.title)}</strong><small>${t.type}${t.deadline?' · 마감 '+displayDate(t.deadline):''}</small></div>`).join('');}
+function scheduleRows(items){return items.map(t=>`<div><span class="${t.date<localDate()?'overdue':''}">${displayDate(t.date)}${t.date<localDate()?' · 지난 날짜':''}</span><strong>${esc(t.title)}</strong><small>${t.type}${t.deadline?' · 마감일 '+displayDate(t.deadline):''}</small></div>`).join('');}
 function schedulePreview(r){
  try{return scheduleRows(makeSchedule(r.scheduleType,r.start,r.end));}catch(err){return `<p role="alert">${esc(err.message)}</p>`;}
 }
@@ -535,7 +535,7 @@ function chatScheduleTasks(r){
 const closedScheduleDetails=new Set();
 function scheduleDetailHTML(r){
  const list=chatScheduleTasks(r),today=localDate();
- const rows=list.map(t=>`<article class="agenda-item ${t.done?'done':''}"><div class="schedule-detail-title"><strong>${esc(t.title)}</strong>${t.time?`<span class="task-time">${icon('clock')} ${esc(timeLabel(t.time))}</span>`:''}${t.done?'<span class="schedule-detail-done">완료</span>':''}</div><small>${esc(displayDate(t.date))} · ${t.planType==='event'?esc(t.planLabel||'내 일정'):`${esc(t.planLabel||'')} · ${esc(t.type)}`}</small>${t.note?`<p>${esc(t.note)}</p>`:''}${t.deadline?`<p class="agenda-deadline ${!t.done&&t.deadline<today?'overdue':''}">규정 마감 ${displayDate(t.deadline)}</p>`:''}</article>`).join('');
+ const rows=list.map(t=>`<article class="agenda-item ${t.done?'done':''}"><div class="schedule-detail-title"><strong>${esc(t.title)}</strong>${t.time?`<span class="task-time">${icon('clock')} ${esc(timeLabel(t.time))}</span>`:''}${t.done?'<span class="schedule-detail-done">완료</span>':''}</div><small>${esc(displayDate(t.date))} · ${t.planType==='event'?esc(t.planLabel||'내 일정'):`${esc(t.planLabel||'')} · ${esc(t.type)}`}</small>${t.note?`<p>${esc(t.note)}</p>`:''}${t.deadline?`<p class="agenda-deadline ${!t.done&&t.deadline<today?'overdue':''}">규정 마감일 ${displayDate(t.deadline)}</p>`:''}</article>`).join('');
  return `<details class="schedule-inline" data-detail-for="${esc(r.messageId)}" ${closedScheduleDetails.has(r.messageId)?'':'open'}><summary>${icon('list')} 일정 상세 <small>${list.length?`${list.length}개`:''}</small></summary><div class="schedule-detail-list">${rows||'<p class="caption">내 일정에서 지웠거나 찾을 수 없는 일정이에요.</p>'}</div></details>`;
 }
 // 내 일정에서 일정 제목 수정
@@ -897,7 +897,7 @@ document.addEventListener('change',async e=>{
  if(e.target.closest('[data-plan-form]')){const form=e.target.closest('[data-plan-form]'),r=messages.find(m=>m.result?.messageId===form.dataset.planForm)?.result;if(r){r.start=form.elements.start.value;if(form.elements.end){form.elements.end.min=r.start;if(form.elements.end.value<r.start)form.elements.end.value=r.start;r.end=form.elements.end.value;}else r.end=r.start;form.querySelector('.schedule-preview').innerHTML=schedulePreview(r);}}
  if(e.target.id==='active-category'){category=e.target.value;toast(`${categories.find(c=>c.id===category).label} 분야로 변경했어요.`);}
  if(e.target.dataset.complete){const next=tasks.map(t=>t.id===e.target.dataset.complete?{...t,done:e.target.checked}:t);if(save('om-tasks',next)){tasks=next;render();}}
- if(e.target.dataset.taskDate){if(!e.target.value)return;const next=tasks.map(t=>t.id===e.target.dataset.taskDate?{...t,date:e.target.value}:t);if(save('om-tasks',next)){tasks=next;render();toast('작업일을 바꿨어요. 규정상 마감은 유지됩니다.');}}
+ if(e.target.dataset.taskDate){if(!e.target.value)return;const next=tasks.map(t=>t.id===e.target.dataset.taskDate?{...t,date:e.target.value}:t);if(save('om-tasks',next)){tasks=next;render();toast('예정일을 바꿨어요. 규정 마감일은 그대로예요.');}}
  if(e.target.id==='bg-upload')await loadBackground(e.target.files[0]);
  if(e.target.id==='doc-upload'){const file=e.target.files[0];if(!file)return;if(!/\.(txt|md)$/i.test(file.name)||file.size>2*1024*1024){toast('2MB 이하 TXT 또는 Markdown 파일을 선택해 주세요.');return;}const contents=await file.text();const paragraphs=contents.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean);if(!paragraphs.length){toast('내용이 있는 문서를 선택해 주세요.');return;}const id=crypto.randomUUID();const doc={id,category:$('#upload-category').value,title:file.name,version:'내가 추가한 자료',sections:paragraphs.map((text,i)=>({id:`${id}-${i}`,label:`문단 ${i+1}`,text}))};if(save('om-docs',[...uploads,doc])){uploads.push(doc);showDocs();toast('샘플 자료를 추가했어요. 같은 분야에서 검색할 수 있어요.');}}
 });
