@@ -507,3 +507,6 @@ html[data-theme=dark] #app .top-icons>#attendance-button.done{background:#4ade80
 #modal .schedule-detail-list .agenda-item p.agenda-deadline{color:var(--ui-sub)}
 #modal .schedule-detail-list .agenda-item p.agenda-deadline.overdue{color:#dc2626}
 html[data-theme=dark] #modal .schedule-detail-list .agenda-item p.agenda-deadline.overdue{color:#ff8a8a}
+
+/* 23. 내 일정 '+ 일정 추가' 버튼: 목록·달력 보기에서 크기를 똑같이(목록 쪽 style.css의 아이콘 14px 규칙을 달력에도) */
+.calendar-heading>.secondary-button .icon{width:14px;height:14px}
