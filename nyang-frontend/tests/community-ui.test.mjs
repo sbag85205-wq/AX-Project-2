@@ -104,3 +104,15 @@ test('내 질문 상세 창을 열면(게시판에서 열어도) 새 답변을 �
  await refreshCommunity();showBoardPost('p1');showBoardPost('p2');
  assert.deepEqual(seen,['p1','p2']); // 앱은 내 글(mine)만 읽음 처리한다
 });
+test('게시판 답변 수정·삭제 버튼: 담당자 본인이 쓴 답변(own)에만, 직원에게는 보이지 않는다',async()=>{
+ const {boardPostHTML}=await import('../public/board-view.js');
+ const replies=[{id:'mine',department:'운영',name:'담당자',created:'2026-11-25',body:'내가 쓴 답변입니다.',source:'규정',own:true},{id:'theirs',department:'인사',name:'담당자 B',created:'2026-11-25',body:'다른 담당자 답변입니다.',source:'규정'}];
+ const post={id:'p',category:'server',body:'질문',created:'2026-11-25',replies};
+ const staff=boardPostHTML({me:{role:'staff',username:'manager'},posts:[post]},'p');
+ assert.ok(staff.includes('data-edit-reply="mine"'));assert.ok(staff.includes('data-delete-reply="mine"'));assert.ok(staff.includes('data-edit-reply-form="mine"'));
+ assert.ok(!staff.includes('data-edit-reply="theirs"'));assert.ok(!staff.includes('data-delete-reply="theirs"'));
+ // 고치기 칸에는 지금 답변이 채워져 있고, 등록 버튼은 아래 줄(staff-composer-foot)에 있다
+ assert.ok(staff.includes('>내가 쓴 답변입니다.</textarea>'));assert.match(staff,/staff-composer-foot"><p>[^<]+<\/p><button class="primary-button">담당자 답변 등록/);
+ const employee=boardPostHTML({me:{role:'employee'},posts:[post]},'p');
+ assert.ok(!employee.includes('data-edit-reply'));assert.ok(!employee.includes('data-delete-reply'));
+});

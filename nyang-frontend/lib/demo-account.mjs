@@ -47,7 +47,7 @@ export async function session(db,env,request,now=Date.now()){
 export async function logout(db,request){const token=tokenFrom(request);if(/^[a-f0-9]{64}$/.test(token||''))await run(db,'DELETE FROM demo_sessions WHERE token_hash=?',await digest(token));return cookie(request,'',0);}
 export async function accountCommunity(database,username,action=null,input={}){
  const account=typeof username==='object'&&username?username:accounts[username];if(!account)fail('로그인 후 이용해 주세요.',401);
- const allowed=account.role==='staff'?['reply','delete-post','restore-post']:['question','attendance','post','like','reward','delete-post'];
+ const allowed=account.role==='staff'?['reply','edit-reply','delete-reply','delete-post','restore-post']:['question','attendance','post','like','reward','delete-post'];
  if(action&&!allowed.includes(action))fail(account.role==='staff'?'담당자는 게시판 관리와 통계 기능을 이용할 수 있어요.':'담당자만 이 작업을 할 수 있어요.',403);
  const db=accountDatabase(database),uid=account.id||'demo-'+username,email=account.id?account.id+'@knowly.internal':username+'@demo.invalid';
  await run(db,`INSERT INTO members(email,uid,role,department,name,active) VALUES(?,?,?,?,?,1) ON CONFLICT(email) DO UPDATE SET role=excluded.role,department=excluded.department,name=excluded.name`,email,uid,account.role,account.department,account.name);
@@ -65,11 +65,27 @@ export async function accountCommunity(database,username,action=null,input={}){
   }
   action=null;
  }
+ // 담당자 답변 고치기·지우기: 답변을 쓴 담당자 본인만(답변 표의 staff 칸 = 쓴 사람 uid). 표 구조는 그대로 쓴다.
+ if(action==='edit-reply'||action==='delete-reply'){
+  if(typeof input.reply!=='string'||!input.reply||input.reply.length>100)fail('답변을 확인해 주세요.',400);
+  const reply=await one(database,'SELECT id,staff FROM demo_replies WHERE id=?',input.reply);
+  if(!reply)fail('답변을 찾을 수 없어요. 이미 지워졌을 수 있어요.',404);
+  if(reply.staff!==uid)fail('내가 쓴 답변만 고치거나 지울 수 있어요.',403);
+  if(action==='edit-reply'){
+   const body=typeof input.body==='string'?input.body.trim():'',source=typeof input.source==='string'?input.source.trim():'';
+   if(body.length<5||body.length>4000)fail('답변: 5~4000자로 입력해 주세요.');
+   if(source.length<2||source.length>500)fail('근거 문서·규정: 2~500자로 입력해 주세요.');
+   await run(database,'UPDATE demo_replies SET body=?,source=? WHERE id=? AND staff=?',body,source,reply.id,uid);notice='답변을 고쳤어요.';
+  }else{
+   await run(database,'DELETE FROM demo_replies WHERE id=? AND staff=?',reply.id,uid);notice='답변을 지웠어요.';
+  }
+  action=null;
+ }
  const result=await community(db,{userId:uid,email,fullName:account.name},undefined,action,input);
  if(result.partial)return result;
  const authors=await rows(db,'SELECT id,staff FROM replies WHERE post IN (SELECT id FROM posts ORDER BY created DESC LIMIT 200)');
  const byId=new Map(authors.map(r=>[r.id,r.staff]));
- const posts=result.posts.map(p=>({...p,replies:p.replies.map(r=>({...r,authorUsername:Object.keys(accounts).find(key=>'demo-'+key===byId.get(r.id))||'',authorRole:'staff'}))}));
+ const posts=result.posts.map(p=>({...p,replies:p.replies.map(r=>({...r,authorUsername:Object.keys(accounts).find(key=>'demo-'+key===byId.get(r.id))||'',authorRole:'staff',...(account.role==='staff'&&byId.get(r.id)===uid?{own:true}:{})}))}));
  const deletedPosts=account.role==='staff'?await rows(database,'SELECT p.id,p.category,p.body,p.created,d.deleted_at FROM demo_deleted_posts d JOIN demo_posts p ON p.id=d.post ORDER BY d.deleted_at DESC LIMIT 200'):undefined;
  return {...result,...(notice?{notice}:{}),posts,deletedPosts,demoMode:!account.id,me:{username:account.username||username,...account},members:undefined};
 }

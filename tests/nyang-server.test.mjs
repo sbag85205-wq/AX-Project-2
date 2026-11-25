@@ -82,6 +82,40 @@ test('서버 저장: 브라우저 저장소와 같은 규칙(보상·게시판·
   } finally { await pg.close(); }
 });
 
+test('게시판 답변 고치기·지우기: 답변을 쓴 담당자 본인만 할 수 있고, 표 구조는 그대로다', async () => {
+  const { pg, call } = await server();
+  const staff2 = { id: 'staff-b', username: 'manager2', name: '담당자 B', department: '인사', role: 'staff' };
+  try {
+    await call(a); await call(staff); await call(staff2);
+    const post = (await call(a, 'post', { category: 'server', body: '재택근무 신청은 어디서 하나요?' })).posts[0];
+    await call(staff, 'reply', { post: post.id, id: 'r-mine', body: '그룹웨어 근무 신청에서 해요.', source: '근무 규정 제3조' });
+    await call(staff2, 'reply', { post: post.id, id: 'r-other', body: '팀장 승인도 필요해요.', source: '근무 규정 제4조' });
+    // 쓴 사람에게만 own 표시: 다른 담당자 답변·직원 화면에는 없다
+    const mine = (await call(staff)).posts[0].replies;
+    assert.equal(mine.find((r) => r.id === 'r-mine').own, true);
+    assert.equal(mine.find((r) => r.id === 'r-other').own, undefined);
+    assert.equal((await call(a)).posts[0].replies.some((r) => 'own' in r), false);
+    // 본인 답변 고치기
+    const edited = await call(staff, 'edit-reply', { reply: 'r-mine', body: '그룹웨어 > 근태관리 > 재택근무 신청에서 해요.', source: '근무 규정 제3조 2항' });
+    assert.equal(edited.notice, '답변을 고쳤어요.');
+    const r = edited.posts[0].replies.find((x) => x.id === 'r-mine');
+    assert.equal(r.body, '그룹웨어 > 근태관리 > 재택근무 신청에서 해요.'); assert.equal(r.source, '근무 규정 제3조 2항');
+    // 다른 담당자·직원은 못 고치고 못 지운다, 형식이 틀리면 거절
+    await assert.rejects(call(staff2, 'edit-reply', { reply: 'r-mine', body: '남의 답변을 고쳐 봅니다.', source: '규정' }), /내가 쓴 답변만/);
+    await assert.rejects(call(staff2, 'delete-reply', { reply: 'r-mine' }), /내가 쓴 답변만/);
+    await assert.rejects(call(a, 'delete-reply', { reply: 'r-mine' }), /담당자만/);
+    await assert.rejects(call(staff, 'edit-reply', { reply: 'r-mine', body: '짧', source: '규정' }), /5~4000자/);
+    await assert.rejects(call(staff, 'delete-reply', { reply: 'nope' }), /찾을 수 없어요/);
+    // 본인 답변 지우기: 다른 담당자 답변은 남는다
+    const deleted = await call(staff, 'delete-reply', { reply: 'r-mine' });
+    assert.deepEqual(deleted.posts[0].replies.map((x) => x.id), ['r-other']);
+    assert.equal((await pg.query("SELECT COUNT(*)::int AS n FROM nyang.replies WHERE id = 'r-mine'")).rows[0].n, 0);
+    // 남은 답변도 지우면 '답변 대기'로 돌아간다
+    await call(staff2, 'delete-reply', { reply: 'r-other' });
+    assert.equal((await call(a)).posts[0].replies.length, 0);
+  } finally { await pg.close(); }
+});
+
 test('서버 저장: 개인 기록(내 일정·대화 기록 등)은 계정별로 저장되고 정해진 이름·크기만 받는다', async () => {
   const { pg, call } = await server();
   try {
