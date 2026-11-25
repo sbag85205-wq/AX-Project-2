@@ -115,6 +115,11 @@ const TABS=[...SEASONS.map(([id])=>[id,tabLabel(id)]),['items','꾸미기 아이
 function pageHTML(){
  const c=deps.catalog(),tab=TABS.find(([id])=>id===ui.tab)||TABS[0];
  return `<section class="admin-page nyang-manage"><header class="admin-heading"><h1>냥대리 관리</h1></header>
+ <div class="nm-guide"><p>직원 첫 화면에 사는 <b>냥대리 캐릭터</b>의 모습과 반응을 정하는 곳이에요. 여기서 바꾼 내용은 모든 직원에게 똑같이 보여요.</p>
+ <ul><li><b>평소 모습</b> 직원 첫 화면에 서 있는 냥대리 그림이에요. 계절 칸마다 따로 정해요.</li>
+ <li><b>반응</b> 직원이 냥대리를 쓰다듬으면 나오는 그림과 멘트예요. 따뜻한·차가운 모드별로 나뉘고, 같은 종류의 반응은 같은 확률로 골라 나와요.</li>
+ <li><b>꾸미기 아이템</b> 직원이 하트로 사서 냥대리에게 입히는 아이템이에요.</li>
+ <li><b>지금 쓰는 칸</b> 탭에 점이 찍힌 칸이 지금 직원에게 보이는 칸이에요. 다른 칸에서 '지금 계절을 …로 바꾸기'(기본값 칸은 '기본값으로 쓰기')를 누르면 바뀌어요.</li></ul></div>
  <div class="nm-tabs" role="tablist" aria-label="냥대리 관리">${TABS.map(([id,label])=>`<button type="button" role="tab" class="nm-tab ${tab[0]===id?'on':''}" aria-selected="${tab[0]===id}" data-nm="tab" data-tab="${id}">${label}${c.season===id?'<i class="nm-tab-dot" title="지금 쓰는 칸"></i>':''}</button>`).join('')}</div>
  <p class="nm-lead">${tab[0]==='items'?'직원이 하트로 열고 착용하는 아이템이에요. 새 아이템을 추가하고 판매를 켜고 끌 수 있어요.':tab[0]==='none'?'계절을 정하지 않았을 때(기본값) 냥대리의 평소 모습과 쓰다듬기 반응이에요.':`${tab[1]}에 쓸 평소 모습과 쓰다듬기 반응이에요. 지금 계절을 ${tab[1]}로 바꾸면 이 칸이 쓰여요.`}</p>
  <div class="nm-body">${tab[0]==='items'?itemsHTML(c):bucketHTML(c,tab[0])}</div></section>`;

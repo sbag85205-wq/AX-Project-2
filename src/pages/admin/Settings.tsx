@@ -169,16 +169,20 @@ export default function Settings() {
         <section className="card panel" style={{ flex: '1 1 420px', minWidth: 0, display: 'grid', gap: 18 }}>
           <div>
             <h2>검색 기준</h2>
-            <p className="panel-sub" style={{ marginBottom: 0 }}>높이면 정확한 근거만 쓰고, 낮추면 더 많은 질문에 답하지만 엉뚱한 근거가 섞일 수 있어요.</p>
+            <p className="panel-sub" style={{ marginBottom: 0 }}>
+              문서 조각마다 <b>키워드 점수</b>(질문의 검색어가 얼마나 들어 있나)와 <b>의미 점수</b>(뜻이 얼마나 비슷한가)를 0~1로 매겨요.
+              두 점수 중 <b>하나라도</b> 아래 최소 점수를 넘으면 근거 후보가 되고, 후보는 <b>비중</b>대로 섞은 점수가 높은 순서로 최대 5개까지 답변에 써요.
+              최소 점수를 높이면 정확한 근거만 쓰고, 낮추면 더 많은 질문에 답하지만 엉뚱한 근거가 섞일 수 있어요.
+            </p>
           </div>
           <Ratio id="keyword-min" label="키워드 최소 점수" value={draft.keyword_min}
-            hint="질문의 검색어 중 문서에 들어 있는 비율이 이 값 이상이면 근거로 써요. 기본 0.35"
+            hint={`질문의 검색어 중 ${Math.round(draft.keyword_min * 100)}% 이상이 문서 조각에 들어 있으면 근거로 써요. 예: 검색어가 4개면 ${Math.max(1, Math.ceil(4 * draft.keyword_min - 1e-9))}개 이상. 기본 0.35`}
             onChange={(v) => setDraft({ ...draft, keyword_min: v })} />
           <Ratio id="vector-min" label="의미 검색 최소 점수" value={draft.vector_min} disabled={!info.embedding_configured}
-            hint={info.embedding_configured ? '임베딩 유사도가 이 값 이상이면 근거로 써요. 기본 0.55' : 'EMBEDDING_MODEL 비밀값을 설정하면 쓸 수 있어요.'}
+            hint={info.embedding_configured ? '질문과 문서 조각의 뜻이 비슷한 정도(임베딩 유사도)가 이 값 이상이면, 같은 단어가 없어도 근거로 써요. 예: "연차"로 물어도 "휴가" 조항을 찾아요. 기본 0.55' : 'EMBEDDING_MODEL 비밀값을 설정하면 쓸 수 있어요.'}
             onChange={(v) => setDraft({ ...draft, vector_min: v })} />
           <Ratio id="vector-weight" label="의미 검색 비중" value={draft.vector_weight} disabled={!info.embedding_configured}
-            hint={`근거 순서를 정할 때 의미 검색 ${Math.round(draft.vector_weight * 100)}% · 키워드 ${Math.round((1 - draft.vector_weight) * 100)}%로 섞어요.`}
+            hint={`근거를 고르는 기준이 아니라 순서를 정하는 값이에요. 의미 점수 ${Math.round(draft.vector_weight * 100)}% · 키워드 점수 ${Math.round((1 - draft.vector_weight) * 100)}%로 섞어 높은 순서로 써요. 높이면 뜻이 비슷한 문서가, 낮추면 같은 단어가 많은 문서가 앞에 와요. 기본 0.60`}
             onChange={(v) => setDraft({ ...draft, vector_weight: v })} />
         </section>
       </div>
