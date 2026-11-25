@@ -192,3 +192,11 @@ body[data-route='/admin/unanswered'] .stat-label { font-size: 16px; font-weight:
 body[data-route='/admin/unanswered'] .stat-value { margin-top: 10px; font-size: 38px; }
 body[data-route='/admin/unanswered'] .stat-value small { font-size: 16px; margin-left: 5px; }
 body[data-route='/admin/unanswered'] .stat-sub { margin-top: 4px; font-size: 14px; }
+
+/* 문서 관리: 문서 목록 위 찾기 줄(검색·분야·상태) */
+.doc-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 14px 22px; border-bottom: 1px solid var(--line-soft); }
+.doc-filters-search { position: relative; flex: 1 1 240px; min-width: 0; }
+.doc-filters-search .input { padding-left: 36px; }
+.doc-filters-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); display: flex; color: var(--faint); pointer-events: none; }
+.doc-filters .select { width: auto; flex: 0 1 150px; }
+.doc-filters-count { margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }

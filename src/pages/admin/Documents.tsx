@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState, type DragEvent, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type DragEvent, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { GearIcon } from '../../components/Icons';
+import { GearIcon, SearchIcon } from '../../components/Icons';
 import { Modal } from '../../components/Modal';
 import { useToast } from '../../components/Toast';
 import { callFunction, errorMessage } from '../../lib/api';
@@ -34,6 +34,10 @@ export default function Documents() {
   const [saving, setSaving] = useState(false);
   // 분야 관리에서 정한 분야 목록. 불러오기 전에는 기본 분야를 보여준다.
   const [categories, setCategories] = useState<string[]>([...CATEGORIES]);
+  // 문서 목록 찾기: 이미 불러온 목록 안에서만 거른다(서버 요청 없음)
+  const [q, setQ] = useState('');
+  const [catFilter, setCatFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'' | DocumentRow['status']>('');
 
   const load = useCallback(async () => {
     const { data } = await supabase.from('documents').select('*').order('created_at', { ascending: false });
@@ -128,6 +132,19 @@ export default function Documents() {
     load();
   };
 
+  // 문서명·카테고리·버전에서 찾는다. 띄어쓰기와 대소문자는 무시한다.
+  const shown = useMemo(() => {
+    const key = (t: string) => t.toLowerCase().replace(/\s+/g, '');
+    const words = q.trim().split(/\s+/).filter(Boolean).map(key);
+    return docs.filter((d) =>
+      (!catFilter || d.category === catFilter) &&
+      (!statusFilter || d.status === statusFilter) &&
+      words.every((w) => key(`${d.title} ${d.category} ${d.version}`).includes(w)));
+  }, [docs, q, catFilter, statusFilter]);
+  const filtering = !!(q.trim() || catFilter || statusFilter);
+  // 분야 필터: 분야 관리 목록 + 목록에 없는 예전 분야로 등록된 문서의 분야
+  const filterCategories = useMemo(() => [...new Set([...categories, ...docs.map((d) => d.category)])], [categories, docs]);
+
   return (
     <main className="admin-main">
       <div className="page-head">
@@ -176,8 +193,30 @@ export default function Documents() {
       </form>
 
       <section className="card" aria-label="문서 목록" style={{ overflow: 'hidden' }}>
+        {docs.length > 0 && (
+          <div className="doc-filters" role="search" aria-label="문서 찾기">
+            <div className="doc-filters-search">
+              <label htmlFor="admin-doc-search" className="sr">문서 검색</label>
+              <input id="admin-doc-search" type="search" className="input" placeholder="문서명·카테고리·버전 검색" value={q} onChange={(e) => setQ(e.target.value)} />
+              <span className="doc-filters-icon" aria-hidden="true"><SearchIcon /></span>
+            </div>
+            <label htmlFor="admin-doc-cat" className="sr">분야</label>
+            <select id="admin-doc-cat" className="select" value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
+              <option value="">모든 분야</option>
+              {filterCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <label htmlFor="admin-doc-status" className="sr">상태</label>
+            <select id="admin-doc-status" className="select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}>
+              <option value="">모든 상태</option>
+              {(Object.keys(STATUS) as DocumentRow['status'][]).map((k) => <option key={k} value={k}>{STATUS[k][0]}</option>)}
+            </select>
+            <span className="hint doc-filters-count" role="status">{filtering ? `${docs.length}개 중 ${shown.length}개` : `전체 ${docs.length}개`}</span>
+            {filtering && <button type="button" className="btn btn-sm btn-ghost" onClick={() => { setQ(''); setCatFilter(''); setStatusFilter(''); }}>초기화</button>}
+          </div>
+        )}
         {docs.length === 0 && <div className="empty">등록된 문서가 없어요.</div>}
-        {docs.map((d) => (
+        {docs.length > 0 && shown.length === 0 && <div className="empty">조건에 맞는 문서가 없어요.</div>}
+        {shown.map((d) => (
           <div key={d.id} className="list-row">
             <div className="list-main">
               <div className="list-title">{d.title}</div>
