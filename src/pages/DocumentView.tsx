@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { BackIcon } from '../components/Icons';
 import { PdfViewer } from '../components/PdfViewer';
 import { SheetViewer } from '../components/SheetViewer';
 import { useAuth } from '../lib/auth';
@@ -23,6 +24,9 @@ export default function DocumentView() {
   const [params] = useSearchParams();
   const focusChunk = params.get('chunk');
   const { profile } = useAuth();
+  // 돌아갈 목록: 문서 관리(관리자)에서 '보기'로 열었으면 문서 관리로, 아니면 사내 문서 목록으로.
+  // 관리자는 검색에서 빠진 문서(사내 문서 목록에 없음)도 문서 관리로 돌려보낸다.
+  const fromAdmin = (useLocation().state as { from?: string } | null)?.from === 'admin';
   const [doc, setDoc] = useState<DocumentRow | null>(null);
   const [chunks, setChunks] = useState<ChunkRow[]>([]);
   const [missing, setMissing] = useState(false);
@@ -81,7 +85,7 @@ export default function DocumentView() {
     return (
       <main className="admin-main">
         <div className="card empty">문서를 찾을 수 없어요. 삭제되었거나 검색 대상에서 제외된 문서일 수 있어요.</div>
-        <Link to="/docs" className="btn" style={{ alignSelf: 'flex-start' }}>문서 목록으로</Link>
+        <BackLink to={fromAdmin && profile?.role === 'admin' ? '/admin/documents' : '/docs'} />
       </main>
     );
   }
@@ -91,8 +95,8 @@ export default function DocumentView() {
     <main className="admin-main">
       <div className="page-head">
         <div>
-          <Link to={profile?.role === 'admin' && doc.status !== 'ready' ? '/admin/documents' : '/docs'} className="hint">← 목록으로</Link>
-          <h1 style={{ marginTop: 6 }}>{doc.title}</h1>
+          <BackLink to={profile?.role === 'admin' && (fromAdmin || doc.status !== 'ready') ? '/admin/documents' : '/docs'} />
+          <h1 style={{ marginTop: 10 }}>{doc.title}</h1>
           <p>
             {doc.category} · {doc.version} · {pageCountLabel(doc.page_count, doc.file_path)}
             {doc.effective_from ? ` · 시행 ${doc.effective_from}` : ''}
@@ -141,5 +145,14 @@ export default function DocumentView() {
         </div>
       )}
     </main>
+  );
+}
+
+/** 목록으로 돌아가는 버튼: 어느 목록으로 가는지 글자로 보여 준다 */
+function BackLink({ to }: { to: string }) {
+  return (
+    <Link to={to} className="btn btn-sm doc-back">
+      <BackIcon />{to === '/admin/documents' ? '문서 관리로' : '문서 목록으로'}
+    </Link>
   );
 }

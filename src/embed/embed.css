@@ -192,3 +192,8 @@ body[data-route='/admin/unanswered'] .stat-label { font-size: 16px; font-weight:
 body[data-route='/admin/unanswered'] .stat-value { margin-top: 10px; font-size: 38px; }
 body[data-route='/admin/unanswered'] .stat-value small { font-size: 16px; margin-left: 5px; }
 body[data-route='/admin/unanswered'] .stat-sub { margin-top: 4px; font-size: 14px; }
+
+/* 문서 보기: 목록으로 돌아가는 버튼(글자 작은 링크 대신 버튼) */
+.doc-back { align-self: flex-start; gap: 6px; padding: 0 14px 0 10px; font-size: 13px; color: var(--text-2); text-decoration: none; }
+.doc-back svg { width: 16px; height: 16px; }
+.doc-back:hover { color: var(--text); }
