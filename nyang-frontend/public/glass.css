@@ -471,3 +471,6 @@ html body .chat-room .answer-tools>button[data-knowly-vote] .icon{width:15px;hei
 html body .chat-room .answer-tools>button[data-knowly-vote]:not([aria-pressed=true]):hover{color:var(--vote-ink);background:color-mix(in srgb,var(--vote) 11%,var(--ui-panel,#fff));border-color:color-mix(in srgb,var(--vote) 70%,transparent)}
 html[data-theme=dark] body .chat-room .answer-tools>button[data-knowly-vote]:not([aria-pressed=true]):hover{background:color-mix(in srgb,var(--vote) 16%,transparent)}
 html body .chat-room .answer-tools>button[data-knowly-vote][aria-pressed=true],html body .chat-room .answer-tools>button[data-knowly-vote][aria-pressed=true]:hover{color:var(--vote-on);background:var(--vote);border-color:var(--vote)}
+
+/* 21. 라이트 모드 '내 레벨'의 '출석 완료' 버튼: 진한 파란 배경에 회색 글자라 안 보이던 것 → 흰 글자 */
+html:not([data-theme=dark]) body[data-mode=cat] .activity-page .activity-attendance>.primary-button:disabled{color:#fff}
