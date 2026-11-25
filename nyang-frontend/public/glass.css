@@ -460,16 +460,14 @@ html:not([data-theme=dark]) .company-logo-dark,html[data-theme=dark] .company-lo
 /* 19. 사진·파일을 끌어다 질문 입력창 위로 가져오면 놓을 수 있다는 표시 */
 html body .desktop-workspace .chat-composer.drag-over{border-color:var(--ui-accent)!important;box-shadow:0 0 0 4px var(--ui-accent-fill)!important;border-style:dashed!important}
 
-/* 20. 답변 평가(도움돼요·아쉬워요): 누르기 전에도 테두리 있는 둥근 버튼으로 또렷하게 보이고(마우스를 올리면 각자 색이 비친다),
-   누른 쪽은 색 배경 칩으로 바뀐다(도움돼요=강조색, 아쉬워요=주황). 다시 누르면 취소되어 원래대로 */
+/* 20. 답변 평가(도움돼요·아쉬워요): 세 단계로 구분한다.
+   기본 = 각자 색(도움돼요=강조색, 아쉬워요=주황)의 옅은 테두리·배경·글자 / 마우스 올림 = 조금 더 진하게 / 누름 = 색이 꽉 찬 버튼. 다시 누르면 취소 */
 html body .chat-room .answer-tools[aria-label="답변 평가"]{gap:8px}
-html body .chat-room .answer-tools>button[data-knowly-vote]{gap:6px;min-height:32px;padding:5px 14px;border:1px solid var(--ui-line,#e5e5e8);border-radius:999px;background:var(--ui-panel,#fff);color:var(--ui-ink,#1d1d1f);font-size:13px;font-weight:500;transition:background .15s,color .15s,border-color .15s}
+html body .chat-room .answer-tools>button[data-knowly-vote]{--vote:var(--ui-accent,#4a5bd8);--vote-ink:var(--ui-accent,#4a5bd8);--vote-on:#fff;gap:6px;min-height:32px;padding:5px 14px;border:1px solid color-mix(in srgb,var(--vote) 38%,transparent);border-radius:999px;background:color-mix(in srgb,var(--vote) 7%,var(--ui-panel,#fff));color:var(--vote-ink);font-size:13px;font-weight:600;transition:background .15s,color .15s,border-color .15s}
+html body .chat-room .answer-tools>button[data-knowly-vote=down]{--vote:#c2410c;--vote-ink:#c2410c}
+html[data-theme=dark] body .chat-room .answer-tools>button[data-knowly-vote]{--vote-on:#14163a;background:color-mix(in srgb,var(--vote) 12%,transparent);border-color:color-mix(in srgb,var(--vote) 45%,transparent)}
+html[data-theme=dark] body .chat-room .answer-tools>button[data-knowly-vote=down]{--vote:#ff9a5c;--vote-ink:#ffb185;--vote-on:#2a1206}
 html body .chat-room .answer-tools>button[data-knowly-vote] .icon{width:15px;height:15px}
-html body .chat-room .answer-tools>button[data-knowly-vote=up]:not([aria-pressed=true]):hover{color:var(--ui-accent);border-color:color-mix(in srgb,var(--ui-accent) 45%,transparent);background:color-mix(in srgb,var(--ui-accent) 6%,var(--ui-panel,#fff))}
-html body .chat-room .answer-tools>button[data-knowly-vote=down]:not([aria-pressed=true]):hover{color:#c2410c;border-color:rgba(234,88,12,.4);background:color-mix(in srgb,#ea580c 6%,var(--ui-panel,#fff))}
-html[data-theme=dark] body .chat-room .answer-tools>button[data-knowly-vote]{background:transparent;color:var(--ui-ink,#f2f2f7)}
-html[data-theme=dark] body .chat-room .answer-tools>button[data-knowly-vote=up]:not([aria-pressed=true]):hover{color:var(--ui-accent);background:color-mix(in srgb,var(--ui-accent) 10%,transparent)}
-html[data-theme=dark] body .chat-room .answer-tools>button[data-knowly-vote=down]:not([aria-pressed=true]):hover{color:#ffb185;background:rgba(255,145,80,.1)}
-html body .chat-room .answer-tools>button[data-knowly-vote=up][aria-pressed=true]{color:var(--ui-accent);background:var(--ui-accent-fill);border-color:color-mix(in srgb,var(--ui-accent) 35%,transparent);font-weight:600}
-html body .chat-room .answer-tools>button[data-knowly-vote=down][aria-pressed=true]{color:#c2410c;background:rgba(234,88,12,.1);border-color:rgba(234,88,12,.32);font-weight:600}
-html[data-theme=dark] body .chat-room .answer-tools>button[data-knowly-vote=down][aria-pressed=true]{color:#ffb185;background:rgba(255,145,80,.16);border-color:rgba(255,145,80,.38)}
+html body .chat-room .answer-tools>button[data-knowly-vote]:not([aria-pressed=true]):hover{color:var(--vote-ink);background:color-mix(in srgb,var(--vote) 11%,var(--ui-panel,#fff));border-color:color-mix(in srgb,var(--vote) 70%,transparent)}
+html[data-theme=dark] body .chat-room .answer-tools>button[data-knowly-vote]:not([aria-pressed=true]):hover{background:color-mix(in srgb,var(--vote) 16%,transparent)}
+html body .chat-room .answer-tools>button[data-knowly-vote][aria-pressed=true],html body .chat-room .answer-tools>button[data-knowly-vote][aria-pressed=true]:hover{color:var(--vote-on);background:var(--vote);border-color:var(--vote)}
