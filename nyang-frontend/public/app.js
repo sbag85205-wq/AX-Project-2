@@ -442,7 +442,7 @@ function attachmentChips(){return attachments.length?`<div class="composer-attac
 function eventHTML(r){const e=r.event||{},when=`${displayDate(e.date)}${e.time?' · '+timeLabel(e.time):''}`;
  if(r.decision==='added')return `<div class="answer-content event-card"><span class="answer-label">${icon('check')} 내 일정에 추가했어요</span><h3>${esc(e.title)}</h3><p>${esc(when)}</p>${scheduleDetailHTML(r)}<div class="answer-tools"><button class="answer-schedule-button" data-open-plan="${esc(e.date)}">${icon('calendar')} 내 일정 보기</button></div></div>`;
  if(r.decision==='no')return `<div class="answer-content event-card"><span class="answer-label muted">${icon('calendar')} 일정 추가</span><h3>일정 추가를 취소했어요.</h3><p>필요하면 다시 말해 주세요.</p></div>`;
- return `<div class="answer-content event-card"><span class="answer-label">${icon('calendar')} 일정 추가</span><h3>이렇게 내 일정에 넣을까요?</h3><p>제목·날짜·시간을 확인하고, 필요하면 고친 뒤 추가하세요.</p><form class="event-form" data-event-form="${esc(r.messageId)}"><label>제목<input name="title" value="${esc(e.title)}" maxlength="40" required></label><label>날짜<input type="date" name="date" value="${esc(e.date)}" required></label><label>시간<input type="time" name="time" value="${esc(e.time)}"></label><div class="event-form-actions"><button type="submit" class="primary-button">${icon('calendar')} 내 일정에 추가</button><button type="button" class="text-button" data-event-cancel="${esc(r.messageId)}">취소</button></div></form></div>`;
+ return `<div class="answer-content event-card"><span class="answer-label">${icon('calendar')} 일정 추가</span><h3>이렇게 내 일정에 넣을까요?</h3><p>제목·날짜·시간을 확인하고, 필요하면 고친 뒤 추가하세요.</p><form class="event-form" data-event-form="${esc(r.messageId)}"><label>제목<input name="title" value="${esc(e.title)}" maxlength="40" required></label><label>날짜<input type="date" name="date" value="${esc(e.date)}" required></label><label>시간<input type="text" name="time" value="${esc(e.time)}" inputmode="numeric" maxlength="5" placeholder="예: 14:30" autocomplete="off" data-typed-time></label><div class="event-form-actions"><button type="submit" class="primary-button">${icon('calendar')} 내 일정에 추가</button><button type="button" class="text-button" data-event-cancel="${esc(r.messageId)}">취소</button></div></form></div>`;
 }
 function resultHTML(r){
  if(r.kind==='answer'){const a=personalityAnswer(answers[r.id],personality),detail=a.steps?`<ol class="answer-steps">${a.steps.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`:'';return `<div class="answer-content"><span class="answer-label">${icon('check')} 자료에서 확인한 답변</span><h3>${esc(a.title)}</h3><p>${esc(a.text)}</p>${answerTools(r,a.refs,detail)}</div>`;}
@@ -841,8 +841,9 @@ document.addEventListener('submit',e=>{
   if(!r||r.kind!=='event'||r.decision==='added')return;
   const fd=new FormData(e.target),title=String(fd.get('title')||'').trim().slice(0,40)||'새 일정',date=String(fd.get('date')||''),time=String(fd.get('time')||'');
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){toast('날짜를 골라 주세요.');return;}
-  const taskId=crypto.randomUUID(),next=[...tasks,eventTask({title,date,time:/^\d{2}:\d{2}$/.test(time)?time:''},taskId)];
-  if(save('om-tasks',next)){tasks=next;r.event={title,date,time};r.taskId=taskId;r.decision='added';saveCurrentChat();render();toast(`${displayDate(date)}${time?' '+timeLabel(time):''} '${title}' 일정을 내 일정에 넣었어요.`);}
+  const hm=typedTime(time);if(hm===null){toast('시간은 14:30처럼 0:00~23:59로 입력해 주세요.');e.target.elements.time?.focus();return;}
+  const taskId=crypto.randomUUID(),next=[...tasks,eventTask({title,date,time:hm},taskId)];
+  if(save('om-tasks',next)){tasks=next;r.event={title,date,time:hm};r.taskId=taskId;r.decision='added';saveCurrentChat();render();toast(`${displayDate(date)}${hm?' '+timeLabel(hm):''} '${title}' 일정을 내 일정에 넣었어요.`);}
   return;
  }
  if(e.target.dataset.planForm){
@@ -855,7 +856,7 @@ document.addEventListener('submit',e=>{
  }
 });
 document.addEventListener('toggle',e=>{const id=e.target.dataset?.detailFor;if(id){if(e.target.open)closedScheduleDetails.delete(id);else closedScheduleDetails.add(id);}},true);
-document.addEventListener('focusout',e=>{if(e.target.id==='task-add-time'){const hm=typedTime(e.target.value);if(hm)e.target.value=hm;}});
+document.addEventListener('focusout',e=>{if(e.target.id==='task-add-time'||e.target.matches?.('[data-typed-time]')){const hm=typedTime(e.target.value);if(hm)e.target.value=hm;}});
 document.addEventListener('input',e=>{if(e.target.matches('#question-form textarea')){chatDraft=e.target.value;resizeComposer();}
  // 일정 잡기 창의 제목은 입력하는 동안 기억해 둔다(화면이 다시 그려져도 남는다)
  if(e.target.matches('[data-plan-form] input[name=title]')){const r=messages.find(m=>m.result?.messageId===e.target.form.dataset.planForm)?.result;if(r)r.title=e.target.value;}});
