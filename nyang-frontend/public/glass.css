@@ -535,12 +535,3 @@ html[data-theme=dark] .chat-room .schedule-inline .agenda-item p.agenda-deadline
 
 /* 28. 알림(toast)을 맨 위 층(popover)에 띄울 때 브라우저 기본 popover 모양(테두리·배경·가운데 배치)을 지운다 */
 #toast-stack[popover]{inset:auto auto 35px 50%;margin:0;padding:0;border:0;background:transparent;color:inherit;overflow:visible;width:max-content;height:auto;max-width:90vw}
-
-/* 29. 꾸미기 배경: 물어보기 화면(첫 화면·대화) 전체에 배경을 옅게 깔고(반투명 덧칠로 글자가 잘 보이게),
-   첫 화면 냥대리 아래 타원형 배경(입력창 뒤로 내려오던 것)은 쓰지 않는다. 입력창·질문 예시는 거의 불투명하게 */
-/* (2번 '#main 투명' 규칙보다 앞서도록 #main으로 고른다) */
-html body[data-mode=cat].custom-bg .desktop-workspace #main:not(.work-view){background:linear-gradient(rgba(255,255,255,.58),rgba(255,255,255,.58)),var(--user-bg) center/cover no-repeat!important}
-html[data-theme=dark] body[data-mode=cat].custom-bg .desktop-workspace #main:not(.work-view){background:linear-gradient(rgba(22,24,46,.7),rgba(22,24,46,.7)),var(--user-bg) center/cover no-repeat!important}
-body.custom-bg .desktop-workspace .home-scene .scene-window{display:none}
-html body.custom-bg .desktop-workspace .chat-composer{background:rgba(255,255,255,.96)!important}
-html[data-theme=dark] body.custom-bg .desktop-workspace .chat-composer{background:rgba(38,40,70,.96)!important}
