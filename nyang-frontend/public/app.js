@@ -20,12 +20,12 @@ import {orderNav,installNavLayout} from './nav-layout.js?v=2a33659a9a7a';
 import {createGuide} from './guide.js?v=a94d3106cc42';
 import {recentTurns} from './chat-context.js?v=e6c82dc547ad';
 import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=5402e774fd4a';
-import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=c3575a7ac45f';
+import {initSchedule,renderCalendar,renderTodos} from './schedule.js?v=f61f2f75941a';
 const mode=document.body.dataset.mode;
 const isCat=mode==='cat';
 const root='/nyang/';
 // 답변 저장(북마크) 아이콘
-const paths={bookmark:'M7 4h10v16l-5-3.5L7 20V4Z',spark:'m12 3 2.4 6.6L21 12l-6.6 2.4L12 21l-2.4-6.6L3 12l6.6-2.4L12 3Z',chat:'M21 11.5a8.4 8.4 0 0 1-9 8.5 10 10 0 0 1-4-.9L3 21l1.7-5a8.5 8.5 0 1 1 16.3-4.5Z',list:'m3 6 1 1 2-2M10 6h11M3 12l1 1 2-2m4 1h11M3 18l1 1 2-2m4 1h11',book:'M4 3h13a3 3 0 0 1 3 3v15H6a3 3 0 0 1-3-3V6a3 3 0 0 1 1-3ZM3 17h17M7 7h9M7 11h7',arrow:'M5 12h14m-6-6 6 6-6 6',chevron:'m9 5 7 7-7 7',down:'m6 9 6 6 6-6',sun:'M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',wallet:'M20 8H5a3 3 0 0 1 0-6h13v6M3 5v14a2 2 0 0 0 2 2h15V8m0 5h-5v4h5',case:'M3 7h18v14H3V7Zm5 0V3h8v4M3 12l9 3 9-3M10 12h4',coffee:'M3 7h13v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7Zm13 1h3a3 3 0 0 1 0 6h-3M6 2v2m5-2v2',picture:'M3 3h18v18H3V3Zm0 14 6-6 5 5 3-3 4 4M8 7h.01',check:'m5 12 4 4L19 6',close:'m6 6 12 12M6 18 18 6',send:'M12 19V5m-6 6 6-6 6 6',plus:'M12 5v14M5 12h14',back:'M19 12H5m6-6-6 6 6 6',calendar:'M3 5h18v16H3V5Zm4-3v6m10-6v6M3 11h18',trash:'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7',info:'M12 11v6m0-10v.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z',menu:'M4 6h16M4 12h16M4 18h16',clock:'M12 7v5l3 2M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z',logout:'M9 4H4v16h5m5-13 5 5-5 5m-6-5h12'};
+const paths={edit:'M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z',bookmark:'M7 4h10v16l-5-3.5L7 20V4Z',spark:'m12 3 2.4 6.6L21 12l-6.6 2.4L12 21l-2.4-6.6L3 12l6.6-2.4L12 3Z',chat:'M21 11.5a8.4 8.4 0 0 1-9 8.5 10 10 0 0 1-4-.9L3 21l1.7-5a8.5 8.5 0 1 1 16.3-4.5Z',list:'m3 6 1 1 2-2M10 6h11M3 12l1 1 2-2m4 1h11M3 18l1 1 2-2m4 1h11',book:'M4 3h13a3 3 0 0 1 3 3v15H6a3 3 0 0 1-3-3V6a3 3 0 0 1 1-3ZM3 17h17M7 7h9M7 11h7',arrow:'M5 12h14m-6-6 6 6-6 6',chevron:'m9 5 7 7-7 7',down:'m6 9 6 6 6-6',sun:'M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z',wallet:'M20 8H5a3 3 0 0 1 0-6h13v6M3 5v14a2 2 0 0 0 2 2h15V8m0 5h-5v4h5',case:'M3 7h18v14H3V7Zm5 0V3h8v4M3 12l9 3 9-3M10 12h4',coffee:'M3 7h13v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7Zm13 1h3a3 3 0 0 1 0 6h-3M6 2v2m5-2v2',picture:'M3 3h18v18H3V3Zm0 14 6-6 5 5 3-3 4 4M8 7h.01',check:'m5 12 4 4L19 6',close:'m6 6 12 12M6 18 18 6',send:'M12 19V5m-6 6 6-6 6 6',plus:'M12 5v14M5 12h14',back:'M19 12H5m6-6-6 6 6 6',calendar:'M3 5h18v16H3V5Zm4-3v6m10-6v6M3 11h18',trash:'M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7',info:'M12 11v6m0-10v.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z',menu:'M4 6h16M4 12h16M4 18h16',clock:'M12 7v5l3 2M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z',logout:'M9 4H4v16h5m5-13 5 5-5 5m-6-5h12'};
 const icon=(name,cls='')=>`<svg class="icon ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${paths[name]||paths.spark}"/></svg>`;
 const CAT_LABELS={searching:'책에서 자료를 찾고 있는',annoyed:'귀찮은 표정의',happy:'행복한 표정의','warm-pet':'눈을 감고 골골거리는','warm-wink':'윙크하는','warm-shy':'수줍게 쉬고 싶어 하는','warm-joy':'두 손 모아 기뻐하는','cold-tsun':'곁눈질하며 볼이 빨개진','cold-think':'턱을 괴고 생각하는','cold-stop':'손바닥으로 멈추라는','cold-sulk':'고개를 돌리고 삐친','cold-shoo':'콧김을 뿜으며 손을 젓는'};
 // style: 관리에서 올린 그림(--art), inner: 냥대리 위에 겹치는 추가 꾸미기 아이템
@@ -538,6 +538,12 @@ function scheduleDetailHTML(r){
  const rows=list.map(t=>`<article class="agenda-item ${t.done?'done':''}"><div class="schedule-detail-title"><strong>${esc(t.title)}</strong>${t.time?`<span class="task-time">${icon('clock')} ${esc(timeLabel(t.time))}</span>`:''}${t.done?'<span class="schedule-detail-done">완료</span>':''}</div><small>${esc(displayDate(t.date))} · ${t.planType==='event'?esc(t.planLabel||'내 일정'):`${esc(t.planLabel||'')} · ${esc(t.type)}`}</small>${t.note?`<p>${esc(t.note)}</p>`:''}${t.deadline?`<p class="agenda-deadline ${!t.done&&t.deadline<today?'overdue':''}">규정 마감 ${displayDate(t.deadline)}</p>`:''}</article>`).join('');
  return `<details class="schedule-inline" data-detail-for="${esc(r.messageId)}" ${closedScheduleDetails.has(r.messageId)?'':'open'}><summary>${icon('list')} 일정 상세 <small>${list.length?`${list.length}개`:''}</small></summary><div class="schedule-detail-list">${rows||'<p class="caption">내 일정에서 지웠거나 찾을 수 없는 일정이에요.</p>'}</div></details>`;
 }
+// 내 일정에서 일정 제목 수정
+function showRenameTask(id){
+ const t=tasks.find(x=>x.id===id);if(!t)return;
+ openModal(`<h2 id="modal-title">제목 수정</h2><p class="modal-sub">${esc(displayDate(t.date))}${t.time?' · '+esc(timeLabel(t.time)):''} 일정의 제목을 바꿔요.</p><form id="task-rename-form" class="chat-settings-form" data-task-id="${esc(t.id)}"><label for="task-rename-title">제목</label><input id="task-rename-title" name="title" maxlength="40" required value="${esc(t.title)}" autocomplete="off"><div class="chat-delete-actions"><button type="button" class="secondary-button" data-action="close-modal">취소</button><button class="primary-button" type="submit">저장</button></div></form>`);
+ const input=$('#task-rename-title');input?.focus();input?.select();
+}
 function showChatSettings(id){
  if(!communityState().member)return;
  saveCurrentChat();const thread=chats.find(x=>x.id===id);if(!thread)return;
@@ -757,6 +763,7 @@ const clickByData=[
  [b=>b.dataset.switchCategory,(b,e)=>{category=b.dataset.switchCategory;ask(b.dataset.retry,undefined,false);return;}],
  [b=>b.dataset.filter,(b,e)=>{filter=b.dataset.filter;render();return;}],
  [b=>b.dataset.day,(b,e)=>{selectedDay=b.dataset.day;filter='day';render();return;}],
+ [b=>b.dataset.renameTask,(b,e)=>{showRenameTask(b.dataset.renameTask);return;}],
  [b=>b.dataset.delete,(b,e)=>{const next=tasks.filter(t=>t.id!==b.dataset.delete);if(save('om-tasks',next)){tasks=next;render();toast('할 일을 삭제했어요.');}return;}],
  [b=>b.dataset.postQuestion,(b,e)=>{const r=messages.find(m=>m.result?.messageId===b.dataset.postQuestion)?.result;if(r)showPostDialog(r);return;}],
  [b=>b.dataset.chatSettings,(b,e)=>{showChatSettings(b.dataset.chatSettings);return;}],
@@ -828,6 +835,15 @@ document.addEventListener('click',async e=>{
 });
 document.addEventListener('submit',e=>{
  if(e.target.id==='question-form'){e.preventDefault();const text=new FormData(e.target).get('question');ask(text);}
+ if(e.target.id==='task-rename-form'){
+  e.preventDefault();const id=e.target.dataset.taskId,title=String(new FormData(e.target).get('title')||'').trim().slice(0,40);
+  if(!title){toast('제목을 입력해 주세요.');$('#task-rename-title')?.focus();return;}
+  const before=tasks.find(t=>t.id===id);if(!before){closeModal();return;}
+  if(before.title===title){closeModal();return;}
+  const next=tasks.map(t=>t.id===id?{...t,title}:t);
+  if(save('om-tasks',next)){tasks=next;closeModal();render();toast(`제목을 '${title}'(으)로 바꿨어요.`);}
+  return;
+ }
  if(e.target.id==='task-add-form'){
   e.preventDefault();const fd=new FormData(e.target),title=String(fd.get('title')||'').trim().slice(0,40),date=String(fd.get('date')||''),time=String(fd.get('time')||'');
   if(!title){toast('제목을 입력해 주세요.');$('#task-add-title')?.focus();return;}

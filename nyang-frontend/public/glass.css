@@ -526,3 +526,9 @@ html[data-theme=dark] .chat-room .schedule-inline .agenda-item p.agenda-deadline
 .task-time .icon{width:12px;height:12px}
 .done .task-time{opacity:.6}
 .day-agenda .agenda-item>label .task-time{margin-left:6px}
+
+/* 27. 내 일정 '제목 수정'(연필) 버튼: 삭제 버튼과 같은 크기로 그 옆에 둔다 */
+.task-row>.rename-task{width:25px;height:25px;margin-top:13px;flex:none}
+.rename-task .icon{width:14px;height:14px}
+.agenda-edit>.rename-task{margin-left:auto;margin-right:2px}
+@media(max-width:760px){.task-row{padding-right:56px}.task-row>.rename-task{position:absolute;right:29px;top:18px;margin:0}}
