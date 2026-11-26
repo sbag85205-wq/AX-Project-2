@@ -1,14 +1,14 @@
 import {parseEventRequest,timeLabel,eventTask} from './event-request.js?v=7dffe9d847bc';
 import {viewOf,pageTitleOf,NAV_NAMES,navViews,STAFF_NAVS,EMPLOYEE_NAVS} from './views.js?v=df74efb0e3fe';
 import {fetch} from './transport.js?v=fd4b994ba12d';
-import {emptyCatalog,normalizeCatalog,createCatalogPicker,idleLook,shopItems,neededImages,isHidden} from './nyang-catalog.js?v=b1cdda32ede3';
-import {installNyangManage,nyangManagePageHTML} from './nyang-manage.js?v=bea56f072302';
+import {emptyCatalog,normalizeCatalog,createCatalogPicker,idleLook,shopItems,neededImages,isHidden} from './nyang-catalog.js?v=e213f012afc5';
+import {installNyangManage,nyangManagePageHTML} from './nyang-manage.js?v=2f1ffccf15c2';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=291139f9595c';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=2b1060400411';
 import {initCommunity,communityState,communityAction,refreshCommunity,activityHTML,boardHTML,unknownOffer,showPostDialog,showMyPost,accountGateHTML,logoutAccount,statsHTML,loadStatistics} from './community-ui.js?v=2b78e2027bbf';
 import {categories,applyManagedCategories,defaultCategory,categoryOf,documents,faq,startersFor,answers,reference,resolveQuestion,localDate,addDays,asDate,nextFriday,displayDate,makePlan} from './core.js?v=4dc923f4c7f7';
-import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=335f02dcd2db';
+import {QUESTION_POINTS,TREAT_COST,PET_COOLDOWN_MS,PET_BONUS_POINTS,petOutcome,wardrobe,normalizeRewards,rewardTransition,scheduleTypes,scheduleTypeFor,makeSchedule,mergeSchedule} from './companion.js?v=e05a8f2c9aa5';
 import {createPetInteraction} from './pet-interaction.js?v=25ddd542a513';
 import {normalizeHistory,recordAnswer,toggleSaved,unseenReplies,levelLadder} from './activity-history.js?v=20d8b9f9b46b';
 const $=s=>document.querySelector(s);
@@ -251,11 +251,14 @@ async function commitReward(event){
 }
 /** 관리에서 추가한 꾸미기 아이템: 냥대리 그림과 같은 틀의 그림을 냥대리 위에 겹친다(cat()의 inner로 넣는다) */
 function customOutfitHTML(id=rewards.equipped){
+ // 그림으로 된 처음부터 있던 아이템(계절 꾸미기)도 추가 아이템처럼 냥대리 위에 겹쳐 그린다
+ const art=wardrobe.find(x=>x.id===id&&x.image);
+ if(art)return isHidden(nyangCatalog,id)?'':`<span class="outfit-custom" aria-label="${esc(nyangCatalog.itemNames?.[id]||art.name)}" style="--outfit:url('${root}assets/${art.image}')"></span>`;
  if(!id?.startsWith('item-'))return '';const item=nyangCatalog.custom.items.find(x=>x.id===id),src=item&&catalogImages.get(item.image);
  return src?`<span class="outfit-custom" aria-label="${esc(item.name)}" style="--outfit:url('${src}')"></span>`:'';
 }
 // 관리에서 지운 처음부터 있던 아이템은 이미 착용 중이어도 그리지 않는다(추가 아이템을 지운 것과 같게). 이름은 관리에서 바꾼 이름
-function outfitHTML(id=rewards.equipped){if(id?.startsWith('item-')||isHidden(nyangCatalog,id))return '';return id?`<span class="cat-outfit outfit-${id}" aria-label="${esc(nyangCatalog.itemNames?.[id]||wardrobe.find(x=>x.id===id)?.name||'')}">${id==='ribbon'?'<i></i>':id==='crown'?'♛':'✦ <i>✧</i> ✦'}</span>`:'';}
+function outfitHTML(id=rewards.equipped){if(id?.startsWith('item-')||isHidden(nyangCatalog,id)||wardrobe.some(x=>x.id===id&&x.image))return '';return id?`<span class="cat-outfit outfit-${id}" aria-label="${esc(nyangCatalog.itemNames?.[id]||wardrobe.find(x=>x.id===id)?.name||'')}">${id==='ribbon'?'<i></i>':id==='crown'?'♛':'✦ <i>✧</i> ✦'}</span>`:'';}
 function petHTML(){
  const reaction=petReaction&&Date.now()<petReaction.until?petReaction.kind:null;
  const happy=(rewards.pending.length>0||Date.now()<happyUntil)&&!['sleepy','peek','hesitate'].includes(companionPhase);

@@ -7,7 +7,7 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {communityState} from './community-ui.js?v=2b78e2027bbf';
 import {esc} from './shared.js?v=b4248c4d9fbf';
-import {SEASONS,KINDS,MODES,allReactions,bucketReactions,suggestLine,seasonImages,seasonDefault,shopItems,selectSeason,normalizeCatalog,hiddenInBucket,hiddenItems} from './nyang-catalog.js?v=b1cdda32ede3';
+import {SEASONS,KINDS,MODES,allReactions,bucketReactions,suggestLine,seasonImages,seasonDefault,shopItems,selectSeason,normalizeCatalog,hiddenInBucket,hiddenItems} from './nyang-catalog.js?v=e213f012afc5';
 
 let deps=null;
 const ui={tab:'none',mode:'warm',saving:false,editing:null,renaming:null};
@@ -62,6 +62,8 @@ function seasonThumb(item){
  const src=deps.images.get(item.image);return src?deps.cat('custom-art','nm-thumb reaction-art',`--art:url('${src}')`):'<div class="nm-thumb nm-missing">그림을 불러오는 중</div>';
 }
 function itemThumb(item){
+ // 그림으로 된 처음부터 있던 아이템(계절 꾸미기)은 냥대리 위에 겹친 모습으로
+ if(item.builtin&&item.image)return deps.cat('','nm-thumb','',`<span class="outfit-custom" style="--outfit:url('${new URL('./assets/'+item.image,import.meta.url).pathname}')"></span>`);
  if(item.builtin)return `<div class="nm-item-symbol item-symbol item-${item.id}">${item.symbol}</div>`;
  const src=deps.images.get(item.image);
  return src?deps.cat('','nm-thumb','',`<span class="outfit-custom" style="--outfit:url('${src}')"></span>`):'<div class="nm-thumb nm-missing">그림을 불러오는 중</div>';

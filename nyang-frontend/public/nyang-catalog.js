@@ -6,7 +6,7 @@
 //  - 꾸미기 상점에 보일 아이템을 알려 준다.
 // 화면 꾸밈만 정한다. 좋아함·쉬고 싶음·보너스 중 무엇이 나올지와 포인트는 계속 서버가 정한다.
 import {reactionPoses,seasonReactionPoses} from './reaction-variety.js?v=343305d55ffe';
-import {wardrobe} from './companion.js?v=335f02dcd2db';
+import {wardrobe} from './companion.js?v=e05a8f2c9aa5';
 
 export const SEASONS=[['none','기본'],['spring','봄'],['summer','여름'],['autumn','가을'],['winter','겨울']];
 export const KINDS=[['like','좋아함'],['dislike','쉬고 싶음'],['bonus','보너스']];

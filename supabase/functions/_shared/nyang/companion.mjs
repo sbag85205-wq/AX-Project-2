@@ -14,7 +14,12 @@ export function petOutcome(likeRoll,bonusRoll){
 export const wardrobe=[
  {id:'ribbon',name:'딸기우유 리본',cost:3,description:'무심한 얼굴에 사랑스러운 한 끗.',symbol:'🎀'},
  {id:'crown',name:'오늘의 왕관',cost:5,description:'오늘도 출근한 우리 냥대리가 최고.',symbol:'♛'},
- {id:'starlight',name:'반짝이는 별빛',cost:8,description:'냥대리 곁에 작은 별들이 머물러요.',symbol:'✦'}
+ {id:'starlight',name:'반짝이는 별빛',cost:8,description:'냥대리 곁에 작은 별들이 머물러요.',symbol:'✦'},
+ // 계절 꾸미기: 냥대리 둘레에 겹쳐 그리는 그림(assets/의 image, 관리에서 올린 아이템과 같은 750 틀)
+ {id:'spring-petals',name:'봄 벚꽃잎',cost:6,description:'냥대리 곁에 벚꽃잎이 살랑살랑 흩날려요.',symbol:'🌸',image:'item-spring.webp'},
+ {id:'summer-drops',name:'여름 물방울',cost:6,description:'시원한 물방울이 톡톡 맺혀요.',symbol:'💧',image:'item-summer.webp'},
+ {id:'autumn-leaves',name:'가을 낙엽',cost:6,description:'알록달록 낙엽이 바스락 내려앉아요.',symbol:'🍁',image:'item-autumn.webp'},
+ {id:'winter-snow',name:'겨울 눈송이',cost:6,description:'포근한 눈송이가 소복소복 내려요.',symbol:'❄',image:'item-winter.webp'}
 ];
 /** 담당자가 '냥대리 관리'에서 추가한 꾸미기 아이템 번호. 가격·이름은 서버의 관리 목록에서 정한다. */
 export const CUSTOM_ITEM=/^item-[a-z0-9]{6,40}$/;
