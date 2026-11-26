@@ -17,7 +17,7 @@ import {createAccountSync} from './account-sync.js?v=422e8ba71441';
 import {esc,loadingHTML} from './shared.js?v=b4248c4d9fbf';
 import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=e7418c08ff0f';
 import {orderNav,installNavLayout} from './nav-layout.js?v=2a33659a9a7a';
-import {installStaffAlerts} from './staff-alerts.js?v=3f7710b33c0b';
+import {installStaffAlerts} from './staff-alerts.js?v=2812b85c08af';
 import {createGuide} from './guide.js?v=47a851688d92';
 import {recentTurns} from './chat-context.js?v=e6c82dc547ad';
 import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=661669b8506a';
@@ -211,8 +211,8 @@ installNyangManage({icon,toast,cat,catalog:()=>nyangCatalog,images:catalogImages
 
 // ── 주 메뉴 배치 (nav-layout.js) ─────────────────────────────────────
 installNavLayout();
-// 담당자 알림: 처리하지 않은 챗봇 미답변 질문·답변 대기 게시판 글 수를 메뉴에 숫자로, 새로 들어오면 알림으로 (staff-alerts.js)
-const staffAlerts=installStaffAlerts({fetch,toast});
+// 담당자 알림 종: 처리하지 않은 챗봇 미답변 질문·답변 대기 게시판 글 수를 오른쪽 위 종과 메뉴에 숫자로 (staff-alerts.js)
+const staffAlerts=installStaffAlerts({fetch});
 // ── 첫 사용자 가이드 (guide.js · guide-steps.js) ─────────────────────
 // 직원에게 첫 로그인 때 한 번 띄우고, 오른쪽 위 '가이드'(?) 아이콘으로 다시 본다. 담당자에게는 띄우지 않는다.
 const guide=createGuide({request:fetch,busy:()=>$('#modal').open,returnFocus:()=>$('#guide-button'),beforeStart(){if(view!=='chat'){view='chat';petInteraction.reset();render();$('#main').scrollTop=0;}}});

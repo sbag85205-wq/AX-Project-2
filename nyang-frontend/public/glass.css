@@ -411,6 +411,37 @@ body[data-authenticated="false"] #app .top-icons>#guide-button{display:none}
    지금 모드 글자를 함께 보여 주는 알약 버튼으로 바꾼다: ☀ 라이트 모드 / 🌙 다크 모드 */
 body[data-role="staff"] #app .top-icons>.theme-toggle{width:auto;min-width:0;height:30px;padding:0 12px 0 10px;gap:6px;border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap}
 body[data-role="staff"] #app .top-icons>.theme-toggle>span{position:static;width:auto;height:auto;overflow:visible;clip:auto}
+/* 담당자 알림 종(staff-alerts.js): 화면 밝기 버튼 왼쪽. 숫자는 오른쪽 위 빨간 점, 새로 들어오면 한 번 흔들린다 */
+#app .top-icons>.staff-bell{overflow:visible}
+#app .top-icons>.staff-bell>.icon{width:16px;height:16px;transform-origin:50% 10%}
+#app .top-icons>.staff-bell>.staff-bell-count{position:absolute;top:-5px;right:-6px;display:grid;place-items:center;min-width:17px;height:17px;box-sizing:border-box;padding:0 4px;border-radius:999px;background:#e5484d;color:#fff;font-size:10.5px;font-weight:700;font-style:normal;line-height:1;box-shadow:0 0 0 2px var(--ui-panel,#fff);font-variant-numeric:tabular-nums}
+#app .top-icons>.staff-bell>.staff-bell-count[hidden]{display:none}
+html[data-theme=dark] #app .top-icons>.staff-bell>.staff-bell-count{background:#ff6b6b;color:#1d1f3a;box-shadow:0 0 0 2px #1d1f3a}
+#app .top-icons>.staff-bell.ring>.icon{animation:staff-bell-ring .9s ease-in-out}
+@keyframes staff-bell-ring{0%,100%{rotate:0deg}15%{rotate:16deg}30%{rotate:-14deg}45%{rotate:10deg}60%{rotate:-8deg}75%{rotate:4deg}}
+@media (prefers-reduced-motion:reduce){#app .top-icons>.staff-bell.ring>.icon{animation:none}}
+body.motion-paused #app .top-icons>.staff-bell.ring>.icon{animation:none}
+#staff-bell-menu{position:fixed;inset:auto;margin:0;width:288px;max-height:min(70vh,520px);overflow:auto;box-sizing:border-box;padding:8px;border:1px solid var(--glass-edge);border-radius:18px;background:rgba(255,255,255,.97);color:var(--ui-ink);box-shadow:0 24px 50px -22px rgba(40,30,110,.5)}
+#staff-bell-menu:popover-open{display:flex;flex-direction:column;gap:2px;animation:profile-menu-in .16s cubic-bezier(.2,.8,.2,1)}
+html[data-theme=dark] #staff-bell-menu{background:rgb(40,42,72)}
+#staff-bell-menu .sb-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:6px 10px 8px}
+#staff-bell-menu h2{margin:0;font-size:14px;font-weight:700}
+#staff-bell-menu .sb-head small{font-size:12px;color:var(--ui-sub)}
+#staff-bell-menu .sb-row{display:flex;align-items:center;gap:10px;width:100%;margin:0;padding:9px 10px;border:0;border-radius:12px;background:transparent;color:var(--ui-ink);text-align:left;cursor:pointer}
+#staff-bell-menu .sb-row:hover,#staff-bell-menu .sb-row:focus-visible{background:var(--ui-fill)}
+#staff-bell-menu .sb-row>span{display:flex;flex-direction:column;min-width:0;margin-right:auto}
+#staff-bell-menu .sb-row strong{font-size:13.5px;font-weight:600}
+#staff-bell-menu .sb-row small{font-size:12px;color:var(--ui-sub)}
+#staff-bell-menu .sb-row>b{display:grid;place-items:center;min-width:26px;height:22px;padding:0 7px;box-sizing:border-box;border-radius:999px;background:var(--ui-fill);color:var(--ui-sub);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
+#staff-bell-menu .sb-row>b.on{background:var(--ui-accent);color:#fff}
+html[data-theme=dark] #staff-bell-menu .sb-row>b.on{color:#14163a}
+#staff-bell-menu .sb-log{margin-top:4px;padding:8px 10px 4px;border-top:1px solid var(--ui-line)}
+#staff-bell-menu h3{margin:0 0 6px;font-size:11.5px;font-weight:600;color:var(--ui-sub)}
+#staff-bell-menu ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+#staff-bell-menu li{display:flex;justify-content:space-between;gap:10px;font-size:12.5px}
+#staff-bell-menu li time{flex:none;color:var(--ui-faint);font-size:11.5px}
+#staff-bell-menu .sb-log p{margin:0 0 4px;font-size:12.5px;color:var(--ui-sub)}
+@media (prefers-reduced-motion:reduce){#staff-bell-menu:popover-open{animation:none}}
 
 /* 13. 다크 모드 정리: 글래스 디자인 전에 만든 회색 다크 색(theme.css 등)이 남아 있던 곳을 글래스 다크 색으로 맞춘다 */
 /* 예전 다크 팔레트 변수를 글래스 값으로 (이 변수를 쓰는 판·칸이 한꺼번에 따라온다) */
