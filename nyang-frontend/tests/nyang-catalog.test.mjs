@@ -63,7 +63,7 @@ test('계절별 기본 모습: 고른 계절의 기본 모습이 평소 모습�
 test('꾸미기: 처음부터 있던 아이템 + 판매 중인 추가 아이템',()=>{
  const c=normalizeCatalog({custom:{reactions:[],seasonImages:[],items:[{id:'item-abcdef12',image:'img-cccccccc3',name:'벚꽃 핀',cost:4,enabled:true},{id:'item-zzzzzz99',image:'img-dddddddd4',name:'숨김',cost:2,enabled:false}]}});
  assert.deepEqual(shopItems(c).map(x=>x.id),['ribbon','crown','starlight','spring-petals','summer-drops','autumn-leaves','winter-snow','item-abcdef12']);
- assert.equal(shopItems(c,{all:true}).length,5);
+ assert.equal(shopItems(c,{all:true}).length,9); // 기본 7개(리본·왕관·별빛 + 계절 4종) + 추가 2개
  assert.equal(allReactions(c,'cold','dislike').every(r=>r.builtin),true);
 });
 
