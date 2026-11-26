@@ -81,3 +81,10 @@
 /* 지운 기본 항목 되돌리기 줄 */
 .nm-restore{display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:10px 14px;border:1px dashed var(--ui-line,#d8dce6);border-radius:12px;background:var(--ui-fill,#f5f6fa);font-size:13px;color:var(--ui-sub,#5d6187)}
 .nm-restore .text-button{font-weight:600}
+
+/* 꾸미기 아이템 칸: 반짝이는 별빛을 작은 냥대리(96px)와 함께 */
+.nm-thumb-wrap{position:relative;width:96px;height:96px;margin:12px auto 4px;flex:none}
+.nm-thumb-wrap>.cat-art.nm-thumb{margin:0}
+.nm-thumb-wrap>.outfit-starlight{left:50%;top:28%;width:122px;font-size:17px;text-shadow:0 0 6px #eac365}
+.nm-thumb-wrap>.outfit-starlight i{right:16%;top:-22px;font-size:12px}
+html:not([data-theme=dark]) .nm-thumb-wrap>.outfit-starlight{color:#e2ac35;text-shadow:0 0 5px #f6d77a}
