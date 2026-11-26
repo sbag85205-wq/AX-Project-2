@@ -228,6 +228,9 @@ export function cleanCatalog(input) {
   out.hidden = [...new Set((Array.isArray(m.hidden) ? m.hidden : []).filter((id) => typeof id === 'string' && ENTRY_ID.test(id) && id !== 'base'))].slice(0, 500);
   out.itemNames = {};
   for (const [id, v] of Object.entries(m.itemNames && typeof m.itemNames === 'object' ? m.itemNames : {}).slice(0, 100)) if (ENTRY_ID.test(id) && short(v, 30)) out.itemNames[id] = short(v, 30);
+  // 처음부터 있던 아이템의 바꾼 하트 가격(1~999)
+  out.itemCosts = {};
+  for (const [id, v] of Object.entries(m.itemCosts && typeof m.itemCosts === 'object' ? m.itemCosts : {}).slice(0, 100)) if (ENTRY_ID.test(id) && Number.isSafeInteger(v) && v >= 1 && v <= 999) out.itemCosts[id] = v;
   return out;
 }
 async function readCatalog(db) {
@@ -283,6 +286,11 @@ export async function handleNyang(db, account, input) {
       const item = (await readCatalog(db)).custom.items.find((x) => x.id === clean.item);
       if (clean.type === 'buy' && (!item || !item.enabled)) fail('지금은 살 수 없는 꾸미기 아이템이에요.');
       if (item) clean.catalogItem = { id: item.id, cost: item.cost };
+    } else if (clean.type === 'buy' && typeof clean.item === 'string') {
+      // 처음부터 있던 아이템: 관리에서 지웠으면 살 수 없고, 가격을 바꿨으면 그 가격으로 산다
+      const catalog = await readCatalog(db);
+      if (catalog.hidden.includes(clean.item)) fail('지금은 살 수 없는 꾸미기 아이템이에요.');
+      if (catalog.itemCosts[clean.item]) clean.catalogItem = { id: clean.item, cost: catalog.itemCosts[clean.item] };
     }
     return accountCommunity(db, account, action, clean);
   }

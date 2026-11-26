@@ -7,7 +7,7 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {communityState} from './community-ui.js?v=2b78e2027bbf';
 import {esc} from './shared.js?v=b4248c4d9fbf';
-import {SEASONS,KINDS,MODES,allReactions,bucketReactions,suggestLine,seasonImages,seasonDefault,shopItems,selectSeason,normalizeCatalog,hiddenInBucket,hiddenItems} from './nyang-catalog.js?v=a3f27059fede';
+import {SEASONS,KINDS,MODES,allReactions,bucketReactions,suggestLine,seasonImages,seasonDefault,shopItems,selectSeason,normalizeCatalog,hiddenInBucket,hiddenItems} from './nyang-catalog.js?v=7cfe5c5d48b6';
 
 let deps=null;
 const ui={tab:'none',mode:'warm',saving:false,editing:null,renaming:null};
@@ -105,9 +105,9 @@ function bucketHTML(c,season){
 // ── 칸 3: 꾸미기 아이템 ──────────────────────────────────────────
 function itemsHTML(c){
  return `${restoreHTML(hiddenItems(c),'data-items="1"')}<section class="nm-group"><header><h3>꾸미기 아이템</h3><span>직원이 하트로 열고 착용해요</span></header><div class="nm-grid">${shopItems(c,{all:true}).map(item=>`<article class="nm-card ${item.enabled===false?'off':''} ${ui.renaming===item.id?'editing':''}">${itemThumb(item)}${ui.renaming===item.id
-   ?`<form class="nm-edit" data-nm-form="item-name" data-id="${esc(item.id)}"><label>이름<input name="name" maxlength="30" required value="${esc(item.name)}"></label><div class="nm-edit-actions"><button class="primary-button" ${ui.saving?'disabled':''}>저장</button>${item.builtin&&item.name!==item.originalName?`<button type="button" class="text-button" data-nm="reset-item-name" data-id="${esc(item.id)}">원래 이름으로</button>`:''}<button type="button" class="text-button" data-nm="cancel-rename">취소</button></div></form>`
-   :`<div class="nm-card-text"><strong>${esc(item.name)}</strong><small>♥ ${item.cost}${item.description?' · '+esc(item.description):''}</small><button type="button" class="text-button nm-edit-open" data-nm="item-rename" data-id="${esc(item.id)}">${deps.icon('edit')}이름 수정</button></div>`}
-  <div class="nm-card-foot">${item.builtin?builtinFoot(item.id,item.name!==item.originalName?'기본 · 이름 수정':'기본'):`<label class="nm-switch"><input type="checkbox" data-nm="item-enable" data-id="${esc(item.id)}" ${item.enabled!==false?'checked':''}> 판매 중</label><button type="button" class="text-button nm-del" data-nm="del-item" data-id="${esc(item.id)}">지우기</button>`}</div></article>`).join('')}</div></section>
+   ?`<form class="nm-edit" data-nm-form="item-name" data-id="${esc(item.id)}"><label>이름<input name="name" maxlength="30" required value="${esc(item.name)}"></label><label>하트 가격<input name="cost" type="number" min="1" max="999" required value="${item.cost}"></label><div class="nm-edit-actions"><button class="primary-button" ${ui.saving?'disabled':''}>저장</button>${item.builtin&&(item.name!==item.originalName||item.cost!==item.originalCost)?`<button type="button" class="text-button" data-nm="reset-item-name" data-id="${esc(item.id)}">원래대로</button>`:''}<button type="button" class="text-button" data-nm="cancel-rename">취소</button></div></form>`
+   :`<div class="nm-card-text"><strong>${esc(item.name)}</strong><small>♥ ${item.cost}${item.description?' · '+esc(item.description):''}</small><button type="button" class="text-button nm-edit-open" data-nm="item-rename" data-id="${esc(item.id)}">${deps.icon('edit')}이름·가격 수정</button></div>`}
+  <div class="nm-card-foot">${item.builtin?builtinFoot(item.id,item.name!==item.originalName||item.cost!==item.originalCost?'기본 · 수정됨':'기본'):`<label class="nm-switch"><input type="checkbox" data-nm="item-enable" data-id="${esc(item.id)}" ${item.enabled!==false?'checked':''}> 판매 중</label><button type="button" class="text-button nm-del" data-nm="del-item" data-id="${esc(item.id)}">지우기</button>`}</div></article>`).join('')}</div></section>
  <form class="nm-add" data-nm-form="item"><h3>아이템 추가</h3>
   <label class="nm-file">그림<input type="file" name="image" accept="image/png,image/webp,image/jpeg" required></label>
   <label>이름<input name="name" maxlength="30" required placeholder="예: 벚꽃 머리핀"></label>
@@ -171,7 +171,7 @@ export function installNyangManage(d){
   // 처음부터 있던 반응·계절 모습·아이템 지우기: 목록에서 숨긴다(위쪽 '되돌리기'로 다시 살릴 수 있다)
   if(a==='hide'&&confirm('이 기본 항목을 지울까요? 위쪽의 \'되돌리기\'로 다시 살릴 수 있어요.')){if(!next.hidden.includes(id))next.hidden.push(id);for(const s in next.defaults)if(next.defaults[s]===id)delete next.defaults[s];save(next,'지웠어요. 위쪽 \'되돌리기\'로 다시 살릴 수 있어요.');return;}
   if(a==='restore'){const ids=b.dataset.items?hiddenItems(next):hiddenInBucket(next,b.dataset.season);next.hidden=next.hidden.filter(x=>!ids.includes(x));save(next,`지운 기본 항목 ${ids.length}개를 되돌렸어요.`);return;}
-  if(a==='reset-item-name'){delete next.itemNames[id];ui.renaming=null;save(next,'원래 이름으로 되돌렸어요.');return;}
+  if(a==='reset-item-name'){delete next.itemNames[id];delete next.itemCosts[id];ui.renaming=null;save(next,'원래 이름·가격으로 되돌렸어요.');return;}
  });
  document.addEventListener('change',e=>{
   const t=e.target;if(!t.dataset?.nm||!staff()||ui.saving)return;
@@ -186,10 +186,12 @@ export function installNyangManage(d){
   const f=e.target.closest?.('[data-nm-form]');if(!f||!staff())return;e.preventDefault();if(ui.saving)return;
   const data=new FormData(f),kind=f.dataset.nmForm;
   if(kind==='item-name'){
-   const next=draft(),id=f.dataset.id,name=String(data.get('name')||'').trim().slice(0,30);if(!name){deps.toast('이름을 적어 주세요.');return;}
+   const next=draft(),id=f.dataset.id,name=String(data.get('name')||'').trim().slice(0,30),cost=Math.round(Number(data.get('cost')));if(!name){deps.toast('이름을 적어 주세요.');return;}
+   if(!Number.isSafeInteger(cost)||cost<1||cost>999){deps.toast('하트 가격은 1~999 사이로 적어 주세요.');return;}
    const custom=next.custom.items.find(x=>x.id===id);
-   if(custom)custom.name=name;else{const original=shopItems(next,{all:true}).find(x=>x.id===id)?.originalName;if(name===original)delete next.itemNames[id];else next.itemNames[id]=name;}
-   ui.renaming=null;save(next,`이름을 '${name}'(으)로 바꿨어요.`);return;
+   if(custom){custom.name=name;custom.cost=cost;}
+   else{const o=shopItems(next,{all:true}).find(x=>x.id===id);if(name===o?.originalName)delete next.itemNames[id];else next.itemNames[id]=name;if(cost===o?.originalCost)delete next.itemCosts[id];else next.itemCosts[id]=cost;}
+   ui.renaming=null;save(next,`'${name}' · ♥ ${cost}(으)로 바꿨어요. 이미 연 직원은 다시 사지 않아도 돼요.`);return;
   }
   if(kind==='edit'){
    const next=draft(),id=f.dataset.id,r=findReaction(next,id);if(!r)return;

@@ -6,7 +6,7 @@
 //  - 꾸미기 상점에 보일 아이템을 알려 준다.
 // 화면 꾸밈만 정한다. 좋아함·쉬고 싶음·보너스 중 무엇이 나올지와 포인트는 계속 서버가 정한다.
 import {reactionPoses,seasonReactionPoses} from './reaction-variety.js?v=343305d55ffe';
-import {wardrobe} from './companion.js?v=be0125e6c23b';
+import {wardrobe} from './companion.js?v=335f02dcd2db';
 
 export const SEASONS=[['none','기본'],['spring','봄'],['summer','여름'],['autumn','가을'],['winter','겨울']];
 export const KINDS=[['like','좋아함'],['dislike','쉬고 싶음'],['bonus','보너스']];
@@ -23,7 +23,8 @@ export const BUILTIN_SEASON_IMAGES=[
 const DEFAULT_MOTION={like:'purr',dislike:'backstep',bonus:'bounce'};
 
 // hidden: 관리에서 지운 '처음부터 있던' 반응·계절 모습·꾸미기 아이템(되돌리기로 다시 살릴 수 있다), itemNames: 처음부터 있던 아이템의 바꾼 이름
-export function emptyCatalog(){return {season:'none',defaults:{},reactions:{},hidden:[],itemNames:{},custom:{reactions:[],seasonImages:[],items:[]}};}
+// itemCosts: 처음부터 있던 아이템의 바꾼 하트 가격(1~999)
+export function emptyCatalog(){return {season:'none',defaults:{},reactions:{},hidden:[],itemNames:{},itemCosts:{},custom:{reactions:[],seasonImages:[],items:[]}};}
 /** 서버가 준 목록을 안전한 모양으로(서버 cleanCatalog와 같은 모양). */
 export function normalizeCatalog(value){
  const c=emptyCatalog();if(!value||typeof value!=='object')return c;
@@ -35,6 +36,7 @@ export function normalizeCatalog(value){
  c.custom.reactions=c.custom.reactions.map(r=>({...r,season:SEASON_IDS.includes(r.season)?r.season:'none'}));
  if(Array.isArray(value.hidden))c.hidden=[...new Set(value.hidden.filter(id=>typeof id==='string'&&id&&id!=='base'))];
  if(value.itemNames&&typeof value.itemNames==='object')for(const [id,v] of Object.entries(value.itemNames))if(typeof v==='string'&&v.trim())c.itemNames[id]=v.trim().slice(0,30);
+ if(value.itemCosts&&typeof value.itemCosts==='object')for(const [id,v] of Object.entries(value.itemCosts))if(Number.isSafeInteger(v)&&v>=1&&v<=999)c.itemCosts[id]=v;
  return c;
 }
 /** 관리에서 지운 처음부터 있던 항목인가 */
@@ -107,7 +109,7 @@ export function seasonDefault(catalog,season){
 export function idleLook(catalog){return seasonDefault(catalog,catalog.season);}
 /** 꾸미기 상점: 처음부터 있던 아이템(관리에서 지운 것은 빼고, 바꾼 이름으로) + 판매 중인 추가 아이템. */
 export function shopItems(catalog,{all=false}={}){
- return [...wardrobe.filter(x=>!isHidden(catalog,x.id)).map(x=>({...x,name:catalog.itemNames?.[x.id]||x.name,originalName:x.name,builtin:true,enabled:true})),...catalog.custom.items.filter(x=>all||x.enabled!==false).map(x=>({...x,builtin:false,symbol:''}))];
+ return [...wardrobe.filter(x=>!isHidden(catalog,x.id)).map(x=>({...x,name:catalog.itemNames?.[x.id]||x.name,originalName:x.name,cost:catalog.itemCosts?.[x.id]||x.cost,originalCost:x.cost,builtin:true,enabled:true})),...catalog.custom.items.filter(x=>all||x.enabled!==false).map(x=>({...x,builtin:false,symbol:''}))];
 }
 /** 화면에 필요한 올린 그림 번호들(지금 계절의 반응·평소 모습·아이템). */
 export function neededImages(catalog){

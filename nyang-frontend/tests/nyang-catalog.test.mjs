@@ -88,3 +88,9 @@ test('관리에서 지운 처음부터 있던 항목은 빠지고 되돌리기 �
  assert.deepEqual(hiddenInBucket(c,'none'),['b:warm:like:0']);assert.deepEqual(hiddenInBucket(c,'winter'),['season-winter']);assert.deepEqual(hiddenItems(c),['crown']);
  assert.deepEqual(shopItems(c).map(x=>`${x.id}:${x.name}`),['ribbon:분홍 리본','starlight:반짝이는 별빛']);
 });
+
+test('관리에서 바꾼 기본 아이템 가격으로 보이고, 원래 가격도 기억한다',async()=>{
+ const c=normalizeCatalog({itemCosts:{ribbon:7,crown:0,starlight:1000}});
+ assert.deepEqual(c.itemCosts,{ribbon:7}); // 1~999만
+ const ribbon=shopItems(c).find(x=>x.id==='ribbon');assert.equal(ribbon.cost,7);assert.equal(ribbon.originalCost,3);
+});

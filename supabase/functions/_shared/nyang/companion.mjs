@@ -48,7 +48,9 @@ export function rewardTransition(previous,event){
  }else if(event.type==='buy'){
   // 추가한 아이템은 서버가 관리 목록에서 찾은 값(event.item: {id,cost})으로만 산다
   const custom=event.item&&event.item.id===event.id&&CUSTOM_ITEM.test(event.id)&&Number.isSafeInteger(event.item.cost)&&event.item.cost>=1&&event.item.cost<=999?event.item:null;
-  const item=wardrobe.find(x=>x.id===event.id)||custom;if(!item)throw Error('없는 꾸미기 아이템이에요.');
+  // 처음부터 있던 아이템은 관리에서 바꾼 가격(서버가 event.item에 넣어 준 값)이 있으면 그 가격으로 산다
+  const base=wardrobe.find(x=>x.id===event.id),priced=base&&event.item&&event.item.id===event.id&&Number.isSafeInteger(event.item.cost)&&event.item.cost>=1&&event.item.cost<=999?{...base,cost:event.item.cost}:base;
+  const item=priced||custom;if(!item)throw Error('없는 꾸미기 아이템이에요.');
   if(!s.owned.includes(item.id)){if(s.hearts<item.cost)throw Error('하트가 조금 더 필요하다냥.');s.hearts-=item.cost;s.owned.push(item.id);}s.equipped=item.id;
  }else if(event.type==='equip'){
   if(event.id!==null&&!s.owned.includes(event.id))throw Error('먼저 아이템을 열어 주세요.');s.equipped=event.id;
