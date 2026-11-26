@@ -122,6 +122,12 @@ body[data-mode=cat] .app-sidebar .brand{display:flex;align-items:center;gap:10px
 .app-sidebar .workspace-nav.side-nav>button.active>.icon{color:var(--ui-ink)}
 .app-sidebar .workspace-nav .count,
 .app-sidebar .workspace-nav .activity-unread{margin-left:auto}
+/* 담당자 알림 숫자(staff-alerts.js): 묶음 버튼에서는 숫자를 오른쪽으로 밀고 화살표는 그 바로 뒤에 */
+.app-sidebar .workspace-nav .nav-group-toggle{position:relative}
+.app-sidebar .workspace-nav.side-nav .nav-group-toggle .staff-alert-count+.icon{margin-left:-4px}
+/* 새 소식 숫자 글자색: 글래스에서는 --ui-bg가 투명이라 숫자가 안 보였다(직원 '질문 게시판' 새 답변 숫자도 같음) */
+.activity-unread{color:#fff;font-weight:600}
+html[data-theme=dark] .activity-unread{color:#14163a}
 /* 담당자 묶음 메뉴: 떠 있는 드롭다운 대신 사이드바 안에서 아래로 펼친다 */
 .app-sidebar .workspace-nav .nav-group{flex-direction:column}
 .app-sidebar .workspace-nav.side-nav .nav-group-toggle .icon{margin-left:auto}

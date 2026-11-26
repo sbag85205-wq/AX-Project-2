@@ -123,6 +123,12 @@ export async function request(path: string, init: RequestInit = {}): Promise<Res
     if (input.action === 'password') return Response.json(await changePassword(session.user.email ?? '', input.current, input.next));
     if (path === '/api/guide') return Response.json(await guideRecord(input));
     if (path === '/api/knowly-session') return Response.json({ connected: true });
+    // 담당자 알림: 아직 처리하지 않은('신규') 챗봇 미답변 질문 수. question_groups는 관리자만 읽을 수 있다(RLS)
+    if (path === '/api/staff-alerts') {
+      const { count, error } = await supabase.from('question_groups').select('id', { count: 'exact', head: true }).eq('status', '신규');
+      if (error) throw error;
+      return Response.json({ unanswered: count ?? 0 });
+    }
     // 냥대리 테스트 화면의 검색·모델 설정 (관리자인지는 서버 함수가 확인한다)
     if (path === '/api/knowly-settings') return Response.json(await callFunction('admin-settings', input));
     // 채팅의 '분야 변경' 목록 (분야 관리에서 정한 분야)

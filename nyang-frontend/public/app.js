@@ -17,6 +17,7 @@ import {createAccountSync} from './account-sync.js?v=422e8ba71441';
 import {esc,loadingHTML} from './shared.js?v=b4248c4d9fbf';
 import {staffSettingsHTML,expandStaffSettings,installStaffSettings} from './staff-settings.js?v=e7418c08ff0f';
 import {orderNav,installNavLayout} from './nav-layout.js?v=2a33659a9a7a';
+import {installStaffAlerts} from './staff-alerts.js?v=43f1f7a3c485';
 import {createGuide} from './guide.js?v=47a851688d92';
 import {recentTurns} from './chat-context.js?v=e6c82dc547ad';
 import {initBackground,backgroundUploads,backgroundState,showBackground,applyBackground,loadBackground} from './background.js?v=661669b8506a';
@@ -209,6 +210,8 @@ installNyangManage({icon,toast,cat,catalog:()=>nyangCatalog,images:catalogImages
 
 // ── 주 메뉴 배치 (nav-layout.js) ─────────────────────────────────────
 installNavLayout();
+// 담당자 알림: 처리하지 않은 챗봇 미답변 질문 수를 메뉴에 숫자로, 새로 들어오면 알림으로 (staff-alerts.js)
+const syncStaffAlerts=installStaffAlerts({fetch,toast});
 // ── 첫 사용자 가이드 (guide.js · guide-steps.js) ─────────────────────
 // 직원에게 첫 로그인 때 한 번 띄우고, 오른쪽 위 '가이드'(?) 아이콘으로 다시 본다. 담당자에게는 띄우지 않는다.
 const guide=createGuide({request:fetch,busy:()=>$('#modal').open,returnFocus:()=>$('#guide-button'),beforeStart(){if(view!=='chat'){view='chat';petInteraction.reset();render();$('#main').scrollTop=0;}}});
@@ -218,6 +221,7 @@ function render(){
  document.body.dataset.view=view;
  const session=communityState(),staff=session.me?.role==='staff';document.body.dataset.authenticated=String(!!session.member);document.body.dataset.role=staff?'staff':'employee';
  for(const name of EMPLOYEE_NAVS)$('#nav-'+name).hidden=staff;
+ syncStaffAlerts(!!session.member&&staff);
  $('#guide-button').hidden=staff||!session.member;
  $('#nav-chat span').textContent=staff?'냥대리 테스트':'물어보기';
  orderNav(staff);
