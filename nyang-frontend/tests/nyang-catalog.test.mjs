@@ -94,3 +94,9 @@ test('관리에서 바꾼 기본 아이템 가격으로 보이고, 원래 가격
  assert.deepEqual(c.itemCosts,{ribbon:7}); // 1~999만
  const ribbon=shopItems(c).find(x=>x.id==='ribbon');assert.equal(ribbon.cost,7);assert.equal(ribbon.originalCost,3);
 });
+
+test('관리에서 바꾼 기본 아이템 설명으로 보이고, 원래 설명도 기억한다',()=>{
+ const c=normalizeCatalog({itemDescs:{crown:'  반짝 왕관  ',ribbon:'   '}});
+ assert.deepEqual(c.itemDescs,{crown:'반짝 왕관'});
+ const crown=shopItems(c).find(x=>x.id==='crown');assert.equal(crown.description,'반짝 왕관');assert.equal(crown.originalDescription,'오늘도 출근한 우리 냥대리가 최고.');
+});

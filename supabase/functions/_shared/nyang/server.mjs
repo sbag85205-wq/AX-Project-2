@@ -231,6 +231,9 @@ export function cleanCatalog(input) {
   // 처음부터 있던 아이템의 바꾼 하트 가격(1~999)
   out.itemCosts = {};
   for (const [id, v] of Object.entries(m.itemCosts && typeof m.itemCosts === 'object' ? m.itemCosts : {}).slice(0, 100)) if (ENTRY_ID.test(id) && Number.isSafeInteger(v) && v >= 1 && v <= 999) out.itemCosts[id] = v;
+  // 처음부터 있던 아이템의 바꾼 설명
+  out.itemDescs = {};
+  for (const [id, v] of Object.entries(m.itemDescs && typeof m.itemDescs === 'object' ? m.itemDescs : {}).slice(0, 100)) if (ENTRY_ID.test(id) && short(v, 80)) out.itemDescs[id] = short(v, 80);
   return out;
 }
 async function readCatalog(db) {
