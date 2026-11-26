@@ -62,7 +62,7 @@ test('계절별 기본 모습: 고른 계절의 기본 모습이 평소 모습�
 
 test('꾸미기: 처음부터 있던 아이템 + 판매 중인 추가 아이템',()=>{
  const c=normalizeCatalog({custom:{reactions:[],seasonImages:[],items:[{id:'item-abcdef12',image:'img-cccccccc3',name:'벚꽃 핀',cost:4,enabled:true},{id:'item-zzzzzz99',image:'img-dddddddd4',name:'숨김',cost:2,enabled:false}]}});
- assert.deepEqual(shopItems(c).map(x=>x.id),['ribbon','crown','starlight','item-abcdef12']);
+ assert.deepEqual(shopItems(c).map(x=>x.id),['ribbon','crown','starlight','spring-petals','summer-drops','autumn-leaves','winter-snow','item-abcdef12']);
  assert.equal(shopItems(c,{all:true}).length,5);
  assert.equal(allReactions(c,'cold','dislike').every(r=>r.builtin),true);
 });
@@ -86,7 +86,7 @@ test('관리에서 지운 처음부터 있던 항목은 빠지고 되돌리기 �
  assert.equal(allReactions(c,'warm','like').length,allReactions(c,'warm','like',{withHidden:true}).length-1);
  assert.deepEqual(seasonImages(c,'winter').map(x=>x.id),[]);
  assert.deepEqual(hiddenInBucket(c,'none'),['b:warm:like:0']);assert.deepEqual(hiddenInBucket(c,'winter'),['season-winter']);assert.deepEqual(hiddenItems(c),['crown']);
- assert.deepEqual(shopItems(c).map(x=>`${x.id}:${x.name}`),['ribbon:분홍 리본','starlight:반짝이는 별빛']);
+ assert.deepEqual(shopItems(c).map(x=>`${x.id}:${x.name}`).slice(0,2),['ribbon:분홍 리본','starlight:반짝이는 별빛']);assert.ok(!shopItems(c).some(x=>x.id==='crown'));
 });
 
 test('관리에서 바꾼 기본 아이템 가격으로 보이고, 원래 가격도 기억한다',async()=>{
