@@ -493,7 +493,7 @@ function conversation(){
 }
 // 첫 화면 발바닥 냥대리 메뉴: 츄르 주기·성격 모드·꾸미기를 한곳에 모은다(동작은 기존 data-action 그대로).
 // 열고 닫기는 glass-motion.js가 맡는다. workspace-utilities: 담당자에게는 숨기고(account.css), 가이드 'fun' 단계가 가리킨다.
-function pawMenuHTML(){return `<div class="workspace-utilities" data-paw><button type="button" class="paw-button" data-paw-toggle aria-haspopup="true" aria-expanded="false" aria-controls="paw-menu" aria-label="냥대리에게 (츄르 주기 · 모드 · 꾸미기)" title="냥대리에게">${icon('paw')}</button><div id="paw-menu" class="paw-menu" role="group" aria-label="냥대리에게" hidden><p class="paw-menu-title">냥대리에게</p><div class="chat-rewards paw-treat">${chatRewards()}</div><button type="button" id="personality-button" data-action="personality" aria-label="냥대리 성격 설정">${icon(personality==='warm'?'heart':'snow')}<span>${voice().label}</span></button><button type="button" class="paw-wardrobe" data-action="wardrobe">${icon('shirt')}<span>꾸미기</span></button></div></div>`;}
+function pawMenuHTML(){return `<div class="workspace-utilities" data-paw><button type="button" class="paw-button" data-paw-toggle aria-haspopup="true" aria-expanded="false" aria-controls="paw-menu" aria-label="${communityState().me?.role==='staff'?'냥대리 모드 바꾸기':'냥대리에게 (츄르 주기 · 모드 · 꾸미기)'}" title="${communityState().me?.role==='staff'?'냥대리 모드':'냥대리에게'}">${icon('paw')}</button><div id="paw-menu" class="paw-menu" role="group" aria-label="냥대리에게" hidden><p class="paw-menu-title">냥대리에게</p><div class="chat-rewards paw-treat">${chatRewards()}</div><button type="button" id="personality-button" data-action="personality" aria-label="냥대리 성격 설정">${icon(personality==='warm'?'heart':'snow')}<span>${voice().label}</span></button><button type="button" class="paw-wardrobe" data-action="wardrobe">${icon('shirt')}<span>꾸미기</span></button></div></div>`;}
 function chatRewards(){return `<button class="chat-treat-button" data-action="feed" ${(rewards.points<TREAT_COST&&!rewards.treatTokens)||rewards.pending.length?'disabled':''}><span class="treat-stick" aria-hidden="true"></span> 츄르 주기 <small>${rewards.treatTokens?`보유 ${rewards.treatTokens}개`:'10 P'}</small></button>${rewards.pending.map((id,i)=>`<button class="chat-collect-heart" data-heart="${id}" aria-label="하트 ${i+1} 모으기">♥ <small>+1</small></button>`).join('')}`;}
 function refreshChatRewards(){document.querySelectorAll('.chat-rewards').forEach(area=>area.innerHTML=chatRewards());}
 function motionButton(){const moving=read('om-cat-motion',true);return `<button class="motion-control" data-action="toggle-motion" aria-pressed="${moving}" aria-label="${moving?'고양이 움직임 끄기':'고양이 움직임 켜기'}"><span class="motion-mark">${moving?'Ⅱ':'▷'}</span><span>${moving?'움직임 끄기':'움직임 켜기'}</span></button>`;}
@@ -708,7 +708,8 @@ function openHistory(id){
 }
 
 function showPersonality(){
- if(!communityState().member||communityState().me?.role==='staff')return;
+ // 담당자도 냥대리 테스트에서 모드를 바꿀 수 있다(성격은 계정별 개인 기록)
+ if(!communityState().member)return;
  openModal(`<h2 id="modal-title">어떤 냥대리가 좋아요?</h2><p class="modal-sub">움직임을 미리 보고, 마음에 드는 냥대리를 골라 주세요.</p><div class="personality-options" role="group" aria-label="냥대리 성격">${['cold','warm'].map(mode=>`<button class="personality-option ${personality===mode?'selected':''}" data-personality="${mode}" aria-pressed="${personality===mode}"><span class="personality-preview" aria-hidden="true">${previewCat(mode)}</span><strong>${personalities[mode].label}</strong><span>${mode==='warm'?'먼저 인사하고, 손길에는 골골. 츄르는 바로 냠냠!':'무심하게 힐끗. 가끔 손길에 마음을 열어요.'}</span><q>${mode==='warm'?'쓰다듬어주면 행복하다냥!':'츄르? …잠깐, 나 주고 가라냥.'}</q><small>${personality===mode?'사용 중':'이 모드로 선택'}</small></button>`).join('')}</div><p class="personality-note">답변의 정보와 출처, 포인트 보상은 같아요.<br>선택은 이 브라우저에 계정별로 저장됩니다.</p>`);
 }
 // 꾸미기 창 미리보기 냥대리도 지금 계절의 기본 모습(관리에서 고른 것)을 입힌다(전에는 늘 기본 모습이었다)
@@ -795,7 +796,7 @@ const clickByData=[
  [b=>b.dataset.chatDelete,(b,e)=>{showDeleteChat(b.dataset.chatDelete);return;}],
  [b=>b.dataset.chatDeleteConfirm,(b,e)=>{deleteChat(b.dataset.chatDeleteConfirm);return;}],
  [b=>b.dataset.chatOpen,(b,e)=>{openChat(b.dataset.chatOpen,b.dataset.chatMessage||null);return;}],
- [b=>b.dataset.personality,(b,e)=>{if(!communityState().member||communityState().me?.role==='staff')return;
+ [b=>b.dataset.personality,(b,e)=>{if(!communityState().member)return;
   const next=normalizePersonality(b.dataset.personality);if(!save('om-personality',next))return;
   personality=next;petInteraction.reset();closeModal();render();companionBehavior.greet(personality);toast(voice().label+'로 바꿨어요.');return;}],
 ];

@@ -256,7 +256,9 @@ body[data-authenticated="false"] .app-sidebar .sidebar-toggle{display:none!impor
    열고 닫기는 glass-motion.js. 담당자에게는 account.css의 .workspace-utilities 숨김으로 보이지 않는다. */
 .desktop-workspace .chat-home .cat-resident-stage>[data-paw]{grid-column:2;grid-row:1;justify-self:end;align-self:end;position:relative;z-index:6;display:block;margin:0 -40px 8px 0;padding:0;border:0}
 /* 담당자: 위 위치 규칙이 account.css의 담당자 숨김(.workspace-utilities)을 덮지 않게 여기서도 숨긴다 */
-body[data-role="staff"] .desktop-workspace .chat-home .cat-resident-stage>[data-paw]{display:none}
+/* 담당자(냥대리 테스트)도 발바닥 메뉴로 냥대리 모드(따뜻한/차가운)를 바꿀 수 있다. 포인트·하트가 없으니 츄르 주기·꾸미기는 빼고 모드만 */
+body[data-role="staff"] .desktop-workspace .chat-home .cat-resident-stage>[data-paw]{display:block}
+body[data-role="staff"] [data-paw] .paw-menu>:is(.paw-treat,.paw-wardrobe){display:none!important}
 [data-paw]>.paw-button{display:grid;place-items:center;width:34px;height:34px;padding:0;border:1px solid rgba(31,35,64,.08);border-radius:50%;background:#fff;color:#15172a;box-shadow:0 8px 18px -10px rgba(40,30,110,.6);cursor:pointer;transition:translate .18s,box-shadow .18s}
 [data-paw]>.paw-button:hover{background:#fff;color:#15172a;translate:0 -2px;box-shadow:0 12px 22px -10px rgba(40,30,110,.7)}
 [data-paw]>.paw-button[aria-expanded="true"]{box-shadow:0 0 0 3px var(--ui-accent-fill),0 8px 18px -10px rgba(40,30,110,.6)}
