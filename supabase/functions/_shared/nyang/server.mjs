@@ -224,6 +224,10 @@ export function cleanCatalog(input) {
     if (!r || !/^item-[a-z0-9]{6,40}$/.test(r.id) || !IMAGE_ID.test(r.image) || !Number.isSafeInteger(r.cost) || r.cost < 1 || r.cost > 999) continue;
     out.custom.items.push({ id: r.id, image: r.image, name: short(r.name, 30) || '새 아이템', cost: r.cost, description: short(r.description, 80), enabled: r.enabled !== false });
   }
+  // 관리에서 지운 '처음부터 있던' 반응·계절 모습·아이템(되돌리기로 살릴 수 있다. 원래 냥대리 base는 지울 수 없다)과 처음부터 있던 아이템의 바꾼 이름
+  out.hidden = [...new Set((Array.isArray(m.hidden) ? m.hidden : []).filter((id) => typeof id === 'string' && ENTRY_ID.test(id) && id !== 'base'))].slice(0, 500);
+  out.itemNames = {};
+  for (const [id, v] of Object.entries(m.itemNames && typeof m.itemNames === 'object' ? m.itemNames : {}).slice(0, 100)) if (ENTRY_ID.test(id) && short(v, 30)) out.itemNames[id] = short(v, 30);
   return out;
 }
 async function readCatalog(db) {

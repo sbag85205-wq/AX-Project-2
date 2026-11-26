@@ -77,3 +77,14 @@ test('멘트: 추가할 때 모드·종류·계절에 맞게 자동으로 쓰고
  const r=allReactions(c,'cold','dislike')[0];assert.equal(r.line,'고친 멘트다냥');assert.equal(r.pose.line,'고친 멘트다냥');assert.equal(r.edited,true);assert.notEqual(r.original.line,'고친 멘트다냥');
  const pick=createCatalogPicker(()=>c,()=>true,()=>0);assert.equal(pick('cold','dislike').line,'고친 멘트다냥');
 });
+
+test('관리에서 지운 처음부터 있던 항목은 빠지고 되돌리기 목록에 잡히며, 아이템은 바꾼 이름으로 보인다',async()=>{
+ const {isHidden,hiddenInBucket,hiddenItems}=await import('../public/nyang-catalog.js');
+ const c=normalizeCatalog({hidden:['b:warm:like:0','season-winter','crown','base'],itemNames:{ribbon:'분홍 리본'}});
+ assert.deepEqual(c.hidden,['b:warm:like:0','season-winter','crown']); // 원래 냥대리(base)는 지울 수 없다
+ assert.ok(isHidden(c,'crown')&&!isHidden(c,'ribbon'));
+ assert.equal(allReactions(c,'warm','like').length,allReactions(c,'warm','like',{withHidden:true}).length-1);
+ assert.deepEqual(seasonImages(c,'winter').map(x=>x.id),[]);
+ assert.deepEqual(hiddenInBucket(c,'none'),['b:warm:like:0']);assert.deepEqual(hiddenInBucket(c,'winter'),['season-winter']);assert.deepEqual(hiddenItems(c),['crown']);
+ assert.deepEqual(shopItems(c).map(x=>`${x.id}:${x.name}`),['ribbon:분홍 리본','starlight:반짝이는 별빛']);
+});

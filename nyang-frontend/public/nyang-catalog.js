@@ -22,7 +22,8 @@ export const BUILTIN_SEASON_IMAGES=[
 ];
 const DEFAULT_MOTION={like:'purr',dislike:'backstep',bonus:'bounce'};
 
-export function emptyCatalog(){return {season:'none',defaults:{},reactions:{},custom:{reactions:[],seasonImages:[],items:[]}};}
+// hidden: 관리에서 지운 '처음부터 있던' 반응·계절 모습·꾸미기 아이템(되돌리기로 다시 살릴 수 있다), itemNames: 처음부터 있던 아이템의 바꾼 이름
+export function emptyCatalog(){return {season:'none',defaults:{},reactions:{},hidden:[],itemNames:{},custom:{reactions:[],seasonImages:[],items:[]}};}
 /** 서버가 준 목록을 안전한 모양으로(서버 cleanCatalog와 같은 모양). */
 export function normalizeCatalog(value){
  const c=emptyCatalog();if(!value||typeof value!=='object')return c;
@@ -32,18 +33,32 @@ export function normalizeCatalog(value){
  const custom=value.custom&&typeof value.custom==='object'?value.custom:{};
  for(const key of ['reactions','seasonImages','items'])c.custom[key]=Array.isArray(custom[key])?custom[key].filter(x=>x&&typeof x==='object'&&typeof x.id==='string'):[];
  c.custom.reactions=c.custom.reactions.map(r=>({...r,season:SEASON_IDS.includes(r.season)?r.season:'none'}));
+ if(Array.isArray(value.hidden))c.hidden=[...new Set(value.hidden.filter(id=>typeof id==='string'&&id&&id!=='base'))];
+ if(value.itemNames&&typeof value.itemNames==='object')for(const [id,v] of Object.entries(value.itemNames))if(typeof v==='string'&&v.trim())c.itemNames[id]=v.trim().slice(0,30);
  return c;
 }
+/** 관리에서 지운 처음부터 있던 항목인가 */
+export function isHidden(catalog,id){return !!catalog.hidden?.includes(id);}
+/** 한 칸(기본값·계절)에서 지운 처음부터 있던 항목 번호들(반응·평소 모습) */
+export function hiddenInBucket(catalog,season){
+ const ids=new Set(MODES.flatMap(([m])=>KINDS.flatMap(([k])=>allReactions(catalog,m,k,{withHidden:true}).filter(r=>r.builtin&&r.season===season).map(r=>r.id))));
+ for(const x of BUILTIN_SEASON_IMAGES)if(x.season===season)ids.add(x.id);
+ return (catalog.hidden||[]).filter(id=>ids.has(id));
+}
+/** 꾸미기 칸에서 지운 처음부터 있던 아이템 번호들 */
+export function hiddenItems(catalog){return (catalog.hidden||[]).filter(id=>wardrobe.some(x=>x.id===id));
+}
 
-/** 처음부터 있던 반응(reaction-variety.js: 기본값 칸 + 계절 칸)과 관리에서 추가한 반응. 반응마다 칸(season)과 사용 여부가 붙는다. */
-export function allReactions(catalog,mode,kind){
+/** 처음부터 있던 반응(reaction-variety.js: 기본값 칸 + 계절 칸)과 관리에서 추가한 반응. 반응마다 칸(season)과 사용 여부가 붙는다.
+ * 관리에서 지운 처음부터 있던 반응은 빼고 준다(withHidden이면 함께). */
+export function allReactions(catalog,mode,kind,{withHidden=false}={}){
  const m=mode==='warm'?'warm':'cold';
  const builtin=[...(reactionPoses[m][kind]||[]).map((pose,i)=>({id:`b:${m}:${kind}:${i}`,mode:m,kind,season:'none',builtin:true,pose,line:pose.line,mark:pose.mark})),
   ...Object.entries(seasonReactionPoses).flatMap(([season,modes])=>(modes[m]?.[kind]||[]).map((pose,i)=>({id:`b:${season}:${m}:${kind}:${i}`,mode:m,kind,season,builtin:true,pose,line:pose.line,mark:pose.mark})))];
  const custom=catalog.custom.reactions.filter(r=>r.mode===m&&r.kind===kind).map(r=>({id:r.id,mode:m,kind,season:r.season,builtin:false,image:r.image,line:r.line,mark:r.mark,
   pose:{motion:DEFAULT_MOTION[kind],line:r.line,mark:r.mark,eyes:'',wag:false,art:'',image:r.image}}));
  // 처음부터 있던 반응은 관리에서 고친 멘트(line·mark)가 있으면 그것을 쓴다
- return [...builtin,...custom].map(r=>{
+ return [...builtin.filter(r=>withHidden||!isHidden(catalog,r.id)),...custom].map(r=>{
   const o=catalog.reactions[r.id]||{},line=r.builtin&&o.line?o.line:r.line,mark=r.builtin&&typeof o.mark==='string'?o.mark:r.mark;
   return {...r,line,mark,original:{line:r.line,mark:r.mark},edited:r.builtin&&(line!==r.pose.line||mark!==r.pose.mark),pose:{...r.pose,line,mark},enabled:o.enabled!==false};
  });
@@ -67,6 +82,8 @@ export function createCatalogPicker(getCatalog,ready=()=>true,random=Math.random
   const catalog=getCatalog();
   let pool=activeReactions(catalog,mode,kind,ready);
   if(!pool.length)pool=allReactions(catalog,mode,kind).filter(r=>r.builtin);
+  // 처음부터 있던 반응까지 모두 지웠으면 지운 것 중에서라도 고른다(반응이 아예 없으면 화면이 멈춘다)
+  if(!pool.length)pool=allReactions(catalog,mode,kind,{withHidden:true}).filter(r=>r.builtin);
   if(!pool.length)return null;
   const key=mode+':'+kind,candidates=pool.length>1?pool.filter(r=>r.id!==previous.get(key)):pool;
   const chosen=candidates[Math.min(candidates.length-1,Math.max(0,Math.floor(random()*candidates.length)))];
@@ -79,7 +96,7 @@ export function selectSeason(catalog,season){
 }
 /** 계절별 모습 목록(처음부터 있던 것 + 추가한 것). */
 export function seasonImages(catalog,season){
- return [...BUILTIN_SEASON_IMAGES.filter(x=>x.season===season),...catalog.custom.seasonImages.filter(x=>x.season===season).map(x=>({...x,builtin:false}))];
+ return [...BUILTIN_SEASON_IMAGES.filter(x=>x.season===season&&!isHidden(catalog,x.id)),...catalog.custom.seasonImages.filter(x=>x.season===season).map(x=>({...x,builtin:false}))];
 }
 /** 그 계절의 기본 모습(관리에서 고른 것, 없으면 그 계절의 첫 그림). */
 export function seasonDefault(catalog,season){
@@ -88,9 +105,9 @@ export function seasonDefault(catalog,season){
 }
 /** 평소 모습: 지금 계절의 기본 모습. {id:'base'}이면 원래 냥대리(눈 깜빡임). */
 export function idleLook(catalog){return seasonDefault(catalog,catalog.season);}
-/** 꾸미기 상점: 처음부터 있던 아이템 + 판매 중인 추가 아이템. */
+/** 꾸미기 상점: 처음부터 있던 아이템(관리에서 지운 것은 빼고, 바꾼 이름으로) + 판매 중인 추가 아이템. */
 export function shopItems(catalog,{all=false}={}){
- return [...wardrobe.map(x=>({...x,builtin:true,enabled:true})),...catalog.custom.items.filter(x=>all||x.enabled!==false).map(x=>({...x,builtin:false,symbol:''}))];
+ return [...wardrobe.filter(x=>!isHidden(catalog,x.id)).map(x=>({...x,name:catalog.itemNames?.[x.id]||x.name,originalName:x.name,builtin:true,enabled:true})),...catalog.custom.items.filter(x=>all||x.enabled!==false).map(x=>({...x,builtin:false,symbol:''}))];
 }
 /** 화면에 필요한 올린 그림 번호들(지금 계절의 반응·평소 모습·아이템). */
 export function neededImages(catalog){

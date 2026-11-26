@@ -1,8 +1,8 @@
 import {parseEventRequest,timeLabel,eventTask} from './event-request.js?v=7dffe9d847bc';
 import {viewOf,pageTitleOf,NAV_NAMES,navViews,STAFF_NAVS,EMPLOYEE_NAVS} from './views.js?v=df74efb0e3fe';
 import {fetch} from './transport.js?v=fd4b994ba12d';
-import {emptyCatalog,normalizeCatalog,createCatalogPicker,idleLook,shopItems,neededImages} from './nyang-catalog.js?v=3a88ea59d01b';
-import {installNyangManage,nyangManagePageHTML} from './nyang-manage.js?v=1d646ec3a0dc';
+import {emptyCatalog,normalizeCatalog,createCatalogPicker,idleLook,shopItems,neededImages,isHidden} from './nyang-catalog.js?v=a3f27059fede';
+import {installNyangManage,nyangManagePageHTML} from './nyang-manage.js?v=0d9e773dda3b';
 import {createCompanionBehavior,companionAppearance} from './companion-behavior.js?v=291139f9595c';
 import {normalizePersonality,personalities,personalityText,personalityAnswer,petAppearance} from './personality.js?v=32786256695d';
 import {normalizeChats,rememberChat,removeChat,importQuestionHistory,questionsByCategory,chatFolders,updateChatDetails,renameChatFolder} from './chat-history.js?v=2b1060400411';
@@ -254,7 +254,8 @@ function customOutfitHTML(id=rewards.equipped){
  if(!id?.startsWith('item-'))return '';const item=nyangCatalog.custom.items.find(x=>x.id===id),src=item&&catalogImages.get(item.image);
  return src?`<span class="outfit-custom" aria-label="${esc(item.name)}" style="--outfit:url('${src}')"></span>`:'';
 }
-function outfitHTML(id=rewards.equipped){if(id?.startsWith('item-'))return '';return id?`<span class="cat-outfit outfit-${id}" aria-label="${wardrobe.find(x=>x.id===id)?.name}">${id==='ribbon'?'<i></i>':id==='crown'?'♛':'✦ <i>✧</i> ✦'}</span>`:'';}
+// 관리에서 지운 처음부터 있던 아이템은 이미 착용 중이어도 그리지 않는다(추가 아이템을 지운 것과 같게). 이름은 관리에서 바꾼 이름
+function outfitHTML(id=rewards.equipped){if(id?.startsWith('item-')||isHidden(nyangCatalog,id))return '';return id?`<span class="cat-outfit outfit-${id}" aria-label="${esc(nyangCatalog.itemNames?.[id]||wardrobe.find(x=>x.id===id)?.name||'')}">${id==='ribbon'?'<i></i>':id==='crown'?'♛':'✦ <i>✧</i> ✦'}</span>`:'';}
 function petHTML(){
  const reaction=petReaction&&Date.now()<petReaction.until?petReaction.kind:null;
  const happy=(rewards.pending.length>0||Date.now()<happyUntil)&&!['sleepy','peek','hesitate'].includes(companionPhase);

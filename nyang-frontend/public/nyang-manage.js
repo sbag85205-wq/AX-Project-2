@@ -7,10 +7,10 @@
 import {fetch} from './transport.js?v=fd4b994ba12d';
 import {communityState} from './community-ui.js?v=2b78e2027bbf';
 import {esc} from './shared.js?v=b4248c4d9fbf';
-import {SEASONS,KINDS,MODES,allReactions,bucketReactions,suggestLine,seasonImages,seasonDefault,shopItems,selectSeason,normalizeCatalog} from './nyang-catalog.js?v=3a88ea59d01b';
+import {SEASONS,KINDS,MODES,allReactions,bucketReactions,suggestLine,seasonImages,seasonDefault,shopItems,selectSeason,normalizeCatalog,hiddenInBucket,hiddenItems} from './nyang-catalog.js?v=a3f27059fede';
 
 let deps=null;
-const ui={tab:'none',mode:'warm',saving:false,editing:null};
+const ui={tab:'none',mode:'warm',saving:false,editing:null,renaming:null};
 const seasonLabel=id=>SEASONS.find(([s])=>s===id)?.[1]||'기본';
 const staff=()=>communityState().me?.role==='staff';
 
@@ -68,6 +68,10 @@ function itemThumb(item){
 }
 // ── 기본값·계절 칸: 평소 모습 + 모드별 반응 ───────────────────────────
 const tabLabel=season=>season==='none'?'기본값':seasonLabel(season);
+// 처음부터 있던 그림·아이템을 지웠으면 '되돌리기'로 한 번에 살린다
+const restoreHTML=(ids,attrs)=>ids.length?`<div class="nm-restore">지운 기본 항목 ${ids.length}개 <button type="button" class="text-button" data-nm="restore" ${attrs}>되돌리기</button></div>`:'';
+// 처음부터 있던 항목의 카드 아래: '기본' 표시 + 지우기(숨기기)
+const builtinFoot=(id,badge='기본')=>`<span class="nm-badge">${badge}</span><button type="button" class="text-button nm-del" data-nm="hide" data-id="${esc(id)}">지우기</button>`;
 function bucketHTML(c,season){
  const ready=id=>deps.images.has(id),label=tabLabel(season),current=c.season===season;
  const images=seasonImages(c,season),chosen=seasonDefault(c,season);
@@ -75,7 +79,7 @@ function bucketHTML(c,season){
   ?`<div class="nm-now"><span class="nm-now-badge">지금 쓰는 칸</span>직원들에게 이 칸의 평소 모습과 반응이 나와요.${season==='none'?'':' 이 칸에 반응이 없는 종류는 기본값 반응이 나와요.'}</div>`
   :`<div class="nm-now"><button type="button" class="primary-button" data-nm="season" data-season="${season}" ${ui.saving?'disabled':''}>${season==='none'?'기본값으로 쓰기':`지금 계절을 ${label}로 바꾸기`}</button><span>지금은 '${tabLabel(c.season)}' 칸을 쓰고 있어요.</span></div>`;
  const look=`<section class="nm-group"><header><h3>평소 모습</h3><span>기본 모습: ${esc(chosen.name||'')}</span></header><div class="nm-grid">${images.map(item=>`<article class="nm-card ${chosen.id===item.id?'chosen':''}">${seasonThumb(item)}<div class="nm-card-text"><strong>${esc(item.name||'새 모습')}</strong></div>
-   <div class="nm-card-foot"><label class="nm-switch"><input type="radio" name="default-${season}" data-nm="default" data-season="${season}" data-id="${esc(item.id)}" ${chosen.id===item.id?'checked':''}> 기본 모습</label>${item.builtin?'<span class="nm-badge">기본</span>':`<button type="button" class="text-button nm-del" data-nm="del-season" data-id="${esc(item.id)}">지우기</button>`}</div></article>`).join('')}
+   <div class="nm-card-foot"><label class="nm-switch"><input type="radio" name="default-${season}" data-nm="default" data-season="${season}" data-id="${esc(item.id)}" ${chosen.id===item.id?'checked':''}> 기본 모습</label>${item.id==='base'?'<span class="nm-badge">기본</span>':item.builtin?builtinFoot(item.id):`<button type="button" class="text-button nm-del" data-nm="del-season" data-id="${esc(item.id)}">지우기</button>`}</div></article>`).join('')}
    <form class="nm-add nm-add-inline" data-nm-form="season" data-season="${season}"><label class="nm-file">${label} 모습 추가<input type="file" name="image" accept="image/png,image/webp,image/jpeg" required></label><input name="name" maxlength="30" placeholder="이름(예: ${label} 냥대리 2)"><button class="secondary-button" ${ui.saving?'disabled':''}>추가</button></form></div></section>`;
  const modes=`<div class="nm-modes" role="tablist" aria-label="모드">${MODES.map(([id,l])=>`<button type="button" role="tab" class="nm-mode ${ui.mode===id?'on':''}" aria-selected="${ui.mode===id}" data-nm="mode" data-mode="${id}">${l}</button>`).join('')}</div>`;
  const kinds=KINDS.map(([kind,kl])=>{
@@ -88,20 +92,22 @@ function bucketHTML(c,season){
       <div class="nm-edit-actions"><button class="primary-button" ${ui.saving?'disabled':''}>저장</button><button type="button" class="text-button" data-nm="suggest" data-id="${id}">다시 써 주기</button>${r.edited?`<button type="button" class="text-button" data-nm="reset-line" data-id="${id}">원래 멘트로</button>`:''}<button type="button" class="text-button" data-nm="cancel-edit">취소</button></div></form>`
     :`<div class="nm-card-text"><strong>${esc(r.line)}</strong>${r.mark?`<small>${esc(r.mark)}</small>`:''}<button type="button" class="text-button nm-edit-open" data-nm="edit" data-id="${id}">${deps.icon('edit')}수정</button></div>`;
    return `<article class="nm-card ${on?'':'off'} ${ui.editing===r.id?'editing':''}">${poseThumb(r)}${text}
-    <div class="nm-card-foot"><label class="nm-switch"><input type="checkbox" data-nm="enable" data-id="${id}" ${r.enabled?'checked':''}> 사용</label><span class="nm-pct">${on?pct+'%':'꺼짐'}</span>${r.builtin?`<span class="nm-badge">${r.edited?'기본 · 멘트 수정':'기본'}</span>`:`<button type="button" class="text-button nm-del" data-nm="del-reaction" data-id="${id}">지우기</button>`}</div></article>`;}).join('')}</div>`:`<p class="nm-empty">${season==='none'?'아직 반응이 없어요.':`${label} 칸에 아직 ${kl} 반응이 없어요. 아래에서 추가해 주세요.`}</p>`}</section>`;
+    <div class="nm-card-foot"><label class="nm-switch"><input type="checkbox" data-nm="enable" data-id="${id}" ${r.enabled?'checked':''}> 사용</label><span class="nm-pct">${on?pct+'%':'꺼짐'}</span>${r.builtin?builtinFoot(r.id,r.edited?'기본 · 멘트 수정':'기본'):`<button type="button" class="text-button nm-del" data-nm="del-reaction" data-id="${id}">지우기</button>`}</div></article>`;}).join('')}</div>`:`<p class="nm-empty">${season==='none'?'아직 반응이 없어요.':`${label} 칸에 아직 ${kl} 반응이 없어요. 아래에서 추가해 주세요.`}</p>`}</section>`;
  }).join('');
  const add=`<form class="nm-add" data-nm-form="reaction" data-season="${season}"><h3>${label} · ${MODES.find(([m])=>m===ui.mode)[1]} 반응 추가</h3>
   <label class="nm-file">그림<input type="file" name="image" accept="image/png,image/webp,image/jpeg" required></label>
   <label>반응 종류<select name="kind">${KINDS.map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}</select></label>
   <button class="primary-button" ${ui.saving?'disabled':''}>추가하기</button>
   <p class="nm-hint">멘트는 모드·반응 종류·계절에 맞게 자동으로 써 드려요. 추가한 뒤 '수정'으로 바꿀 수 있어요. 그림은 냥대리 그림처럼 정사각형에 냥대리가 가운데 있는 투명 배경 그림이 가장 잘 맞아요. 같은 종류 안에서는 모든 반응이 같은 확률로 나와요.</p></form>`;
- return `${head}${look}<h2 class="nm-section-title">반응</h2>${modes}${kinds}${add}`;
+ return `${head}${restoreHTML(hiddenInBucket(c,season),`data-season="${season}"`)}${look}<h2 class="nm-section-title">반응</h2>${modes}${kinds}${add}`;
 }
 
 // ── 칸 3: 꾸미기 아이템 ──────────────────────────────────────────
 function itemsHTML(c){
- return `<section class="nm-group"><header><h3>꾸미기 아이템</h3><span>직원이 하트로 열고 착용해요</span></header><div class="nm-grid">${shopItems(c,{all:true}).map(item=>`<article class="nm-card ${item.enabled===false?'off':''}">${itemThumb(item)}<div class="nm-card-text"><strong>${esc(item.name)}</strong><small>♥ ${item.cost}${item.description?' · '+esc(item.description):''}</small></div>
-  <div class="nm-card-foot">${item.builtin?'<span class="nm-badge">기본</span>':`<label class="nm-switch"><input type="checkbox" data-nm="item-enable" data-id="${esc(item.id)}" ${item.enabled!==false?'checked':''}> 판매 중</label><button type="button" class="text-button nm-del" data-nm="del-item" data-id="${esc(item.id)}">지우기</button>`}</div></article>`).join('')}</div></section>
+ return `${restoreHTML(hiddenItems(c),'data-items="1"')}<section class="nm-group"><header><h3>꾸미기 아이템</h3><span>직원이 하트로 열고 착용해요</span></header><div class="nm-grid">${shopItems(c,{all:true}).map(item=>`<article class="nm-card ${item.enabled===false?'off':''} ${ui.renaming===item.id?'editing':''}">${itemThumb(item)}${ui.renaming===item.id
+   ?`<form class="nm-edit" data-nm-form="item-name" data-id="${esc(item.id)}"><label>이름<input name="name" maxlength="30" required value="${esc(item.name)}"></label><div class="nm-edit-actions"><button class="primary-button" ${ui.saving?'disabled':''}>저장</button>${item.builtin&&item.name!==item.originalName?`<button type="button" class="text-button" data-nm="reset-item-name" data-id="${esc(item.id)}">원래 이름으로</button>`:''}<button type="button" class="text-button" data-nm="cancel-rename">취소</button></div></form>`
+   :`<div class="nm-card-text"><strong>${esc(item.name)}</strong><small>♥ ${item.cost}${item.description?' · '+esc(item.description):''}</small><button type="button" class="text-button nm-edit-open" data-nm="item-rename" data-id="${esc(item.id)}">${deps.icon('edit')}이름 수정</button></div>`}
+  <div class="nm-card-foot">${item.builtin?builtinFoot(item.id,item.name!==item.originalName?'기본 · 이름 수정':'기본'):`<label class="nm-switch"><input type="checkbox" data-nm="item-enable" data-id="${esc(item.id)}" ${item.enabled!==false?'checked':''}> 판매 중</label><button type="button" class="text-button nm-del" data-nm="del-item" data-id="${esc(item.id)}">지우기</button>`}</div></article>`).join('')}</div></section>
  <form class="nm-add" data-nm-form="item"><h3>아이템 추가</h3>
   <label class="nm-file">그림<input type="file" name="image" accept="image/png,image/webp,image/jpeg" required></label>
   <label>이름<input name="name" maxlength="30" required placeholder="예: 벚꽃 머리핀"></label>
@@ -141,7 +147,9 @@ export function installNyangManage(d){
  document.addEventListener('click',e=>{
   const b=e.target.closest?.('[data-nm]');if(!b||!staff())return;
   const a=b.dataset.nm;
-  if(a==='tab'){ui.tab=b.dataset.tab;ui.editing=null;render();return;}
+  if(a==='tab'){ui.tab=b.dataset.tab;ui.editing=null;ui.renaming=null;render();return;}
+  if(a==='item-rename'){ui.renaming=b.dataset.id;render();const input=document.querySelector(`[data-nm-form="item-name"][data-id="${CSS.escape(b.dataset.id)}"] input[name=name]`);input?.focus();input?.select();return;}
+  if(a==='cancel-rename'){ui.renaming=null;render();return;}
   if(a==='edit'){ui.editing=b.dataset.id;render();document.querySelector(`.nm-edit[data-id="${CSS.escape(b.dataset.id)}"] input[name=line]`)?.focus();return;}
   if(a==='cancel-edit'){ui.editing=null;render();return;}
   if(a==='suggest'){
@@ -159,7 +167,11 @@ export function installNyangManage(d){
   if(a==='reset-line'){const o=next.reactions[id]||{};next.reactions[id]={enabled:o.enabled!==false};ui.editing=null;save(next,'원래 멘트로 되돌렸어요.');return;}
   if(a==='del-reaction'&&confirm('이 반응을 지울까요?')){const r=next.custom.reactions.find(x=>x.id===id);next.custom.reactions=next.custom.reactions.filter(x=>x.id!==id);delete next.reactions[id];save(next,'반응을 지웠어요.').then(()=>r&&call({action:'catalog-image-delete',id:r.image}).catch(()=>{}));return;}
   if(a==='del-season'&&confirm('이 모습을 지울까요?')){const r=next.custom.seasonImages.find(x=>x.id===id);next.custom.seasonImages=next.custom.seasonImages.filter(x=>x.id!==id);for(const s in next.defaults)if(next.defaults[s]===id)delete next.defaults[s];save(next,'모습을 지웠어요.').then(()=>r&&call({action:'catalog-image-delete',id:r.image}).catch(()=>{}));return;}
-  if(a==='del-item'&&confirm('이 아이템을 지울까요? 이미 연 직원의 냥대리에서도 보이지 않게 돼요.')){next.custom.items=next.custom.items.filter(x=>x.id!==id);save(next,'아이템을 지웠어요.');return;}
+  if(a==='del-item'&&confirm('이 아이템을 지울까요? 이미 연 직원의 냥대리에서도 보이지 않게 돼요.')){const r=next.custom.items.find(x=>x.id===id);next.custom.items=next.custom.items.filter(x=>x.id!==id);save(next,'아이템을 지웠어요.').then(()=>r&&call({action:'catalog-image-delete',id:r.image}).catch(()=>{}));return;}
+  // 처음부터 있던 반응·계절 모습·아이템 지우기: 목록에서 숨긴다(위쪽 '되돌리기'로 다시 살릴 수 있다)
+  if(a==='hide'&&confirm('이 기본 항목을 지울까요? 위쪽의 \'되돌리기\'로 다시 살릴 수 있어요.')){if(!next.hidden.includes(id))next.hidden.push(id);for(const s in next.defaults)if(next.defaults[s]===id)delete next.defaults[s];save(next,'지웠어요. 위쪽 \'되돌리기\'로 다시 살릴 수 있어요.');return;}
+  if(a==='restore'){const ids=b.dataset.items?hiddenItems(next):hiddenInBucket(next,b.dataset.season);next.hidden=next.hidden.filter(x=>!ids.includes(x));save(next,`지운 기본 항목 ${ids.length}개를 되돌렸어요.`);return;}
+  if(a==='reset-item-name'){delete next.itemNames[id];ui.renaming=null;save(next,'원래 이름으로 되돌렸어요.');return;}
  });
  document.addEventListener('change',e=>{
   const t=e.target;if(!t.dataset?.nm||!staff()||ui.saving)return;
@@ -173,6 +185,12 @@ export function installNyangManage(d){
  document.addEventListener('submit',async e=>{
   const f=e.target.closest?.('[data-nm-form]');if(!f||!staff())return;e.preventDefault();if(ui.saving)return;
   const data=new FormData(f),kind=f.dataset.nmForm;
+  if(kind==='item-name'){
+   const next=draft(),id=f.dataset.id,name=String(data.get('name')||'').trim().slice(0,30);if(!name){deps.toast('이름을 적어 주세요.');return;}
+   const custom=next.custom.items.find(x=>x.id===id);
+   if(custom)custom.name=name;else{const original=shopItems(next,{all:true}).find(x=>x.id===id)?.originalName;if(name===original)delete next.itemNames[id];else next.itemNames[id]=name;}
+   ui.renaming=null;save(next,`이름을 '${name}'(으)로 바꿨어요.`);return;
+  }
   if(kind==='edit'){
    const next=draft(),id=f.dataset.id,r=findReaction(next,id);if(!r)return;
    const line=String(data.get('line')||'').trim().slice(0,80),mark=String(data.get('mark')||'').trim().slice(0,30);if(!line){deps.toast('멘트를 적어 주세요.');return;}
