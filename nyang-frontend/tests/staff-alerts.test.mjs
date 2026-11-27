@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {alertText, boardAlertText, waitingPostIds, agoText} from '../public/staff-alerts.js';
+import {alertText, boardAlertText, waitingPostIds, agoText, newPostIds, pruneBoardLog} from '../public/staff-alerts.js';
 
 test('담당자 알림 종: 챗봇 미답변은 로그인 뒤 처음 센 것은 기록하지 않고, 늘어난 만큼만 기록한다', () => {
   assert.equal(alertText(null, 3), '');
@@ -26,4 +26,16 @@ test('담당자 알림 종: 기록 시각', () => {
   assert.equal(agoText(now - 20_000, now), '방금');
   assert.equal(agoText(now - 5 * 60_000, now), '5분 전');
   assert.match(agoText(now - 2 * 3600_000, now), /\d/);
+});
+
+test('담당자 알림 종: 삭제·영구삭제된 글은 새로 들어온 기록에서도 빠진다', () => {
+  assert.deepEqual(newPostIds(null, ['a']), []);
+  assert.deepEqual(newPostIds(new Set(['a']), ['a', 'b', 'c']), ['b', 'c']);
+  const log = [{text: '질문 게시판에 새 질문 2개', at: 1, view: 'board', ids: ['b', 'c']}, {text: '챗봇 미답변에 새 질문 1개', at: 0, view: 'unanswered'}];
+  // c가 삭제됨 → 1개로 줄고, 챗봇 기록은 그대로
+  assert.deepEqual(pruneBoardLog(log, [{id: 'a'}, {id: 'b', replies: [{id: 'r'}]}]), [{text: '질문 게시판에 새 질문 1개', at: 1, view: 'board', ids: ['b']}, log[1]]);
+  // 둘 다 삭제됨 → 게시판 기록은 사라진다
+  assert.deepEqual(pruneBoardLog(log, [{id: 'a'}]), [log[1]]);
+  // 그대로면 같은 기록
+  assert.equal(pruneBoardLog(log, [{id: 'b'}, {id: 'c'}])[0], log[0]);
 });

@@ -17,9 +17,22 @@ export function alertText(previous, count) {
 
 /** 게시판에 전에 없던 답변 대기 글(새 글)이 생겼을 때의 기록 문구. 로그인 뒤 처음 센 것과 줄어든 것은 '' */
 export function boardAlertText(previousIds, waitingIds) {
-  if (previousIds === null) return '';
-  const added = waitingIds.filter(id => !previousIds.has(id)).length;
-  return added ? `질문 게시판에 새 질문 ${added}개` : '';
+  return boardLogText(newPostIds(previousIds, waitingIds).length);
+}
+/** 전에 없던 답변 대기 글의 id (로그인 뒤 처음 센 것은 []) */
+export const newPostIds = (previousIds, waitingIds) => previousIds === null ? [] : waitingIds.filter(id => !previousIds.has(id));
+const boardLogText = n => n ? `질문 게시판에 새 질문 ${n}개` : '';
+
+/** 게시판에서 삭제(영구삭제 포함)되어 목록에 없는 글은 '새로 들어온 것' 기록에서도 뺀다. 남은 글이 없으면 그 기록을 지운다.
+ *  답변이 달린 글은 목록에 그대로 있으므로 기록도 남는다. */
+export function pruneBoardLog(log, posts) {
+  const present = new Set((Array.isArray(posts) ? posts : []).map(p => String(p?.id)));
+  return log.flatMap(x => {
+    if (!x.ids) return [x];
+    const ids = x.ids.filter(id => present.has(id));
+    if (!ids.length) return [];
+    return ids.length === x.ids.length ? [x] : [{ ...x, ids, text: boardLogText(ids.length) }];
+  });
 }
 
 /** 게시판 글 가운데 답변을 기다리는 글의 id */
@@ -108,9 +121,9 @@ export function installStaffAlerts({ fetch }) {
     if (document.getElementById('staff-bell-menu')?.matches(':popover-open')) renderMenu();
   }
   // 새로 들어오면 기록에 남기고 종을 한 번 흔든다
-  function arrived(text, view) {
+  function arrived(text, view, ids) {
     if (!text) return;
-    log = [{ text, at: Date.now(), view }, ...log].slice(0, LOG_MAX);
+    log = [{ text, at: Date.now(), view, ...(ids ? { ids } : {}) }, ...log].slice(0, LOG_MAX);
     const btn = document.getElementById('staff-bell'); if (!btn) return;
     btn.classList.remove('ring'); void btn.offsetWidth; btn.classList.add('ring');
   }
@@ -142,8 +155,9 @@ export function installStaffAlerts({ fetch }) {
     /** 게시판 목록을 새로 받을 때마다 app.js가 부른다(담당자일 때만 센다) */
     board(posts) {
       if (!active || !Array.isArray(posts)) return; // 목록을 아직 못 받았으면 세지 않는다
-      const ids = waitingPostIds(posts), text = boardAlertText(boardIds, ids);
-      boardIds = new Set(ids); show(); arrived(text, 'board');
+      const ids = waitingPostIds(posts), added = newPostIds(boardIds, ids);
+      log = pruneBoardLog(log, posts); // 삭제된 글의 알림 기록은 지운다
+      boardIds = new Set(ids); show(); arrived(boardLogText(added.length), 'board', added);
     },
   };
 }
