@@ -48,6 +48,7 @@ test('서버 저장: 브라우저 저장소와 같은 규칙(보상·게시판·
     await assert.rejects(call(b, 'delete-post', { post: post.id }), /본인/);
     await call(staff, 'delete-post', { post: post.id }); assert.equal((await call(a)).posts.length, 0); assert.equal((await call(staff)).deletedPosts.length, 1);
     await call(staff, 'restore-post', { post: post.id }); assert.equal((await call(a)).posts.length, 1);
+    await assert.rejects(call(staff, 'purge-post', { post: post.id }), /삭제된 글에서만/); // 보이는 글은 바로 영구삭제할 수 없다
     await assert.rejects(call(a, 'stats'), /담당자/);
     await assert.rejects(call(staff, 'question', { question: '담당자 보상 위조' }), /담당자/);
     const fed = await call(a, 'reward', { type: 'feed', id: 'feed-1' });
@@ -75,6 +76,11 @@ test('서버 저장: 브라우저 저장소와 같은 규칙(보상·게시판·
     assert.deepEqual(s.levels.map((l) => l.n), [1, 0, 1, 0, 0]);
     assert.deepEqual(s.streaks, [{ uid: 'user-a', username: '', days: 3 }]); assert.deepEqual(s.attendanceDaily.map((d) => d.n), [0, 0, 0, 0, 1, 1, 1]);
     assert.equal(JSON.stringify(s).includes('휴가 승인'), false); assert.equal(JSON.stringify(s).includes('"name"'), false);
+    // 영구삭제(Postgres): 삭제된 글 → 답변·유익해요·삭제 표시·질문 행까지 지워진다
+    await call(staff, 'delete-post', { post: post.id });
+    await assert.rejects(call(a, 'purge-post', { post: post.id }), /담당자/);
+    assert.equal((await call(staff, 'purge-post', { post: post.id })).deletedPosts.length, 0);
+    for (const [table, col] of [['posts', 'id'], ['replies', 'post'], ['likes', 'post'], ['deleted_posts', 'post']]) assert.equal((await pg.query(`SELECT COUNT(*)::int AS n FROM nyang.${table} WHERE ${col} = $1`, [post.id])).rows[0].n, 0, table);
     // 실패한 요청은 아무것도 남기지 않는다(트랜잭션)
     const points = (await call(b)).wallet.points;
     await assert.rejects(call(b, 'like', { post: 'no-such-post' }), /찾을 수 없어요/); assert.equal((await call(b)).wallet.points, points);

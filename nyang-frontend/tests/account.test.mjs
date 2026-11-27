@@ -54,6 +54,14 @@ test('staff moderation hides and restores posts, preserves rewards, and attribut
  const restored=await call(staff.cookie,{action:'restore-post',post:post.id});assert.equal(restored.data.deletedPosts.length,0);assert.equal(restored.data.posts.length,1);assert.equal(restored.data.posts[0].replies.length,1);assert.equal((await call(employee.cookie)).data.wallet.points,balance);
  assert.equal((await call(staff.cookie,null,'?view=stats')).data.answered,1);
  assert.equal(db.sql.prepare('SELECT deleted_by FROM demo_deleted_posts').get(),undefined);
+ // 영구삭제: 담당자만, 삭제된 글만. 답변·유익해요·질문까지 지워지고 복원할 수 없다
+ assert.equal((await call(staff.cookie,{action:'purge-post',post:post.id})).status,404);
+ await call(staff.cookie,{action:'delete-post',post:post.id});
+ assert.equal((await call(employee.cookie,{action:'purge-post',post:post.id})).status,403);
+ const purged=await call(staff.cookie,{action:'purge-post',post:post.id});assert.equal(purged.status,200);assert.equal(purged.data.deletedPosts.length,0);assert.equal(purged.data.posts.length,0);
+ for(const table of ['demo_posts','demo_replies','demo_likes','demo_deleted_posts'])assert.equal(db.sql.prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ${table==='demo_posts'?'id':'post'}=?`).get(post.id).n,0,table);
+ assert.equal((await call(staff.cookie,{action:'restore-post',post:post.id})).status,404);
+ assert.equal((await call(employee.cookie)).data.wallet.points,balance);
 });
 test('wrong credentials, wrong login type, forged tokens, cross-origin requests, throttling and secret rotation',async()=>{
  const {db,call,sign}=fixture();
